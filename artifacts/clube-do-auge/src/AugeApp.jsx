@@ -543,7 +543,8 @@ function DefinirHabitos({ onSalvar }) {
 
 function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
                 ckOk, setCkOk, notas, setNotas, anc, historico, setHist,
-                retomadas, setRet, pontos, medC, ir, tk }) {
+                retomadas, setRet, pontos, medC, ir, tk,
+                habAngulares, setHabAngulares }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
     {id:"cansada",   e:"😮‍💨",l:"Cansada"},
@@ -617,8 +618,12 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
           </div>
         )}
 
-        {/* Passo 1 — chips */}
-        {passo===1 && (
+        {/* Passo 1 — definir hábitos (primeiro uso) ou chips */}
+        {passo===1 && habAngulares.length===0 && (
+          <DefinirHabitos onSalvar={habs=>{ setHabAngulares(habs); setPasso(1); }}/>
+        )}
+
+        {passo===1 && habAngulares.length>0 && (
           <div>
             <div style={{fontFamily:FS,fontSize:22,fontWeight:300,color:`rgba(255,255,255,.85)`,marginBottom:6}}>Como você chegou hoje?</div>
             <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.35)`,marginBottom:20}}>Selecione até 2</div>
