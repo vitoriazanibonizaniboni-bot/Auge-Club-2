@@ -220,7 +220,8 @@ const TODAY = new Date().toISOString().split("T")[0];
 
 export default function App() {
   const [legalOk,  setLegalOk]  = useState(true); // DEMO
-  const [perfil,   setPerfil]   = useState("jornada"); // DEMO
+  // TODO produção: perfil vem do Supabase após identificação do plano pelo pagamento
+  const [perfil,   setPerfil]   = useState("jornada");
   const [diagOk,   setDiagOk]   = useState(true); // DEMO
   const [tela,     setTela]     = useState(S.HOME);
 
@@ -257,6 +258,9 @@ export default function App() {
   const [retomadas,setRet]      = useLocalStorage("auge_retomadas", 0);
 
   const [toast,    setToast]    = useState(null);
+
+  // Dados de onboarding — nome e e-mail persistidos entre sessões
+  const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
 
   const sem = 3;
   const mes = sem<=4?1:sem<=8?2:3;
@@ -299,7 +303,7 @@ export default function App() {
   const medC   = [...(maxSeq>=3?["momentum"]:[]),...(retomadas>=3?["retomada"]:[]),...(diasC>=21?["protagonista"]:[])];
 
   const ctx = {perfil,ir,back,tk,feed,setFeed,habF,setHabF,chips,setChips,ckOk,setCkOk,notas,setNotas,rodaR,setRodaR,rodaI,setRodaI,matches,setMatches,ci,sw,doSwipe,selM,setSelM,anc,setAnc,kitMin,setKitMin,kitApoio,setKitApoio,escT,setEscT,vit,setVit,historico,setHist,retomadas,setRet,sem,mes,hDia,feitos,postTreino,calcRoda,zc,zl,pontos,medC,
-    habAngulares,setHabAngulares,dataCadastro};
+    habAngulares,setHabAngulares,dataCadastro,usuario};
 
   const SEM_NAV = [S.SPLASH,S.LEGAL,S.LOGIN,S.DIAG,S.VOZ,S.CHAT,S.RODA];
 
@@ -307,6 +311,14 @@ export default function App() {
   if(!legalOk && tela !== S.SPLASH) return (
     <Phone>
       <Rolar><AvisoLegal onAceitar={()=>{localStorage.setItem('auge_lgpd','1');setLegalOk(true);setTela(S.LOGIN);}}/></Rolar>
+      <Estilos/>
+    </Phone>
+  );
+
+  // Onboarding — coleta nome e e-mail no primeiro acesso
+  if(!usuario) return (
+    <Phone>
+      <Rolar><Onboarding onConcluir={u=>setUsuario(u)}/></Rolar>
       <Estilos/>
     </Phone>
   );
@@ -455,6 +467,45 @@ function AvisoLegal({ onAceitar }) {
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
+// ─── ONBOARDING ───────────────────────────────────────────────────────────────
+function Onboarding({ onConcluir }) {
+  const [nome,  setNome]  = useState("");
+  const [email, setEmail] = useState("");
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const ok = nome.trim().length >= 2 && emailOk;
+  const salvar = () => {
+    if (!ok) return;
+    onConcluir({ nome: nome.trim(), email: email.trim().toLowerCase() });
+  };
+  return (
+    <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px 56px",animation:"fadeUp .4s ease"}}>
+      <Logo width={170} fundo="escuro"/>
+      <div style={{fontFamily:FS,fontSize:24,fontWeight:300,color:C.linho,marginTop:24,marginBottom:6,textAlign:"center"}}>Bem-vinda</div>
+      <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.35)`,marginBottom:40,textAlign:"center",lineHeight:1.65}}>Para começar, me diz seu nome e e-mail.</div>
+
+      <div style={{width:"100%",marginBottom:28}}>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.45)`,letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:8}}>Nome</div>
+        <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Como você se chama?"
+          onKeyDown={e=>e.key==="Enter"&&document.getElementById("ob-email")?.focus()}
+          style={{width:"100%",background:"transparent",border:"none",borderBottom:`1px solid ${nome.trim().length>=2?C.ouro+"66":"rgba(255,255,255,.2)"}`,color:C.branco,fontFamily:FS,fontSize:17,fontWeight:300,padding:"8px 0"}}/>
+      </div>
+
+      <div style={{width:"100%",marginBottom:40}}>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.45)`,letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:8}}>E-mail</div>
+        <input id="ob-email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com"
+          onKeyDown={e=>e.key==="Enter"&&salvar()}
+          style={{width:"100%",background:"transparent",border:"none",borderBottom:`1px solid ${emailOk?C.ouro+"66":"rgba(255,255,255,.2)"}`,color:C.branco,fontFamily:FS,fontSize:17,fontWeight:300,padding:"8px 0"}}/>
+      </div>
+
+      <BtnPill onClick={salvar} style={{opacity:ok?1:.4}}>Começar minha jornada</BtnPill>
+
+      <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.18)`,marginTop:20,textAlign:"center",lineHeight:1.7}}>
+        Seus dados ficam guardados apenas neste dispositivo.
+      </div>
+    </Grain>
+  );
+}
+
 function Login({ onLogin }) {
   const [email, setEmail]   = useState("");
   const [senha, setSenha]   = useState("");
@@ -564,7 +615,7 @@ function DefinirHabitos({ onSalvar }) {
 function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
                 ckOk, setCkOk, notas, setNotas, anc, historico, setHist,
                 retomadas, setRet, pontos, medC, ir, tk,
-                habAngulares, setHabAngulares }) {
+                habAngulares, setHabAngulares, usuario }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
     {id:"cansada",   e:"😮‍💨",l:"Cansada"},
@@ -613,7 +664,9 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
 
       <Grain style={{padding:"18px 18px 24px"}}>
         {/* Saudação */}
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.ouro,letterSpacing:"0.35em",textTransform:"uppercase",marginBottom:4}}>BOM DIA ☀️</div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.ouro,letterSpacing:"0.35em",textTransform:"uppercase",marginBottom:4}}>
+          BOM DIA{usuario?.nome ? `, ${usuario.nome.split(" ")[0].toUpperCase()}` : ""} ☀️
+        </div>
         <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(240,233,218,.45)`,lineHeight:1.5,marginBottom:20,borderLeft:`1px solid ${C.ouro}33`,paddingLeft:10}}>"{anc}"</div>
 
         {/* Checkin */}
