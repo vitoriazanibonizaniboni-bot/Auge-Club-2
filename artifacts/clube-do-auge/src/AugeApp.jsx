@@ -114,9 +114,9 @@ const iaCache = new Map();
 const callISA = async (msg) => {
   if (iaCache.has(msg)) return iaCache.get(msg);
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:300,system:SYS_ISA,messages:[{role:"user",content:msg}]})});
+    const r = await fetch(`${import.meta.env.BASE_URL}api/isa`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})});
     const d = await r.json();
-    const t = d.content?.[0]?.text || "Não consegui processar agora. Tente em instantes!";
+    const t = d.text || d.error || "Não consegui processar agora. Tente em instantes!";
     iaCache.set(msg,t); return t;
   } catch { return "Estou com dificuldade de conexão. Tente em instantes! 🌿"; }
 };
