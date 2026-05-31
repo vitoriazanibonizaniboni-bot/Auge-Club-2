@@ -105,11 +105,6 @@ const MEDALHAS = [
 ];
 
 // ─── IA ───────────────────────────────────────────────────────────────────────
-const SYS_ISA = `Você é a assistente virtual da Dra. Isadora Zaniboni, médica geriatra, criadora do Clube do Auge.
-TOM: Calorosa, direta, coloquial. Use "pra","tá","a gente". Parágrafos curtos. Termine com afeto 💖 ou ☀️.
-NUNCA: "disciplina"/"força de vontade"/"estudos mostram"/"combater o envelhecimento"/"vai melhorar seus exames"/"idosa"/"declínio".
-USE: "longevidade","energia","bem-estar","protagonismo".
-REGRAS: Máx 3 sugestões. Sintoma físico → indique consulta presencial. Nunca prescreva. Português brasileiro.`;
 const iaCache = new Map();
 const callISA = async (msg) => {
   if (iaCache.has(msg)) return iaCache.get(msg);
@@ -633,6 +628,29 @@ function DefinirHabitos({ onSalvar }) {
   );
 }
 
+// ─── CARD DA DRA. ISADORA ─────────────────────────────────────────────────────
+function IsaCard({ text, loading }) {
+  return (
+    <div style={{background:`rgba(255,255,255,.05)`,border:`1px solid ${C.ouro}28`,borderRadius:12,padding:"16px 18px",marginTop:16,animation:"fadeUp .4s ease"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+        <Av ini="DI" cor={C.ouroDk} sz={38}/>
+        <div>
+          <div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.85)`}}>Dra. Isadora</div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.lt}}>Médica Geriatra · Longevidade</div>
+        </div>
+      </div>
+      {loading ? (
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0"}}>
+          <div style={{fontSize:18,animation:"pulse 1.5s ease-in-out infinite"}}>💭</div>
+          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(255,255,255,.35)`}}>Dra. Isadora está respondendo...</div>
+        </div>
+      ) : (
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.6)`,lineHeight:1.75,whiteSpace:"pre-wrap"}}>{text}</div>
+      )}
+    </div>
+  );
+}
+
 function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
   let icon, titulo, sub, cor, bg, onClick;
   if (ckOk) {
@@ -683,12 +701,20 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
   const pct   = total ? Math.round(feitos/total*100) : 0;
   const toggle= id => setChips(c=>c.includes(id)?c.filter(x=>x!==id):[...c.slice(-1),id]);
 
-  const salvar = () => {
+  const [isaRes, setIsaRes] = useState(null);
+  const [isaLoad, setIsaLoad] = useState(false);
+
+  const salvar = async () => {
     const hoje = new Date().toISOString().split("T")[0];
     setHist(h=>({...h,[hoje]:{feitos,total,retomada:false}}));
     setCkOk(true);
     tk(pct===100?"Dia completo! +"+( feitos*5+5)+" pontos 🏆":"Checkin salvo. Você apareceu hoje 💖");
     setPasso(4);
+    setIsaLoad(true);
+    const msg = `A aluna fez ${feitos} de ${total} hábitos hoje (${pct}%). Responda de forma acolhedora e breve.`;
+    const resp = await callISA(msg);
+    setIsaRes(resp);
+    setIsaLoad(false);
   };
 
   // Calendário mensal
@@ -803,16 +829,19 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
 
         {/* Passo 4 — fechamento */}
         {passo===4 && (
-          <div style={{textAlign:"center",marginBottom:18}}>
-            <div style={{fontFamily:FS,fontStyle:"italic",fontSize:56,color:C.ouro,marginBottom:10}}>{pct}%</div>
-            <div style={{fontFamily:FS,fontSize:18,fontWeight:300,color:`rgba(255,255,255,.75)`,lineHeight:1.4,marginBottom:8}}>
-              {pct===100?"Dia completo.":pct>=50?"Mais da metade. Isso conta.":"Qualquer passo é progresso."}
-            </div>
-            {perfil==="jornada" && (
-              <div style={{background:`${C.ouro}12`,borderRadius:8,padding:"10px 14px",marginTop:12,display:"inline-block"}}>
-                <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro}}>+{feitos*5+(pct===100?5:0)} pontos AUGE</div>
+          <div style={{marginBottom:18}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontFamily:FS,fontStyle:"italic",fontSize:56,color:C.ouro,marginBottom:10}}>{pct}%</div>
+              <div style={{fontFamily:FS,fontSize:18,fontWeight:300,color:`rgba(255,255,255,.75)`,lineHeight:1.4,marginBottom:8}}>
+                {pct===100?"Dia completo.":pct>=50?"Mais da metade. Isso conta.":"Qualquer passo é progresso."}
               </div>
-            )}
+              {perfil==="jornada" && (
+                <div style={{background:`${C.ouro}12`,borderRadius:8,padding:"10px 14px",marginTop:4,display:"inline-block"}}>
+                  <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro}}>+{feitos*5+(pct===100?5:0)} pontos AUGE</div>
+                </div>
+              )}
+            </div>
+            <IsaCard text={isaRes} loading={isaLoad}/>
             <button onClick={()=>setPasso(0)} style={{background:"none",border:"none",color:`rgba(255,255,255,.3)`,fontFamily:FB,fontWeight:300,fontSize:12,cursor:"pointer",marginTop:14,display:"block",width:"100%"}}>← Voltar ao início</button>
           </div>
         )}
@@ -961,7 +990,7 @@ function Voz({ back, postTreino, tk }) {
   const rRef=useRef(null);
   const iniciar=useCallback(()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){setErr(true);return;}const r=new SR();r.lang="pt-BR";r.continuous=false;r.interimResults=true;r.onstart=()=>setFase("ouvindo");r.onresult=(e)=>setTr(Array.from(e.results).map(r=>r[0].transcript).join(""));r.onend=()=>{if(tr)proc(tr);else setFase("idle");};r.onerror=()=>{setFase("idle");setErr(true);};rRef.current=r;r.start();},[tr]);
   const parar=()=>{rRef.current?.stop();};
-  const proc=async texto=>{setFase("proc");const isa=await callISA(`A usuária disse: "${texto}". Parabenize genuinamente e dê até 2 dicas práticas de recuperação pós-treino. Calorosa e breve.`);setRes({texto,isa});setFase("resultado");};
+  const proc=async texto=>{setFase("proc");setRes({texto});setFase("resultado");};
   const demo=async()=>{const t="Corri 5 quilômetros hoje de manhã, levei 35 minutos";setTr(t);await proc(t);};
   const [publica,setPublica]=useState(true);
   return (
@@ -1292,6 +1321,17 @@ function Roda({ rodaR, setRodaR, rodaI, setRodaI, calcRoda, zc, zl, back, tk, pe
 // ─── RETOMADA ─────────────────────────────────────────────────────────────────
 function Retomada({ anc, back, tk, setRet }) {
   const [mot,setMot]=useState(""); const [onde,setOnde]=useState(""); const [p,setP]=useState(1);
+  const [isaMsg,setIsaMsg]=useState(null); const [isaLoad,setIsaLoad]=useState(false); const [registrado,setRegistrado]=useState(false);
+
+  const registrar = async () => {
+    setRet(r=>r+1);
+    tk("Retomada registrada. +20 pontos AUGE 💖");
+    setRegistrado(true);
+    setIsaLoad(true);
+    const resp = await callISA("A aluna ativou o protocolo de retomada. Ela voltou depois de uma pausa. Acolha com carinho.");
+    setIsaMsg(resp);
+    setIsaLoad(false);
+  };
   return(
     <div style={{animation:"fadeUp .4s ease"}}>
       <Cab titulo="Protocolo de Retomada" voltar={back}/>
@@ -1308,7 +1348,11 @@ function Retomada({ anc, back, tk, setRet }) {
         {p>=1&&<div style={{marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:8}}>O que aconteceu?</div><textarea value={mot} onChange={e=>setMot(e.target.value)} placeholder="Sem julgamento." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"12px",fontSize:14,fontFamily:FS,color:`rgba(255,255,255,.65)`,resize:"none",height:76,lineHeight:1.6}}/></div>}
         {p>=2&&<div style={{marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:8}}>Onde quebrou?</div><div style={{display:"flex",flexWrap:"wrap",gap:8}}>{["Falta de tempo","Cansaço","Imprevisto","Esqueci","Outro"].map(op=><button key={op} onClick={()=>setOnde(op)} style={{padding:"9px 14px",borderRadius:50,border:`1px solid ${onde===op?C.ouro+"55":C.ouro+"15"}`,background:onde===op?`${C.ouro}20`:`rgba(255,255,255,.03)`,color:onde===op?C.ouro:`rgba(255,255,255,.3)`,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer"}}>{op}</button>)}</div></div>}
         {p===1&&<BtnPill onClick={()=>mot&&setP(2)} style={{opacity:mot?1:.4}}>Continuar</BtnPill>}
-        {p>=2&&<div><div style={{background:`${C.ouroLt}10`,border:`1px solid ${C.ouro}25`,borderRadius:10,padding:"14px",marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Com o que você volta hoje?</div><div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.55)`,lineHeight:1.6}}>5 minutos de movimento. Uma refeição no horário. Um copo de água. Isso conta.</div></div><BtnPill onClick={()=>{setRet(r=>r+1);tk("Retomada registrada. +20 pontos AUGE 💖");back();}}>Registrar minha retomada</BtnPill></div>}
+        {p>=2&&<div><div style={{background:`${C.ouroLt}10`,border:`1px solid ${C.ouro}25`,borderRadius:10,padding:"14px",marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Com o que você volta hoje?</div><div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.55)`,lineHeight:1.6}}>5 minutos de movimento. Uma refeição no horário. Um copo de água. Isso conta.</div></div>
+          {!registrado && <BtnPill onClick={registrar}>Registrar minha retomada</BtnPill>}
+          {(isaLoad || isaMsg) && <IsaCard text={isaMsg} loading={isaLoad}/>}
+          {registrado && !isaLoad && <BtnPill onClick={back} style={{marginTop:12}}>Concluir ←</BtnPill>}
+        </div>}
       </Grain>
     </div>
   );
@@ -1388,6 +1432,13 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk }) {
 // ─── KIT DE EMERGÊNCIA ────────────────────────────────────────────────────────
 function Emergencia({ anc, kitMin, setKitMin, kitApoio, setKitApoio, back, tk }) {
   const [edit,setEdit]=useState(false);const [tm,setTm]=useState(kitMin);const [ta,setTa]=useState(kitApoio);const naoTem=!kitMin;
+  const [isaMsg,setIsaMsg]=useState(null); const [isaLoad,setIsaLoad]=useState(false);
+  useEffect(()=>{
+    if(!naoTem && !edit){
+      setIsaLoad(true);
+      callISA("A aluna está no limite hoje e abriu o kit de emergência. Responda com apoio suave e encoraje o mínimo possível.").then(r=>{setIsaMsg(r);setIsaLoad(false);});
+    }
+  },[]);
   return(
     <div style={{animation:"fadeUp .4s ease"}}>
       <div style={{background:`${C.blush}18`,padding:"20px 20px 22px",borderBottom:`1px solid ${C.blush}25`}}>
@@ -1411,7 +1462,8 @@ function Emergencia({ anc, kitMin, setKitMin, kitApoio, setKitApoio, back, tk })
           <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:10}}>Meu mínimo viável</div>
           <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"14px",marginBottom:14}}><div style={{fontFamily:FS,fontSize:16,color:`rgba(255,255,255,.7)`,lineHeight:1.6}}>{kitMin}</div></div>
           {kitApoio&&<><div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:10}}>Onde busco apoio</div><div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"14px",marginBottom:14}}><div style={{fontFamily:FS,fontSize:16,color:`rgba(255,255,255,.7)`,lineHeight:1.6}}>{kitApoio}</div></div></>}
-          <div style={{background:`${C.ouroLt}10`,border:`1px solid ${C.ouro}20`,borderRadius:10,padding:"13px",marginBottom:18,textAlign:"center"}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:C.ouro,lineHeight:1.6}}>"Isso conta. Isso já é o auge de hoje."</div></div>
+          {(isaLoad || isaMsg) && <IsaCard text={isaMsg} loading={isaLoad}/>}
+          <div style={{background:`${C.ouroLt}10`,border:`1px solid ${C.ouro}20`,borderRadius:10,padding:"13px",marginBottom:18,textAlign:"center",marginTop:isaMsg||isaLoad?12:0}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:C.ouro,lineHeight:1.6}}>"Isso conta. Isso já é o auge de hoje."</div></div>
           <BtnPill onClick={()=>{tk("Registrado. Você apareceu hoje 💖");back();}} style={{marginBottom:10}}>Registrar meu kit de hoje</BtnPill>
           <button onClick={()=>{setTm(kitMin);setTa(kitApoio);setEdit(true);}} style={{width:"100%",background:"none",border:`1px solid ${C.ouro}15`,borderRadius:50,padding:"11px",fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.25)`,cursor:"pointer",letterSpacing:"0.1em"}}>Editar meu kit</button>
         </div>)}
