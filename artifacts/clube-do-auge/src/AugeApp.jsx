@@ -303,7 +303,7 @@ export default function App() {
   const medC   = [...(maxSeq>=3?["momentum"]:[]),...(retomadas>=3?["retomada"]:[]),...(diasC>=21?["protagonista"]:[])];
 
   const ctx = {perfil,ir,back,tk,feed,setFeed,habF,setHabF,chips,setChips,ckOk,setCkOk,notas,setNotas,rodaR,setRodaR,rodaI,setRodaI,matches,setMatches,ci,sw,doSwipe,selM,setSelM,anc,setAnc,kitMin,setKitMin,kitApoio,setKitApoio,escT,setEscT,vit,setVit,historico,setHist,retomadas,setRet,sem,mes,hDia,feitos,postTreino,calcRoda,zc,zl,pontos,medC,
-    habAngulares,setHabAngulares,dataCadastro,usuario};
+    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario};
 
   const SEM_NAV = [S.SPLASH,S.LEGAL,S.LOGIN,S.DIAG,S.VOZ,S.CHAT,S.RODA];
 
@@ -1455,15 +1455,56 @@ function Conteudo({ perfil }) {
 // ═══════════════════════════════════════════════════════════════════
 // ABA: PERFIL
 // ═══════════════════════════════════════════════════════════════════
-function Perfil({ perfil, matches, pontos, medC, habAngulares, setHabAngulares }) {
+function Perfil({ perfil, matches, pontos, medC, habAngulares, setHabAngulares, usuario, setUsuario }) {
+  const [editando, setEditando] = useState(false);
+  const [nomeEdit,  setNomeEdit]  = useState(usuario?.nome  || "");
+  const [emailEdit, setEmailEdit] = useState(usuario?.email || "");
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEdit.trim());
+  const editOk  = nomeEdit.trim().length >= 2 && emailOk;
+
+  const iniciais = usuario?.nome
+    ? usuario.nome.trim().split(/\s+/).slice(0,2).map(n=>n[0].toUpperCase()).join("")
+    : "?";
+
+  const salvarEdicao = () => {
+    if (!editOk) return;
+    setUsuario({ nome: nomeEdit.trim(), email: emailEdit.trim().toLowerCase() });
+    setEditando(false);
+  };
+
   return(
     <div style={{animation:"fadeUp .35s ease"}}>
       <div style={{background:C.obs,padding:"24px 18px 30px",textAlign:"center",borderBottom:`1px solid ${C.ouro}12`}}>
-        <div style={{width:80,height:80,borderRadius:"50%",background:`${C.ouro}18`,border:`1px solid ${C.ouro}33`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:FS,fontSize:28,color:C.ouro,margin:"0 auto 12px"}}>RF</div>
-        <div style={{fontFamily:FS,fontSize:22,fontWeight:300,color:`rgba(255,255,255,.85)`}}>Regina Fonseca</div>
+        <div style={{width:80,height:80,borderRadius:"50%",background:`${C.ouro}18`,border:`1px solid ${C.ouro}33`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:FS,fontSize:28,color:C.ouro,margin:"0 auto 12px"}}>{iniciais}</div>
+        <div style={{fontFamily:FS,fontSize:22,fontWeight:300,color:`rgba(255,255,255,.85)`}}>{usuario?.nome || "—"}</div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.3)`,marginTop:3}}>{usuario?.email || ""}</div>
         <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:C.ouro,marginTop:4}}>{perfil==="jornada"?"Aluna da Jornada · Semana 3 de 12":"Assinante da Comunidade"}</div>
         {perfil==="jornada"&&<div style={{display:"inline-block",background:"rgba(15,110,86,.18)",border:"1px solid rgba(15,110,86,.3)",borderRadius:20,padding:"4px 14px",marginTop:10,color:"#4ade80",fontSize:11,fontFamily:FB}}>✓ Identidade verificada</div>}
+        <div style={{marginTop:14}}>
+          <button onClick={()=>{ setNomeEdit(usuario?.nome||""); setEmailEdit(usuario?.email||""); setEditando(e=>!e); }}
+            style={{background:"transparent",border:`1px solid ${C.ouro}30`,borderRadius:20,padding:"6px 16px",fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro,cursor:"pointer",letterSpacing:"0.1em"}}>
+            {editando ? "Cancelar" : "✏️ Editar dados"}
+          </button>
+        </div>
       </div>
+
+      {/* Formulário de edição inline */}
+      {editando && (
+        <div style={{background:`${C.obs2}`,borderBottom:`1px solid ${C.ouro}12`,padding:"20px 20px 24px",animation:"fadeUp .25s ease"}}>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:16}}>Editar informações</div>
+          <div style={{marginBottom:18}}>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.4)`,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:6}}>Nome</div>
+            <input value={nomeEdit} onChange={e=>setNomeEdit(e.target.value)}
+              style={{width:"100%",background:"transparent",border:"none",borderBottom:`1px solid ${nomeEdit.trim().length>=2?C.ouro+"66":"rgba(255,255,255,.2)"}`,color:C.branco,fontFamily:FS,fontSize:16,fontWeight:300,padding:"6px 0"}}/>
+          </div>
+          <div style={{marginBottom:20}}>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.4)`,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:6}}>E-mail</div>
+            <input type="email" value={emailEdit} onChange={e=>setEmailEdit(e.target.value)}
+              style={{width:"100%",background:"transparent",border:"none",borderBottom:`1px solid ${emailOk?C.ouro+"66":"rgba(255,255,255,.2)"}`,color:C.branco,fontFamily:FS,fontSize:16,fontWeight:300,padding:"6px 0"}}/>
+          </div>
+          <BtnPill onClick={salvarEdicao} style={{opacity:editOk?1:.4}}>Salvar alterações</BtnPill>
+        </div>
+      )}
       <Grain style={{padding:"18px 18px 32px"}}>
         {/* Estatísticas */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
