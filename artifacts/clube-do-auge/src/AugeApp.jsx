@@ -121,6 +121,24 @@ const callISA = async (msg) => {
   } catch { return "Estou com dificuldade de conexão. Tente em instantes! 🌿"; }
 };
 
+// ─── LOCAL STORAGE HOOK ───────────────────────────────────────────────────────
+function useLocalStorage(key, initial) {
+  const [val, setVal] = useState(() => {
+    try {
+      const s = localStorage.getItem(key);
+      return s !== null ? JSON.parse(s) : initial;
+    } catch { return initial; }
+  });
+  const set = v => {
+    setVal(prev => {
+      const next = typeof v === "function" ? v(prev) : v;
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  return [val, set];
+}
+
 // ─── LOGO SVG (brand kit oficial) ────────────────────────────────────────────
 function Logo({ width=200, fundo="escuro" }) {
   const textoAuge = fundo==="escuro" ? "#F0E9DA" : "#1C1A17";
@@ -198,6 +216,8 @@ function Cab({ titulo, voltar, acao }) {
 
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
+const TODAY = new Date().toISOString().split("T")[0];
+
 export default function App() {
   const [legalOk,  setLegalOk]  = useState(true); // DEMO
   const [perfil,   setPerfil]   = useState("jornada"); // DEMO
@@ -207,11 +227,11 @@ export default function App() {
   // Feed
   const [feed,     setFeed]     = useState(FEED0);
 
-  // Checkin / Hábitos
-  const [habF,     setHabF]     = useState({});
-  const [chips,    setChips]    = useState([]);
-  const [ckOk,     setCkOk]     = useState(false);
-  const [notas,    setNotas]    = useState("");
+  // Checkin / Hábitos — chave diária: reseta automaticamente no dia seguinte
+  const [habF,     setHabF]     = useLocalStorage(`auge_habF_${TODAY}`, {});
+  const [chips,    setChips]    = useLocalStorage(`auge_chips_${TODAY}`, []);
+  const [ckOk,     setCkOk]     = useLocalStorage(`auge_ckOk_${TODAY}`, false);
+  const [notas,    setNotas]    = useLocalStorage(`auge_notas_${TODAY}`, "");
 
   // Roda AUGE
   const [rodaR,    setRodaR]    = useState({});
@@ -223,18 +243,18 @@ export default function App() {
   const [sw,       setSw]       = useState(null);
   const [selM,     setSelM]     = useState(null);
 
-  // Jornada
-  const [anc,      setAnc]      = useState("Eu sou a mulher que volta.");
-  const [kitMin,   setKitMin]   = useState("");
-  const [kitApoio, setKitApoio] = useState("");
+  // Jornada — persistidos entre sessões
+  const [anc,      setAnc]      = useLocalStorage("auge_anc", "Eu sou a mulher que volta.");
+  const [kitMin,   setKitMin]   = useLocalStorage("auge_kitMin", "");
+  const [kitApoio, setKitApoio] = useLocalStorage("auge_kitApoio", "");
   const [escT,     setEscT]     = useState("vitorias");
-  const [vit,      setVit]      = useState([{sem:1,texto:"Fiz 3 dias de caminhada!",data:"05/05"},{sem:2,texto:"Dormi às 22h por 5 dias.",data:"12/05"}]);
-  const [historico,setHist]     = useState({});
-  // Hábitos angulares personalizados (definidos com a Isa na sessão)
-  const [habAngulares, setHabAngulares] = useState([]); // aluna define no primeiro checkin
+  const [vit,      setVit]      = useLocalStorage("auge_vit", [{sem:1,texto:"Fiz 3 dias de caminhada!",data:"05/05"},{sem:2,texto:"Dormi às 22h por 5 dias.",data:"12/05"}]);
+  const [historico,setHist]     = useLocalStorage("auge_historico", {});
+  // Hábitos angulares personalizados — persistidos entre sessões
+  const [habAngulares, setHabAngulares] = useLocalStorage("auge_habAngulares", []);
   // Data de cadastro para cálculo S6/S12 da Roda
   const [dataCadastro] = useState(new Date(Date.now() - 2 * 7 * 24 * 60 * 60 * 1000)); // demo: 2 semanas atrás
-  const [retomadas,setRet]      = useState(0);
+  const [retomadas,setRet]      = useLocalStorage("auge_retomadas", 0);
 
   const [toast,    setToast]    = useState(null);
 
