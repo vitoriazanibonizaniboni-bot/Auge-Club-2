@@ -478,8 +478,10 @@ function Onboarding({ onConcluir }) {
     onConcluir({ nome: nome.trim(), email: email.trim().toLowerCase() });
   };
   return (
-    <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px 56px",animation:"fadeUp .4s ease"}}>
-      <Logo width={170} fundo="escuro"/>
+    <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 24px 56px",animation:"fadeUp .4s ease"}}>
+      <div style={{width:"100%",display:"flex",justifyContent:"center",marginBottom:4}}>
+        <Logo width={300} fundo="escuro"/>
+      </div>
       <div style={{fontFamily:FS,fontSize:24,fontWeight:300,color:C.linho,marginTop:24,marginBottom:6,textAlign:"center"}}>Bem-vinda</div>
       <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.35)`,marginBottom:40,textAlign:"center",lineHeight:1.65}}>Para começar, me diz seu nome e e-mail.</div>
 
