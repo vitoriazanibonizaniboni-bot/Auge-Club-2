@@ -240,7 +240,7 @@ export default function App() {
 
   const sem = 3;
   const mes = sem<=4?1:sem<=8?2:3;
-  const hDia = HAB[mes];
+  const hDia = habAngulares.length > 0 ? habAngulares : HAB[mes];
   const feitos = hDia.filter(h=>habF[h.id]).length;
 
   const ir   = t => setTela(t);
