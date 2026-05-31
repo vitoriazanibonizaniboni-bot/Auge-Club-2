@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Clube do Auge"
+version = "1.0.0"
+id = "artifacts/clube-do-auge"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18545
+
+[services.development]
+run = "pnpm --filter @workspace/clube-do-auge run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/clube-do-auge", "run", "build" ]
+publicDir = "artifacts/clube-do-auge/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18545"
+BASE_PATH = "/"
