@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable: safe zone is inner 80% (approx 205-307). Full bleed background. -->
+  <rect width="512" height="512" fill="#1A1712"/>
+  <text x="256" y="216" font-family="Georgia, serif" font-size="44" font-weight="300" fill="#C9A96E" text-anchor="middle" letter-spacing="8">CLUBE DO</text>
+  <text x="256" y="308" font-family="Georgia, serif" font-size="108" font-weight="300" fill="#C9A96E" text-anchor="middle" letter-spacing="6">AUGE</text>
+  <line x1="150" y1="326" x2="362" y2="326" stroke="#C9A96E" stroke-width="1.5" opacity="0.5"/>
+  <text x="256" y="362" font-family="Georgia, serif" font-size="24" font-weight="300" fill="#C9A96E" text-anchor="middle" letter-spacing="5" opacity="0.7">MÉTODO · 40+</text>
+</svg>
