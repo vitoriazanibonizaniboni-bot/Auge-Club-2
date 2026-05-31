@@ -300,10 +300,30 @@ export default function App() {
   const diasC  = Object.values(historico).filter(d=>d.feitos>0||d.retomada).length;
   const vals   = Object.values(historico);
   let seq=0,maxSeq=0; vals.forEach(d=>{if(d.feitos>0||d.retomada){seq++;maxSeq=Math.max(maxSeq,seq);}else seq=0;});
+
+  // Streak atual (dias consecutivos até hoje) e dias sem treino
+  const _sortedKeys = Object.keys(historico).sort();
+  const _ativo = k => (historico[k]?.feitos>0||historico[k]?.retomada);
+  let streakAtual = 0;
+  {
+    const d = new Date(TODAY);
+    if (_ativo(TODAY)) { streakAtual=1; d.setDate(d.getDate()-1); }
+    else d.setDate(d.getDate()-1);
+    while(true){ const k=d.toISOString().split("T")[0]; if(!_ativo(k)) break; streakAtual++; d.setDate(d.getDate()-1); }
+  }
+  let diasSemTreino = 0;
+  {
+    const d = new Date(TODAY);
+    if (!_ativo(TODAY)) {
+      d.setDate(d.getDate()-1);
+      while(true){ const k=d.toISOString().split("T")[0]; if(_ativo(k)||diasSemTreino>60) break; diasSemTreino++; d.setDate(d.getDate()-1); }
+      if(diasSemTreino===0 && !_sortedKeys.some(_ativo)) diasSemTreino = -1; // nunca treinou
+    }
+  }
   const medC   = [...(maxSeq>=3?["momentum"]:[]),...(retomadas>=3?["retomada"]:[]),...(diasC>=21?["protagonista"]:[])];
 
   const ctx = {perfil,ir,back,tk,feed,setFeed,habF,setHabF,chips,setChips,ckOk,setCkOk,notas,setNotas,rodaR,setRodaR,rodaI,setRodaI,matches,setMatches,ci,sw,doSwipe,selM,setSelM,anc,setAnc,kitMin,setKitMin,kitApoio,setKitApoio,escT,setEscT,vit,setVit,historico,setHist,retomadas,setRet,sem,mes,hDia,feitos,postTreino,calcRoda,zc,zl,pontos,medC,
-    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario};
+    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino};
 
   const SEM_NAV = [S.SPLASH,S.LEGAL,S.LOGIN,S.DIAG,S.VOZ,S.CHAT,S.RODA];
 
@@ -357,7 +377,7 @@ export default function App() {
     <Phone>
       {toast && <Brinde msg={toast}/>}
       <Rolar>{renderTela()}</Rolar>
-      {!SEM_NAV.includes(tela) && <NavBar tela={tela} ir={ir} mc={matches.length} perfil={perfil}/>}
+      {!SEM_NAV.includes(tela) && <NavBar tela={tela} ir={ir} mc={matches.length} perfil={perfil} ckOk={ckOk}/>}
       <Estilos/>
     </Phone>
   );
@@ -382,11 +402,11 @@ function Estilos() {
 }
 
 // ─── NAV BAR ──────────────────────────────────────────────────────────────────
-function NavBar({ tela, ir, mc, perfil }) {
+function NavBar({ tela, ir, mc, perfil, ckOk }) {
   const aba = ABA_ORIGEM[tela]||S.HOME;
   const tabs=[
     {id:S.HOME, label:"Início",    icon:Ico.home},
-    {id:S.FEED, label:"Feed",      icon:Ico.feed},
+    {id:S.FEED, label:"Feed",      icon:Ico.feed, badge: !ckOk ? 1 : 0},
     {id:S.JOR,  label:"Jornada",   icon:Ico.jor},
     {id:S.CT,   label:"Conteúdo",  icon:Ico.ct},
     {id:S.PF,   label:"Perfil",    icon:Ico.pf},
@@ -396,7 +416,7 @@ function NavBar({ tela, ir, mc, perfil }) {
     <div style={{background:C.obs,borderTop:`1px solid ${C.ouro}15`,display:"flex",padding:"10px 0 16px"}}>
       {tabs.map(t=>(
         <div key={t.id} onClick={()=>ir(t.id)} style={{flex:1,textAlign:"center",cursor:"pointer",position:"relative"}}>
-          {t.badge>0 && <div style={{position:"absolute",top:0,right:"18%",width:15,height:15,borderRadius:"50%",background:C.terra,color:C.branco,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{t.badge}</div>}
+          {t.badge>0 && <div style={{position:"absolute",top:0,right:"22%",width:8,height:8,borderRadius:"50%",background:C.terra,border:`1.5px solid ${C.obs}`}}/>}
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
             {t.icon(aba===t.id?C.ouro:C.lt)}
             <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:aba===t.id?C.ouro:C.lt,transition:"color .2s"}}>{t.label}</div>
@@ -613,10 +633,44 @@ function DefinirHabitos({ onSalvar }) {
   );
 }
 
+function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
+  let icon, titulo, sub, cor, bg, onClick;
+  if (ckOk) {
+    if (streakAtual >= 7)  { icon="🔥"; titulo=`${streakAtual} dias em sequência!`; sub="Você está imparável. Continue assim."; cor="#F97316"; bg="rgba(249,115,22,.1)"; }
+    else if (streakAtual >= 3) { icon="🔥"; titulo=`${streakAtual} dias seguidos!`; sub="Sua sequência está crescendo. Não pare."; cor="#F97316"; bg="rgba(249,115,22,.1)"; }
+    else { icon="✨"; titulo="Checkin feito!"; sub="Você apareceu hoje. Isso é tudo."; cor=C.ouro; bg=`${C.ouro}12`; }
+  } else if (diasSemTreino === -1) {
+    icon="🌟"; titulo="Comece hoje!"; sub="Registre seu primeiro treino e inicie sua sequência."; cor=C.ouro; bg=`${C.ouro}12`; onClick=()=>ir(S.HOME);
+  } else if (diasSemTreino === 0) {
+    icon="⚡"; titulo="Ainda falta o checkin de hoje"; sub="Você treinou ontem — não quebre agora!"; cor="#F97316"; bg="rgba(249,115,22,.1)";
+  } else if (diasSemTreino <= 2) {
+    icon="🌱"; titulo={1:"1 dia sem registrar",2:"2 dias sem registrar"}[diasSemTreino]; sub="Sua sequência está esperando por você."; cor="#F97316"; bg="rgba(249,115,22,.1)";
+  } else if (diasSemTreino <= 6) {
+    icon="⚠️"; titulo={3:"3 dias",4:"4 dias",5:"5 dias",6:"6 dias"}[diasSemTreino]+" sem registrar"; sub="Não desista agora — cada dia conta!"; cor="#EF4444"; bg="rgba(239,68,68,.1)";
+  } else {
+    icon="🕯️"; titulo={diasSemTreino}[diasSemTreino]||`${diasSemTreino} dias`+" afastada"; titulo=`${diasSemTreino} dias sem registrar`; sub="Sua chama ainda está lá. Volte hoje."; cor="#EF4444"; bg="rgba(239,68,68,.08)";
+  }
+  return (
+    <div style={{background:bg,border:`1px solid ${cor}22`,borderRadius:12,padding:"13px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12,cursor:onClick?"pointer":"default"}} onClick={onClick}>
+      <div style={{fontSize:22,flexShrink:0}}>{icon}</div>
+      <div style={{flex:1}}>
+        <div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:cor}}>{titulo}</div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.4)`,marginTop:2}}>{sub}</div>
+      </div>
+      {streakAtual>0 && ckOk && (
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
+          <div style={{fontFamily:FS,fontSize:22,color:cor,lineHeight:1}}>{streakAtual}</div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:`rgba(255,255,255,.3)`,letterSpacing:"0.1em"}}>DIAS</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
                 ckOk, setCkOk, notas, setNotas, anc, historico, setHist,
                 retomadas, setRet, pontos, medC, ir, tk,
-                habAngulares, setHabAngulares, usuario }) {
+                habAngulares, setHabAngulares, usuario, streakAtual, diasSemTreino }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
     {id:"cansada",   e:"😮‍💨",l:"Cansada"},
@@ -668,7 +722,10 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
         <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.ouro,letterSpacing:"0.35em",textTransform:"uppercase",marginBottom:4}}>
           BOM DIA{usuario?.nome ? `, ${usuario.nome.split(" ")[0].toUpperCase()}` : ""} ☀️
         </div>
-        <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(240,233,218,.45)`,lineHeight:1.5,marginBottom:20,borderLeft:`1px solid ${C.ouro}33`,paddingLeft:10}}>"{anc}"</div>
+        <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(240,233,218,.45)`,lineHeight:1.5,marginBottom:16,borderLeft:`1px solid ${C.ouro}33`,paddingLeft:10}}>"{anc}"</div>
+
+        {/* Banner motivacional estilo Duolingo */}
+        <MotivBanner ckOk={ckOk} streakAtual={streakAtual} diasSemTreino={diasSemTreino} ir={ir}/>
 
         {/* Checkin */}
         {passo===0 && (
