@@ -33,7 +33,7 @@ const S = {
 const ABA_ORIGEM = {
   [S.HOME]:S.HOME,
   [S.FEED]:S.FEED, [S.NOVO]:S.FEED, [S.VOZ]:S.FEED,
-  [S.CX]:S.CX, [S.MATCH]:S.CX, [S.CHAT]:S.CX,
+  [S.CX]:S.FEED, [S.MATCH]:S.FEED, [S.CHAT]:S.FEED,
   [S.JOR]:S.JOR, [S.RODA]:S.JOR, [S.RET]:S.JOR,
   [S.CAL]:S.JOR, [S.ESC]:S.JOR, [S.EM]:S.JOR,
   [S.CT]:S.CT, [S.PF]:S.PF,
@@ -387,7 +387,6 @@ function NavBar({ tela, ir, mc, perfil }) {
   const tabs=[
     {id:S.HOME, label:"Início",    icon:Ico.home},
     {id:S.FEED, label:"Feed",      icon:Ico.feed},
-    {id:S.CX,   label:"Conexões",  icon:Ico.cx, badge:mc},
     {id:S.JOR,  label:"Jornada",   icon:Ico.jor},
     {id:S.CT,   label:"Conteúdo",  icon:Ico.ct},
     {id:S.PF,   label:"Perfil",    icon:Ico.pf},
@@ -807,9 +806,19 @@ function Feed({ feed, setFeed, ir }) {
       </div>
       <Grain style={{padding:"14px 14px 8px"}}>
         {/* Botão registrar */}
-        <div onClick={()=>ir(S.NOVO)} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:12,padding:"14px 16px",marginBottom:14,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div onClick={()=>ir(S.NOVO)} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:12,padding:"14px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:`rgba(255,255,255,.35)`}}>O que você treinou hoje?</div>
           <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro,letterSpacing:"0.1em"}}>+ POSTAR</div>
+        </div>
+
+        {/* Card Conexões */}
+        <div onClick={()=>ir(S.CX)} style={{background:`linear-gradient(135deg,rgba(15,110,86,.18) 0%,rgba(139,74,107,.14) 100%)`,border:`1px solid rgba(15,110,86,.3)`,borderRadius:12,padding:"14px 16px",marginBottom:14,cursor:"pointer",display:"flex",alignItems:"center",gap:14}}>
+          <div style={{width:44,height:44,borderRadius:"50%",background:"rgba(15,110,86,.22)",border:"1px solid rgba(15,110,86,.35)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>💚</div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:FS,fontSize:16,fontWeight:300,color:`rgba(255,255,255,.85)`}}>Encontrar parceira de treino</div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginTop:3}}>Radar de amigas · Swipe · Chat</div>
+          </div>
+          <div style={{fontFamily:FB,fontSize:18,color:"rgba(15,110,86,.7)"}}>›</div>
         </div>
 
         {visiveis.map(p=>{const cu=p.cur.includes("RF");const ab=open===p.id;return(
