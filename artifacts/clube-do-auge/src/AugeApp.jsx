@@ -660,6 +660,7 @@ function TelaAuth({ onAuth }) {
   const [erro,    setErro]    = useState(null);
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
 
   const mapErro = (msg) => {
     if (!msg) return null;
@@ -695,7 +696,11 @@ function TelaAuth({ onAuth }) {
         lgpd_aceito: true, lgpd_data: new Date().toISOString(),
         data_cadastro: new Date().toISOString(),
       });
-      onAuth(data.user);
+      if (data.session) {
+        onAuth(data.user);
+      } else {
+        setAguardandoConfirmacao(true);
+      }
     }
   };
 
@@ -738,6 +743,14 @@ function TelaAuth({ onAuth }) {
       <Logo width={150} fundo="escuro"/>
       <div style={{fontFamily:FS,fontSize:20,fontWeight:300,color:C.linho,marginTop:16,marginBottom:6}}>Criar conta</div>
       <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.3)`,marginBottom:28,textAlign:"center"}}>Bem-vinda ao Clube do Auge</div>
+      {aguardandoConfirmacao && (
+        <div style={{background:`${C.augeZ}14`,border:`1px solid ${C.augeZ}33`,borderRadius:12,padding:"22px 18px",width:"100%",textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:32,marginBottom:10}}>📩</div>
+          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:16,color:`rgba(255,255,255,.7)`,lineHeight:1.6,marginBottom:8}}>Confirme seu e-mail</div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.45)`,lineHeight:1.7}}>Enviamos um link de confirmação para <strong style={{color:`rgba(255,255,255,.7)`}}>{email}</strong>. Clique no link e depois faça login.</div>
+          <button onClick={()=>{setAguardandoConfirmacao(false);setMode("login");}} style={{marginTop:16,background:"none",border:`1px solid ${C.ouro}33`,borderRadius:20,padding:"6px 18px",color:C.ouro,fontFamily:FB,fontWeight:300,fontSize:12,cursor:"pointer"}}>Ir para o login</button>
+        </div>
+      )}
       <div style={{width:"100%",marginBottom:22}}>
         <div style={lbl}>Seu nome</div>
         <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Como você se chama?" style={inp}
@@ -1688,7 +1701,23 @@ function Roda({ rodaR, setRodaR, rodaI, setRodaI, calcRoda, zc, zl, back, tk, pe
         <div style={{borderLeft:`1px solid ${C.ouro}44`,padding:"0.9rem 1rem",marginBottom:"1.5rem"}}>
           <p style={{fontSize:14,fontWeight:300,fontStyle:"italic",color:`rgba(255,255,255,.55)`,lineHeight:1.6,fontFamily:FS}}>"O auge não é o que você foi. É o que você está construindo."</p>
         </div>
-        <BtnPill onClick={()=>{tk("Roda salva! Repita na semana 6 e 12 💖");back();}}>Salvar resultado</BtnPill>
+        <BtnPill onClick={()=>{
+          const notas=calcRoda();
+          const vals=Object.values(notas).filter(v=>v!==null);
+          const indice=vals.length?+(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):0;
+          syncInsert("roda_auge",{
+            momento:momento||"S1", data:new Date().toISOString().split("T")[0],
+            respostas:rodaR,
+            nota_energia:notas["Energia"]??null,
+            nota_consciencia:notas["Consciência"]??null,
+            nota_organizacao:notas["Organização"]??null,
+            nota_autocuidado:notas["Autocuidado"]??null,
+            nota_protagonismo:notas["Protagonismo"]??null,
+            indice_auge:indice,
+          });
+          tk("Roda salva! Repita na semana 6 e 12 💖");
+          back();
+        }}>Salvar resultado</BtnPill>
         <BtnOut onClick={()=>{setFase("intro");setMom(null);setRodaR({});setRodaI(0);}} style={{marginTop:10}}>Fazer novamente</BtnOut>
       </div>
     </Grain>
