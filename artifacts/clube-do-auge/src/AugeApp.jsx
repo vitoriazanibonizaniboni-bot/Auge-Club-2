@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { requestPermission, scheduleAll, clearAll } from "./notifications.js";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
 const C = {
@@ -252,6 +253,7 @@ export default function App() {
   const [dataCadastro] = useState(new Date(Date.now() - 2 * 7 * 24 * 60 * 60 * 1000)); // demo: 2 semanas atrás
   const [retomadas,setRet]      = useLocalStorage("auge_retomadas", 0);
   const [carta, setCarta]       = useLocalStorage("auge_carta", null);
+  const [notifStatus, setNotifStatus] = useLocalStorage("auge_notif", "pending"); // "pending"|"granted"|"denied"|"dismissed"
 
   const [toast,    setToast]    = useState(null);
 
@@ -318,8 +320,30 @@ export default function App() {
   }
   const medC   = [...(maxSeq>=3?["momentum"]:[]),...(retomadas>=3?["retomada"]:[]),...(diasC>=21?["protagonista"]:[])];
 
+  // ── Deep link: abre tela/aba via ?open= (vem das notificações)
+  useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("open");
+    if (!param) return;
+    // Limpa o param da URL sem recarregar
+    const clean = window.location.pathname;
+    window.history.replaceState({}, "", clean);
+    if (param === "retomada")          { ir(S.RET); }
+    if (param === "escritas-vitorias") { setEscT("vitorias"); ir(S.ESC); }
+    if (param === "home")              { ir(S.HOME); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Reagenda notificações sempre que diasSemTreino muda (ou permissão é concedida)
+  useEffect(() => {
+    if (perfil === "jornada" && notifStatus === "granted") {
+      scheduleAll(diasSemTreino < 0 ? 0 : diasSemTreino);
+    }
+    if (notifStatus !== "granted") {
+      clearAll();
+    }
+  }, [diasSemTreino, notifStatus, perfil]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const ctx = {perfil,ir,back,tk,feed,setFeed,habF,setHabF,chips,setChips,ckOk,setCkOk,notas,setNotas,rodaR,setRodaR,rodaI,setRodaI,matches,setMatches,ci,sw,doSwipe,selM,setSelM,anc,setAnc,kitMin,setKitMin,kitApoio,setKitApoio,escT,setEscT,vit,setVit,historico,setHist,retomadas,setRet,sem,mes,hDia,feitos,postTreino,calcRoda,zc,zl,pontos,medC,
-    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino,carta,setCarta};
+    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino,carta,setCarta,notifStatus,setNotifStatus};
 
   const SEM_NAV = [S.SPLASH,S.LEGAL,S.LOGIN,S.DIAG,S.VOZ,S.CHAT,S.RODA];
 
@@ -689,7 +713,8 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
 function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
                 ckOk, setCkOk, notas, setNotas, anc, historico, setHist,
                 retomadas, setRet, pontos, medC, ir, tk,
-                habAngulares, setHabAngulares, usuario, streakAtual, diasSemTreino, carta, dataCadastro }) {
+                habAngulares, setHabAngulares, usuario, streakAtual, diasSemTreino, carta, dataCadastro,
+                notifStatus, setNotifStatus }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
     {id:"cansada",   e:"😮‍💨",l:"Cansada"},
@@ -774,6 +799,22 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
           <div style={{background:`${C.blush}12`,border:`1px solid ${C.blush}33`,borderRadius:10,padding:"13px 15px",marginBottom:14}}>
             <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:C.blush,lineHeight:1.5,marginBottom:10}}>Faz {diasSemTreino} dia{diasSemTreino!==1?"s":""} sem registro. O que aconteceu?</div>
             <button onClick={()=>ir(S.RET)} style={{background:C.blush,border:"none",borderRadius:50,padding:"10px",width:"100%",fontFamily:FB,fontWeight:400,fontSize:13,color:C.obs2,cursor:"pointer"}}>Estou voltando agora →</button>
+          </div>
+        )}
+
+        {/* Card de permissão de notificações (Jornada, primeira vez) */}
+        {perfil==="jornada" && notifStatus==="pending" && "Notification" in window && Notification.permission!=="denied" && (
+          <div style={{background:`${C.ouro}0A`,border:`1px solid ${C.ouro}22`,borderRadius:10,padding:"14px 15px",marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div style={{fontFamily:FB,fontWeight:400,fontSize:12,color:C.ouro}}>🔔 Lembretes do método</div>
+              <button onClick={()=>setNotifStatus("dismissed")} style={{background:"none",border:"none",color:`rgba(255,255,255,.2)`,fontSize:16,cursor:"pointer",lineHeight:1,padding:0}}>×</button>
+            </div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.4)`,lineHeight:1.6,marginBottom:10}}>Ative para receber os 3 gatilhos do método: Regra dos 2 Dias, Ritual de Sexta e Reforço do 1%.</div>
+            <button onClick={async()=>{
+              const r = await requestPermission();
+              if(r==="granted"){ setNotifStatus("granted"); }
+              else { setNotifStatus(r==="denied"?"denied":"dismissed"); }
+            }} style={{background:C.ouro,border:"none",borderRadius:50,padding:"10px",width:"100%",fontFamily:FB,fontWeight:400,fontSize:12,color:C.obs2,cursor:"pointer",letterSpacing:"0.02em"}}>Ativar lembretes</button>
           </div>
         )}
 
