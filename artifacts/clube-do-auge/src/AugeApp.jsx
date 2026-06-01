@@ -678,16 +678,63 @@ function Onboarding({ onConcluir }) {
   );
 }
 
-// ─── TELA DE AUTENTICAÇÃO ─────────────────────────────────────────────────────
+// ─── MODAL TERMOS DE USO ──────────────────────────────────────────────────────
+const TEXTO_TERMOS = `Este aplicativo é um programa de desenvolvimento de hábitos e estilo de vida. Não substitui consulta médica, acompanhamento clínico individual, avaliação de exames ou prescrição de medicamentos de qualquer natureza. A formação médica da facilitadora, Dra. Isadora Zaniboni, informa a profundidade do conteúdo — não caracteriza ato médico. Seus dados são tratados conforme a LGPD (Lei 13.709/2018) e nunca compartilhados com terceiros. Você pode solicitar a exclusão de todos os seus dados a qualquer momento.`;
+
+function ModalTermos({ onAceitar, onFechar }) {
+  const [chegouAoFim, setChegouAoFim] = useState(false);
+  const [marcou, setMarcou] = useState(false);
+  const scrollRef = useRef(null);
+
+  const handleScroll = (e) => {
+    const el = e.currentTarget;
+    const restante = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (restante < 24) setChegouAoFim(true);
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(0,0,0,.72)"}}>
+      <div style={{width:"100%",maxWidth:430,background:"#18141C",borderRadius:"20px 20px 0 0",border:`1px solid ${C.ouro}20`,paddingBottom:"env(safe-area-inset-bottom)",animation:"fadeUp .3s ease"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 20px 14px",borderBottom:`1px solid ${C.ouro}12`}}>
+          <div style={{fontFamily:FS,fontSize:17,fontWeight:300,letterSpacing:"0.08em",color:C.linho}}>Termos de Uso</div>
+          <button onClick={onFechar} style={{background:"none",border:"none",color:`rgba(255,255,255,.3)`,fontSize:20,cursor:"pointer",lineHeight:1,padding:0}}>✕</button>
+        </div>
+        <div ref={scrollRef} onScroll={handleScroll}
+          style={{overflowY:"auto",maxHeight:260,padding:"18px 20px",lineHeight:1.8}}>
+          <p style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.65)`,margin:0}}>{TEXTO_TERMOS}</p>
+          <div style={{height:40}}/>
+        </div>
+        {!chegouAoFim && (
+          <div style={{textAlign:"center",paddingBottom:6}}>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.28)`,letterSpacing:"0.15em"}}>role para baixo para continuar ↓</div>
+          </div>
+        )}
+        <div style={{padding:"12px 20px 20px",borderTop:`1px solid ${C.ouro}10`}}>
+          <div onClick={()=>chegouAoFim&&setMarcou(v=>!v)}
+            style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:16,cursor:chegouAoFim?"pointer":"default",opacity:chegouAoFim?1:.45}}>
+            <div style={{width:18,height:18,borderRadius:4,border:`1.5px solid ${marcou?C.ouro:"rgba(255,255,255,.3)"}`,background:marcou?`${C.ouro}22`:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",marginTop:1}}>
+              {marcou&&<span style={{color:C.ouro,fontSize:11}}>✓</span>}
+            </div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.5)`,lineHeight:1.5}}>Li e aceito os termos de uso e a política de privacidade</div>
+          </div>
+          <BtnPill onClick={()=>marcou&&onAceitar()} style={{opacity:marcou?1:.35,fontSize:13}}>Confirmar e continuar</BtnPill>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TelaAuth({ onAuth }) {
   const [mode,    setMode]    = useState("login");
-  const [nome,    setNome]    = useState("");
-  const [email,   setEmail]   = useState("");
-  const [senha,   setSenha]   = useState("");
-  const [lgpd,    setLgpd]    = useState(false);
-  const [erro,    setErro]    = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [enviado, setEnviado] = useState(false);
+  const [nome,       setNome]       = useState("");
+  const [email,      setEmail]      = useState("");
+  const [senha,      setSenha]      = useState("");
+  const [lgpd,       setLgpd]       = useState(false);
+  const [erro,       setErro]       = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [enviado,    setEnviado]    = useState(false);
+  const [showTermos, setShowTermos] = useState(false);
+  const [leuTermos,  setLeuTermos]  = useState(false);
   const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
 
   const mapErro = (msg) => {
@@ -794,14 +841,21 @@ function TelaAuth({ onAuth }) {
         <input id="cad-senha" type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••••" style={inp}
           onKeyDown={e=>e.key==="Enter"&&handleCadastro()}/>
       </div>
-      <div style={{width:"100%",marginBottom:28,display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer"}} onClick={()=>setLgpd(v=>!v)}>
-        <div style={{width:18,height:18,borderRadius:4,border:`1.5px solid ${lgpd?C.ouro:"rgba(255,255,255,.25)"}`,background:lgpd?`${C.ouro}22`:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",marginTop:1}}>
+      {showTermos && (
+        <ModalTermos onAceitar={()=>{setLeuTermos(true);setLgpd(true);setShowTermos(false);}} onFechar={()=>setShowTermos(false)}/>
+      )}
+      <div style={{width:"100%",marginBottom:28,display:"flex",alignItems:"flex-start",gap:10}}>
+        <div onClick={()=>leuTermos&&setLgpd(v=>!v)} style={{width:18,height:18,borderRadius:4,border:`1.5px solid ${lgpd?C.ouro:leuTermos?"rgba(255,255,255,.35)":"rgba(255,255,255,.15)"}`,background:lgpd?`${C.ouro}22`:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",marginTop:1,cursor:leuTermos?"pointer":"default"}}>
           {lgpd && <span style={{color:C.ouro,fontSize:11}}>✓</span>}
         </div>
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.4)`,lineHeight:1.6}}>Aceito os termos de uso e a política de privacidade. Meus dados serão usados apenas para personalizar minha experiência no app.</div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.4)`,lineHeight:1.6}}>
+          Aceito os{" "}
+          <span onClick={()=>setShowTermos(true)} style={{color:C.ouro,textDecoration:"underline",cursor:"pointer"}}>termos de uso</span>
+          {" "}e a política de privacidade. Meus dados serão usados apenas para personalizar minha experiência no app.
+        </div>
       </div>
       {erro && <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:"#f87171",marginBottom:12,width:"100%"}}>{erro}</div>}
-      <BtnPill onClick={handleCadastro} style={{opacity:loading||!nome.trim()||!email.trim()||senha.length<6||!lgpd?0.45:1}}>
+      <BtnPill onClick={handleCadastro} style={{opacity:loading||!nome.trim()||!email.trim()||senha.length<6||!lgpd||!leuTermos?0.45:1}}>
         {loading?"Criando conta...":"Criar minha conta"}
       </BtnPill>
       <button onClick={()=>{setMode("login");setErro(null);}} style={{marginTop:20,background:"none",border:"none",color:`rgba(255,255,255,.3)`,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer"}}>Já tenho conta → Entrar</button>
