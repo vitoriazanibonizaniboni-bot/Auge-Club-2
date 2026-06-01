@@ -1,0 +1,1 @@
+- [Supabase auth pattern](supabase-auth.md) — fire-and-forget syncDB/syncInsert helpers; loadUserData após getSession; lgpdOk read de profiles, não localStorage

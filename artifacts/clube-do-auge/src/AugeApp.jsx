@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { requestPermission, scheduleAll, clearAll } from "./notifications.js";
+import { supabase } from "./supabase.js";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
 const C = {
@@ -104,6 +105,20 @@ const MEDALHAS = [
   {id:"retomada",   icon:"🛡️",nome:"Mestre da Retomada",    cor:C.ouroDk},
   {id:"protagonista",icon:"👑",nome:"Protagonista Consistente",cor:C.ouroLt},
 ];
+
+// ─── SYNC SUPABASE (fire-and-forget, pega userId da sessão cacheada) ──────────
+const syncDB = (table, data, options = {}) => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session?.user) return;
+    supabase.from(table).upsert({ user_id: session.user.id, ...data }, options).then(() => {});
+  });
+};
+const syncInsert = (table, data) => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session?.user) return;
+    supabase.from(table).insert({ user_id: session.user.id, ...data }).then(() => {});
+  });
+};
 
 // ─── IA ───────────────────────────────────────────────────────────────────────
 const iaCache = new Map();
@@ -215,11 +230,12 @@ function Cab({ titulo, voltar, acao }) {
 const TODAY = new Date().toISOString().split("T")[0];
 
 export default function App() {
-  const [legalOk,  setLegalOk]  = useState(true); // DEMO
-  // TODO produção: perfil vem do Supabase após identificação do plano pelo pagamento
-  const [perfil,   setPerfil]   = useState("jornada");
-  const [diagOk,   setDiagOk]   = useState(true); // DEMO
-  const [tela,     setTela]     = useState(S.HOME);
+  const [authUser,   setAuthUser]    = useState(null);
+  const [loadingAuth,setLoadingAuth] = useState(true);
+  const [perfil,     setPerfil]      = useState(null);
+  const [lgpdOk,     setLgpdOk]      = useState(false);
+  const [diagOk,     setDiagOk]      = useLocalStorage("auge_diagOk", false);
+  const [tela,       setTela]        = useState(S.HOME);
 
   // Feed
   const [feed,     setFeed]     = useState(FEED0);
@@ -250,7 +266,7 @@ export default function App() {
   // Hábitos angulares personalizados — persistidos entre sessões
   const [habAngulares, setHabAngulares] = useLocalStorage("auge_habAngulares", []);
   // Data de cadastro para cálculo S6/S12 da Roda
-  const [dataCadastro] = useState(new Date(Date.now() - 2 * 7 * 24 * 60 * 60 * 1000)); // demo: 2 semanas atrás
+  const [dataCadastro, setDataCadastro] = useState(null);
   const [retomadas,setRet]      = useLocalStorage("auge_retomadas", 0);
   const [carta, setCarta]       = useLocalStorage("auge_carta", null);
   const [notifStatus, setNotifStatus] = useLocalStorage("auge_notif", "pending"); // "pending"|"granted"|"denied"|"dismissed"
@@ -260,7 +276,7 @@ export default function App() {
   // Dados de onboarding — nome e e-mail persistidos entre sessões
   const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
 
-  const sem = 3;
+  const sem = dataCadastro ? Math.min(12, Math.max(1, Math.ceil((Date.now()-dataCadastro.getTime())/(7*24*60*60*1000)))) : 1;
   const mes = sem<=4?1:sem<=8?2:3;
   const hDia = habAngulares.length > 0 ? habAngulares : HAB[mes];
   const feitos = hDia.filter(h=>habF[h.id]).length;
@@ -269,10 +285,57 @@ export default function App() {
   const tk   = m => { setToast(m); setTimeout(()=>setToast(null),3000); };
   const back = () => ir(ABA_ORIGEM[tela]||S.HOME);
 
-  const login = tipo => {
-    setPerfil(tipo);
-    if(tipo==="jornada" && !diagOk) ir(S.DIAG);
-    else ir(S.HOME);
+  // ── Carrega todos os dados da aluna do Supabase após autenticação ────────────
+  const loadUserData = async (userId) => {
+    const [profileRes, checkinsRes, habRes, kitRes, ancRes, vitRes, cartaRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).single(),
+      supabase.from("checkins").select("*").eq("user_id", userId),
+      supabase.from("habitos_angulares").select("*").eq("user_id", userId).single(),
+      supabase.from("kit_emergencia").select("*").eq("user_id", userId).single(),
+      supabase.from("ancora").select("*").eq("user_id", userId).single(),
+      supabase.from("vitorias").select("*").eq("user_id", userId),
+      supabase.from("carta_futuro").select("*").eq("user_id", userId).single(),
+    ]);
+    if (profileRes.data) {
+      const p = profileRes.data;
+      setPerfil(p.plano || "comunidade");
+      setUsuario({ nome: p.nome || "", email: p.email || "" });
+      setLgpdOk(!!p.lgpd_aceito);
+      if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
+    }
+    if (checkinsRes.data?.length) {
+      const hist = {};
+      for (const c of checkinsRes.data) {
+        hist[c.data] = { feitos: c.total_feitos, total: c.total, retomada: c.retomada };
+      }
+      setHist(hist);
+    }
+    if (habRes.data && !habRes.error) {
+      const { hab1, hab2, hab3 } = habRes.data;
+      const habs = [hab1, hab2, hab3].filter(Boolean).map((t, i) => ({ id: `ha${i+1}`, t }));
+      if (habs.length) setHabAngulares(habs);
+    }
+    if (kitRes.data && !kitRes.error) {
+      if (kitRes.data.min_viavel) setKitMin(kitRes.data.min_viavel);
+      if (kitRes.data.onde_apoio) setKitApoio(kitRes.data.onde_apoio);
+    }
+    if (ancRes.data && !ancRes.error && ancRes.data.texto) setAnc(ancRes.data.texto);
+    if (vitRes.data?.length) {
+      setVit(vitRes.data.map(v => ({ sem: v.sem, texto: v.texto, data: v.data })));
+    }
+    if (cartaRes.data && !cartaRes.error && cartaRes.data.texto) {
+      const d = new Date(cartaRes.data.data_escrita);
+      const ds = `${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()}`;
+      setCarta({ texto: cartaRes.data.texto, data: ds });
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setAuthUser(null); setPerfil(null); setUsuario(null); setLgpdOk(false);
+    setHist({}); setVit([]); setCarta(null);
+    setAnc("Eu sou a mulher que volta."); setKitMin(""); setKitApoio(""); setHabAngulares([]);
+    setTela(S.HOME);
   };
 
   const doSwipe = dir => {
@@ -342,23 +405,63 @@ export default function App() {
     }
   }, [diasSemTreino, notifStatus, perfil]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Sessão Supabase: verifica sessão existente e escuta mudanças ──────────────
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setAuthUser(session.user);
+        loadUserData(session.user.id).finally(() => setLoadingAuth(false));
+      } else {
+        setLoadingAuth(false);
+      }
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user) setAuthUser(session.user);
+      else if (event === "SIGNED_OUT") { setAuthUser(null); setPerfil(null); setUsuario(null); }
+    });
+    return () => subscription.unsubscribe();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Diagnóstico de Sabotadores: dispara ao carregar perfil jornada ────────────
+  useEffect(() => {
+    if (perfil === "jornada" && !diagOk && authUser) setTela(S.DIAG);
+  }, [perfil, diagOk, authUser]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const ctx = {perfil,ir,back,tk,feed,setFeed,habF,setHabF,chips,setChips,ckOk,setCkOk,notas,setNotas,rodaR,setRodaR,rodaI,setRodaI,matches,setMatches,ci,sw,doSwipe,selM,setSelM,anc,setAnc,kitMin,setKitMin,kitApoio,setKitApoio,escT,setEscT,vit,setVit,historico,setHist,retomadas,setRet,sem,mes,hDia,feitos,postTreino,calcRoda,zc,zl,pontos,medC,
-    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino,carta,setCarta,notifStatus,setNotifStatus};
+    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino,carta,setCarta,notifStatus,setNotifStatus,
+    authUserId:authUser?.id,logout};
 
   const SEM_NAV = [S.SPLASH,S.LEGAL,S.LOGIN,S.DIAG,S.VOZ,S.CHAT,S.RODA];
 
-  // LGPD — só mostra uma vez (primeira vez que usa o app)
-  if(!legalOk && tela !== S.SPLASH) return (
+  // Aguardando verificação de sessão Supabase
+  if (loadingAuth) return (
     <Phone>
-      <Rolar><AvisoLegal onAceitar={()=>{localStorage.setItem('auge_lgpd','1');setLegalOk(true);setTela(S.LOGIN);}}/></Rolar>
+      <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:24}}>
+        <Logo width={140} fundo="escuro"/>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.25)`,animation:"pulse 1.5s ease-in-out infinite",letterSpacing:"0.2em"}}>carregando...</div>
+      </Grain>
       <Estilos/>
     </Phone>
   );
 
-  // Onboarding — coleta nome e e-mail no primeiro acesso
-  if(!usuario) return (
+  // Não autenticada → tela de login / cadastro
+  if (!authUser) return (
     <Phone>
-      <Rolar><Onboarding onConcluir={u=>setUsuario(u)}/></Rolar>
+      <Rolar><TelaAuth onAuth={async (user) => {
+        setAuthUser(user);
+        await loadUserData(user.id);
+      }}/></Rolar>
+      <Estilos/>
+    </Phone>
+  );
+
+  // LGPD pendente (caso raro: usuária antiga sem aceite)
+  if (!lgpdOk) return (
+    <Phone>
+      <Rolar><AvisoLegal onAceitar={async () => {
+        await supabase.from("profiles").update({lgpd_aceito:true, lgpd_data: new Date().toISOString()}).eq("id", authUser.id);
+        setLgpdOk(true);
+      }}/></Rolar>
       <Estilos/>
     </Phone>
   );
@@ -373,7 +476,7 @@ export default function App() {
 
   const renderTela = () => {
     switch(tela) {
-      case S.LOGIN:   return <Login onLogin={login}/>;
+      case S.LOGIN:   return <Home {...ctx}/>;
       case S.HOME:    return <Home {...ctx}/>;
       case S.FEED:    return <Feed {...ctx}/>;
       case S.NOVO:    return <Novo {...ctx}/>;
@@ -381,7 +484,7 @@ export default function App() {
       case S.CX:      return <Cx   {...ctx}/>;
       case S.MATCH:   return selM ? <MatchDet {...ctx}/> : <Cx {...ctx}/>;
       case S.CHAT:    return selM ? <Chat     {...ctx}/> : <Cx {...ctx}/>;
-      case S.JOR:     return perfil==="jornada" ? <Jornada {...ctx}/> : <JornadaClube ir={ir} onLogin={login}/>;
+      case S.JOR:     return perfil==="jornada" ? <Jornada {...ctx}/> : <JornadaClube ir={ir}/>;
       case S.RODA:    return perfil==="jornada" ? <Roda    {...ctx}/> : <TelaConvite back={back}/>;
       case S.RET:     return perfil==="jornada" ? <Retomada {...ctx}/> : <TelaConvite back={back}/>;
       case S.CAL:     return perfil==="jornada" ? <Calendario {...ctx}/> : <TelaConvite back={back}/>;
@@ -547,37 +650,144 @@ function Onboarding({ onConcluir }) {
   );
 }
 
-function Login({ onLogin }) {
-  const [email, setEmail]   = useState("");
-  const [senha, setSenha]   = useState("");
+// ─── TELA DE AUTENTICAÇÃO ─────────────────────────────────────────────────────
+function TelaAuth({ onAuth }) {
+  const [mode,    setMode]    = useState("login");
+  const [nome,    setNome]    = useState("");
+  const [email,   setEmail]   = useState("");
+  const [senha,   setSenha]   = useState("");
+  const [lgpd,    setLgpd]    = useState(false);
+  const [erro,    setErro]    = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  const mapErro = (msg) => {
+    if (!msg) return null;
+    if (msg.includes("Invalid login credentials")) return "E-mail ou senha incorretos. Tente novamente.";
+    if (msg.includes("already registered") || msg.includes("already been registered")) return "Já existe uma conta com este e-mail. Faça login.";
+    if (msg.includes("Password should be at least")) return "A senha deve ter pelo menos 6 caracteres.";
+    if (msg.includes("Email not confirmed")) return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.";
+    return "Ocorreu um erro. Tente novamente.";
+  };
+
+  const handleLogin = async () => {
+    if (!email.trim() || !senha) return;
+    setLoading(true); setErro(null);
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: senha });
+    setLoading(false);
+    if (error) { setErro(mapErro(error.message)); return; }
+    onAuth(data.user);
+  };
+
+  const handleCadastro = async () => {
+    if (!nome.trim() || !email.trim() || senha.length < 6 || !lgpd) return;
+    setLoading(true); setErro(null);
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(), password: senha,
+      options: { data: { nome: nome.trim() } },
+    });
+    setLoading(false);
+    if (error) { setErro(mapErro(error.message)); return; }
+    if (data.user) {
+      await supabase.from("profiles").upsert({
+        id: data.user.id, nome: nome.trim(), email: email.trim().toLowerCase(),
+        plano: "comunidade",
+        lgpd_aceito: true, lgpd_data: new Date().toISOString(),
+        data_cadastro: new Date().toISOString(),
+      });
+      onAuth(data.user);
+    }
+  };
+
+  const handleEsqueci = async () => {
+    if (!email.trim()) return;
+    setLoading(true);
+    await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: window.location.origin });
+    setLoading(false); setEnviado(true);
+  };
+
+  const inp = { background:"transparent", border:"none", borderBottom:`1px solid rgba(255,255,255,.25)`, color:C.branco, fontFamily:FB, fontWeight:300, fontSize:16, padding:"8px 0", width:"100%", outline:"none" };
+  const lbl = { fontFamily:FB, fontWeight:300, fontSize:12, color:`rgba(255,255,255,.45)`, marginBottom:7 };
+
+  if (mode === "esqueci") return (
+    <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px",animation:"fadeUp .4s ease"}}>
+      <Logo width={150} fundo="escuro"/>
+      <div style={{fontFamily:FS,fontSize:20,fontWeight:300,color:C.linho,marginTop:24,marginBottom:8}}>Recuperar senha</div>
+      {enviado ? (
+        <div style={{background:`${C.augeZ}14`,border:`1px solid ${C.augeZ}33`,borderRadius:10,padding:"18px 16px",marginTop:16,textAlign:"center"}}>
+          <div style={{fontSize:28,marginBottom:8}}>📩</div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.6)`,lineHeight:1.7}}>Link enviado para <strong>{email}</strong>.<br/>Verifique sua caixa de entrada.</div>
+        </div>
+      ) : (
+        <div style={{width:"100%",marginTop:32}}>
+          <div style={lbl}>E-mail da sua conta</div>
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={inp} placeholder="seu@email.com"
+            onKeyDown={e=>e.key==="Enter"&&handleEsqueci()}/>
+          {erro && <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:"#f87171",marginTop:8}}>{erro}</div>}
+          <BtnPill onClick={handleEsqueci} style={{marginTop:28,opacity:loading||!email.trim()?0.45:1}}>
+            {loading?"Enviando...":"Enviar link de redefinição"}
+          </BtnPill>
+        </div>
+      )}
+      <button onClick={()=>{setMode("login");setErro(null);setEnviado(false);}} style={{marginTop:24,background:"none",border:"none",color:`rgba(255,255,255,.3)`,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer"}}>← Voltar para o login</button>
+    </Grain>
+  );
+
+  if (mode === "cadastro") return (
+    <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",padding:"40px 32px 48px",animation:"fadeUp .4s ease"}}>
+      <Logo width={150} fundo="escuro"/>
+      <div style={{fontFamily:FS,fontSize:20,fontWeight:300,color:C.linho,marginTop:16,marginBottom:6}}>Criar conta</div>
+      <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.3)`,marginBottom:28,textAlign:"center"}}>Bem-vinda ao Clube do Auge</div>
+      <div style={{width:"100%",marginBottom:22}}>
+        <div style={lbl}>Seu nome</div>
+        <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Como você se chama?" style={inp}
+          onKeyDown={e=>e.key==="Enter"&&document.getElementById("cad-email")?.focus()}/>
+      </div>
+      <div style={{width:"100%",marginBottom:22}}>
+        <div style={lbl}>E-mail</div>
+        <input id="cad-email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" style={inp}
+          onKeyDown={e=>e.key==="Enter"&&document.getElementById("cad-senha")?.focus()}/>
+      </div>
+      <div style={{width:"100%",marginBottom:24}}>
+        <div style={lbl}>Senha (mínimo 6 caracteres)</div>
+        <input id="cad-senha" type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••••" style={inp}
+          onKeyDown={e=>e.key==="Enter"&&handleCadastro()}/>
+      </div>
+      <div style={{width:"100%",marginBottom:28,display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer"}} onClick={()=>setLgpd(v=>!v)}>
+        <div style={{width:18,height:18,borderRadius:4,border:`1.5px solid ${lgpd?C.ouro:"rgba(255,255,255,.25)"}`,background:lgpd?`${C.ouro}22`:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",marginTop:1}}>
+          {lgpd && <span style={{color:C.ouro,fontSize:11}}>✓</span>}
+        </div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.4)`,lineHeight:1.6}}>Aceito os termos de uso e a política de privacidade. Meus dados serão usados apenas para personalizar minha experiência no app.</div>
+      </div>
+      {erro && <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:"#f87171",marginBottom:12,width:"100%"}}>{erro}</div>}
+      <BtnPill onClick={handleCadastro} style={{opacity:loading||!nome.trim()||!email.trim()||senha.length<6||!lgpd?0.45:1}}>
+        {loading?"Criando conta...":"Criar minha conta"}
+      </BtnPill>
+      <button onClick={()=>{setMode("login");setErro(null);}} style={{marginTop:20,background:"none",border:"none",color:`rgba(255,255,255,.3)`,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer"}}>Já tenho conta → Entrar</button>
+    </Grain>
+  );
+
   return (
     <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px 48px",animation:"fadeUp .4s ease"}}>
       <Logo width={180} fundo="escuro"/>
       <div style={{fontFamily:FS,fontSize:22,fontWeight:300,color:C.linho,marginTop:20,marginBottom:8}}>Bem-vinda</div>
-      <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.35)`,marginBottom:44,textAlign:"center"}}>Entre com seu e-mail e senha</div>
-      {/* Input underline estilo AstroJourney */}
+      <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.35)`,marginBottom:40,textAlign:"center"}}>Entre com seu e-mail e senha</div>
       <div style={{width:"100%",marginBottom:28}}>
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.45)`,marginBottom:8}}>E-mail</div>
-        <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
-          style={{width:"100%",background:"transparent",border:"none",borderBottom:`1px solid rgba(255,255,255,.25)`,color:C.branco,fontFamily:FB,fontWeight:300,fontSize:16,padding:"8px 0"}}/>
+        <div style={lbl}>E-mail</div>
+        <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" style={inp}
+          onKeyDown={e=>e.key==="Enter"&&document.getElementById("ln-senha")?.focus()}/>
       </div>
-      <div style={{width:"100%",marginBottom:36}}>
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.45)`,marginBottom:8}}>Senha</div>
-        <input type="password" value={senha} onChange={e=>setSenha(e.target.value)}
-          style={{width:"100%",background:"transparent",border:"none",borderBottom:`1px solid rgba(255,255,255,.25)`,color:C.branco,fontFamily:FB,fontWeight:300,fontSize:16,padding:"8px 0"}}/>
+      <div style={{width:"100%",marginBottom:28}}>
+        <div style={lbl}>Senha</div>
+        <input id="ln-senha" type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••••" style={inp}
+          onKeyDown={e=>e.key==="Enter"&&handleLogin()}/>
       </div>
-      <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.3)`,marginBottom:28,cursor:"pointer"}}>Esqueceu sua senha?</div>
-      {/* Simulação: botões de demo */}
-      <BtnPill onClick={()=>onLogin("comunidade")} style={{marginBottom:12}}>Entrar</BtnPill>
-      <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.25)`,marginTop:16,cursor:"pointer",textAlign:"center"}}>Criar novo cadastro</div>
-      {/* Demo apenas — em produção o banco identifica o plano */}
-      <div style={{marginTop:24,padding:"12px 16px",background:`rgba(255,255,255,.03)`,border:`1px solid ${C.ouro}12`,borderRadius:10}}>
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.2)`,textAlign:"center",marginBottom:10,letterSpacing:"0.1em",textTransform:"uppercase"}}>Demo — simular plano</div>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>onLogin("comunidade")} style={{flex:1,background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,borderRadius:8,padding:"9px",fontFamily:FB,fontSize:11,color:`rgba(255,255,255,.35)`,cursor:"pointer"}}>Comunidade</button>
-          <button onClick={()=>onLogin("jornada")} style={{flex:1,background:`${C.ouro}12`,border:`1px solid ${C.ouro}33`,borderRadius:8,padding:"9px",fontFamily:FB,fontSize:11,color:C.ouro,cursor:"pointer"}}>Jornada AUGE</button>
-        </div>
-      </div>
+      {erro && <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:"#f87171",marginBottom:12,width:"100%"}}>{erro}</div>}
+      <button onClick={()=>{setMode("esqueci");setErro(null);}} style={{background:"none",border:"none",color:`rgba(255,255,255,.25)`,fontFamily:FB,fontWeight:300,fontSize:12,cursor:"pointer",marginBottom:20,alignSelf:"flex-start"}}>Esqueceu sua senha?</button>
+      <BtnPill onClick={handleLogin} style={{marginBottom:14,opacity:loading||!email.trim()||!senha?0.45:1}}>
+        {loading?"Entrando...":"Entrar"}
+      </BtnPill>
+      <button onClick={()=>{setMode("cadastro");setErro(null);}} style={{background:"none",border:"none",color:C.ouro,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer",letterSpacing:"0.05em"}}>Ainda não tenho conta → Criar cadastro</button>
     </Grain>
   );
 }
@@ -735,6 +945,14 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
     setHist(h=>({...h,[hoje]:{feitos,total,retomada:false}}));
     setCkOk(true);
     tk(pct===100?"Dia completo! +"+( feitos*5+5)+" pontos 🏆":"Checkin salvo. Você apareceu hoje 💖");
+    syncDB("checkins", {
+      data: hoje,
+      hab_feitos: hDia.filter(h=>habF[h.id]).map(h=>h.t),
+      hab_nao_feitos: hDia.filter(h=>!habF[h.id]).map(h=>h.t),
+      total_feitos: feitos, total,
+      percentual: total ? Math.round(feitos/total*100) : 0,
+      chips, nota: notas.trim()||null, retomada: false,
+    }, {onConflict:"user_id,data"});
     setPasso(4);
     setIsaLoad(true);
     const habNomes = hDia.filter(h=>habF[h.id]).map(h=>h.t);
@@ -1169,6 +1387,7 @@ function CartaEditor({ setCarta, tk }) {
     const d = new Date();
     const data = `${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()}`;
     setCarta({ texto: txt.trim(), data });
+    syncDB("carta_futuro", {texto: txt.trim(), data_escrita: new Date().toISOString()});
     tk("Carta guardada. Ela espera por você na Semana 12. 💖");
   };
   return (
@@ -1210,7 +1429,7 @@ function TelaConvite({ back }) {
 }
 
 // ─── JORNADA CLUBE ────────────────────────────────────────────────────────────
-function JornadaClube({ ir, onLogin }) {
+function JornadaClube({ ir }) {
   const [convite, setConvite] = useState(false);
   if (convite) return <TelaConvite back={()=>setConvite(false)}/>;
   const lock = () => setConvite(true);
@@ -1246,7 +1465,7 @@ function JornadaClube({ ir, onLogin }) {
         ))}
         <div style={{marginTop:18}}>
           <BtnPill onClick={()=>window.open("https://wa.me/5548999999999","_blank")} style={{marginBottom:10,fontSize:13}}>Quero entrar na Jornada AUGE</BtnPill>
-          <BtnOut onClick={()=>onLogin("jornada")} style={{fontSize:13}}>Já sou aluna — entrar</BtnOut>
+          <BtnOut onClick={()=>ir(S.HOME)} style={{fontSize:13}}>Voltar ao início</BtnOut>
         </div>
       </Grain>
     </div>
@@ -1291,8 +1510,8 @@ function VitJornada({ ir, onLogin }) {
         <BtnPill onClick={()=>window.open("https://wa.me/5548999999999","_blank")} style={{marginBottom:12}}>
           Quero participar da próxima turma
         </BtnPill>
-        <BtnOut onClick={()=>onLogin("jornada")} style={{fontSize:13}}>
-          Já sou aluna — entrar
+        <BtnOut onClick={()=>ir(S.HOME)} style={{fontSize:13}}>
+          Voltar ao início
         </BtnOut>
       </div>
     </Grain>
@@ -1483,6 +1702,8 @@ function Retomada({ anc, back, tk, setRet }) {
 
   const registrar = async () => {
     setRet(r=>r+1);
+    const hoje = new Date().toISOString().split("T")[0];
+    syncDB("checkins", {data:hoje, total_feitos:0, total:0, percentual:0, retomada:true, chips:[]}, {onConflict:"user_id,data"});
     tk("Retomada registrada. +20 pontos AUGE 💖");
     setRegistrado(true);
     setIsaLoad(true);
@@ -1552,7 +1773,9 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, se
   const salvarVit = async () => {
     if (!nv.trim()) return;
     const d = new Date();
-    setVit(v=>[...v,{sem:3,texto:nv,data:`${d.getDate()}/${d.getMonth()+1}`}]);
+    const vitData = `${d.getDate()}/${d.getMonth()+1}`;
+    setVit(v=>[...v,{sem:3,texto:nv.trim(),data:vitData}]);
+    syncInsert("vitorias", {sem:3, texto:nv.trim(), data:vitData});
     tk("Vitória registrada! 💖");
     setIsaVitLoad(true);
     setIsaVit(null);
@@ -1587,7 +1810,7 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, se
         {escT==="ancora"&&(<div>
           <div style={{background:`${C.ouro}10`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"22px 18px",textAlign:"center",marginBottom:16}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:20,color:C.ouro,lineHeight:1.5}}>"{na||anc}"</div></div>
           <textarea value={na} onChange={e=>setNa(e.target.value)} placeholder="A frase que vai te trazer de volta..." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"13px",fontSize:15,fontFamily:FS,fontStyle:"italic",color:`rgba(255,255,255,.65)`,resize:"none",height:80,lineHeight:1.6,marginBottom:12}}/>
-          <BtnPill onClick={()=>{setAnc(na);tk("Âncora salva 💖");}}>Salvar minha âncora</BtnPill>
+          <BtnPill onClick={()=>{setAnc(na);syncDB("ancora",{texto:na});tk("Âncora salva 💖");}}>Salvar minha âncora</BtnPill>
         </div>)}
         {escT==="porques"&&(<div>
           <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.25)`,lineHeight:1.7,marginBottom:16}}>Essas respostas são só suas. Ninguém mais acessa.</div>
@@ -1652,7 +1875,7 @@ function Emergencia({ anc, kitMin, setKitMin, kitApoio, setKitApoio, back, tk })
           <textarea value={tm} onChange={e=>setTm(e.target.value)} placeholder="Ex: 10 minutos de caminhada antes do café" style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"11px",fontSize:14,fontFamily:FS,color:`rgba(255,255,255,.65)`,resize:"none",height:76,lineHeight:1.6,marginBottom:14}}/>
           <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:6}}>Onde você busca apoio?</div>
           <textarea value={ta} onChange={e=>setTa(e.target.value)} placeholder="Ex: Ligo para minha irmã / Leio minha âncora" style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"11px",fontSize:14,fontFamily:FS,color:`rgba(255,255,255,.65)`,resize:"none",height:76,lineHeight:1.6,marginBottom:14}}/>
-          <BtnPill onClick={()=>{setKitMin(tm);setKitApoio(ta);setEdit(false);tk("Kit salvo 💖");}} style={{opacity:tm.trim()?1:.4,marginBottom:10}}>Salvar meu kit</BtnPill>
+          <BtnPill onClick={()=>{setKitMin(tm);setKitApoio(ta);syncDB("kit_emergencia",{min_viavel:tm,onde_apoio:ta});setEdit(false);tk("Kit salvo 💖");}} style={{opacity:tm.trim()?1:.4,marginBottom:10}}>Salvar meu kit</BtnPill>
           <button onClick={()=>setEdit(false)} style={{width:"100%",background:"none",border:"none",color:`rgba(255,255,255,.2)`,fontFamily:FB,fontWeight:300,fontSize:12,cursor:"pointer"}}>Cancelar</button>
         </div>)
         :(<div>
@@ -1770,7 +1993,7 @@ function Conteudo({ perfil }) {
 // ═══════════════════════════════════════════════════════════════════
 // ABA: PERFIL
 // ═══════════════════════════════════════════════════════════════════
-function Perfil({ perfil, matches, pontos, medC, habAngulares, setHabAngulares, usuario, setUsuario }) {
+function Perfil({ perfil, matches, pontos, medC, habAngulares, setHabAngulares, usuario, setUsuario, logout }) {
   const [editando, setEditando] = useState(false);
   const [nomeEdit,  setNomeEdit]  = useState(usuario?.nome  || "");
   const [emailEdit, setEmailEdit] = useState(usuario?.email || "");
@@ -1795,11 +2018,15 @@ function Perfil({ perfil, matches, pontos, medC, habAngulares, setHabAngulares, 
         <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.3)`,marginTop:3}}>{usuario?.email || ""}</div>
         <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:C.ouro,marginTop:4}}>{perfil==="jornada"?"Aluna da Jornada · Semana 3 de 12":"Assinante da Comunidade"}</div>
         {perfil==="jornada"&&<div style={{display:"inline-block",background:"rgba(15,110,86,.18)",border:"1px solid rgba(15,110,86,.3)",borderRadius:20,padding:"4px 14px",marginTop:10,color:"#4ade80",fontSize:11,fontFamily:FB}}>✓ Identidade verificada</div>}
-        <div style={{marginTop:14}}>
+        <div style={{marginTop:14,display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
           <button onClick={()=>{ setNomeEdit(usuario?.nome||""); setEmailEdit(usuario?.email||""); setEditando(e=>!e); }}
             style={{background:"transparent",border:`1px solid ${C.ouro}30`,borderRadius:20,padding:"6px 16px",fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro,cursor:"pointer",letterSpacing:"0.1em"}}>
             {editando ? "Cancelar" : "✏️ Editar dados"}
           </button>
+          {logout && <button onClick={logout}
+            style={{background:"transparent",border:`1px solid rgba(255,255,255,.1)`,borderRadius:20,padding:"6px 16px",fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.3)`,cursor:"pointer",letterSpacing:"0.1em"}}>
+            Sair
+          </button>}
         </div>
       </div>
 
@@ -1926,7 +2153,9 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
   const ok = vals.every(v=>v.trim());
   const salvar = () => {
     if(!ok) return;
-    setHabAngulares(vals.map((t,i)=>({id:"ha"+(i+1),t:t.trim()})));
+    const habs = vals.map((t,i)=>({id:"ha"+(i+1),t:t.trim()}));
+    setHabAngulares(habs);
+    syncDB("habitos_angulares",{hab1:habs[0]?.t||null,hab2:habs[1]?.t||null,hab3:habs[2]?.t||null});
     setSalvo(true);
     setTimeout(()=>setSalvo(false),2000);
   };
