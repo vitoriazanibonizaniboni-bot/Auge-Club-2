@@ -261,7 +261,7 @@ export default function App() {
   const [kitMin,   setKitMin]   = useLocalStorage("auge_kitMin", "");
   const [kitApoio, setKitApoio] = useLocalStorage("auge_kitApoio", "");
   const [escT,     setEscT]     = useState("vitorias");
-  const [vit,      setVit]      = useLocalStorage("auge_vit", [{sem:1,texto:"Fiz 3 dias de caminhada!",data:"05/05"},{sem:2,texto:"Dormi às 22h por 5 dias.",data:"12/05"}]);
+  const [vit,      setVit]      = useLocalStorage("auge_vit", []);
   const [historico,setHist]     = useLocalStorage("auge_historico", {});
   // Hábitos angulares personalizados — persistidos entre sessões
   const [habAngulares, setHabAngulares] = useLocalStorage("auge_habAngulares", []);
@@ -287,6 +287,10 @@ export default function App() {
 
   // ── Carrega todos os dados da aluna do Supabase após autenticação ────────────
   const loadUserData = async (userId) => {
+    // Supabase é a fonte de verdade — resetar estado local antes de popular
+    setHist({}); setVit([]); setCarta(null);
+    setAnc("Eu sou a mulher que volta."); setKitMin(""); setKitApoio(""); setHabAngulares([]);
+
     const [profileRes, checkinsRes, habRes, kitRes, ancRes, vitRes, cartaRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("checkins").select("*").eq("user_id", userId),
@@ -296,13 +300,17 @@ export default function App() {
       supabase.from("vitorias").select("*").eq("user_id", userId),
       supabase.from("carta_futuro").select("*").eq("user_id", userId).single(),
     ]);
+
     if (profileRes.data) {
       const p = profileRes.data;
       setPerfil(p.plano || "comunidade");
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
+    } else {
+      setPerfil("comunidade");
     }
+
     if (checkinsRes.data?.length) {
       const hist = {};
       for (const c of checkinsRes.data) {
@@ -310,19 +318,26 @@ export default function App() {
       }
       setHist(hist);
     }
+
     if (habRes.data && !habRes.error) {
       const { hab1, hab2, hab3 } = habRes.data;
       const habs = [hab1, hab2, hab3].filter(Boolean).map((t, i) => ({ id: `ha${i+1}`, t }));
       if (habs.length) setHabAngulares(habs);
     }
+
     if (kitRes.data && !kitRes.error) {
-      if (kitRes.data.min_viavel) setKitMin(kitRes.data.min_viavel);
-      if (kitRes.data.onde_apoio) setKitApoio(kitRes.data.onde_apoio);
+      setKitMin(kitRes.data.min_viavel || "");
+      setKitApoio(kitRes.data.onde_apoio || "");
     }
-    if (ancRes.data && !ancRes.error && ancRes.data.texto) setAnc(ancRes.data.texto);
+
+    if (ancRes.data && !ancRes.error && ancRes.data.texto) {
+      setAnc(ancRes.data.texto);
+    }
+
     if (vitRes.data?.length) {
       setVit(vitRes.data.map(v => ({ sem: v.sem, texto: v.texto, data: v.data })));
     }
+
     if (cartaRes.data && !cartaRes.error && cartaRes.data.texto) {
       const d = new Date(cartaRes.data.data_escrita);
       const ds = `${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()}`;
