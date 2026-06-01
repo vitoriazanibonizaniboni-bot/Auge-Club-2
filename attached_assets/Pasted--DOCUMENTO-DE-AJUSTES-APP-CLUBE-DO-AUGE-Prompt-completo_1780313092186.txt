@@ -1,0 +1,470 @@
+# DOCUMENTO DE AJUSTES — APP CLUBE DO AUGE
+
+## Prompt completo para o Replit Agent
+
+### Versão consolidada · Junho 2026
+
+-----
+
+Este documento contém todos os ajustes necessários no app antes do lançamento.
+Execute na ordem dos sprints. Cada item tem contexto, instrução técnica e copy exata.
+
+-----
+
+# SPRINT 1 — URGENTE (bloqueia o lançamento)
+
+## 1.1 Remover vocabulário fitness do app inteiro
+
+*CONTEXTO*
+A Jornada AUGE não é programa fitness. O método trabalha com seis pilares: Mente, Corpo, Hábitos, Protocolo de Falha, Protagonismo, Comunidade. A palavra “treino” reduz tudo isso à dimensão física e ativa o gatilho de “tudo ou nada” da persona — exatamente o ciclo que o método existe para desinstalar.
+
+*SUBSTITUIÇÕES OBRIGATÓRIAS em todas as telas, cards, contadores e CTAs:*
+
+- “O que você treinou hoje?” → “O que você fez por você hoje?”
+- “Encontrar parceira de treino” → “Encontre mulheres como você”
+- “Radar de amigas · Swipe · Chat” → “Radar de Amigas”
+- “Treinos: 8” (contador no Perfil) → “Check-ins: 8”
+- “Registrar treino” → “Registrar movimento”
+- “Registrar treino por voz” → “Registrar por voz”
+- “Vamos treinar juntas?” → “Vamos nos mover juntas?”
+- “Treino registrado” → “Registro salvo”
+- Qualquer outro lugar que contenha a palavra “treino” ou “treinos”
+
+*ÍCONES:*
+
+- O coração verde brilhante no card de Conexões: trocar para coração na cor Ouro (#C4A882)
+
+-----
+
+## 1.2 Transformar o Feed em Mural do 1%
+
+*CONTEXTO*
+O Feed atual mostra posts no formato Strava com números de performance (“Corrida 5km — bati meu recorde!”). Isso ativa comparação entre mulheres 40+ e reforça o ciclo de culpa. O Mural do 1% foi previsto no escopo exatamente como antídoto a esse formato.
+
+*MUDANÇAS OBRIGATÓRIAS:*
+
+*Nome da aba:*
+
+- Renomear de “Feed” para “Mural” em toda a interface
+
+*Placeholder do campo de post:*
+
+- Atual: “O que você fez por você hoje?”
+- Manter: “O que você fez por você hoje?” ✓ (já correto após 1.1)
+
+*Tom dos posts de exemplo (substituir os posts mock atuais):*
+Os posts de exemplo devem mostrar micro-ações comportamentais, não performance física:
+
+
+Post 1 — Mariana Costa:
+"Sentei pra ler 15 min em vez de scrollar antes de dormir."
+
+Post 2 — Cecília Alves:
+"Hoje almocei sentada, sem pressa e sem tela. Primeira vez na semana."
+
+Post 3 — Você (placeholder):
+"Voltei depois de 3 dias parada. Caminhei 10 min. Conta."
+
+
+*Imagens dos posts:*
+
+- Remover imagens de performance (corrida, musculação, academia)
+- Se houver imagem, usar cores sólidas suaves alinhadas à paleta (fundos em tons do brand kit)
+- Nunca mostrar corpos em posição de performance atlética
+
+*Sistema de reações:*
+
+- Substituir “curtidas” (coração com contagem grande) por reação de pertencimento
+- Botão: “💛 Te entendo” ou “Comigo também”
+- Não mostrar número grande de reações — apenas indicar de forma discreta que outras mulheres reagiram (ex: “3 mulheres se identificaram”)
+- Remover a contagem competitiva de curtidas
+
+-----
+
+## 1.3 Nav bar — 5 abas visíveis para todas, comportamento condicional
+
+*ESTRUTURA — 5 abas sempre visíveis para todo mundo:*
+
+
+Início | Mural | Jornada | Conteúdo | Perfil
+
+
+*Comportamento por plano:*
+
+ASSINANTE DO CLUBE ao tocar em “Jornada”:
+
+- Entra na aba normalmente
+- Vê o conteúdo com cadeados dourados em tudo
+- Cada cadeado ao ser tocado abre uma tela de convite para a Jornada AUGE
+
+ALUNA DA JORNADA ao tocar em “Jornada”:
+
+- Entra com acesso completo a tudo
+- Sem cadeados, sem restrições
+
+*IMPORTANTE:* Nunca bloquear a aba em si — o bloqueio é por funcionalidade dentro da aba, não no acesso à aba. A assinante do Clube sempre consegue entrar e ver o que existe, gerando desejo.
+
+-----
+
+## 1.4 Cadeados dourados — mapa completo de bloqueios para assinante do Clube
+
+*PRINCÍPIO DE DESIGN:*
+O cadeado dourado nunca deve parecer punição. É uma promessa visual: “isso aqui existe, é poderoso, e você pode acessar.” Use sempre o ouro da marca (#C4A882). Texto sempre afirmativo, nunca restritivo. Fundo do card do cadeado: obsidiana com borda dourada suave.
+
+*TELA DE CONVITE* (abre quando assinante do Clube toca em qualquer cadeado):
+
+
+Título: "Isso é da Jornada AUGE"
+Subtítulo em itálico: "12 semanas. Método. Transformação real."
+
+Benefícios (4 cards):
+• Check-in diário com seus 3 hábitos personalizados
+• Roda AUGE: acompanhe sua evolução em S1, S6 e S12
+• Protocolo de Retomada com Kit de Emergência personalizado
+• Espaços de escrita exclusivos: Vitórias, Âncora, Porquês e Carta para o Futuro
+
+Depoimento em itálico:
+"Em 12 semanas criei uma rotina que achei que nunca seria possível pra mim."
+— Maria, 54 anos · Florianópolis
+
+Botão principal (pill bege):
+"Quero entrar na lista de espera"
+→ Abre link wa.me do WhatsApp da Dra. Isadora
+
+Botão secundário (outline):
+"Saber mais sobre a Jornada"
+→ Link externo para página de vendas
+
+
+*MAPA DE CADEADOS por área:*
+
+ABA JORNADA — para assinante do Clube, toda a aba mostra versão com cadeados:
+
+- Check-in detalhado: bloqueado (vê versão simplificada sem os 3 hábitos personalizados)
+- Roda AUGE: pode fazer a roda básica (S1), mas o gráfico comparativo S1/S6/S12 aparece borrado/cinza com cadeado e texto: “O acompanhamento de evolução é exclusivo da Jornada AUGE.”
+- Protocolo de Retomada: tela explicativa (com a Regra dos 2 Dias) visível, mas o Kit de Emergência personalizado bloqueado com cadeado
+- Espaços de Escrita (Vitórias, Âncora, Porquês, Carta para o Futuro): completamente bloqueados com selo “Ferramentas exclusivas da Jornada AUGE”
+- Calendário das 12 semanas: visível como vitrine com cadeado, texto “Disponível na Jornada AUGE”
+- Pontos AUGE e medalhas: versão básica visível para Clube, versão completa com cadeado
+
+ABA CONTEÚDO — sub-aba “Minha Jornada”:
+
+- Aparece para assinante do Clube com cadeado em todos os módulos
+- Ao tocar em qualquer módulo bloqueado: abre tela de convite da Jornada
+
+-----
+
+# SPRINT 2 — REFINAMENTO DO PROTOCOLO DE RETOMADA
+
+*CONTEXTO ESTRATÉGICO*
+O Protocolo de Retomada é o maior diferencial do método AUGE. Nenhum concorrente trabalha a falha como pilar estruturante. O problema da versão atual: as cópias acolhem mas não convocam. O método AUGE não é só acolhimento — é acolhimento que chama ao movimento. A mulher cai, é acolhida, e age.
+
+## 2.1 Destaque visual do Protocolo
+
+*BOTÃO NA HOME:*
+
+- Atual: campo “Estou no limite hoje…” com “KIT →” ao lado
+- Substituir por botão maior em Blush (#E2B9A8) com texto:
+  “PROTOCOLO DE RETOMADA →”
+- “Kit” é técnico demais. “Protocolo de Retomada” é o nome forte do pilar.
+
+*MICROCARD NA HOME (só para alunas da Jornada):*
+
+- Aparece quando faz mais de 24h sem registro
+- Texto: “Faz 1 dia sem registro. Amanhã vira limite. Quer voltar agora?”
+- Botão: “Sim, estou voltando” → abre Protocolo de Retomada diretamente
+- Este aviso NÃO aparece para assinante do Clube
+
+*NA ABA JORNADA — bloco Ferramentas Exclusivas:*
+
+- Protocolo de Retomada deve ser o PRIMEIRO item da lista, com card maior
+- Subtexto reforçado: “O coração do método. Onde o método AUGE se diferencia.”
+- Ícone: arco em S dourado (mesmo do logo AUGE) ou seta circular dourada
+- NÃO usar ícone genérico azul
+
+*COR DE FUNDO DA TELA DO PROTOCOLO:*
+
+- Trocar obsidiana padrão por obsidiana levemente mais quente: #2A2520
+- Isso sinaliza visualmente que é um espaço diferente — território de transformação
+
+## 2.2 Reescrita completa das cópias do Protocolo
+
+*TELA PRINCIPAL — topo:*
+
+- ATUAL: “Você pode voltar agora. Não do zero. De onde você parou.”
+- REESCRITA: “Caiu. Faz parte. Agora você volta.”
+
+Justificativa: “Você pode voltar” é permissão (a porta fica aberta para adiar). “Agora você volta” é afirmação (a decisão já está tomada). Acolhe e convoca nos mesmos três batimentos.
+
+*AS 4 REGRAS DOS 2 DIAS:*
+
+Regra 1:
+
+- ATUAL: “Nunca dois dias seguidos sem o hábito”
+- REESCRITA: “Dois dias é o limite. No terceiro, você já não é mais a mesma.”
+
+Regra 2:
+
+- ATUAL: “Se ontem não aconteceu, hoje acontece com metade”
+- REESCRITA: “Ontem não conta. Hoje conta com metade — e isso já é tudo.”
+
+Regra 3:
+
+- ATUAL: “Nunca compensar — retomada é com menos, não com mais”
+- REESCRITA: “Não compensa. Não é hora de provar nada. É hora de voltar.”
+
+Regra 4:
+
+- ATUAL: “O dia de retomada conta tanto quanto qualquer outro”
+- REESCRITA: “O dia que você volta vale igual ao dia perfeito. Às vezes vale mais.”
+
+*PERGUNTA “O que aconteceu?”:*
+
+- ATUAL: placeholder “Sem julgamento.”
+- REESCRITA: “Sem julgamento. E sem rodeio. Escreve curto, pra você ver com clareza.”
+
+*BOTÃO DE FINALIZAÇÃO:*
+
+- ATUAL: “Registrar minha retomada”
+- REESCRITA: “Estou voltando agora”
+
+*SUBTÍTULO DO KIT DE EMERGÊNCIA:*
+
+- ATUAL: “O mínimo possível para não parar.”
+- REESCRITA: “O mínimo possível para voltar a se mover. Hoje.”
+
+*FECHAMENTO DA CARTA DA ISA NO KIT:*
+
+- ATUAL: “Hoje o convite é só um: respira fundo, bebe uma água, e deixa o resto pra depois. Você já fez o que precisava. Pronto. Amanhã é um novo dia. 🩷”
+- REESCRITA: “Hoje o convite é um só: respira fundo, faz o mínimo que você combinou consigo, e marca aqui no app. Não precisa ser bonito. Precisa ser agora. Hoje você volta. E volta é tudo. 🩷”
+
+-----
+
+# SPRINT 2B — CARTA PARA O FUTURO (dentro do app)
+
+*REMOVER* o redirecionamento para o FutureMe. A carta deve funcionar 100% dentro do app.
+
+*FUNCIONAMENTO:*
+
+1. Aluna abre a aba “Carta” nos Espaços de Escrita
+1. Vê um campo de texto para escrever livremente
+1. Ao salvar: carta guardada no localStorage com chave auge_carta e data de escrita
+1. Ela pode reler quando quiser — não precisa travar
+1. Na semana 12 (calculado pela data de cadastro): banner especial no topo da tela Início
+- Texto do banner: “Você tem uma carta esperando por você ✉️ — escrita por você mesma na Semana 1”
+- Botão: “Abrir minha carta”
+1. Ao abrir na semana 12: exibe a carta com a data em que foi escrita + mensagem da ISA celebrando:
+- “Você chegou. 12 semanas de protagonismo. Isso é o seu auge. 💖”
+
+-----
+
+# SPRINT 2C — ISA (renomear + system prompt + contexto completo)
+
+*RENOMEAR em toda a interface:*
+
+- Todas as referências à “Dra. Isadora” nos cards de resposta → “ISA — Inteligência do Clube do Auge”
+- Linha discreta embaixo de cada card da ISA:
+  “ISA é uma inteligência artificial criada com base no método da Dra. Isadora Zaniboni”
+
+*SYSTEM PROMPT — atualizar na rota /api/isa:*
+
+
+Você é ISA, a Inteligência do Clube do Auge — criada com base no método e na visão da Dra. Isadora Zaniboni, médica geriatra especialista em longevidade feminina.
+
+Você não é a Dra. Isadora. Você é uma assistente de IA que incorpora o método, os valores e a forma de pensar dela. Sempre que apropriado, diga "aqui no método do Clube do Auge..." ou "a Dra. Isadora acredita que...".
+
+TOM E ESTILO (baseado nas mensagens reais dela):
+- Abre com carinho: "Bom dia, maravilhosas!" ou "Bom diaaa, divas do Clube! ☀️"
+- Parágrafos curtos. Uma ideia por vez.
+- Coloquial e próxima: "pra", "tá", "a gente", "por aí"
+- Compartilha experiências pessoais quando faz sentido
+- Humor leve e autodepreciativo
+- Faz perguntas que convidam à reflexão: "Suas metas cabem na sua vida real?", "O que você está deixando de priorizar?"
+- Termina com afeto: "💖", "✨", "☀️"
+- Emojis com naturalidade: ☀️ 💖 💗 ✨ 🌸 😅
+
+CRENÇAS DO MÉTODO:
+- Meta impossível vira sabotagem. O caminho precisa caber na vida real.
+- Não é falta de força de vontade — é meta errada ou contexto ignorado.
+- Estar com pessoas que amamos é tão importante pra longevidade quanto treinar.
+- Celebrar cada pequena vitória importa.
+- Planejamento faz toda a diferença. Não perfeição — planejamento.
+- Envelhecer bem é um movimento ativo, não uma resignação.
+- A falha não é o oposto do método — ela É parte do método.
+
+NUNCA DIGA:
+- "Você precisa ter mais disciplina"
+- "Basta ter força de vontade" / "É simples, é só fazer"
+- "Estudos mostram que X%" / "Cientificamente comprovado"
+- "Combater o envelhecimento" / "Parecer mais jovem"
+- "Vai melhorar seus exames" / "Vai regular seus hormônios"
+- "Idosa" / "Terceira idade" / "Declínio" / "Deterioração"
+- Tom distante ou clínico: "conforme mencionado", "cabe ressaltar"
+- Nunca diga que você É a Dra. Isadora
+
+USE SEMPRE:
+- "longevidade", "energia", "bem-estar", "protagonismo"
+- "vida real", "o que cabe na sua rotina", "pequena vitória"
+- "movimento" em vez de "treino"
+
+REGRAS:
+- Máximo 4 parágrafos por resposta
+- Sintoma físico ou dúvida médica → indique consulta presencial com carinho
+- Nunca prescreva medicamentos ou exames
+- Você é uma IA — se perguntarem, confirme com transparência
+- Responda sempre em português brasileiro
+
+
+*CONTEXTO COMPLETO enviado para /api/isa em cada momento:*
+
+NO CHECKIN (após salvar):
+
+
+A aluna acabou de completar o checkin do dia.
+Hábitos que ela marcou como feitos: [lista dos hábitos marcados]
+Hábitos que ela não marcou: [lista dos hábitos não marcados]
+Total: fez X de Y hábitos (Z%)
+Como ela se sentiu hoje (chips selecionados): [ex: Energizada, Forte]
+Nota que ela escreveu (microdiário): "[texto livre — se não escreveu, diz 'não registrou nota hoje']"
+Responda de forma personalizada e calorosa considerando TUDO isso — não só o percentual. Se ela escreveu algo no microdiário, mencione. Se marcou que estava Cansada mas fez os hábitos, celebre a coragem. Se fez parcial, acolha sem dramatizar.
+
+
+NO PROTOCOLO DE RETOMADA (ao clicar “Estou voltando agora”):
+
+
+A aluna acabou de ativar o Protocolo de Retomada.
+O que aconteceu segundo ela: "[texto do campo 'o que aconteceu' — se não preencheu, diz 'não descreveu o que aconteceu']"
+Onde ela disse que quebrou: [pill selecionado — ex: Cansaço, Falta de tempo, Imprevisto]
+Âncora de identidade dela: "[texto da âncora]"
+Acolha o que ela compartilhou diretamente, sem generalizar. Depois convoque ao movimento com a energia do método: acolhe e chama. Termine com a frase da marca se fizer sentido: "O auge não é o que você foi. É o que você está construindo."
+
+
+NO KIT DE EMERGÊNCIA (ao abrir o kit já configurado):
+
+
+A aluna está no limite hoje e abriu o kit de emergência.
+Âncora de identidade dela: "[texto da âncora]"
+O mínimo viável que ela mesma definiu: "[kit min]"
+Onde ela busca apoio: "[kit apoio]"
+Responda com apoio suave e encoraje ela a fazer exatamente o mínimo que ela mesma definiu — não sugira mais, não expanda. O kit é dela. Valide a sabedoria dela em ter criado esse kit. Máximo 3 parágrafos.
+
+
+-----
+
+# SPRINT 3 — FUNCIONALIDADES BASE
+
+## 3.1 Assinatura de marca em 4 momentos obrigatórios
+
+A frase fixa da marca deve aparecer obrigatoriamente nestas telas:
+
+
+"O auge não é o que você foi. É o que você está construindo."
+
+
+ONDE:
+
+1. Tela final da Roda AUGE — após o gráfico radar, antes do botão “Salvar resultado”
+1. Tela de finalização do registro de Vitória da Semana — após salvar uma vitória nos Espaços de Escrita
+1. Tela final do Protocolo de Retomada — após clicar “Estou voltando agora”
+1. Tela de fim da Jornada — Semana 12, junto com a abertura da Carta para o Futuro
+
+DESIGN: frase em Cormorant Garamond 300, itálico, cor #C4A882, centralizada, com borda esquerda dourada fina (1px).
+
+## 3.2 Check-in — garantir fluxo completo com dados emocionais
+
+O check-in deve passar pelos 3 momentos em ordem:
+
+PASSO 1 — Hábitos angulares:
+
+- Mostra os 3 hábitos personalizados que a aluna definiu
+- Se ainda não definiu: abre tela DefinirHabitos primeiro
+- Cards clicáveis com círculo de check
+
+PASSO 2 — Estado emocional (APÓS os hábitos, não antes):
+
+- 5 chips horizontais, seleção de até 2: Cansada 😮‍💨 · Ansiosa 🌀 · Energizada 🔋 · Forte ⚡ · Progredindo 📈
+
+PASSO 3 — Microdiário opcional:
+
+- Campo de texto livre
+- Placeholder: “Quer registrar algo sobre hoje? (Opcional)”
+- Botão “Pular” visível e sem culpa
+
+PASSO 4 — Fechamento:
+
+- Percentual em itálico dourado
+- Pontos ganhos
+- Card da ISA com resposta personalizada (ver contexto completo na seção 2C)
+
+DADOS SALVOS no localStorage por checkin:
+
+json
+{
+  "data": "2026-06-01",
+  "habFeitos": ["nome do hábito 1", "nome do hábito 3"],
+  "habNaoFeitos": ["nome do hábito 2"],
+  "totalFeitos": 2,
+  "total": 3,
+  "percentual": 66,
+  "chips": ["Energizada", "Forte"],
+  "nota": "texto livre da aluna",
+  "retomada": false
+}
+
+
+## 3.3 Notificações push — 3 gatilhos automáticos
+
+*GATILHO 1 — Regra dos 2 Dias (verificação às 20h):*
+
+- Condição: aluna da Jornada com 48h sem check-in
+- Texto principal: “Dois dias. É agora. Não precisa ser perfeito. Precisa ser hoje. Toque aqui — você sabe o caminho.”
+- Texto alternativo (se âncora contém “volta”): “Você é a mulher que volta. E volta começa agora. Toque aqui.”
+- Deep link: abre diretamente o Protocolo de Retomada
+
+*GATILHO 2 — Ritual de Sexta (toda sexta às 17h):*
+
+- Condição: todas as alunas da Jornada
+- Texto: “Mais uma semana concluída na sua construção de longevidade. Qual foi a sua pequena vitória desses últimos dias, por menor que pareça? Entre no app e registre para congelar essa conquista no seu painel.”
+- Deep link: abre Espaços de Escrita → aba Vitórias
+
+*GATILHO 3 — Reforço do 1% (todo domingo às 19h):*
+
+- Condição: todas as alunas da Jornada
+- Texto: “Esqueça a busca pela semana perfeita de domingo à noite. Amanhã começamos focando apenas no pequeno, repetido e infinito. Qual será o seu 1% de movimento para essa segunda-feira?”
+- Deep link: abre tela Início
+
+-----
+
+# QUADRO DE REFERÊNCIA — Clube vs Jornada
+
+|Funcionalidade            |Assinante Clube                                          |Aluna Jornada                                       |
+|--------------------------|---------------------------------------------------------|----------------------------------------------------|
+|Biblioteca de conteúdo    |Acesso total                                             |Acesso total                                        |
+|Calendário e check-in     |Versão simples                                           |Versão detalhada (3 hábitos personalizados + emoção)|
+|Mural (antigo Feed)       |Acesso total                                             |Acesso total                                        |
+|Conexões (Radar de Amigas)|Acesso total                                             |Acesso total                                        |
+|Lives mensais             |Sim                                                      |Sim + 12 encontros semanais                         |
+|Trilha das 12 semanas     |Visível com cadeado dourado                              |Liberada cronologicamente                           |
+|Roda AUGE                 |Roda básica S1. Comparativo S1/S6/S12 borrado com cadeado|Roda nos 3 momentos com gráfico comparativo         |
+|Protocolo de Retomada     |Tela explicativa visível. Kit de Emergência bloqueado    |Acesso total + Kit personalizado                    |
+|Espaços de escrita        |Bloqueado com cadeado                                    |Acesso total                                        |
+|Pontos AUGE e medalhas    |Versão básica                                            |Versão completa                                     |
+|ISA (inteligência)        |Não tem acesso                                           |Após checkin, retomada e kit                        |
+
+-----
+
+# O QUE NÃO MUDAR — preservar integralmente
+
+- Voz da marca nas micro-copies: “Você apareceu hoje. Isso é tudo”, “Não existe vitória pequena demais”, “Isso conta. Isso já é o auge de hoje”
+- Âncora de Identidade no topo da Home — editável pela própria aluna
+- Identidade visual: fundo Obsidiana (#1C1A17), acentos em Ouro (#C4A882), Blush (#E2B9A8), Cormorant Garamond nos títulos, Inter nos labels
+- Calendário com gradiente de intensidade e legenda “Pequeno, repetido e infinito. Qualquer cor é uma vitória.”
+- Kit de Emergência com 2 partes editáveis pela aluna
+- Contador de Pontos AUGE e quadro de Retomadas
+- Medalhas (Largada de Momentum, Mestre da Retomada, Protagonista Consistente)
+- Separação Clube / Minha Jornada em sub-abas no Conteúdo
+
+-----
+
+“O auge não é o que você foi. É o que você está construindo.”
+Dra. Isadora Zaniboni · Clube do Auge · Jornada AUGE

@@ -53,9 +53,9 @@ const PERFIS_CX = [
 ];
 
 const FEED0 = [
-  {id:1,aut:"Mariana Costa",ini:"MC",cor:"#8B4A6B",fundo:"#3D2B35",tit:"Corrida 5km",desc:"Sol lindo hoje! Bati meu recorde pessoal.",tempo:"há 1h",publica:true,cur:["CA"],com:[{q:"CA",t:"Arrasou! 🔥"}]},
-  {id:2,aut:"Cecília Alves",ini:"CA",cor:"#3A6B5C",fundo:"#1E2E2A",tit:"Musculação",desc:"Dia de pernas. Cada vez mais forte.",tempo:"há 3h",publica:true,cur:[],com:[]},
-  {id:3,aut:"Você",ini:"RF",cor:C.ouroDk,fundo:"#1E252E",tit:"Yoga 40min",desc:"Paz total. Mente renovada.",tempo:"há 6h",publica:true,cur:["MC","CA"],com:[]},
+  {id:1,aut:"Mariana Costa",ini:"MC",cor:"#8B4A6B",fundo:"#2A2030",tit:"Sentei pra ler 15 min",desc:"Em vez de scrollar antes de dormir. Primeira vez em semanas que a noite foi minha.",tempo:"há 1h",publica:true,cur:["CA"],com:[{q:"CA",t:"Comigo também 💛"}]},
+  {id:2,aut:"Cecília Alves",ini:"CA",cor:"#3A6B5C",fundo:"#1E2E28",tit:"Almocei sentada, sem pressa",desc:"Sem tela. Primeira vez na semana. Parece pouco, mas é tudo.",tempo:"há 3h",publica:true,cur:[],com:[]},
+  {id:3,aut:"Você",ini:"RF",cor:C.ouroDk,fundo:"#1E252E",tit:"Voltei depois de 3 dias",desc:"Caminhei 10 min. Conta.",tempo:"há 6h",publica:true,cur:["MC","CA"],com:[]},
 ];
 
 const RODA_Q = [
@@ -251,6 +251,7 @@ export default function App() {
   // Data de cadastro para cálculo S6/S12 da Roda
   const [dataCadastro] = useState(new Date(Date.now() - 2 * 7 * 24 * 60 * 60 * 1000)); // demo: 2 semanas atrás
   const [retomadas,setRet]      = useLocalStorage("auge_retomadas", 0);
+  const [carta, setCarta]       = useLocalStorage("auge_carta", null);
 
   const [toast,    setToast]    = useState(null);
 
@@ -318,7 +319,7 @@ export default function App() {
   const medC   = [...(maxSeq>=3?["momentum"]:[]),...(retomadas>=3?["retomada"]:[]),...(diasC>=21?["protagonista"]:[])];
 
   const ctx = {perfil,ir,back,tk,feed,setFeed,habF,setHabF,chips,setChips,ckOk,setCkOk,notas,setNotas,rodaR,setRodaR,rodaI,setRodaI,matches,setMatches,ci,sw,doSwipe,selM,setSelM,anc,setAnc,kitMin,setKitMin,kitApoio,setKitApoio,escT,setEscT,vit,setVit,historico,setHist,retomadas,setRet,sem,mes,hDia,feitos,postTreino,calcRoda,zc,zl,pontos,medC,
-    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino};
+    habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino,carta,setCarta};
 
   const SEM_NAV = [S.SPLASH,S.LEGAL,S.LOGIN,S.DIAG,S.VOZ,S.CHAT,S.RODA];
 
@@ -356,12 +357,12 @@ export default function App() {
       case S.CX:      return <Cx   {...ctx}/>;
       case S.MATCH:   return selM ? <MatchDet {...ctx}/> : <Cx {...ctx}/>;
       case S.CHAT:    return selM ? <Chat     {...ctx}/> : <Cx {...ctx}/>;
-      case S.JOR:     return perfil==="jornada" ? <Jornada {...ctx}/> : <VitJornada ir={ir} onLogin={login}/>;
-      case S.RODA:    return perfil==="jornada" ? <Roda    {...ctx}/> : <VitJornada ir={ir} onLogin={login}/>;
-      case S.RET:     return perfil==="jornada" ? <Retomada {...ctx}/> : <VitJornada ir={ir} onLogin={login}/>;
-      case S.CAL:     return perfil==="jornada" ? <Calendario {...ctx}/> : <VitJornada ir={ir} onLogin={login}/>;
-      case S.ESC:     return perfil==="jornada" ? <Escritas {...ctx}/> : <VitJornada ir={ir} onLogin={login}/>;
-      case S.EM:      return perfil==="jornada" ? <Emergencia {...ctx}/> : <VitJornada ir={ir} onLogin={login}/>;
+      case S.JOR:     return perfil==="jornada" ? <Jornada {...ctx}/> : <JornadaClube ir={ir} onLogin={login}/>;
+      case S.RODA:    return perfil==="jornada" ? <Roda    {...ctx}/> : <TelaConvite back={back}/>;
+      case S.RET:     return perfil==="jornada" ? <Retomada {...ctx}/> : <TelaConvite back={back}/>;
+      case S.CAL:     return perfil==="jornada" ? <Calendario {...ctx}/> : <TelaConvite back={back}/>;
+      case S.ESC:     return perfil==="jornada" ? <Escritas {...ctx}/> : <TelaConvite back={back}/>;
+      case S.EM:      return perfil==="jornada" ? <Emergencia {...ctx}/> : <TelaConvite back={back}/>;
       case S.CT:      return <Conteudo {...ctx}/>;
       case S.PF:      return <Perfil   {...ctx} habAngulares={habAngulares} setHabAngulares={setHabAngulares}/>;
       default:        return <Home {...ctx}/>;
@@ -401,7 +402,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk }) {
   const aba = ABA_ORIGEM[tela]||S.HOME;
   const tabs=[
     {id:S.HOME, label:"Início",    icon:Ico.home},
-    {id:S.FEED, label:"Feed",      icon:Ico.feed, badge: !ckOk ? 1 : 0},
+    {id:S.FEED, label:"Mural",     icon:Ico.feed, badge: !ckOk ? 1 : 0},
     {id:S.JOR,  label:"Jornada",   icon:Ico.jor},
     {id:S.CT,   label:"Conteúdo",  icon:Ico.ct},
     {id:S.PF,   label:"Perfil",    icon:Ico.pf},
@@ -633,16 +634,16 @@ function IsaCard({ text, loading }) {
   return (
     <div style={{background:`rgba(255,255,255,.05)`,border:`1px solid ${C.ouro}28`,borderRadius:12,padding:"16px 18px",marginTop:16,animation:"fadeUp .4s ease"}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-        <Av ini="DI" cor={C.ouroDk} sz={38}/>
+        <Av ini="ISA" cor={C.ouroDk} sz={38}/>
         <div>
-          <div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.85)`}}>Dra. Isadora</div>
-          <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.lt}}>Médica Geriatra · Longevidade</div>
+          <div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.85)`}}>ISA — Inteligência do Clube do Auge</div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.lt}}>Criada com base no método da Dra. Isadora Zaniboni</div>
         </div>
       </div>
       {loading ? (
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0"}}>
           <div style={{fontSize:18,animation:"pulse 1.5s ease-in-out infinite"}}>💭</div>
-          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(255,255,255,.35)`}}>Dra. Isadora está respondendo...</div>
+          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(255,255,255,.35)`}}>ISA está respondendo...</div>
         </div>
       ) : (
         <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.6)`,lineHeight:1.75,whiteSpace:"pre-wrap"}}>{text}</div>
@@ -688,7 +689,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
 function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
                 ckOk, setCkOk, notas, setNotas, anc, historico, setHist,
                 retomadas, setRet, pontos, medC, ir, tk,
-                habAngulares, setHabAngulares, usuario, streakAtual, diasSemTreino }) {
+                habAngulares, setHabAngulares, usuario, streakAtual, diasSemTreino, carta, dataCadastro }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
     {id:"cansada",   e:"😮‍💨",l:"Cansada"},
@@ -711,7 +712,11 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
     tk(pct===100?"Dia completo! +"+( feitos*5+5)+" pontos 🏆":"Checkin salvo. Você apareceu hoje 💖");
     setPasso(4);
     setIsaLoad(true);
-    const msg = `A aluna fez ${feitos} de ${total} hábitos hoje (${pct}%). Responda de forma acolhedora e breve.`;
+    const habNomes = hDia.filter(h=>habF[h.id]).map(h=>h.t);
+    const naoFezNomes = hDia.filter(h=>!habF[h.id]).map(h=>h.t);
+    const chipsTxt = chips.length>0 ? chips.join(", ") : "não registrou estado emocional";
+    const notaTxt = notas.trim() ? `"${notas.trim()}"` : "não registrou nota hoje";
+    const msg = `A aluna acabou de completar o checkin do dia.\nHábitos que ela marcou como feitos: ${habNomes.length>0?habNomes.join(", "):"nenhum"}\nHábitos que ela não marcou: ${naoFezNomes.length>0?naoFezNomes.join(", "):"nenhum"}\nTotal: fez ${feitos} de ${total} hábitos (${pct}%)\nComo ela se sentiu hoje (chips): ${chipsTxt}\nNota/microdiário: ${notaTxt}\nPersonalize sua resposta considerando TUDO isso. Se ela escreveu algo no microdiário, mencione. Se marcou Cansada mas fez os hábitos, celebre a coragem. Se fez parcial, acolha sem dramatizar.`;
     const resp = await callISA(msg);
     setIsaRes(resp);
     setIsaLoad(false);
@@ -752,6 +757,25 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
 
         {/* Banner motivacional estilo Duolingo */}
         <MotivBanner ckOk={ckOk} streakAtual={streakAtual} diasSemTreino={diasSemTreino} ir={ir}/>
+
+        {/* Banner carta semana 12 */}
+        {carta && dataCadastro && Math.floor((Date.now()-dataCadastro.getTime())/(7*24*60*60*1000))>=12 && (
+          <div onClick={()=>ir(S.ESC)} style={{background:`${C.ouro}12`,border:`1px solid ${C.ouro}33`,borderRadius:10,padding:"13px 15px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+            <div>
+              <div style={{fontFamily:FB,fontWeight:400,fontSize:12,color:C.ouro,marginBottom:3}}>Você tem uma carta esperando por você ✉️</div>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`}}>escrita por você mesma na Semana 1</div>
+            </div>
+            <div style={{fontFamily:FB,fontSize:16,color:C.ouro}}>→</div>
+          </div>
+        )}
+
+        {/* Micro-card Protocolo de Retomada (quando >24h sem registro, só Jornada) */}
+        {perfil==="jornada" && diasSemTreino>=1 && passo===0 && (
+          <div style={{background:`${C.blush}12`,border:`1px solid ${C.blush}33`,borderRadius:10,padding:"13px 15px",marginBottom:14}}>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:C.blush,lineHeight:1.5,marginBottom:10}}>Faz {diasSemTreino} dia{diasSemTreino!==1?"s":""} sem registro. O que aconteceu?</div>
+            <button onClick={()=>ir(S.RET)} style={{background:C.blush,border:"none",borderRadius:50,padding:"10px",width:"100%",fontFamily:FB,fontWeight:400,fontSize:13,color:C.obs2,cursor:"pointer"}}>Estou voltando agora →</button>
+          </div>
+        )}
 
         {/* Checkin */}
         {passo===0 && (
@@ -893,18 +917,18 @@ function Feed({ feed, setFeed, ir }) {
       <Grain style={{padding:"14px 14px 8px"}}>
         {/* Botão registrar */}
         <div onClick={()=>ir(S.NOVO)} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:12,padding:"14px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:`rgba(255,255,255,.35)`}}>O que você treinou hoje?</div>
+          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:`rgba(255,255,255,.35)`}}>O que você fez por você hoje?</div>
           <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro,letterSpacing:"0.1em"}}>+ POSTAR</div>
         </div>
 
         {/* Card Conexões */}
-        <div onClick={()=>ir(S.CX)} style={{background:`linear-gradient(135deg,rgba(15,110,86,.18) 0%,rgba(139,74,107,.14) 100%)`,border:`1px solid rgba(15,110,86,.3)`,borderRadius:12,padding:"14px 16px",marginBottom:14,cursor:"pointer",display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:44,height:44,borderRadius:"50%",background:"rgba(15,110,86,.22)",border:"1px solid rgba(15,110,86,.35)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>💚</div>
+        <div onClick={()=>ir(S.CX)} style={{background:`${C.ouro}08`,border:`1px solid ${C.ouro}22`,borderRadius:12,padding:"14px 16px",marginBottom:14,cursor:"pointer",display:"flex",alignItems:"center",gap:14}}>
+          <div style={{width:44,height:44,borderRadius:"50%",background:`${C.ouro}18`,border:`1px solid ${C.ouro}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>💛</div>
           <div style={{flex:1}}>
-            <div style={{fontFamily:FS,fontSize:16,fontWeight:300,color:`rgba(255,255,255,.85)`}}>Encontrar parceira de treino</div>
-            <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginTop:3}}>Radar de amigas · Swipe · Chat</div>
+            <div style={{fontFamily:FS,fontSize:16,fontWeight:300,color:`rgba(255,255,255,.85)`}}>Encontre mulheres como você</div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginTop:3}}>Radar de Amigas</div>
           </div>
-          <div style={{fontFamily:FB,fontSize:18,color:"rgba(15,110,86,.7)"}}>›</div>
+          <div style={{fontFamily:FB,fontSize:18,color:C.ouro}}>›</div>
         </div>
 
         {visiveis.map(p=>{const cu=p.cur.includes("RF");const ab=open===p.id;return(
@@ -922,7 +946,7 @@ function Feed({ feed, setFeed, ir }) {
               <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:8}}><Av ini={p.ini} cor={p.cor} sz={32}/><div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.8)`}}>{p.aut}</div></div>
               <div style={{fontSize:14,fontFamily:FB,fontWeight:300,color:`rgba(255,255,255,.5)`,lineHeight:1.65,marginBottom:10}}>{p.desc}</div>
               <div style={{display:"flex",borderTop:`1px solid ${C.ouro}12`,paddingTop:9}}>
-                <button onClick={()=>curtir(p.id)} style={{flex:1,background:"none",border:"none",cursor:"pointer",fontSize:14,color:cu?"#E84040":`rgba(255,255,255,.35)`,fontFamily:FB,display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"5px 0"}}>{cu?"❤️":"🤍"}<span style={{fontSize:12}}>{p.cur.length}</span></button>
+                <button onClick={()=>curtir(p.id)} style={{flex:1,background:"none",border:"none",cursor:"pointer",fontSize:12,color:cu?C.ouro:`rgba(255,255,255,.35)`,fontFamily:FB,fontWeight:300,display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"5px 0"}}>{cu?"💛 Me identifico":"💛 Te entendo"}{p.cur.length>0&&<span style={{fontSize:10,color:`rgba(255,255,255,.28)`,marginLeft:4}}>{p.cur.length} se identificaram</span>}</button>
                 <button onClick={()=>setOpen(ab?null:p.id)} style={{flex:1,background:"none",border:"none",cursor:"pointer",fontSize:14,color:`rgba(255,255,255,.35)`,fontFamily:FB,display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"5px 0"}}>💬<span style={{fontSize:12}}>{p.com.length}</span></button>
               </div>
               {ab&&(<div style={{marginTop:10,borderTop:`1px solid ${C.ouro}12`,paddingTop:10}}>
@@ -944,7 +968,7 @@ function Novo({ back, postTreino }) {
   const EX=["Caminhada","Corrida","Pilates","Yoga","Musculação","Natação","Dança","Funcional","Trilha","Alongamento"];
   return (
     <div style={{animation:"fadeUp .4s ease"}}>
-      <Cab titulo="Registrar treino" voltar={back}/>
+      <Cab titulo="Registrar movimento" voltar={back}/>
       <Grain style={{padding:"20px 20px 36px"}}>
         <div onClick={()=>ref.current?.click()} style={{height:148,borderRadius:12,border:`1.5px dashed ${C.ouro}33`,background:`rgba(255,255,255,.03)`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",marginBottom:20}}>
           {foto?<img src={foto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{textAlign:"center"}}><div style={{fontSize:28}}>📷</div><div style={{fontSize:13,fontFamily:FB,fontWeight:300,color:C.lt,marginTop:7}}>Toque para adicionar foto</div></div>}
@@ -977,7 +1001,7 @@ function Novo({ back, postTreino }) {
           </div>
         </div>
         <BtnPill onClick={()=>ok&&postTreino({fundo:"#1E252E",tit:ex,desc:`${cap} (${dur})`,publica,imgSrc:foto})} style={{opacity:ok?1:.4}}>
-          {publica?"Publicar no feed":"Salvar para mim"}
+          {publica?"Publicar no Mural":"Salvar para mim"}
         </BtnPill>
       </Grain>
     </div>
@@ -999,7 +1023,7 @@ function Voz({ back, postTreino, tk }) {
       <div style={{padding:"28px 22px"}}>
         {fase==="idle"&&(<div style={{textAlign:"center"}}>
           <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,borderRadius:12,padding:"20px 18px",marginBottom:26}}>
-            <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.4)`,marginBottom:12,lineHeight:1.6}}>Toque no microfone e conte seu treino:</div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.4)`,marginBottom:12,lineHeight:1.6}}>Toque no microfone e conte o que você fez por você hoje:</div>
             {["Corri 5km em 35 minutos","Fiz yoga por 40 minutos","Caminhei no parque por meia hora"].map((ex,i)=><div key={i} style={{background:`rgba(255,255,255,.04)`,borderRadius:8,padding:"8px 12px",marginBottom:7,fontSize:12,fontFamily:FS,fontStyle:"italic",color:`rgba(255,255,255,.35)`,textAlign:"left"}}>"{ex}"</div>)}
           </div>
           <div onClick={iniciar} style={{width:90,height:90,borderRadius:"50%",background:`radial-gradient(circle,${C.ouro}20,${C.ouro}06)`,border:`1px solid ${C.ouro}33`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",margin:"0 auto 12px",fontSize:38}}>🎤</div>
@@ -1014,14 +1038,14 @@ function Voz({ back, postTreino, tk }) {
           <div style={{display:"flex",justifyContent:"center",gap:5,marginBottom:24,alignItems:"center",height:32}}>{[0,1,2,3,4,5,6].map(i=><div key={i} style={{width:4,background:C.ouro,borderRadius:100,animation:`wave 1s ease-in-out ${i*0.1}s infinite`}}/>)}</div>
           <button onClick={parar} style={{background:`${C.terra}88`,border:"none",borderRadius:50,padding:"13px 36px",color:C.branco,fontSize:15,fontFamily:FB,cursor:"pointer"}}>⏹  Parar</button>
         </div>)}
-        {fase==="proc"&&(<div style={{textAlign:"center",padding:"44px 0"}}><div style={{fontSize:48,marginBottom:16,animation:"pulse 1.5s ease-in-out infinite"}}>🧠</div><div style={{fontFamily:FS,fontSize:18,color:`rgba(255,255,255,.7)`,marginBottom:6}}>A Dra. Isadora está respondendo...</div></div>)}
+        {fase==="proc"&&(<div style={{textAlign:"center",padding:"44px 0"}}><div style={{fontSize:48,marginBottom:16,animation:"pulse 1.5s ease-in-out infinite"}}>🧠</div><div style={{fontFamily:FS,fontSize:18,color:`rgba(255,255,255,.7)`,marginBottom:6}}>Processando...</div></div>)}
         {fase==="resultado"&&res&&(<div style={{animation:"fadeUp .4s ease"}}>
           <div style={{background:`rgba(255,255,255,.05)`,border:`1px solid ${C.ouro}25`,borderRadius:12,padding:"13px 15px",marginBottom:14}}>
-            <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:5}}>Treino registrado</div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:5}}>Registro salvo</div>
             <div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.6)`}}>"{res.texto}"</div>
           </div>
           <div style={{background:`rgba(255,255,255,.05)`,border:`1px solid ${C.ouro}25`,borderRadius:12,padding:"18px",marginBottom:18}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}><Av ini="DI" cor={C.ouroDk} sz={40}/><div><div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.85)`}}>Dra. Isadora</div><div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.lt}}>Médica Geriatra · Longevidade</div></div></div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}><Av ini="ISA" cor={C.ouroDk} sz={40}/><div><div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.85)`}}>ISA — Inteligência do Clube do Auge</div><div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.lt}}>Criada com base no método da Dra. Isadora Zaniboni</div></div></div>
             <div style={{fontFamily:FB,fontWeight:300,fontSize:14,color:`rgba(255,255,255,.6)`,lineHeight:1.75}}>{res.isa}</div>
           </div>
           {/* Visibilidade */}
@@ -1033,10 +1057,10 @@ function Voz({ back, postTreino, tk }) {
               <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:!publica?C.ouro:`rgba(255,255,255,.3)`}}>🔒 Só para mim</div>
             </button>
           </div>
-          <BtnPill onClick={()=>{postTreino({fundo:"#1E252E",tit:"Treino",desc:res.texto,publica});tk("Treino registrado! 🎉");}}>
-            ✅  {publica?"Registrar no feed":"Salvar para mim"}
+          <BtnPill onClick={()=>{postTreino({fundo:"#1E252E",tit:"Registro",desc:res.texto,publica});tk("Registro salvo! 💖");}}>
+            ✅  {publica?"Registrar no Mural":"Salvar para mim"}
           </BtnPill>
-          <button onClick={()=>{setFase("idle");setTr("");setRes(null);}} style={{width:"100%",background:"none",border:`1px solid ${C.ouro}18`,borderRadius:50,padding:"12px",fontFamily:FB,fontWeight:300,fontSize:12,color:C.lt,cursor:"pointer",marginTop:10}}>🎤  Registrar outro treino</button>
+          <button onClick={()=>{setFase("idle");setTr("");setRes(null);}} style={{width:"100%",background:"none",border:`1px solid ${C.ouro}18`,borderRadius:50,padding:"12px",fontFamily:FB,fontWeight:300,fontSize:12,color:C.lt,cursor:"pointer",marginTop:10}}>🎤  Registrar outro movimento</button>
         </div>)}
       </div>
     </Grain>
@@ -1050,7 +1074,7 @@ function Cx({ matches,setMatches,ci,sw,doSwipe,selM,setSelM,ir,back,tk }) {
     <div style={{animation:"fadeUp .35s ease"}}>
       <Cab titulo="Conexões" voltar={back}/>
       <Grain style={{padding:"18px 16px 8px"}}>
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.35)`,marginBottom:18,textAlign:"center"}}>Encontre sua parceira de treino</div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.35)`,marginBottom:18,textAlign:"center"}}>Encontre mulheres como você</div>
         {p?(<>
           <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,borderRadius:14,overflow:"hidden",marginBottom:14,animation:sw==="right"?"swR .38s ease forwards":sw==="left"?"swL .38s ease forwards":"none"}}>
             <div style={{height:218,background:p.cor,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
@@ -1069,7 +1093,7 @@ function Cx({ matches,setMatches,ci,sw,doSwipe,selM,setSelM,ir,back,tk }) {
           </div>
           <div style={{display:"flex",gap:10}}>
             <button onClick={()=>doSwipe("left")} style={{flex:1,padding:"15px",borderRadius:50,background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,color:`rgba(255,255,255,.4)`,fontSize:14,fontFamily:FB,fontWeight:300,cursor:"pointer"}}>Passar →</button>
-            <button onClick={()=>doSwipe("right")} style={{flex:1,padding:"15px",borderRadius:50,background:`linear-gradient(135deg,${C.ouro}28,${C.ouro}12)`,border:`1px solid ${C.ouro}55`,color:C.ouro,fontSize:14,fontFamily:FB,fontWeight:300,cursor:"pointer"}}>💪 Vamos treinar juntas?</button>
+            <button onClick={()=>doSwipe("right")} style={{flex:1,padding:"15px",borderRadius:50,background:`linear-gradient(135deg,${C.ouro}28,${C.ouro}12)`,border:`1px solid ${C.ouro}55`,color:C.ouro,fontSize:14,fontFamily:FB,fontWeight:300,cursor:"pointer"}}>💚 Vamos nos mover juntas?</button>
           </div>
         </>):(<div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:12,padding:"44px 22px",textAlign:"center"}}><div style={{fontFamily:FS,fontSize:20,color:`rgba(255,255,255,.5)`,marginBottom:8}}>Por hoje é só!</div><div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.3)`,lineHeight:1.6}}>Novas mulheres aparecem toda semana</div></div>)}
         {matches.length>0&&(<div style={{marginTop:22}}>
@@ -1088,13 +1112,106 @@ function MatchDet({ selM, setSelM, ir, back }) {
 
 function Chat({ selM, setMatches, back }) {
   const m=selM;const[msgs,setMsgs]=useState(m.msgs||[]);const[txt,setTxt]=useState("");const bot=useRef();
-  const SUGE=["Oi! Vi que você também curte pilates 🌸","Que horário você costuma treinar?","Vamos combinar um treino juntas?","Topa um café esta semana?"];
-  const enviar=()=>{if(!txt.trim())return;const n={de:"RF",texto:txt.trim(),hora:"agora"};setMsgs(ms=>[...ms,n]);setMatches(ms=>ms.map(mm=>mm.id===m.id?{...mm,msgs:[...(mm.msgs||[]),n]}:mm));setTxt("");setTimeout(()=>{const rs=["Que ótimo! Eu também adoro treinar cedo ☀️","Vamos combinar! Qual horário você prefere?","Perfeito! Manda seu contato e a gente acerta 💪"];setMsgs(ms=>[...ms,{de:m.ini,texto:rs[Math.floor(Math.random()*rs.length)],hora:"agora"}]);},1200);};
-  return(<div style={{display:"flex",flexDirection:"column",height:"100%",animation:"fadeUp .35s ease"}}><div style={{background:C.obs,padding:"12px 15px 14px",display:"flex",alignItems:"center",gap:11,borderBottom:`1px solid ${C.ouro}15`}}><button onClick={back} style={{background:"none",border:"none",color:`rgba(255,255,255,.35)`,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer"}}>←</button><Av ini={m.ini} cor={m.cor} sz={36}/><div><div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.85)`}}>{m.nome.split(" ")[0]}</div><div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.3)`}}>{m.compat}% compatível · {m.cidade}</div></div></div><div style={{flex:1,overflowY:"auto",background:C.obs,padding:"14px 13px 8px",display:"flex",flexDirection:"column",gap:8}}>{msgs.length===0&&<div style={{textAlign:"center",padding:"22px 0"}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.3)`,lineHeight:1.6}}>Comece a conversa!<br/>Combine um treino 💚</div></div>}{msgs.map((msg,i)=>{const eu=msg.de==="RF";return(<div key={i} style={{display:"flex",justifyContent:eu?"flex-end":"flex-start",alignItems:"flex-end",gap:7}}>{!eu&&<Av ini={m.ini} cor={m.cor} sz={26}/>}<div style={{maxWidth:"73%",background:eu?`${C.ouro}20`:`rgba(255,255,255,.06)`,borderRadius:eu?"16px 16px 4px 16px":"16px 16px 16px 4px",padding:"10px 13px",border:`1px solid ${eu?C.ouro+"28":C.ouro+"10"}`}}><div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:eu?C.ouroLt:`rgba(255,255,255,.65)`,lineHeight:1.6}}>{msg.texto}</div><div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:`rgba(255,255,255,.2)`,marginTop:3}}>{msg.hora}</div></div></div>);})}<div ref={bot}/></div>{msgs.length===0&&<div style={{background:C.obs,padding:"0 13px 8px",display:"flex",gap:7,overflowX:"auto"}}>{SUGE.map((s,i)=><button key={i} onClick={()=>setTxt(s)} style={{background:`${C.ouro}10`,border:`1px solid ${C.ouro}18`,borderRadius:20,padding:"6px 11px",fontSize:11,fontFamily:FS,fontStyle:"italic",color:C.ouro,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{s}</button>)}</div>}<div style={{padding:"9px 13px 14px",background:C.obs,borderTop:`1px solid ${C.ouro}15`,display:"flex",gap:8}}><input value={txt} onChange={e=>setTxt(e.target.value)} onKeyDown={e=>e.key==="Enter"&&enviar()} placeholder="Escreva uma mensagem..." style={{flex:1,background:`rgba(255,255,255,.06)`,border:`1px solid ${C.ouro}15`,borderRadius:20,padding:"10px 15px",fontSize:13,fontFamily:FB,fontWeight:300,color:C.branco}}/><button onClick={enviar} style={{background:`${C.ouro}28`,border:`1px solid ${C.ouro}44`,borderRadius:"50%",width:42,height:42,cursor:"pointer",color:C.ouro,fontSize:18}}>→</button></div></div>);
+  const SUGE=["Oi! Vi que você também curte pilates 🌸","Que horários têm mais energia pra você?","Vamos nos mover juntas essa semana?","Topa um café esta semana?"];
+  const enviar=()=>{if(!txt.trim())return;const n={de:"RF",texto:txt.trim(),hora:"agora"};setMsgs(ms=>[...ms,n]);setMatches(ms=>ms.map(mm=>mm.id===m.id?{...mm,msgs:[...(mm.msgs||[]),n]}:mm));setTxt("");setTimeout(()=>{const rs=["Que ótimo! Eu também adoro me mover cedo ☀️","Vamos combinar! Qual horário você prefere?","Perfeito! Manda seu contato e a gente acerta 💛"];setMsgs(ms=>[...ms,{de:m.ini,texto:rs[Math.floor(Math.random()*rs.length)],hora:"agora"}]);},1200);};
+  return(<div style={{display:"flex",flexDirection:"column",height:"100%",animation:"fadeUp .35s ease"}}><div style={{background:C.obs,padding:"12px 15px 14px",display:"flex",alignItems:"center",gap:11,borderBottom:`1px solid ${C.ouro}15`}}><button onClick={back} style={{background:"none",border:"none",color:`rgba(255,255,255,.35)`,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer"}}>←</button><Av ini={m.ini} cor={m.cor} sz={36}/><div><div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:`rgba(255,255,255,.85)`}}>{m.nome.split(" ")[0]}</div><div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.3)`}}>{m.compat}% compatível · {m.cidade}</div></div></div><div style={{flex:1,overflowY:"auto",background:C.obs,padding:"14px 13px 8px",display:"flex",flexDirection:"column",gap:8}}>{msgs.length===0&&<div style={{textAlign:"center",padding:"22px 0"}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.3)`,lineHeight:1.6}}>Comece a conversa!<br/>Se movam juntas 💛</div></div>}{msgs.map((msg,i)=>{const eu=msg.de==="RF";return(<div key={i} style={{display:"flex",justifyContent:eu?"flex-end":"flex-start",alignItems:"flex-end",gap:7}}>{!eu&&<Av ini={m.ini} cor={m.cor} sz={26}/>}<div style={{maxWidth:"73%",background:eu?`${C.ouro}20`:`rgba(255,255,255,.06)`,borderRadius:eu?"16px 16px 4px 16px":"16px 16px 16px 4px",padding:"10px 13px",border:`1px solid ${eu?C.ouro+"28":C.ouro+"10"}`}}><div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:eu?C.ouroLt:`rgba(255,255,255,.65)`,lineHeight:1.6}}>{msg.texto}</div><div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:`rgba(255,255,255,.2)`,marginTop:3}}>{msg.hora}</div></div></div>);})}<div ref={bot}/></div>{msgs.length===0&&<div style={{background:C.obs,padding:"0 13px 8px",display:"flex",gap:7,overflowX:"auto"}}>{SUGE.map((s,i)=><button key={i} onClick={()=>setTxt(s)} style={{background:`${C.ouro}10`,border:`1px solid ${C.ouro}18`,borderRadius:20,padding:"6px 11px",fontSize:11,fontFamily:FS,fontStyle:"italic",color:C.ouro,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{s}</button>)}</div>}<div style={{padding:"9px 13px 14px",background:C.obs,borderTop:`1px solid ${C.ouro}15`,display:"flex",gap:8}}><input value={txt} onChange={e=>setTxt(e.target.value)} onKeyDown={e=>e.key==="Enter"&&enviar()} placeholder="Escreva uma mensagem..." style={{flex:1,background:`rgba(255,255,255,.06)`,border:`1px solid ${C.ouro}15`,borderRadius:20,padding:"10px 15px",fontSize:13,fontFamily:FB,fontWeight:300,color:C.branco}}/><button onClick={enviar} style={{background:`${C.ouro}28`,border:`1px solid ${C.ouro}44`,borderRadius:"50%",width:42,height:42,cursor:"pointer",color:C.ouro,fontSize:18}}>→</button></div></div>);
 }
 
 
 // ═══════════════════════════════════════════════════════════════════
+// ─── EDITOR DE CARTA ──────────────────────────────────────────────────────────
+function CartaEditor({ setCarta, tk }) {
+  const [txt, setTxt] = useState("");
+  const ok = txt.trim().length > 10;
+  const salvar = () => {
+    if (!ok) return;
+    const d = new Date();
+    const data = `${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()}`;
+    setCarta({ texto: txt.trim(), data });
+    tk("Carta guardada. Ela espera por você na Semana 12. 💖");
+  };
+  return (
+    <div>
+      <textarea value={txt} onChange={e=>setTxt(e.target.value)} placeholder="Querida futura eu..." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"14px",fontSize:14,fontFamily:FS,fontStyle:"italic",color:`rgba(255,255,255,.7)`,resize:"none",height:180,lineHeight:1.8,marginBottom:14,boxSizing:"border-box"}}/>
+      <BtnPill onClick={salvar} style={{opacity:ok?1:.4}}>Guardar minha carta</BtnPill>
+    </div>
+  );
+}
+
+// ─── TELA DE CONVITE ──────────────────────────────────────────────────────────
+function TelaConvite({ back }) {
+  return (
+    <Grain style={{minHeight:760,animation:"fadeUp .4s ease"}}>
+      <Cab titulo="Jornada AUGE" voltar={back}/>
+      <div style={{padding:"24px 20px 40px"}}>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.4em",textTransform:"uppercase",marginBottom:12,textAlign:"center"}}>Isso é da Jornada AUGE</div>
+        <div style={{fontFamily:FS,fontStyle:"italic",fontSize:18,color:`rgba(255,255,255,.7)`,textAlign:"center",lineHeight:1.4,marginBottom:24}}>12 semanas. Método.<br/>Transformação real.</div>
+        {[
+          {icon:"✅",tit:"Check-in diário com seus 3 hábitos personalizados"},
+          {icon:"⭕",tit:"Roda AUGE: acompanhe sua evolução em S1, S6 e S12"},
+          {icon:"🔁",tit:"Protocolo de Retomada com Kit de Emergência personalizado"},
+          {icon:"✍️",tit:"Espaços de escrita: Vitórias, Âncora, Porquês e Carta para o Futuro"},
+        ].map((b,i)=>(
+          <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:12}}>
+            <div style={{fontSize:16,flexShrink:0,marginTop:2}}>{b.icon}</div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.5)`,lineHeight:1.5}}>{b.tit}</div>
+          </div>
+        ))}
+        <div style={{borderLeft:`2px solid ${C.ouro}44`,padding:"14px 16px",margin:"20px 0"}}>
+          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.55)`,lineHeight:1.6,marginBottom:6}}>"Em 12 semanas criei uma rotina que achei que nunca seria possível pra mim."</div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.ouro,letterSpacing:"0.2em"}}>— Maria, 54 anos · Florianópolis</div>
+        </div>
+        <BtnPill onClick={()=>window.open("https://wa.me/5548999999999","_blank")} style={{marginBottom:12}}>Quero entrar na lista de espera</BtnPill>
+        <BtnOut onClick={back}>Voltar</BtnOut>
+      </div>
+    </Grain>
+  );
+}
+
+// ─── JORNADA CLUBE ────────────────────────────────────────────────────────────
+function JornadaClube({ ir, onLogin }) {
+  const [convite, setConvite] = useState(false);
+  if (convite) return <TelaConvite back={()=>setConvite(false)}/>;
+  const lock = () => setConvite(true);
+  return (
+    <div style={{animation:"fadeUp .35s ease"}}>
+      <div style={{background:C.obs,padding:"12px 18px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.ouro}15`}}>
+        <div style={{fontFamily:FS,fontSize:18,fontWeight:300,letterSpacing:"0.1em",color:C.linho}}>Jornada AUGE</div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro,letterSpacing:"0.2em"}}>Clube</div>
+      </div>
+      <Grain style={{padding:"16px 18px 24px"}}>
+        <div style={{background:`${C.ouro}08`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(255,255,255,.4)`,lineHeight:1.5,textAlign:"center"}}>As ferramentas abaixo são exclusivas da Jornada AUGE</div>
+        </div>
+        <button onClick={lock} style={{width:"100%",background:`${C.blush}08`,border:`1px solid ${C.blush}22`,borderRadius:10,padding:"14px 18px",marginBottom:16,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontFamily:FB,fontWeight:400,fontSize:13,color:`rgba(255,255,255,.28)`,letterSpacing:"0.05em"}}>PROTOCOLO DE RETOMADA</div>
+          <div style={{fontSize:16}}>🔒</div>
+        </button>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:12}}>Ferramentas exclusivas</div>
+        {[
+          {icon:"🔁",tit:"Protocolo de Retomada",sub:"O coração do método."},
+          {icon:"⭕",tit:"Roda AUGE",sub:"Autodiagnóstico das 5 dimensões"},
+          {icon:"📅",tit:"Calendário completo",sub:"Sua evolução nas 12 semanas"},
+          {icon:"✍️",tit:"Espaços de escrita",sub:"Vitórias, Âncora, Porquês e Carta"},
+        ].map((item,i)=>(
+          <div key={i} onClick={lock} style={{background:`rgba(255,255,255,.03)`,border:`1px solid ${C.ouro}08`,borderRadius:10,padding:"13px 15px",marginBottom:9,cursor:"pointer",display:"flex",alignItems:"center",gap:13,opacity:.55}}>
+            <div style={{fontSize:20,flexShrink:0}}>{item.icon}</div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:FS,fontSize:16,fontWeight:300,color:`rgba(255,255,255,.55)`,marginBottom:2}}>{item.tit}</div>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.22)`,lineHeight:1.4}}>{item.sub}</div>
+            </div>
+            <div style={{fontSize:16}}>🔒</div>
+          </div>
+        ))}
+        <div style={{marginTop:18}}>
+          <BtnPill onClick={()=>window.open("https://wa.me/5548999999999","_blank")} style={{marginBottom:10,fontSize:13}}>Quero entrar na Jornada AUGE</BtnPill>
+          <BtnOut onClick={()=>onLogin("jornada")} style={{fontSize:13}}>Já sou aluna — entrar</BtnOut>
+        </div>
+      </Grain>
+    </div>
+  );
+}
+
 // ABA: JORNADA — Vitrine (Comunidade) ou Conteúdo (Aluna)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1155,10 +1272,10 @@ function Jornada({ sem, hDia, feitos, ckOk, anc, pontos, medC, historico, retoma
         {/* Âncora */}
         <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`${C.ouroLt}55`,lineHeight:1.5,marginBottom:16,borderLeft:`1px solid ${C.ouro}33`,paddingLeft:12}}>"{anc}"</div>
 
-        {/* Emergência */}
-        <button onClick={()=>ir(S.EM)} style={{width:"100%",background:`${C.blush}10`,border:`1px solid ${C.blush}33`,borderRadius:10,padding:"11px 16px",marginBottom:16,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:C.blush}}>Estou no limite hoje...</div>
-          <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.blush,letterSpacing:"0.1em"}}>KIT →</div>
+        {/* Protocolo de Retomada — destaque */}
+        <button onClick={()=>ir(S.RET)} style={{width:"100%",background:`${C.blush}15`,border:`1px solid ${C.blush}55`,borderRadius:10,padding:"14px 18px",marginBottom:16,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontFamily:FB,fontWeight:500,fontSize:13,color:C.blush,letterSpacing:"0.05em"}}>PROTOCOLO DE RETOMADA</div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:15,color:C.blush}}>→</div>
         </button>
 
         {/* Pontos + retomadas */}
@@ -1205,18 +1322,18 @@ function Jornada({ sem, hDia, feitos, ckOk, anc, pontos, medC, historico, retoma
         {/* Ferramentas — SÓ conteúdo exclusivo da Jornada */}
         <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:12}}>Ferramentas exclusivas</div>
         {[
+          {icon:"🔁",tit:"Protocolo de Retomada",sub:"O coração do método. Onde o método AUGE se diferencia.",sc:S.RET,destaque:true},
           {icon:"⭕",tit:"Roda AUGE",sub:"Autodiagnóstico das 5 dimensões · 25 perguntas",sc:S.RODA},
-          {icon:"🔁",tit:"Protocolo de Retomada",sub:"Voltar quando cair faz parte do método",sc:S.RET},
           {icon:"📅",tit:"Calendário completo",sub:"Sua evolução nas 12 semanas",sc:S.CAL},
           {icon:"✍️",tit:"Espaços de escrita",sub:"Vitórias, Âncora, Porquês e Carta para o Futuro",sc:S.ESC},
         ].map(item=>(
-          <div key={item.sc} onClick={()=>ir(item.sc)} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"13px 15px",marginBottom:9,cursor:"pointer",display:"flex",alignItems:"center",gap:13}}>
-            <div style={{fontSize:20,flexShrink:0}}>{item.icon}</div>
+          <div key={item.sc} onClick={()=>ir(item.sc)} style={{background:item.destaque?`${C.blush}08`:`rgba(255,255,255,.04)`,border:`1px solid ${item.destaque?C.blush+"33":C.ouro+"12"}`,borderRadius:10,padding:item.destaque?"16px 15px":"13px 15px",marginBottom:9,cursor:"pointer",display:"flex",alignItems:"center",gap:13}}>
+            <div style={{fontSize:item.destaque?24:20,flexShrink:0}}>{item.icon}</div>
             <div style={{flex:1}}>
-              <div style={{fontFamily:FS,fontSize:16,fontWeight:300,color:`rgba(255,255,255,.8)`,marginBottom:2}}>{item.tit}</div>
-              <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.3)`,lineHeight:1.4}}>{item.sub}</div>
+              <div style={{fontFamily:FS,fontSize:item.destaque?17:16,fontWeight:300,color:item.destaque?C.blush:`rgba(255,255,255,.8)`,marginBottom:3}}>{item.tit}</div>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:item.destaque?`rgba(226,185,168,.45)`:`rgba(255,255,255,.3)`,lineHeight:1.4}}>{item.sub}</div>
             </div>
-            <div style={{color:`rgba(255,255,255,.2)`,fontSize:16}}>›</div>
+            <div style={{color:item.destaque?C.blush:`rgba(255,255,255,.2)`,fontSize:16}}>›</div>
           </div>
         ))}
       </Grain>
@@ -1328,7 +1445,8 @@ function Retomada({ anc, back, tk, setRet }) {
     tk("Retomada registrada. +20 pontos AUGE 💖");
     setRegistrado(true);
     setIsaLoad(true);
-    const resp = await callISA("A aluna ativou o protocolo de retomada. Ela voltou depois de uma pausa. Acolha com carinho.");
+    const motTxt = mot.trim() ? `"${mot.trim()}"` : "não descreveu";
+    const resp = await callISA(`A aluna acabou de ativar o Protocolo de Retomada — clicou em "Estou voltando agora".\nO que aconteceu segundo ela: ${motTxt}\nOnde ela disse que quebrou: ${onde||"não especificou"}\nÂncora de identidade dela: "${anc}"\nAcolha o que ela compartilhou diretamente, sem generalizar. Convoque ao movimento com a energia do método: acolhe e chama. Termine com a frase da marca se fizer sentido natural: "O auge não é o que você foi. É o que você está construindo."`);
     setIsaMsg(resp);
     setIsaLoad(false);
   };
@@ -1336,20 +1454,19 @@ function Retomada({ anc, back, tk, setRet }) {
     <div style={{animation:"fadeUp .4s ease"}}>
       <Cab titulo="Protocolo de Retomada" voltar={back}/>
       <Grain style={{padding:"20px 20px 36px"}}>
-        <div style={{fontFamily:FS,fontSize:22,fontWeight:300,color:`rgba(255,255,255,.85)`,lineHeight:1.3,marginBottom:5}}>Você pode voltar agora.</div>
-        <div style={{fontFamily:FS,fontStyle:"italic",fontSize:16,color:C.ouro,marginBottom:20}}>Não do zero. De onde você parou.</div>
+        <div style={{fontFamily:FS,fontSize:24,fontWeight:300,color:`rgba(255,255,255,.85)`,lineHeight:1.25,marginBottom:16}}>Caiu. Faz parte.<br/>Agora você volta.</div>
         <div style={{background:`${C.ouro}10`,border:`1px solid ${C.ouro}20`,borderRadius:10,padding:"15px",marginBottom:18,textAlign:"center"}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:16,color:C.ouro,lineHeight:1.5}}>"{anc}"</div></div>
         <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"15px",marginBottom:18}}>
           <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.35em",textTransform:"uppercase",marginBottom:12}}>A regra dos 2 dias</div>
-          {["Nunca dois dias seguidos sem o hábito","Se ontem não aconteceu, hoje acontece com metade","Nunca compensar — retomada é com menos, não com mais","O dia de retomada conta tanto quanto qualquer outro"].map((r,i)=>(
+          {["Dois dias é o limite. No terceiro, você já não é mais a mesma.","Ontem não conta. Hoje conta com metade — e isso já é tudo.","Não compensa. Não é hora de provar nada. É hora de voltar.","O dia que você volta vale igual ao dia perfeito. Às vezes vale mais."].map((r,i)=>(
             <div key={i} style={{display:"flex",gap:10,marginBottom:8}}><div style={{color:C.ouro,fontSize:15,flexShrink:0}}>·</div><div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.4)`,lineHeight:1.5}}>{r}</div></div>
           ))}
         </div>
-        {p>=1&&<div style={{marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:8}}>O que aconteceu?</div><textarea value={mot} onChange={e=>setMot(e.target.value)} placeholder="Sem julgamento." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"12px",fontSize:14,fontFamily:FS,color:`rgba(255,255,255,.65)`,resize:"none",height:76,lineHeight:1.6}}/></div>}
+        {p>=1&&<div style={{marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:8}}>O que aconteceu?</div><textarea value={mot} onChange={e=>setMot(e.target.value)} placeholder="Sem julgamento. E sem rodeio. Escreve curto, pra você ver com clareza." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"12px",fontSize:14,fontFamily:FS,color:`rgba(255,255,255,.65)`,resize:"none",height:76,lineHeight:1.6}}/></div>}
         {p>=2&&<div style={{marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:8}}>Onde quebrou?</div><div style={{display:"flex",flexWrap:"wrap",gap:8}}>{["Falta de tempo","Cansaço","Imprevisto","Esqueci","Outro"].map(op=><button key={op} onClick={()=>setOnde(op)} style={{padding:"9px 14px",borderRadius:50,border:`1px solid ${onde===op?C.ouro+"55":C.ouro+"15"}`,background:onde===op?`${C.ouro}20`:`rgba(255,255,255,.03)`,color:onde===op?C.ouro:`rgba(255,255,255,.3)`,fontFamily:FB,fontWeight:300,fontSize:13,cursor:"pointer"}}>{op}</button>)}</div></div>}
         {p===1&&<BtnPill onClick={()=>mot&&setP(2)} style={{opacity:mot?1:.4}}>Continuar</BtnPill>}
         {p>=2&&<div><div style={{background:`${C.ouroLt}10`,border:`1px solid ${C.ouro}25`,borderRadius:10,padding:"14px",marginBottom:14}}><div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Com o que você volta hoje?</div><div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.55)`,lineHeight:1.6}}>5 minutos de movimento. Uma refeição no horário. Um copo de água. Isso conta.</div></div>
-          {!registrado && <BtnPill onClick={registrar}>Registrar minha retomada</BtnPill>}
+          {!registrado && <BtnPill onClick={registrar}>Estou voltando agora</BtnPill>}
           {(isaLoad || isaMsg) && <IsaCard text={isaMsg} loading={isaLoad}/>}
           {registrado && !isaLoad && <BtnPill onClick={back} style={{marginTop:12}}>Concluir ←</BtnPill>}
         </div>}
@@ -1387,9 +1504,22 @@ function Calendario({ back }) {
 }
 
 // ─── ESPAÇOS DE ESCRITA ───────────────────────────────────────────────────────
-function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk }) {
+function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, setCarta, dataCadastro }) {
   const [nv,setNv]=useState(""); const [na,setNa]=useState(anc);
   const [p1,sp1]=useState(""); const [p2,sp2]=useState(""); const [p3,sp3]=useState("");
+  const [isaVit,setIsaVit]=useState(null); const [isaVitLoad,setIsaVitLoad]=useState(false);
+  const salvarVit = async () => {
+    if (!nv.trim()) return;
+    const d = new Date();
+    setVit(v=>[...v,{sem:3,texto:nv,data:`${d.getDate()}/${d.getMonth()+1}`}]);
+    tk("Vitória registrada! 💖");
+    setIsaVitLoad(true);
+    setIsaVit(null);
+    const resp = await callISA(`A aluna acabou de registrar uma vitória: "${nv.trim()}". Escreva uma resposta breve (2-3 linhas) celebrando genuinamente essa vitória. Termine sempre com: — ISA, Inteligência do Clube do Auge · Método Dra. Isadora Zaniboni`);
+    setIsaVit(resp);
+    setIsaVitLoad(false);
+    setNv("");
+  };
   return(
     <div style={{animation:"fadeUp .4s ease"}}>
       <Cab titulo="Espaços de escrita" voltar={back}/>
@@ -1402,7 +1532,15 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk }) {
         {escT==="vitorias"&&(<div>
           <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:10}}>Qual foi sua vitória essa semana?</div>
           <textarea value={nv} onChange={e=>setNv(e.target.value)} placeholder="Não existe vitória pequena demais." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"13px",fontSize:15,fontFamily:FS,color:`rgba(255,255,255,.7)`,resize:"none",height:110,lineHeight:1.7,marginBottom:12}}/>
-          <BtnPill onClick={()=>{if(!nv.trim())return;const d=new Date();setVit(v=>[...v,{sem:3,texto:nv,data:`${d.getDate()}/${d.getMonth()+1}`}]);setNv("");tk("Vitória registrada! 💖");}} style={{opacity:nv.trim()?1:.4,marginBottom:20}}>Registrar vitória</BtnPill>
+          <BtnPill onClick={salvarVit} style={{opacity:nv.trim()?1:.4,marginBottom:14}}>Registrar vitória</BtnPill>
+          {(isaVitLoad||isaVit)&&(
+            <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}20`,borderRadius:12,padding:"14px 15px",marginBottom:16,animation:"fadeUp .3s ease"}}>
+              {isaVitLoad
+                ? <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{fontSize:16,animation:"pulse 1.5s ease-in-out infinite"}}>💭</div><div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(255,255,255,.35)`}}>ISA está respondendo...</div></div>
+                : <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.6)`,lineHeight:1.75,whiteSpace:"pre-wrap"}}>{isaVit}</div>
+              }
+            </div>
+          )}
           {vit.map((v,i)=><div key={i} style={{borderLeft:`2px solid ${C.ouro}33`,paddingLeft:13,marginBottom:13}}><div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:3}}>Semana {v.sem} · {v.data}</div><div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:`rgba(255,255,255,.6)`,lineHeight:1.5}}>{v.texto}</div></div>)}
         </div>)}
         {escT==="ancora"&&(<div>
@@ -1417,12 +1555,28 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk }) {
           ))}
           <BtnPill onClick={()=>tk("Porquês salvos 💖")}>Salvar meus porquês</BtnPill>
         </div>)}
-        {escT==="carta"&&(<div style={{textAlign:"center",paddingTop:8}}>
-          <div style={{fontSize:36,marginBottom:14}}>✉️</div>
-          <div style={{fontFamily:FS,fontSize:20,fontWeight:300,color:`rgba(255,255,255,.8)`,marginBottom:8}}>Carta para o Futuro</div>
-          <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.3)`,lineHeight:1.7,marginBottom:28,maxWidth:260,margin:"0 auto 28px"}}>Escreva uma carta para você mesma agora. Ela só será aberta na Semana 12.</div>
-          <a href="https://www.futureme.org" target="_blank" rel="noopener noreferrer" style={{display:"block",textDecoration:"none"}}><BtnPill style={{pointerEvents:"none"}}>Abrir FutureMe e escrever</BtnPill></a>
-          <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.18)`,marginTop:14,lineHeight:1.6}}>Você será redirecionada para o FutureMe. Programme o envio para o seu e-mail na Semana 12.</div>
+        {escT==="carta"&&(<div style={{paddingTop:4}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+            <div style={{fontSize:26}}>✉️</div>
+            <div>
+              <div style={{fontFamily:FS,fontSize:18,fontWeight:300,color:`rgba(255,255,255,.8)`}}>Carta para o Futuro</div>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.3)`,marginTop:2}}>Aberta na Semana 12</div>
+            </div>
+          </div>
+          {carta ? (
+            <div>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Escrita em {carta.data}</div>
+              <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"16px",marginBottom:16}}>
+                <div style={{fontFamily:FS,fontSize:14,color:`rgba(255,255,255,.65)`,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{carta.texto}</div>
+              </div>
+              <button onClick={()=>setCarta(null)} style={{background:"none",border:`1px solid ${C.ouro}15`,borderRadius:50,padding:"10px",width:"100%",fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.25)`,cursor:"pointer",letterSpacing:"0.1em"}}>Reescrever minha carta</button>
+            </div>
+          ) : (
+            <div>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.3)`,lineHeight:1.7,marginBottom:16}}>Escreva para você mesma. Ninguém mais lê. Na Semana 12, um aviso especial vai aparecer na tela inicial convidando você a abrir.</div>
+              <CartaEditor setCarta={setCarta} tk={tk}/>
+            </div>
+          )}
         </div>)}
       </Grain>
     </div>
@@ -1436,7 +1590,9 @@ function Emergencia({ anc, kitMin, setKitMin, kitApoio, setKitApoio, back, tk })
   useEffect(()=>{
     if(!naoTem && !edit){
       setIsaLoad(true);
-      callISA("A aluna está no limite hoje e abriu o kit de emergência. Responda com apoio suave e encoraje o mínimo possível.").then(r=>{setIsaMsg(r);setIsaLoad(false);});
+      const minTxt = kitMin||"não definiu";
+      const apoioTxt = kitApoio||"não definiu";
+      callISA(`A aluna está no limite hoje e abriu o kit de emergência.\nÂncora de identidade dela: "${anc}"\nO mínimo viável que ela mesma definiu: "${minTxt}"\nOnde ela busca apoio: "${apoioTxt}"\nResponda com apoio suave. Encoraje ela a fazer exatamente o mínimo que ela mesma definiu — não sugira mais, não expanda. O kit é dela. Valide a sabedoria dela em ter criado esse kit. Máximo 3 parágrafos.`).then(r=>{setIsaMsg(r);setIsaLoad(false);});
     }
   },[]);
   return(
@@ -1444,7 +1600,7 @@ function Emergencia({ anc, kitMin, setKitMin, kitApoio, setKitApoio, back, tk })
       <div style={{background:`${C.blush}18`,padding:"20px 20px 22px",borderBottom:`1px solid ${C.blush}25`}}>
         <button onClick={back} style={{background:"none",border:"none",color:C.blush,fontFamily:FB,fontWeight:300,fontSize:12,cursor:"pointer",marginBottom:12}}>← Jornada</button>
         <div style={{fontFamily:FS,fontSize:24,fontWeight:300,color:`rgba(255,255,255,.85)`,lineHeight:1.2}}>Kit de Emergência</div>
-        <div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:C.blush,marginTop:4}}>O mínimo possível para não parar.</div>
+        <div style={{fontFamily:FS,fontStyle:"italic",fontSize:14,color:C.blush,marginTop:4}}>O mínimo possível para voltar a se mover. Hoje.</div>
       </div>
       <Grain style={{padding:"18px 20px 36px"}}>
         <div style={{background:`${C.ouro}10`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"16px",marginBottom:18,textAlign:"center"}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:17,color:C.ouro,lineHeight:1.5}}>"{anc}"</div></div>
@@ -1626,7 +1782,7 @@ function Perfil({ perfil, matches, pontos, medC, habAngulares, setHabAngulares, 
       <Grain style={{padding:"18px 18px 32px"}}>
         {/* Estatísticas */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
-          {[["💚","Conexões",`${matches?.length||0}`],["📋","Treinos",`8`],["▶","Conteúdos","12"],["⭐","Pontos AUGE",`${pontos||0}`]].map(([ic,l,v])=>(
+          {[["💚","Conexões",`${matches?.length||0}`],["📋","Check-ins","8"],["▶","Conteúdos","12"],["⭐","Pontos AUGE",`${pontos||0}`]].map(([ic,l,v])=>(
             <div key={l} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"13px 14px"}}>
               <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`,marginBottom:4}}>{ic}  {l}</div>
               <div style={{fontFamily:FS,fontSize:22,color:C.ouro}}>{v}</div>
