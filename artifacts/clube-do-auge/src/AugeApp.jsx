@@ -865,7 +865,9 @@ function TelaAuth({ onAuth }) {
   return (
     <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px 48px",animation:"fadeUp .4s ease"}}>
       <Logo width={260} fundo="escuro"/>
-      <div style={{fontFamily:FS,fontSize:22,fontWeight:300,color:C.linho,marginTop:20,marginBottom:8,textAlign:"center"}}>Bem-vinda</div>
+      <div
+        style={{fontFamily:FS,fontSize:22,fontWeight:300,color:C.linho,marginTop:20,marginBottom:8,textAlign:"center"}}
+        className="text-center">Bem-vinda</div>
       <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.35)`,marginBottom:40,textAlign:"center"}}>Entre com seu e-mail e senha</div>
       <div style={{width:"100%",marginBottom:28}}>
         <div style={lbl}>E-mail</div>
