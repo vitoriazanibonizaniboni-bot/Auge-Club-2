@@ -500,7 +500,7 @@ export default function App() {
       case S.MATCH:   return selM ? <MatchDet {...ctx}/> : <Cx {...ctx}/>;
       case S.CHAT:    return selM ? <Chat     {...ctx}/> : <Cx {...ctx}/>;
       case S.JOR:     return perfil==="jornada" ? <Jornada {...ctx}/> : <JornadaClube ir={ir}/>;
-      case S.RODA:    return perfil==="jornada" ? <Roda    {...ctx}/> : <TelaConvite back={back}/>;
+      case S.RODA:    return <Roda    {...ctx}/>;
       case S.RET:     return perfil==="jornada" ? <Retomada {...ctx}/> : <TelaConvite back={back}/>;
       case S.CAL:     return perfil==="jornada" ? <Calendario {...ctx}/> : <TelaConvite back={back}/>;
       case S.ESC:     return perfil==="jornada" ? <Escritas {...ctx}/> : <TelaConvite back={back}/>;
@@ -1725,11 +1725,15 @@ function Roda({ rodaR, setRodaR, rodaI, setRodaI, calcRoda, zc, zl, back, tk, pe
         <div style={{fontFamily:FB,fontWeight:300,fontSize:9,letterSpacing:"0.35em",textTransform:"uppercase",color:`rgba(255,255,255,.3)`,marginBottom:24}}>AUGE · 25 perguntas · 5 dimensões</div>
         <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:`rgba(255,255,255,.3)`,letterSpacing:"0.25em",textTransform:"uppercase",marginBottom:10}}>Selecione o momento</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:28}}>
-          {[["S1","Início"],["S6","Meio"],["S12","Fim"]].map(([m,sub])=>(
-            <button key={m} onClick={()=>setMom(m)} style={{background:momento===m?`${C.ouro}22`:`rgba(255,255,255,.04)`,border:`1px solid ${momento===m?C.ouro+"55":C.ouro+"15"}`,borderRadius:10,padding:"14px 0",cursor:"pointer",color:momento===m?C.ouro:`rgba(255,255,255,.3)`,fontFamily:FB,fontSize:12,letterSpacing:"0.2em"}}>
-              {m}<br/><span style={{fontSize:9,opacity:.6}}>{sub}</span>
-            </button>
-          ))}
+          {[["S1","Início"],["S6","Meio"],["S12","Fim"]].map(([m,sub])=>{
+            const bloqMom = perfil!=="jornada" && m!=="S1";
+            return(
+              <button key={m} onClick={()=>bloqMom?null:setMom(m)} style={{background:bloqMom?`rgba(255,255,255,.03)`:momento===m?`${C.ouro}22`:`rgba(255,255,255,.04)`,border:`1px solid ${bloqMom?C.ouro+"0A":momento===m?C.ouro+"55":C.ouro+"15"}`,borderRadius:10,padding:"14px 0",cursor:bloqMom?"default":"pointer",color:bloqMom?`rgba(255,255,255,.18)`:momento===m?C.ouro:`rgba(255,255,255,.3)`,fontFamily:FB,fontSize:12,letterSpacing:"0.2em",position:"relative"}}>
+                {bloqMom&&<span style={{position:"absolute",top:6,right:8,fontSize:10}}>🔒</span>}
+                {m}<br/><span style={{fontSize:9,opacity:.6}}>{sub}</span>
+              </button>
+            );
+          })}
         </div>
         <BtnPill onClick={()=>{if(momento){setRodaR({});setRodaI(0);setFase("perguntas");}}} style={{opacity:momento?1:.4}}>Iniciar diagnóstico</BtnPill>
       </div>
