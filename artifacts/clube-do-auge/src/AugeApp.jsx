@@ -965,7 +965,7 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
                 ckOk, setCkOk, notas, setNotas, anc, historico, setHist,
                 retomadas, setRet, pontos, medC, ir, tk,
                 habAngulares, setHabAngulares, usuario, streakAtual, diasSemTreino, carta, dataCadastro,
-                notifStatus, setNotifStatus }) {
+                notifStatus, setNotifStatus, setEscT }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
     {id:"cansada",   e:"😮‍💨",l:"Cansada"},
@@ -1043,13 +1043,11 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
         <MotivBanner ckOk={ckOk} streakAtual={streakAtual} diasSemTreino={diasSemTreino} ir={ir}/>
 
         {/* Banner carta semana 12 */}
-        {carta && dataCadastro && Math.floor((Date.now()-dataCadastro.getTime())/(7*24*60*60*1000))>=12 && (
-          <div onClick={()=>ir(S.ESC)} style={{background:`${C.ouro}12`,border:`1px solid ${C.ouro}33`,borderRadius:10,padding:"13px 15px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-            <div>
-              <div style={{fontFamily:FB,fontWeight:400,fontSize:12,color:C.ouro,marginBottom:3}}>Você tem uma carta esperando por você ✉️</div>
-              <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.35)`}}>escrita por você mesma na Semana 1</div>
-            </div>
-            <div style={{fontFamily:FB,fontSize:16,color:C.ouro}}>→</div>
+        {carta && sem >= 12 && (
+          <div style={{background:`${C.ouro}12`,border:`1px solid ${C.ouro}44`,borderRadius:12,padding:"16px 16px 14px",marginBottom:16}}>
+            <div style={{fontFamily:FB,fontWeight:400,fontSize:13,color:C.ouro,marginBottom:4}}>Você tem uma carta esperando por você ✉️</div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.45)`,lineHeight:1.5,marginBottom:12}}>escrita por você mesma na Semana 1</div>
+            <button onClick={()=>{setEscT("carta");ir(S.ESC);}} style={{background:C.ouro,border:"none",borderRadius:50,padding:"10px",width:"100%",fontFamily:FB,fontWeight:400,fontSize:13,color:C.obs2,cursor:"pointer",letterSpacing:"0.02em"}}>Abrir minha carta →</button>
           </div>
         )}
 
