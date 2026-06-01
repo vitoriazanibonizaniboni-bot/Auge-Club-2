@@ -269,6 +269,9 @@ export default function App() {
   const [dataCadastro, setDataCadastro] = useState(null);
   const [retomadas,setRet]      = useLocalStorage("auge_retomadas", 0);
   const [carta, setCarta]       = useLocalStorage("auge_carta", null);
+  const [pq1, setPq1]           = useState("");
+  const [pq2, setPq2]           = useState("");
+  const [pq3, setPq3]           = useState("");
   const [notifStatus, setNotifStatus] = useLocalStorage("auge_notif", "pending"); // "pending"|"granted"|"denied"|"dismissed"
 
   const [toast,    setToast]    = useState(null);
@@ -290,8 +293,9 @@ export default function App() {
     // Supabase é a fonte de verdade — resetar estado local antes de popular
     setHist({}); setVit([]); setCarta(null);
     setAnc("Eu sou a mulher que volta."); setKitMin(""); setKitApoio(""); setHabAngulares([]);
+    setPq1(""); setPq2(""); setPq3("");
 
-    const [profileRes, checkinsRes, habRes, kitRes, ancRes, vitRes, cartaRes] = await Promise.all([
+    const [profileRes, checkinsRes, habRes, kitRes, ancRes, vitRes, cartaRes, porquesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("checkins").select("*").eq("user_id", userId),
       supabase.from("habitos_angulares").select("*").eq("user_id", userId).single(),
@@ -299,6 +303,7 @@ export default function App() {
       supabase.from("ancora").select("*").eq("user_id", userId).single(),
       supabase.from("vitorias").select("*").eq("user_id", userId),
       supabase.from("carta_futuro").select("*").eq("user_id", userId).single(),
+      supabase.from("porques").select("*").eq("user_id", userId).single(),
     ]);
 
     if (profileRes.data) {
@@ -343,6 +348,12 @@ export default function App() {
       const ds = `${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()}`;
       setCarta({ texto: cartaRes.data.texto, data: ds });
     }
+
+    if (porquesRes.data && !porquesRes.error) {
+      setPq1(porquesRes.data.p1 || "");
+      setPq2(porquesRes.data.p2 || "");
+      setPq3(porquesRes.data.p3 || "");
+    }
   };
 
   const logout = async () => {
@@ -350,6 +361,7 @@ export default function App() {
     setAuthUser(null); setPerfil(null); setUsuario(null); setLgpdOk(false);
     setHist({}); setVit([]); setCarta(null);
     setAnc("Eu sou a mulher que volta."); setKitMin(""); setKitApoio(""); setHabAngulares([]);
+    setPq1(""); setPq2(""); setPq3("");
     setTela(S.HOME);
   };
 
@@ -444,6 +456,7 @@ export default function App() {
 
   const ctx = {perfil,ir,back,tk,feed,setFeed,habF,setHabF,chips,setChips,ckOk,setCkOk,notas,setNotas,rodaR,setRodaR,rodaI,setRodaI,matches,setMatches,ci,sw,doSwipe,selM,setSelM,anc,setAnc,kitMin,setKitMin,kitApoio,setKitApoio,escT,setEscT,vit,setVit,historico,setHist,retomadas,setRet,sem,mes,hDia,feitos,postTreino,calcRoda,zc,zl,pontos,medC,
     habAngulares,setHabAngulares,dataCadastro,usuario,setUsuario,streakAtual,diasSemTreino,carta,setCarta,notifStatus,setNotifStatus,
+    pq1,setPq1,pq2,setPq2,pq3,setPq3,
     authUserId:authUser?.id,logout};
 
   const SEM_NAV = [S.SPLASH,S.LEGAL,S.LOGIN,S.DIAG,S.VOZ,S.CHAT,S.RODA];
@@ -1882,9 +1895,8 @@ function Calendario({ back }) {
 }
 
 // ─── ESPAÇOS DE ESCRITA ───────────────────────────────────────────────────────
-function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, setCarta, dataCadastro }) {
+function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, setCarta, dataCadastro, pq1, setPq1, pq2, setPq2, pq3, setPq3 }) {
   const [nv,setNv]=useState(""); const [na,setNa]=useState(anc);
-  const [p1,sp1]=useState(""); const [p2,sp2]=useState(""); const [p3,sp3]=useState("");
   const [isaVit,setIsaVit]=useState(null); const [isaVitLoad,setIsaVitLoad]=useState(false);
   const salvarVit = async () => {
     if (!nv.trim()) return;
@@ -1930,10 +1942,10 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, se
         </div>)}
         {escT==="porques"&&(<div>
           <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.25)`,lineHeight:1.7,marginBottom:16}}>Essas respostas são só suas. Ninguém mais acessa.</div>
-          {[["Por que isso importa para você de verdade?",p1,sp1],["O que você está perdendo hoje por estar onde está?",p2,sp2],["Como você quer se sentir daqui a 5 anos?",p3,sp3]].map(([q,v,s],i)=>(
+          {[["Por que isso importa para você de verdade?",pq1,setPq1],["O que você está perdendo hoje por estar onde está?",pq2,setPq2],["Como você quer se sentir daqui a 5 anos?",pq3,setPq3]].map(([q,v,s],i)=>(
             <div key={i} style={{marginBottom:18}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:`rgba(255,255,255,.6)`,lineHeight:1.5,marginBottom:8}}>{q}</div><textarea value={v} onChange={e=>s(e.target.value)} placeholder="Escreva com honestidade..." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"11px 12px",fontSize:14,fontFamily:FS,color:`rgba(255,255,255,.6)`,resize:"none",height:80,lineHeight:1.6}}/></div>
           ))}
-          <BtnPill onClick={()=>tk("Porquês salvos 💖")}>Salvar meus porquês</BtnPill>
+          <BtnPill onClick={()=>{syncDB("porques",{p1:pq1,p2:pq2,p3:pq3},{onConflict:"user_id"});tk("Porquês salvos 💖");}}>Salvar meus porquês</BtnPill>
         </div>)}
         {escT==="carta"&&(<div style={{paddingTop:4}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
