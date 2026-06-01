@@ -37,7 +37,7 @@ const ABA_ORIGEM = {
   [S.FEED]:S.FEED, [S.NOVO]:S.FEED, [S.VOZ]:S.FEED,
   [S.CX]:S.FEED, [S.MATCH]:S.FEED, [S.CHAT]:S.FEED,
   [S.JOR]:S.JOR, [S.RODA]:S.JOR, [S.RET]:S.JOR,
-  [S.CAL]:S.JOR, [S.ESC]:S.JOR, [S.EM]:S.JOR,
+  [S.CAL]:S.HOME, [S.ESC]:S.JOR, [S.EM]:S.JOR,
   [S.CT]:S.CT, [S.PF]:S.PF,
 };
 
@@ -515,7 +515,7 @@ export default function App() {
       case S.JOR:     return perfil==="jornada" ? <Jornada {...ctx}/> : <JornadaClube ir={ir}/>;
       case S.RODA:    return <Roda    {...ctx}/>;
       case S.RET:     return perfil==="jornada" ? <Retomada {...ctx}/> : <TelaConvite back={back}/>;
-      case S.CAL:     return perfil==="jornada" ? <Calendario {...ctx}/> : <TelaConvite back={back}/>;
+      case S.CAL:     return <Calendario {...ctx}/>;
       case S.ESC:     return perfil==="jornada" ? <Escritas {...ctx}/> : <TelaConvite back={back}/>;
       case S.EM:      return perfil==="jornada" ? <Emergencia {...ctx}/> : <TelaConvite back={back}/>;
       case S.CT:      return <Conteudo {...ctx}/>;
@@ -1225,8 +1225,11 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
         )}
 
         {/* Calendário mensal */}
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.35em",textTransform:"uppercase",marginBottom:12,marginTop:passo===0?0:16}}>
-          Maio 2026 · Calendário
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.35em",textTransform:"uppercase",marginBottom:6,marginTop:passo===0?0:16}}>
+          Maio 2026 · Meu progresso
+        </div>
+        <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.3)`,lineHeight:1.6,marginBottom:12}}>
+          Cada dia registrado ganha uma cor. Qualquer cor é uma vitória — o que importa é aparecer.
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:10}}>
           {["D","S","T","Q","Q","S","S"].map((d,i)=><div key={i} style={{textAlign:"center",fontFamily:FB,fontWeight:300,fontSize:9,color:`rgba(255,255,255,.25)`,padding:"2px 0"}}>{d}</div>)}
@@ -1235,9 +1238,17 @@ function Home({ perfil, sem, mes, hDia, feitos, habF, setHabF, chips, setChips,
             <div key={d} style={{aspectRatio:"1",borderRadius:7,background:bg,border:bo||"none",display:"flex",alignItems:"center",justifyContent:"center",fontSize:ex?8:10,fontFamily:FS,fontWeight:300,color:tc}}>{ex||d}</div>
           );})}
         </div>
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.2)`,lineHeight:1.5,marginBottom:18}}>
-          Pequeno, repetido e infinito. Qualquer cor é uma vitória.
+        <div style={{display:"flex",flexWrap:"wrap",gap:"6px 14px",marginBottom:12}}>
+          {[[C.ouro,"Todos os hábitos"],[`${C.ouroLt}30`,"Parcial"],[`${C.blush}40`,"Retomada"],["transparent","Sem registro"]].map(([c,l])=>(
+            <div key={l} style={{display:"flex",alignItems:"center",gap:5}}>
+              <div style={{width:10,height:10,borderRadius:3,background:c,border:`1px solid ${C.ouro}30`,flexShrink:0}}/>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.25)`}}>{l}</div>
+            </div>
+          ))}
         </div>
+        <button onClick={()=>ir(S.CAL)} style={{width:"100%",background:"transparent",border:`1px solid ${C.ouro}25`,borderRadius:50,padding:"11px",fontFamily:FB,fontWeight:300,fontSize:12,color:C.ouro,cursor:"pointer",letterSpacing:"0.06em",marginBottom:18}}>
+          📅 Ver calendário completo
+        </button>
 
         {/* Próximo encontro */}
         {perfil==="jornada" && (
@@ -1612,22 +1623,6 @@ function JornadaClube({ ir }) {
           </LockCard>
         </div>
 
-        {/* Calendário — grade bloqueada */}
-        <div style={{marginBottom:20}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-            <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase"}}>Calendário das 12 semanas</div>
-            <span style={{fontSize:13}}>🔒</span>
-          </div>
-          <div onClick={lock} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"12px",cursor:"pointer"}}>
-            <div style={{display:"flex",gap:3,marginBottom:6}}>
-              {Array.from({length:12},(_,i)=>(
-                <div key={i} style={{flex:1,height:18,borderRadius:3,background:`rgba(196,168,130,${i<2?.12:.05})`,border:`1px solid ${C.ouro}08`}}/>
-              ))}
-            </div>
-            <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.18)`,textAlign:"center"}}>Disponível na Jornada AUGE</div>
-          </div>
-        </div>
-
         <BtnPill onClick={()=>window.open("https://wa.me/5548999999999","_blank")} style={{marginBottom:10,fontSize:13}}>Quero entrar na Jornada AUGE</BtnPill>
         <BtnOut onClick={()=>ir(S.HOME)} style={{fontSize:13}}>Voltar ao início</BtnOut>
       </Grain>
@@ -1747,7 +1742,6 @@ function Jornada({ sem, hDia, feitos, ckOk, anc, pontos, medC, historico, retoma
         {[
           {icon:"🔁",tit:"Protocolo de Retomada",sub:"O coração do método. Onde o método AUGE se diferencia.",sc:S.RET,destaque:true},
           {icon:"⭕",tit:"Roda AUGE",sub:"Autodiagnóstico das 5 dimensões · 25 perguntas",sc:S.RODA},
-          {icon:"📅",tit:"Calendário completo",sub:"Sua evolução nas 12 semanas",sc:S.CAL},
           {icon:"✍️",tit:"Espaços de escrita",sub:"Vitórias, Âncora, Porquês e Carta para o Futuro",sc:S.ESC},
         ].map(item=>(
           <div key={item.sc} onClick={()=>ir(item.sc)} style={{background:item.destaque?`${C.blush}08`:`rgba(255,255,255,.04)`,border:`1px solid ${item.destaque?C.blush+"33":C.ouro+"12"}`,borderRadius:10,padding:item.destaque?"16px 15px":"13px 15px",marginBottom:9,cursor:"pointer",display:"flex",alignItems:"center",gap:13}}>
@@ -1999,7 +1993,7 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, se
           {[["Por que isso importa para você de verdade?",pq1,setPq1],["O que você está perdendo hoje por estar onde está?",pq2,setPq2],["Como você quer se sentir daqui a 5 anos?",pq3,setPq3]].map(([q,v,s],i)=>(
             <div key={i} style={{marginBottom:18}}><div style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:`rgba(255,255,255,.6)`,lineHeight:1.5,marginBottom:8}}>{q}</div><textarea value={v} onChange={e=>s(e.target.value)} placeholder="Escreva com honestidade..." style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"11px 12px",fontSize:14,fontFamily:FS,color:`rgba(255,255,255,.6)`,resize:"none",height:80,lineHeight:1.6}}/></div>
           ))}
-          <BtnPill onClick={()=>{syncDB("porques",{p1:pq1,p2:pq2,p3:pq3},{onConflict:"user_id"});tk("Porquês salvos 💖");}}>Salvar meus porquês</BtnPill>
+          <BtnPill onClick={()=>{syncDB("porques",{p1:pq1,p2:pq2,p3:pq3},{onConflict:"user_id"});tk("Porquês salvos 💖");setTimeout(()=>setEscT("carta"),1200);}}>Salvar meus porquês</BtnPill>
         </div>)}
         {escT==="carta"&&(<div style={{paddingTop:4}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
@@ -2038,7 +2032,7 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, se
             </div>
           ) : (
             <div>
-              <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.3)`,lineHeight:1.7,marginBottom:16}}>Escreva para você mesma. Ninguém mais lê. Na Semana 12, um aviso especial vai aparecer na tela inicial convidando você a abrir.</div>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.3)`,lineHeight:1.7,marginBottom:16}}>Escreva para você mesma. Ninguém mais lê. Essa carta fica guardada aqui — na Semana 12, um aviso especial vai aparecer na tela inicial convidando você a abri-la.</div>
               <CartaEditor setCarta={setCarta} tk={tk}/>
             </div>
           )}
