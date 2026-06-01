@@ -1461,6 +1461,17 @@ function JornadaClube({ ir }) {
   const [convite, setConvite] = useState(false);
   if (convite) return <TelaConvite back={()=>setConvite(false)}/>;
   const lock = () => setConvite(true);
+
+  const LockCard = ({ children, msg }) => (
+    <div style={{position:"relative",borderRadius:10,overflow:"hidden"}} onClick={lock}>
+      <div style={{pointerEvents:"none",opacity:.38}}>{children}</div>
+      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5,cursor:"pointer"}}>
+        <div style={{fontSize:20}}>🔒</div>
+        {msg&&<div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:C.ouro,textAlign:"center",lineHeight:1.4,maxWidth:190,padding:"0 8px"}}>{msg}</div>}
+      </div>
+    </div>
+  );
+
   return (
     <div style={{animation:"fadeUp .35s ease"}}>
       <div style={{background:C.obs,padding:"12px 18px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.ouro}15`}}>
@@ -1468,33 +1479,90 @@ function JornadaClube({ ir }) {
         <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:C.ouro,letterSpacing:"0.2em"}}>Clube</div>
       </div>
       <Grain style={{padding:"16px 18px 24px"}}>
-        <div style={{background:`${C.ouro}08`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"12px 14px",marginBottom:16}}>
-          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(255,255,255,.4)`,lineHeight:1.5,textAlign:"center"}}>As ferramentas abaixo são exclusivas da Jornada AUGE</div>
-        </div>
-        <button onClick={lock} style={{width:"100%",background:`${C.blush}08`,border:`1px solid ${C.blush}22`,borderRadius:10,padding:"14px 18px",marginBottom:16,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontFamily:FB,fontWeight:400,fontSize:13,color:`rgba(255,255,255,.28)`,letterSpacing:"0.05em"}}>PROTOCOLO DE RETOMADA</div>
-          <div style={{fontSize:16}}>🔒</div>
-        </button>
-        <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:12}}>Ferramentas exclusivas</div>
-        {[
-          {icon:"🔁",tit:"Protocolo de Retomada",sub:"O coração do método."},
-          {icon:"⭕",tit:"Roda AUGE",sub:"Autodiagnóstico das 5 dimensões"},
-          {icon:"📅",tit:"Calendário completo",sub:"Sua evolução nas 12 semanas"},
-          {icon:"✍️",tit:"Espaços de escrita",sub:"Vitórias, Âncora, Porquês e Carta"},
-        ].map((item,i)=>(
-          <div key={i} onClick={lock} style={{background:`rgba(255,255,255,.03)`,border:`1px solid ${C.ouro}08`,borderRadius:10,padding:"13px 15px",marginBottom:9,cursor:"pointer",display:"flex",alignItems:"center",gap:13,opacity:.55}}>
-            <div style={{fontSize:20,flexShrink:0}}>{item.icon}</div>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:FS,fontSize:16,fontWeight:300,color:`rgba(255,255,255,.55)`,marginBottom:2}}>{item.tit}</div>
-              <div style={{fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.22)`,lineHeight:1.4}}>{item.sub}</div>
+
+        {/* Check-in diário — hábitos angulares bloqueados */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Check-in diário</div>
+          <LockCard msg="Personalize seus 3 hábitos na Jornada AUGE">
+            <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"14px"}}>
+              <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.35)`,marginBottom:10}}>Como você está hoje?</div>
+              {["1º hábito angular","2º hábito angular","3º hábito angular"].map((h,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                  <div style={{width:20,height:20,borderRadius:6,border:`1px solid ${C.ouro}30`,flexShrink:0}}/>
+                  <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.4)`}}>{h}</div>
+                </div>
+              ))}
             </div>
-            <div style={{fontSize:16}}>🔒</div>
-          </div>
-        ))}
-        <div style={{marginTop:18}}>
-          <BtnPill onClick={()=>window.open("https://wa.me/5548999999999","_blank")} style={{marginBottom:10,fontSize:13}}>Quero entrar na Jornada AUGE</BtnPill>
-          <BtnOut onClick={()=>ir(S.HOME)} style={{fontSize:13}}>Voltar ao início</BtnOut>
+          </LockCard>
         </div>
+
+        {/* Roda AUGE — S1 liberada, S6 e S12 bloqueadas */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Roda AUGE</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:6}}>
+            <button onClick={()=>ir(S.RODA)} style={{background:`${C.ouro}15`,border:`1px solid ${C.ouro}44`,borderRadius:10,padding:"14px 0",cursor:"pointer",color:C.ouro,fontFamily:FB,fontSize:12,letterSpacing:"0.2em"}}>
+              S1<br/><span style={{fontSize:9,opacity:.7}}>Início ✓</span>
+            </button>
+            {[["S6","Meio"],["S12","Fim"]].map(([m,sub])=>(
+              <button key={m} onClick={lock} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:10,padding:"14px 0",cursor:"pointer",color:`rgba(255,255,255,.22)`,fontFamily:FB,fontSize:12,letterSpacing:"0.2em",position:"relative"}}>
+                <div style={{position:"absolute",top:6,right:8,fontSize:10}}>🔒</div>
+                {m}<br/><span style={{fontSize:9,opacity:.5}}>{sub}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.2)`,lineHeight:1.5}}>S6 e S12 são exclusivos da Jornada AUGE</div>
+        </div>
+
+        {/* Protocolo de Retomada — regras visíveis, botão bloqueado */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Protocolo de Retomada</div>
+          <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"14px",marginBottom:8}}>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.35em",textTransform:"uppercase",marginBottom:10}}>A regra dos 2 dias</div>
+            {["Dois dias é o limite. No terceiro, você já não é mais a mesma.","Ontem não conta. Hoje conta com metade — e isso já é tudo.","Não compensa. Não é hora de provar nada. É hora de voltar.","O dia que você volta vale igual ao dia perfeito. Às vezes vale mais."].map((r,i)=>(
+              <div key={i} style={{display:"flex",gap:10,marginBottom:7}}><div style={{color:C.ouro,fontSize:14,flexShrink:0}}>·</div><div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.38)`,lineHeight:1.5}}>{r}</div></div>
+            ))}
+          </div>
+          <button onClick={lock} style={{width:"100%",background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}15`,borderRadius:50,padding:"13px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.22)`,letterSpacing:"0.04em"}}>Estou voltando agora</span>
+            <span style={{fontSize:15}}>🔒</span>
+          </button>
+        </div>
+
+        {/* Espaços de escrita — abas visíveis, tudo bloqueado */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Espaços de escrita</div>
+          <LockCard msg="Ferramentas exclusivas da Jornada AUGE">
+            <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,overflow:"hidden"}}>
+              <div style={{display:"flex",borderBottom:`1px solid ${C.ouro}10`}}>
+                {["Vitórias","Âncora","Porquês","Carta"].map((lb,i)=>(
+                  <div key={i} style={{flex:1,padding:"10px 0",fontFamily:FB,fontWeight:300,fontSize:10,color:i===0?C.ouro:`rgba(255,255,255,.18)`,textAlign:"center",borderBottom:`2px solid ${i===0?C.ouro:"transparent"}`}}>{lb}</div>
+                ))}
+              </div>
+              <div style={{padding:"16px",height:68,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{fontFamily:FS,fontStyle:"italic",fontSize:13,color:`rgba(255,255,255,.12)`,textAlign:"center"}}>Registre sua vitória da semana...</div>
+              </div>
+            </div>
+          </LockCard>
+        </div>
+
+        {/* Calendário — grade bloqueada */}
+        <div style={{marginBottom:20}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase"}}>Calendário das 12 semanas</div>
+            <span style={{fontSize:13}}>🔒</span>
+          </div>
+          <div onClick={lock} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,padding:"12px",cursor:"pointer"}}>
+            <div style={{display:"flex",gap:3,marginBottom:6}}>
+              {Array.from({length:12},(_,i)=>(
+                <div key={i} style={{flex:1,height:18,borderRadius:3,background:`rgba(196,168,130,${i<2?.12:.05})`,border:`1px solid ${C.ouro}08`}}/>
+              ))}
+            </div>
+            <div style={{fontFamily:FB,fontWeight:300,fontSize:10,color:`rgba(255,255,255,.18)`,textAlign:"center"}}>Disponível na Jornada AUGE</div>
+          </div>
+        </div>
+
+        <BtnPill onClick={()=>window.open("https://wa.me/5548999999999","_blank")} style={{marginBottom:10,fontSize:13}}>Quero entrar na Jornada AUGE</BtnPill>
+        <BtnOut onClick={()=>ir(S.HOME)} style={{fontSize:13}}>Voltar ao início</BtnOut>
       </Grain>
     </div>
   );
@@ -1873,11 +1941,30 @@ function Escritas({ vit, setVit, anc, setAnc, escT, setEscT, back, tk, carta, se
           </div>
           {carta ? (
             <div>
-              <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Escrita em {carta.data}</div>
-              <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"16px",marginBottom:16}}>
-                <div style={{fontFamily:FS,fontSize:14,color:`rgba(255,255,255,.65)`,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{carta.texto}</div>
-              </div>
-              <button onClick={()=>setCarta(null)} style={{background:"none",border:`1px solid ${C.ouro}15`,borderRadius:50,padding:"10px",width:"100%",fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.25)`,cursor:"pointer",letterSpacing:"0.1em"}}>Reescrever minha carta</button>
+              {(() => {
+                const semAtual = dataCadastro ? Math.min(12, Math.max(1, Math.ceil((Date.now()-dataCadastro.getTime())/(7*24*60*60*1000)))) : 1;
+                const isS12 = semAtual >= 12;
+                return (
+                  <>
+                    <div style={{fontFamily:FB,fontWeight:300,fontSize:9,color:C.ouro,letterSpacing:"0.3em",textTransform:"uppercase",marginBottom:8}}>Escrita em {carta.data}</div>
+                    <div style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}18`,borderRadius:10,padding:"16px",marginBottom:isS12?0:16}}>
+                      <div style={{fontFamily:FS,fontSize:14,color:`rgba(255,255,255,.65)`,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{carta.texto}</div>
+                    </div>
+                    {isS12 && (
+                      <div style={{marginTop:16,marginBottom:16,animation:"fadeUp .5s ease"}}>
+                        <div style={{borderLeft:`1px solid ${C.ouro}`,padding:"14px 16px",marginBottom:12}}>
+                          <p style={{fontFamily:FS,fontStyle:"italic",fontSize:15,color:C.ouro,lineHeight:1.6,margin:0}}>"O auge não é o que você foi. É o que você está construindo."</p>
+                        </div>
+                        <div style={{background:`${C.ouro}08`,border:`1px solid ${C.ouro}22`,borderRadius:10,padding:"16px 18px"}}>
+                          <div style={{fontFamily:FB,fontWeight:300,fontSize:14,color:`rgba(255,255,255,.75)`,lineHeight:1.7,marginBottom:10}}>Você chegou. 12 semanas de protagonismo. Isso é o seu auge. 💖</div>
+                          <div style={{fontFamily:FS,fontStyle:"italic",fontSize:12,color:C.ouro,letterSpacing:"0.04em"}}>— ISA, Inteligência do Clube do Auge · Método Dra. Isadora Zaniboni</div>
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={()=>setCarta(null)} style={{background:"none",border:`1px solid ${C.ouro}15`,borderRadius:50,padding:"10px",width:"100%",fontFamily:FB,fontWeight:300,fontSize:11,color:`rgba(255,255,255,.25)`,cursor:"pointer",letterSpacing:"0.1em"}}>Reescrever minha carta</button>
+                  </>
+                );
+              })()}
             </div>
           ) : (
             <div>
@@ -1942,10 +2029,13 @@ function Emergencia({ anc, kitMin, setKitMin, kitApoio, setKitApoio, back, tk })
 // ═══════════════════════════════════════════════════════════════════
 function Conteudo({ perfil }) {
   const [sub, setSub] = useState("clube");
+  const [showConvite, setShowConvite] = useState(false);
+  if (showConvite) return <TelaConvite back={()=>setShowConvite(false)}/>;
+  const lockCT = () => setShowConvite(true);
   const VS=[
     {id:1,tag:"Fisiologia 40+",titulo:"O que muda no seu corpo depois dos 40",dur:"18 min",thumb:"#1E252E"},
     {id:2,tag:"Longevidade",titulo:"Os 5 pilares da longevidade feminina",dur:"22 min",thumb:"#1E2E2A"},
-    {id:3,tag:"Movimento",titulo:"Treino de força em casa — sem equipamento",dur:"35 min",thumb:"#252028"},
+    {id:3,tag:"Movimento",titulo:"Força em casa — sem equipamento",dur:"35 min",thumb:"#252028"},
     {id:4,tag:"Mente",titulo:"Meditação guiada para reduzir ansiedade",dur:"12 min",thumb:"#201E2E"},
     {id:5,tag:"Sono",titulo:"Respiração para melhorar a qualidade do sono",dur:"8 min",thumb:"#1A2020"},
   ];
@@ -1966,13 +2056,11 @@ function Conteudo({ perfil }) {
         <Logo width={100} fundo="escuro"/>
         <div style={{width:40}}/>
       </div>
-      {perfil==="jornada"&&(
-        <div style={{background:C.obs,display:"flex",borderBottom:`1px solid ${C.ouro}12`,padding:"0 18px"}}>
-          {[["clube","Clube"],["jornada","Minha Jornada"]].map(([id,lb])=>(
-            <button key={id} onClick={()=>setSub(id)} style={{flex:1,padding:"11px 0",background:"none",border:"none",borderBottom:`2px solid ${sub===id?C.ouro:"transparent"}`,fontFamily:FB,fontWeight:300,fontSize:12,color:sub===id?C.ouro:`rgba(255,255,255,.3)`,cursor:"pointer",letterSpacing:"0.08em",transition:"all .2s"}}>{lb}</button>
-          ))}
-        </div>
-      )}
+      <div style={{background:C.obs,display:"flex",borderBottom:`1px solid ${C.ouro}12`,padding:"0 18px"}}>
+        {[["clube","Clube"],["jornada","Minha Jornada"]].map(([id,lb])=>(
+          <button key={id} onClick={()=>setSub(id)} style={{flex:1,padding:"11px 0",background:"none",border:"none",borderBottom:`2px solid ${sub===id?C.ouro:"transparent"}`,fontFamily:FB,fontWeight:300,fontSize:12,color:sub===id?C.ouro:`rgba(255,255,255,.3)`,cursor:"pointer",letterSpacing:"0.08em",transition:"all .2s"}}>{lb}</button>
+        ))}
+      </div>
       <Grain style={{padding:"14px 16px 8px"}}>
         {sub==="clube"&&VS.map(v=>(
           <div key={v.id} style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${C.ouro}12`,borderRadius:10,marginBottom:10,overflow:"hidden",display:"flex",cursor:"pointer"}}>
@@ -1990,7 +2078,7 @@ function Conteudo({ perfil }) {
             {GUIAS.map((g,i)=>{
               const bloq = perfil!=="jornada";
               return(
-              <div key={i} onClick={()=>bloq&&(window._showVit=true)}
+              <div key={i} onClick={()=>bloq?lockCT():null}
                 style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${bloq?C.ouro+"08":C.ouro+"15"}`,borderRadius:10,padding:"13px 15px",marginBottom:9,display:"flex",alignItems:"center",gap:12,cursor:"pointer",opacity:bloq?.6:1}}>
                 <div style={{fontSize:22,flexShrink:0}}>{g.icon}</div>
                 <div style={{flex:1}}>
@@ -2007,7 +2095,7 @@ function Conteudo({ perfil }) {
             {MINI.map((g,i)=>{
               const bloq = perfil!=="jornada";
               return(
-              <div key={i}
+              <div key={i} onClick={()=>bloq?lockCT():null}
                 style={{background:`rgba(255,255,255,.04)`,border:`1px solid ${bloq?C.ouro+"08":C.ouro+"15"}`,borderRadius:10,padding:"13px 15px",marginBottom:9,display:"flex",alignItems:"center",gap:12,cursor:"pointer",opacity:bloq?.6:1}}>
                 <div style={{fontSize:20,flexShrink:0}}>{g.icon}</div>
                 <div style={{flex:1}}>
