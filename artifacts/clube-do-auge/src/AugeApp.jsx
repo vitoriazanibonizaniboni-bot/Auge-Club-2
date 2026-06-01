@@ -158,7 +158,7 @@ function Logo({ width=200, fundo="escuro" }) {
   const tag = "#C4A882";
   const h = width * (158/380);
   return (
-    <svg width={width} height={h} viewBox="0 0 380 158" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={width} height={h} viewBox="0 0 380 158" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display:"block",margin:"0 auto"}}>
       <path d="M 35 126 C 110 142 272 46 350 38" stroke={arco} strokeWidth="0.55" fill="none" strokeLinecap="round"/>
       <circle cx="350" cy="38" r="1.5" fill={arco}/>
       <text x="190" y="34" textAnchor="middle" fontFamily="'Inter',sans-serif" fontWeight="300" fontSize="10" letterSpacing="7" fill={textoClube}>CLUBE DO</text>
@@ -744,7 +744,7 @@ function TelaAuth({ onAuth }) {
 
   if (mode === "esqueci") return (
     <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px",animation:"fadeUp .4s ease"}}>
-      <Logo width={150} fundo="escuro"/>
+      <Logo width={220} fundo="escuro"/>
       <div style={{fontFamily:FS,fontSize:20,fontWeight:300,color:C.linho,marginTop:24,marginBottom:8}}>Recuperar senha</div>
       {enviado ? (
         <div style={{background:`${C.augeZ}14`,border:`1px solid ${C.augeZ}33`,borderRadius:10,padding:"18px 16px",marginTop:16,textAlign:"center"}}>
@@ -768,7 +768,7 @@ function TelaAuth({ onAuth }) {
 
   if (mode === "cadastro") return (
     <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",padding:"40px 32px 48px",animation:"fadeUp .4s ease"}}>
-      <Logo width={150} fundo="escuro"/>
+      <Logo width={220} fundo="escuro"/>
       <div style={{fontFamily:FS,fontSize:20,fontWeight:300,color:C.linho,marginTop:16,marginBottom:6}}>Criar conta</div>
       <div style={{fontFamily:FB,fontWeight:300,fontSize:12,color:`rgba(255,255,255,.3)`,marginBottom:28,textAlign:"center"}}>Bem-vinda ao Clube do Auge</div>
       {aguardandoConfirmacao && (
@@ -810,7 +810,7 @@ function TelaAuth({ onAuth }) {
 
   return (
     <Grain style={{minHeight:760,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px 48px",animation:"fadeUp .4s ease"}}>
-      <Logo width={180} fundo="escuro"/>
+      <Logo width={260} fundo="escuro"/>
       <div style={{fontFamily:FS,fontSize:22,fontWeight:300,color:C.linho,marginTop:20,marginBottom:8}}>Bem-vinda</div>
       <div style={{fontFamily:FB,fontWeight:300,fontSize:13,color:`rgba(255,255,255,.35)`,marginBottom:40,textAlign:"center"}}>Entre com seu e-mail e senha</div>
       <div style={{width:"100%",marginBottom:28}}>
