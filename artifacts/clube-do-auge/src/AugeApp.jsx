@@ -62,7 +62,7 @@ const ABA_ORIGEM = {
   [S.JOR]: S.JOR,
   [S.RODA]: S.JOR,
   [S.RET]: S.JOR,
-  [S.CAL]: S.JOR,
+  [S.CAL]: S.HOME,
   [S.ESC]: S.JOR,
   [S.EM]: S.JOR,
   [S.CT]: S.CT,
@@ -1372,31 +1372,6 @@ export default function App() {
       </Phone>
     );
 
-  // LGPD pendente (caso raro: usuária antiga sem aceite)
-  if (perfil && !lgpdOk)
-    return (
-      <Phone>
-        <Rolar>
-          <AvisoLegal
-            onAceitar={async () => {
-              await supabase
-                .from("profiles")
-                .update({
-                  lgpd_aceito: true,
-                  lgpd_data: new Date().toISOString(),
-                })
-                .eq("id", authUser.id);
-              try {
-                localStorage.setItem("auge_lgpd", "true");
-              } catch {}
-              setLgpdOk(true);
-            }}
-          />
-        </Rolar>
-        <Estilos />
-      </Phone>
-    );
-
   // Diagnóstico de Sabotadores (primeiro acesso Jornada)
   if (tela === S.DIAG)
     return (
@@ -1984,7 +1959,7 @@ function Onboarding({ onConcluir }) {
 }
 
 // ─── MODAL TERMOS DE USO ──────────────────────────────────────────────────────
-const TEXTO_TERMOS = `Este aplicativo é um programa de desenvolvimento de hábitos e estilo de vida. Não substitui consulta médica, acompanhamento clínico individual, avaliação de exames ou prescrição de medicamentos de qualquer natureza. A formação médica da facilitadora, Dra. Isadora Zaniboni, informa a profundidade do conteúdo — não caracteriza ato médico. Seus dados são tratados conforme a LGPD (Lei 13.709/2018) e nunca compartilhados com terceiros. Você pode solicitar a exclusão de todos os seus dados a qualquer momento.`;
+const TEXTO_TERMOS = `Este aplicativo é um programa de desenvolvimento de hábitos e estilo de vida. Não substitui consulta médica, acompanhamento clínico individual, avaliação de exames ou prescrição de medicamentos de qualquer natureza. A formação médica da facilitadora, Dra. Isadora Zaniboni, informa a profundidade do conteúdo — não caracteriza ato médico. A tríade diagnóstica (anamnese, exame físico e conduta clínica) não está presente neste programa. Se você possui condições de saúde que requerem acompanhamento médico, a participação é complementar ao seu tratamento — nunca substituta. Seus dados de hábitos, monitoramento emocional e respostas da Roda AUGE são tratados como dados pessoais sensíveis, armazenados com segurança e nunca compartilhados com terceiros, conforme a LGPD (Lei 13.709/2018). Você pode solicitar a exclusão definitiva de todos os seus dados a qualquer momento através do suporte.`;
 
 function ModalTermos({ onAceitar, onFechar }) {
   const [chegouAoFim, setChegouAoFim] = useState(false);
