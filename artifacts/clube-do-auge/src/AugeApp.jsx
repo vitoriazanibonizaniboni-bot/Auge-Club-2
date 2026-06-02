@@ -999,6 +999,11 @@ export default function App() {
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
+      if (p.avatar_url) {
+        try {
+          localStorage.setItem("auge_foto", p.avatar_url);
+        } catch {}
+      }
       if (p.radar_cidade) {
         try {
           localStorage.setItem("auge_pref_cidade", p.radar_cidade);
@@ -1063,6 +1068,47 @@ export default function App() {
       setPq2(porquesRes.data.p2 || "");
       setPq3(porquesRes.data.p3 || "");
     }
+
+    // Carregar posts públicos do feed
+    const feedRes = await supabase
+      .from("feed")
+      .select(
+        "id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id",
+      )
+      .eq("publica", true)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (feedRes.data?.length) {
+      const postsReais = feedRes.data.map((p) => ({
+        id: p.id,
+        aut: p.autor_nome,
+        ini: p.autor_ini,
+        cor: p.autor_cor,
+        fundo: "#1E252E",
+        tit: p.titulo,
+        desc: p.descricao,
+        imgSrc: p.img_url || null,
+        tempo: formatTempo(p.created_at),
+        publica: p.publica,
+        cur: p.curtidas || [],
+        com: p.comentarios || [],
+        dbId: p.id,
+        userId: p.user_id,
+      }));
+      setFeed((f) => [...postsReais, ...FEED0]);
+    }
+  };
+
+  const formatTempo = (iso) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "agora";
+    if (min < 60) return `há ${min}min`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `há ${h}h`;
+    const d = Math.floor(h / 24);
+    return `há ${d}d`;
   };
 
   const logout = async () => {
@@ -1097,20 +1143,71 @@ export default function App() {
     }, 380);
   };
 
-  const postTreino = (entry) => {
-    setFeed((f) => [
-      {
-        id: Date.now(),
-        aut: "Você",
-        ini: "RF",
-        cor: C.ouroDk,
-        ...entry,
-        tempo: "agora",
-        cur: [],
-        com: [],
-      },
-      ...f,
-    ]);
+  const postTreino = async (entry) => {
+    const ini = usuario?.nome
+      ? usuario.nome
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((n) => n[0].toUpperCase())
+          .join("")
+      : "?";
+    let imgUrl = null;
+
+    // Upload da imagem se post público e tem foto
+    if (entry.publica !== false && entry.imgSrc && entry.imgFile) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        const f = entry.imgFile;
+        const ext = f.name.split(".").pop();
+        const path = `${session.user.id}/${Date.now()}.${ext}`;
+        const { data, error } = await supabase.storage
+          .from("posts")
+          .upload(path, f, { contentType: f.type });
+        if (!error) {
+          const { data: urlData } = supabase.storage
+            .from("posts")
+            .getPublicUrl(path);
+          imgUrl = urlData?.publicUrl || null;
+        }
+      }
+    }
+
+    const novoPost = {
+      id: Date.now(),
+      aut: usuario?.nome || "Você",
+      ini,
+      cor: C.ouroDk,
+      fundo: "#1E252E",
+      ...entry,
+      imgSrc: imgUrl || entry.imgSrc,
+      tempo: "agora",
+      cur: [],
+      com: [],
+    };
+    setFeed((f) => [novoPost, ...f]);
+
+    // Salva no Supabase se público
+    if (entry.publica !== false) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.user) return;
+        supabase
+          .from("feed")
+          .insert({
+            user_id: session.user.id,
+            autor_nome: usuario?.nome || "Aluna",
+            autor_ini: ini,
+            autor_cor: C.ouroDk,
+            titulo: entry.tit || "",
+            descricao: entry.desc || "",
+            publica: entry.publica !== false,
+            img_url: imgUrl,
+          })
+          .then(() => {});
+      });
+    }
     ir(S.FEED);
   };
 
@@ -4069,23 +4166,43 @@ function Home({
 function Feed({ feed, setFeed, ir }) {
   const [open, setOpen] = useState(null);
   const [txt, setTxt] = useState("");
-  const curtir = (id) =>
+  const curtir = (id) => {
     setFeed((f) =>
       f.map((p) => {
         if (p.id !== id) return p;
-        const j = p.cur.includes("RF");
-        return {
-          ...p,
-          cur: j ? p.cur.filter((x) => x !== "RF") : [...p.cur, "RF"],
-        };
+        const userId = authUser?.id || "RF";
+        const j = p.cur.includes(userId);
+        const newCur = j
+          ? p.cur.filter((x) => x !== userId)
+          : [...p.cur, userId];
+        // Salva curtida no Supabase se for post real (UUID)
+        if (p.dbId) {
+          supabase
+            .from("feed")
+            .update({ curtidas: newCur })
+            .eq("id", p.dbId)
+            .then(() => {});
+        }
+        return { ...p, cur: newCur };
       }),
     );
+  };
   const comentar = (id) => {
     if (!txt.trim()) return;
     setFeed((f) =>
-      f.map((p) =>
-        p.id === id ? { ...p, com: [...p.com, { q: "Você", t: txt }] } : p,
-      ),
+      f.map((p) => {
+        if (p.id !== id) return p;
+        const newCom = [...p.com, { q: "Você", t: txt }];
+        // Salva comentário no Supabase se for post real
+        if (p.dbId) {
+          supabase
+            .from("feed")
+            .update({ comentarios: newCom })
+            .eq("id", p.dbId)
+            .then(() => {});
+        }
+        return { ...p, com: newCom };
+      }),
     );
     setTxt("");
   };
@@ -4488,6 +4605,7 @@ function Novo({ back, postTreino }) {
   const [dur, setDur] = useState("");
   const [cap, setCap] = useState("");
   const [foto, setFoto] = useState(null);
+  const [fotoFile, setFotoFile] = useState(null);
   const [publica, setPublica] = useState(true);
   const ref = useRef();
   const ok = ex && dur && cap;
@@ -4553,6 +4671,7 @@ function Novo({ back, postTreino }) {
           onChange={(e) => {
             const f = e.target.files[0];
             if (!f) return;
+            setFotoFile(f);
             const r = new FileReader();
             r.onload = (ev) => setFoto(ev.target.result);
             r.readAsDataURL(f);
@@ -4767,6 +4886,7 @@ function Novo({ back, postTreino }) {
               desc: `${cap} (${dur})`,
               publica,
               imgSrc: foto,
+              imgFile: fotoFile,
             })
           }
           style={{ opacity: ok ? 1 : 0.4 }}
@@ -6841,7 +6961,7 @@ function Jornada({
         </div>
       </div>
       <Grain style={{ padding: "16px 18px 24px" }}>
-        {/* ��ncora */}
+        {/* Âncora */}
         <div
           style={{
             fontFamily: FS,
@@ -7932,8 +8052,7 @@ function Retomada({ anc, back, tk, setRet }) {
   );
 }
 
-// ─── CALENDÁRIO ────────────────────────
- �──────────────────────────────────────
+// ─── CALENDÁRIO ───────────────────────────────────────────────────────────────
 function Calendario({ back, historico, dataCadastro }) {
   const hoje = new Date();
   const ano = hoje.getFullYear();
@@ -9659,7 +9778,7 @@ function Perfil({
           type="file"
           accept="image/*"
           style={{ display: "none" }}
-          onChange={(e) => {
+          onChange={async (e) => {
             const f = e.target.files[0];
             if (!f) return;
             const r = new FileReader();
@@ -9670,6 +9789,30 @@ function Perfil({
               } catch {}
             };
             r.readAsDataURL(f);
+            // Upload para Supabase Storage
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (!session?.user) return;
+            const ext = f.name.split(".").pop() || "jpg";
+            const path = `${session.user.id}/avatar.${ext}`;
+            const { error } = await supabase.storage
+              .from("avatars")
+              .upload(path, f, { upsert: true, contentType: f.type });
+            if (!error) {
+              const { data: urlData } = supabase.storage
+                .from("avatars")
+                .getPublicUrl(path);
+              if (urlData?.publicUrl) {
+                await supabase
+                  .from("profiles")
+                  .update({ avatar_url: urlData.publicUrl })
+                  .eq("id", session.user.id);
+                try {
+                  localStorage.setItem("auge_foto_url", urlData.publicUrl);
+                } catch {}
+              }
+            }
           }}
         />
         <div
