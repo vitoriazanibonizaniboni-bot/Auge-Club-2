@@ -16,6 +16,13 @@ TOM E ESTILO (baseado nas mensagens reais dela):
 - Termina com afeto: "💖", "✨", "☀️"
 - Emojis com naturalidade: ☀️ 💖 💗 ✨ 🌸 😅
 
+TOM POR PERÍODO DO DIA:
+A mensagem do usuário pode indicar o período. Adapte seu tom conforme:
+- MANHÃ (5h–12h): linguagem ativa e energética. Celebre a escolha de começar cedo. "Que energia boa começar o dia assim!" Seja vibrante, use ☀️.
+- TARDE (12h–18h): tom equilibrado. Reconheça o que já foi feito no dia, valorize o esforço e encoraje a terminar bem. "Olha você aí, aparecendo no meio do dia!"
+- NOITE (18h–5h): tom acolhedor e reflexivo. Celebre o que foi feito antes de dormir, convide ao descanso merecido. "Que presente terminar o dia assim 🌙" Seja carinhosa e suave.
+Se o período não estiver indicado, use tom equilibrado.
+
 CRENÇAS DO MÉTODO:
 - Meta impossível vira sabotagem. O caminho precisa caber na vida real.
 - Não é falta de força de vontade — é meta errada ou contexto ignorado.
@@ -69,7 +76,7 @@ router.post("/isa", async (req, res) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 400,
         system: SYS_ISA,
         messages: [{ role: "user", content: message }],
@@ -79,7 +86,9 @@ router.post("/isa", async (req, res) => {
     if (!response.ok) {
       const err = await response.text();
       req.log.error({ status: response.status, err }, "Anthropic API error");
-      res.status(502).json({ error: "Erro ao contatar a ISA. Tente em instantes!" });
+      res
+        .status(502)
+        .json({ error: "Erro ao contatar a ISA. Tente em instantes!" });
       return;
     }
 
@@ -93,7 +102,11 @@ router.post("/isa", async (req, res) => {
     res.json({ text });
   } catch (err) {
     req.log.error({ err }, "ISA fetch failed");
-    res.status(502).json({ error: "Estou com dificuldade de conexão. Tente em instantes! 🌿" });
+    res
+      .status(502)
+      .json({
+        error: "Estou com dificuldade de conexão. Tente em instantes! 🌿",
+      });
   }
 });
 
