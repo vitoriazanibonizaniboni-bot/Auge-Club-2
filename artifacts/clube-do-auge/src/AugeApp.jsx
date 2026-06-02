@@ -1421,11 +1421,7 @@ export default function App() {
           <TelaConvite back={back} />
         );
       case S.CAL:
-        return perfil === "jornada" ? (
-          <Calendario {...ctx} />
-        ) : (
-          <TelaConvite back={back} />
-        );
+        return <Calendario {...ctx} />;
       case S.ESC:
         return perfil === "jornada" ? (
           <Escritas {...ctx} />
@@ -3343,7 +3339,9 @@ function Home({
           }}
         >
           BOM DIA
-          {usuario?.nome ? `, ${usuario.nome.split(" ")[0].toUpperCase()}` : ""}{" "}
+          {usuario?.nome
+            ? `, ${usuario.nome.split(" ")[0].toUpperCase()}`
+            : ""}{" "}
           ☀️
         </div>
         <div
