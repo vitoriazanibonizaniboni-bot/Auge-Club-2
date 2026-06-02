@@ -705,21 +705,6 @@ function Phone({ children }) {
           flexDirection: "column",
         }}
       >
-        <div
-          style={{
-            background: C.obs,
-            padding: "12px 24px 8px",
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: 12,
-            color: C.lt,
-            fontFamily: FB,
-            fontWeight: 300,
-          }}
-        >
-          <span>9:41</span>
-          <span>●●● 🔋</span>
-        </div>
         {children}
       </div>
     </div>
@@ -1393,8 +1378,26 @@ export default function App() {
       <Phone>
         <Rolar>
           <Diagnostico
-            onConcluir={() => {
+            onConcluir={(respostas) => {
               setDiagOk(true);
+              // Salva respostas no Supabase
+              supabase.auth.getSession().then(({ data: { session } }) => {
+                if (!session?.user) return;
+                supabase
+                  .from("diagnostico")
+                  .upsert(
+                    {
+                      user_id: session.user.id,
+                      p1: respostas[1] || null,
+                      p2: respostas[2] || null,
+                      p3: respostas[3] || null,
+                      p4: respostas[4] || null,
+                      p5: respostas[5] || null,
+                    },
+                    { onConflict: "user_id" },
+                  )
+                  .then(() => {});
+              });
               ir(S.HOME);
             }}
           />
@@ -6838,7 +6841,7 @@ function Jornada({
         </div>
       </div>
       <Grain style={{ padding: "16px 18px 24px" }}>
-        {/* Âncora */}
+        {/* ��ncora */}
         <div
           style={{
             fontFamily: FS,
@@ -7929,7 +7932,8 @@ function Retomada({ anc, back, tk, setRet }) {
   );
 }
 
-// ─── CALENDÁRIO ───────────────────────────────────────────────────────────────
+// ─── CALENDÁRIO ────────────────────────
+ �──────────────────────────────────────
 function Calendario({ back, historico, dataCadastro }) {
   const hoje = new Date();
   const ano = hoje.getFullYear();
