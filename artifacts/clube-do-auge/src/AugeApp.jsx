@@ -1436,11 +1436,7 @@ export default function App() {
           <TelaConvite back={back} />
         );
       case S.CAL:
-        return perfil === "jornada" ? (
-          <Calendario {...ctx} />
-        ) : (
-          <TelaConvite back={back} />
-        );
+        return <Calendario {...ctx} />;
       case S.ESC:
         return perfil === "jornada" ? (
           <Escritas {...ctx} />
