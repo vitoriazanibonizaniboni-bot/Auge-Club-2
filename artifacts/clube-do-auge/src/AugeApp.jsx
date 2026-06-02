@@ -883,7 +883,13 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [perfil, setPerfil] = useState(null);
-  const [lgpdOk, setLgpdOk] = useState(false);
+  const [lgpdOk, setLgpdOk] = useState(() => {
+    try {
+      return localStorage.getItem("auge_lgpd") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [diagOk, setDiagOk] = useLocalStorage("auge_diagOk", false);
   const [tela, setTela] = useState(S.HOME);
 
@@ -1006,28 +1012,7 @@ export default function App() {
       const p = profileRes.data;
       setPerfil(p.plano || "comunidade");
       setUsuario({ nome: p.nome || "", email: p.email || "" });
-      // Respeita localStorage (evita loop de LGPD para usuárias antigas)
-      const lgpdLocal = (() => {
-        try {
-          return localStorage.getItem("auge_lgpd") === "true";
-        } catch {
-          return false;
-        }
-      })();
-      const lgpdAceito = !!p.lgpd_aceito || lgpdLocal;
-      setLgpdOk(lgpdAceito);
-      if (lgpdAceito) {
-        try {
-          localStorage.setItem("auge_lgpd", "true");
-        } catch {}
-      }
-      if (lgpdLocal && !p.lgpd_aceito) {
-        supabase
-          .from("profiles")
-          .update({ lgpd_aceito: true, lgpd_data: new Date().toISOString() })
-          .eq("id", p.id)
-          .then(() => {});
-      }
+      setLgpdOk(!!p.lgpd_aceito);
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
     } else {
       setPerfil("comunidade");
@@ -1388,7 +1373,7 @@ export default function App() {
     );
 
   // LGPD pendente (caso raro: usuária antiga sem aceite)
-  if (!lgpdOk)
+  if (perfil && !lgpdOk)
     return (
       <Phone>
         <Rolar>
@@ -1461,7 +1446,11 @@ export default function App() {
           <TelaConvite back={back} />
         );
       case S.CAL:
-        return <Calendario {...ctx} />;
+        return perfil === "jornada" ? (
+          <Calendario {...ctx} />
+        ) : (
+          <TelaConvite back={back} />
+        );
       case S.ESC:
         return perfil === "jornada" ? (
           <Escritas {...ctx} />
@@ -4005,83 +3994,33 @@ function Home({
           </div>
         )}
 
-        {/* Calendário mensal */}
-        <div
+        {/* Botão Ver meu progresso */}
+        <button
+          onClick={() => ir(S.CAL)}
           style={{
+            width: "100%",
+            background: "transparent",
+            border: `1px solid ${C.ouro}22`,
+            borderRadius: 50,
+            padding: "13px 18px",
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
-            color: C.ouro,
-            letterSpacing: "0.35em",
-            textTransform: "uppercase",
-            marginBottom: 12,
+            fontSize: 12,
+            color: `rgba(255,255,255,.45)`,
+            cursor: "pointer",
+            letterSpacing: "0.06em",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
             marginTop: passo === 0 ? 0 : 16,
+            marginBottom: 8,
           }}
         >
-          Maio 2026 · Calendário
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(7,1fr)",
-            gap: 4,
-            marginBottom: 10,
-          }}
-        >
-          {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
-            <div
-              key={i}
-              style={{
-                textAlign: "center",
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 9,
-                color: `rgba(255,255,255,.25)`,
-                padding: "2px 0",
-              }}
-            >
-              {d}
-            </div>
-          ))}
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={"e" + i} />
-          ))}
-          {dias.map((d) => {
-            const { bg, tc, bo, ex } = rdCor(d);
-            return (
-              <div
-                key={d}
-                style={{
-                  aspectRatio: "1",
-                  borderRadius: 7,
-                  background: bg,
-                  border: bo || "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: ex ? 8 : 10,
-                  fontFamily: FS,
-                  fontWeight: 300,
-                  color: tc,
-                }}
-              >
-                {ex || d}
-              </div>
-            );
-          })}
-        </div>
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 10,
-            color: `rgba(255,255,255,.2)`,
-            lineHeight: 1.5,
-            marginBottom: 18,
-          }}
-        >
-          Pequeno, repetido e infinito. Qualquer cor é uma vitória.
-        </div>
+          <span>📅</span>
+          <span>Ver meu progresso</span>
+          <span style={{ color: C.ouro, fontSize: 16 }}>›</span>
+        </button>
 
         {/* Próximo encontro */}
         {perfil === "jornada" && (
@@ -9086,92 +9025,167 @@ function Emergencia({
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ABA: CONTEÚDO
+// ABA: CONTEÚDO — categorias por tipo
 // ═══════════════════════════════════════════════════════════════════
-function Conteudo({ perfil }) {
-  const [sub, setSub] = useState("clube");
-  const [showConvite, setShowConvite] = useState(false);
-  if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
-  const lockCT = () => setShowConvite(true);
-  const VS = [
+const CATS = [
+  {
+    id: "yoga",
+    icon: "🧘",
+    label: "Yoga e meditação",
+    lock: false,
+    cor: "#1E2E2A",
+  },
+  { id: "nutri", icon: "🥗", label: "Nutrição", lock: false, cor: "#1E2820" },
+  {
+    id: "podcast",
+    icon: "🎙️",
+    label: "Podcast com a Isa",
+    lock: false,
+    cor: "#252028",
+  },
+  {
+    id: "convid",
+    icon: "👥",
+    label: "Convidadas",
+    lock: false,
+    cor: "#1E252E",
+  },
+  {
+    id: "jornada",
+    icon: "📽️",
+    label: "Jornada ao vivo",
+    lock: true,
+    cor: "#2E2018",
+  },
+];
+
+const VIDS = {
+  yoga: [
     {
       id: 1,
-      tag: "Fisiologia 40+",
-      titulo: "O que muda no seu corpo depois dos 40",
-      dur: "18 min",
-      thumb: "#1E252E",
+      titulo: "Flow matinal — 30 min",
+      sub: "Com Fernanda · Yoga",
+      dur: "32 min",
     },
     {
       id: 2,
-      tag: "Longevidade",
-      titulo: "Os 5 pilares da longevidade feminina",
-      dur: "22 min",
-      thumb: "#1E2E2A",
+      titulo: "Yoga restaurativa",
+      sub: "Com Fernanda · Yoga",
+      dur: "28 min",
     },
     {
       id: 3,
-      tag: "Movimento",
-      titulo: "Força em casa — sem equipamento",
-      dur: "35 min",
-      thumb: "#252028",
+      titulo: "Meditação para dormir",
+      sub: "Com Fernanda · Meditação",
+      dur: "15 min",
     },
     {
       id: 4,
-      tag: "Mente",
-      titulo: "Meditação guiada para reduzir ansiedade",
-      dur: "12 min",
-      thumb: "#201E2E",
+      titulo: "Respiração e equilíbrio",
+      sub: "Com Fernanda · Yoga",
+      dur: "20 min",
     },
+  ],
+  nutri: [
     {
       id: 5,
-      tag: "Sono",
-      titulo: "Respiração para melhorar a qualidade do sono",
-      dur: "8 min",
-      thumb: "#1A2020",
-    },
-  ];
-  const GUIAS = [
-    {
-      icon: "🏃",
-      titulo: "Guia do Movimento",
-      sub: "Mês 1 · Volume 1",
-      tag: "PDF",
+      titulo: "Proteína no dia a dia",
+      sub: "Dra. Ana · Nutrição",
+      dur: "22 min",
     },
     {
-      icon: "🥗",
-      titulo: "Guia da Alimentação e Hidratação",
-      sub: "Mês 2 · Volume 2",
-      tag: "PDF",
+      id: 6,
+      titulo: "Como montar seu prato",
+      sub: "Dra. Ana · Nutrição",
+      dur: "18 min",
     },
     {
-      icon: "🌙",
-      titulo: "Guia do Tempo para Si",
-      sub: "Mês 3 · Volume 3",
-      tag: "PDF",
+      id: 7,
+      titulo: "Hidratação e energia",
+      sub: "Dra. Ana · Nutrição",
+      dur: "14 min",
     },
-  ];
-  const MINI = [
+  ],
+  podcast: [
     {
-      icon: "🎯",
-      titulo: "Mini Guia do Sabotador Principal",
-      sub: "Diagnóstico personalizado",
-      tag: "PDF",
-    },
-    {
-      icon: "🥘",
-      titulo: "Planejamento Alimentar em 15 min",
-      sub: "Template semanal",
-      tag: "PDF",
+      id: 8,
+      titulo: "A regra dos 2 dias",
+      sub: "Dra. Isadora · Método",
+      dur: "15 min",
     },
     {
-      icon: "📖",
-      titulo: "Curadoria do Auge",
-      sub: "Leituras recomendadas",
-      tag: "Lista",
+      id: 9,
+      titulo: "Por que você sabota",
+      sub: "Dra. Isadora · Método",
+      dur: "20 min",
     },
-  ];
+    {
+      id: 10,
+      titulo: "Protagonismo aos 40+",
+      sub: "Dra. Isadora · Método",
+      dur: "18 min",
+    },
+    {
+      id: 11,
+      titulo: "O que muda no corpo depois dos 40",
+      sub: "Dra. Isadora · Fisiologia",
+      dur: "22 min",
+    },
+  ],
+  convid: [
+    {
+      id: 12,
+      titulo: "Sono e hormônios",
+      sub: "Dra. Paula · Convidada",
+      dur: "35 min",
+    },
+    {
+      id: 13,
+      titulo: "Saúde mental feminina",
+      sub: "Dra. Carla · Convidada",
+      dur: "28 min",
+    },
+  ],
+  jornada: [
+    {
+      id: 14,
+      titulo: "Encontro Semana 1",
+      sub: "Dra. Isadora · Ao vivo",
+      dur: "75 min",
+    },
+    {
+      id: 15,
+      titulo: "Encontro Semana 2",
+      sub: "Dra. Isadora · Ao vivo",
+      dur: "72 min",
+    },
+    {
+      id: 16,
+      titulo: "Encontro Semana 3",
+      sub: "Dra. Isadora · Ao vivo",
+      dur: "78 min",
+    },
+    {
+      id: 17,
+      titulo: "Encontro Semana 4",
+      sub: "Dra. Isadora · Ao vivo",
+      dur: "70 min",
+    },
+  ],
+};
+
+function Conteudo({ perfil }) {
+  const [catSel, setCatSel] = useState("yoga");
+  const [showConvite, setShowConvite] = useState(false);
+  if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
+
+  const catAtual = CATS.find((c) => c.id === catSel);
+  const bloqCat = catAtual?.lock && perfil !== "jornada";
+  const videos = VIDS[catSel] || [];
+
   return (
     <div style={{ animation: "fadeUp .35s ease" }}>
+      {/* Header */}
       <div
         style={{
           background: C.obs,
@@ -9186,312 +9200,226 @@ function Conteudo({ perfil }) {
         <Logo width={100} fundo="escuro" />
         <div style={{ width: 40 }} />
       </div>
+
+      {/* Grid de categorias 3x2 */}
       <div
         style={{
           background: C.obs,
-          display: "flex",
-          borderBottom: `1px solid ${C.ouro}12`,
-          padding: "0 18px",
+          padding: "14px 16px 0",
+          borderBottom: `1px solid ${C.ouro}10`,
         }}
       >
-        {[
-          ["clube", "Clube"],
-          ["jornada", "Minha Jornada"],
-        ].map(([id, lb]) => (
-          <button
-            key={id}
-            onClick={() => setSub(id)}
+        <div
+          style={{
+            fontFamily: FB,
+            fontWeight: 300,
+            fontSize: 9,
+            color: `rgba(255,255,255,.3)`,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            marginBottom: 10,
+          }}
+        >
+          Categorias
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3,1fr)",
+            gap: 8,
+            paddingBottom: 14,
+          }}
+        >
+          {CATS.map((cat) => {
+            const bloq = cat.lock && perfil !== "jornada";
+            const ativa = catSel === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setCatSel(cat.id)}
+                style={{
+                  background: ativa ? `${C.ouro}20` : `rgba(255,255,255,.04)`,
+                  border: `1px solid ${ativa ? C.ouro + "44" : C.ouro + "12"}`,
+                  borderRadius: 10,
+                  padding: "12px 6px",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  position: "relative",
+                }}
+              >
+                {bloq && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 5,
+                      right: 6,
+                      fontSize: 9,
+                    }}
+                  >
+                    🔒
+                  </div>
+                )}
+                <div style={{ fontSize: 18, marginBottom: 4 }}>{cat.icon}</div>
+                <div
+                  style={{
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 10,
+                    color: ativa
+                      ? C.ouro
+                      : bloq
+                        ? `rgba(255,255,255,.2)`
+                        : `rgba(255,255,255,.45)`,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {cat.label}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <Grain style={{ padding: "14px 16px 24px" }}>
+        {/* Título da categoria selecionada */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 14,
+          }}
+        >
+          <div style={{ fontSize: 18 }}>{catAtual?.icon}</div>
+          <div
             style={{
-              flex: 1,
-              padding: "11px 0",
-              background: "none",
-              border: "none",
-              borderBottom: `2px solid ${sub === id ? C.ouro : "transparent"}`,
-              fontFamily: FB,
+              fontFamily: FS,
+              fontSize: 18,
               fontWeight: 300,
-              fontSize: 12,
-              color: sub === id ? C.ouro : `rgba(255,255,255,.3)`,
-              cursor: "pointer",
-              letterSpacing: "0.08em",
-              transition: "all .2s",
+              color: `rgba(255,255,255,.85)`,
             }}
           >
-            {lb}
-          </button>
-        ))}
-      </div>
-      <Grain style={{ padding: "14px 16px 8px" }}>
-        {sub === "clube" &&
-          VS.map((v) => (
+            {catAtual?.label}
+          </div>
+          {bloqCat && (
             <div
-              key={v.id}
               style={{
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}12`,
-                borderRadius: 10,
-                marginBottom: 10,
-                overflow: "hidden",
-                display: "flex",
-                cursor: "pointer",
+                background: `${C.ouro}15`,
+                border: `1px solid ${C.ouro}30`,
+                borderRadius: 20,
+                padding: "2px 10px",
+                fontFamily: FB,
+                fontSize: 9,
+                color: C.ouro,
+                letterSpacing: "0.1em",
               }}
             >
-              <div
-                style={{
-                  width: 88,
-                  background: v.thumb,
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 24,
-                  color: `rgba(255,255,255,.3)`,
-                }}
-              >
-                ▶
-              </div>
-              <div style={{ padding: "12px 14px", flex: 1 }}>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 9,
-                    color: C.ouro,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                    marginBottom: 3,
-                  }}
-                >
-                  {v.tag}
-                </div>
-                <div
-                  style={{
-                    fontFamily: FS,
-                    fontSize: 15,
-                    color: `rgba(255,255,255,.75)`,
-                    lineHeight: 1.3,
-                    marginBottom: 3,
-                  }}
-                >
-                  {v.titulo}
-                </div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 11,
-                    color: `rgba(255,255,255,.3)`,
-                  }}
-                >
-                  Dra. Isadora · {v.dur}
-                </div>
-              </div>
+              Jornada AUGE
             </div>
-          ))}
-        {sub === "jornada" && (
-          <div>
+          )}
+        </div>
+
+        {/* Aviso de bloqueio */}
+        {bloqCat && (
+          <div
+            style={{
+              background: `${C.ouro}0A`,
+              border: `1px solid ${C.ouro}20`,
+              borderRadius: 10,
+              padding: "14px 16px",
+              marginBottom: 16,
+            }}
+          >
             <div
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
-                color: C.ouro,
-                letterSpacing: "0.35em",
-                textTransform: "uppercase",
+                fontSize: 13,
+                color: `rgba(255,255,255,.5)`,
+                lineHeight: 1.6,
                 marginBottom: 12,
               }}
             >
-              Guias dos Hábitos Angulares
+              Os encontros ao vivo da Jornada ficam salvos aqui para você
+              assistir quando quiser.
             </div>
-            {GUIAS.map((g, i) => {
-              const bloq = perfil !== "jornada";
-              return (
-                <div
-                  key={i}
-                  onClick={() => (bloq ? lockCT() : null)}
-                  style={{
-                    background: `rgba(255,255,255,.04)`,
-                    border: `1px solid ${bloq ? C.ouro + "08" : C.ouro + "15"}`,
-                    borderRadius: 10,
-                    padding: "13px 15px",
-                    marginBottom: 9,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    cursor: "pointer",
-                    opacity: bloq ? 0.6 : 1,
-                  }}
-                >
-                  <div style={{ fontSize: 22, flexShrink: 0 }}>{g.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontFamily: FS,
-                        fontSize: 15,
-                        color: bloq
-                          ? `rgba(255,255,255,.4)`
-                          : `rgba(255,255,255,.8)`,
-                        marginBottom: 2,
-                      }}
-                    >
-                      {g.titulo}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: FB,
-                        fontWeight: 300,
-                        fontSize: 11,
-                        color: `rgba(255,255,255,.25)`,
-                      }}
-                    >
-                      {g.sub}
-                    </div>
-                  </div>
-                  {bloq ? (
-                    <div style={{ fontSize: 18 }}>🔒</div>
-                  ) : (
-                    <div
-                      style={{
-                        background: `${C.ouro}18`,
-                        border: `1px solid ${C.ouro}30`,
-                        borderRadius: 20,
-                        padding: "3px 9px",
-                        fontFamily: FB,
-                        fontSize: 9,
-                        color: C.ouro,
-                        letterSpacing: "0.1em",
-                      }}
-                    >
-                      {g.tag}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 9,
-                color: C.ouro,
-                letterSpacing: "0.35em",
-                textTransform: "uppercase",
-                marginBottom: 12,
-                marginTop: 18,
-              }}
+            <BtnPill
+              onClick={() => setShowConvite(true)}
+              style={{ fontSize: 13 }}
             >
-              Mini Guias e Ferramentas
-            </div>
-            {MINI.map((g, i) => {
-              const bloq = perfil !== "jornada";
-              return (
-                <div
-                  key={i}
-                  onClick={() => (bloq ? lockCT() : null)}
-                  style={{
-                    background: `rgba(255,255,255,.04)`,
-                    border: `1px solid ${bloq ? C.ouro + "08" : C.ouro + "15"}`,
-                    borderRadius: 10,
-                    padding: "13px 15px",
-                    marginBottom: 9,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    cursor: "pointer",
-                    opacity: bloq ? 0.6 : 1,
-                  }}
-                >
-                  <div style={{ fontSize: 20, flexShrink: 0 }}>{g.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontFamily: FS,
-                        fontSize: 15,
-                        color: bloq
-                          ? `rgba(255,255,255,.4)`
-                          : `rgba(255,255,255,.8)`,
-                        marginBottom: 2,
-                      }}
-                    >
-                      {g.titulo}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: FB,
-                        fontWeight: 300,
-                        fontSize: 11,
-                        color: `rgba(255,255,255,.25)`,
-                      }}
-                    >
-                      {g.sub}
-                    </div>
-                  </div>
-                  {bloq ? (
-                    <div style={{ fontSize: 18 }}>🔒</div>
-                  ) : (
-                    <div
-                      style={{
-                        background: `${C.ouro}18`,
-                        border: `1px solid ${C.ouro}30`,
-                        borderRadius: 20,
-                        padding: "3px 9px",
-                        fontFamily: FB,
-                        fontSize: 9,
-                        color: C.ouro,
-                        letterSpacing: "0.1em",
-                      }}
-                    >
-                      {g.tag}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {perfil !== "jornada" && (
-              <div
-                style={{
-                  background: `${C.ouro}10`,
-                  border: `1px solid ${C.ouro}25`,
-                  borderRadius: 10,
-                  padding: "16px",
-                  marginTop: 8,
-                  textAlign: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: FS,
-                    fontStyle: "italic",
-                    fontSize: 15,
-                    color: C.ouro,
-                    marginBottom: 8,
-                  }}
-                >
-                  Quer ter acesso a todo o conteúdo?
-                </div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 12,
-                    color: `rgba(255,255,255,.4)`,
-                    lineHeight: 1.6,
-                    marginBottom: 14,
-                  }}
-                >
-                  Os guias e mini guias são exclusivos da Jornada AUGE.
-                </div>
-                <BtnPill
-                  onClick={() =>
-                    window.open("https://wa.me/5548999999999", "_blank")
-                  }
-                  style={{ fontSize: 13 }}
-                >
-                  Quero entrar na lista de espera
-                </BtnPill>
-              </div>
-            )}
+              Quero entrar na Jornada AUGE
+            </BtnPill>
           </div>
         )}
+
+        {/* Lista de vídeos */}
+        {videos.map((v) => (
+          <div
+            key={v.id}
+            style={{
+              background: `rgba(255,255,255,.04)`,
+              border: `1px solid ${C.ouro}12`,
+              borderRadius: 10,
+              marginBottom: 9,
+              overflow: "hidden",
+              display: "flex",
+              cursor: "pointer",
+              opacity: bloqCat ? 0.5 : 1,
+            }}
+          >
+            <div
+              style={{
+                width: 80,
+                background: catAtual?.cor || "#1E252E",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: bloqCat ? 18 : 22,
+                color: `rgba(255,255,255,.3)`,
+              }}
+            >
+              {bloqCat ? "🔒" : "▶"}
+            </div>
+            <div style={{ padding: "11px 13px", flex: 1 }}>
+              <div
+                style={{
+                  fontFamily: FS,
+                  fontSize: 15,
+                  color: bloqCat
+                    ? `rgba(255,255,255,.35)`
+                    : `rgba(255,255,255,.85)`,
+                  marginBottom: 3,
+                  lineHeight: 1.3,
+                }}
+              >
+                {v.titulo}
+              </div>
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 10,
+                  color: `rgba(255,255,255,.3)`,
+                  marginBottom: 2,
+                }}
+              >
+                {v.sub}
+              </div>
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 10,
+                  color: bloqCat ? C.ouro : `rgba(255,255,255,.2)`,
+                }}
+              >
+                {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
+              </div>
+            </div>
+          </div>
+        ))}
       </Grain>
     </div>
   );
