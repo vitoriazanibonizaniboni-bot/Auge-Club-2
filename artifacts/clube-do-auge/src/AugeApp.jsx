@@ -1014,6 +1014,20 @@ export default function App() {
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
+      if (p.radar_cidade) {
+        try {
+          localStorage.setItem("auge_pref_cidade", p.radar_cidade);
+        } catch {}
+      }
+      if (p.radar_interesses?.length) {
+        try {
+          localStorage.setItem(
+            "auge_pref_sels",
+            JSON.stringify(p.radar_interesses),
+          );
+          localStorage.setItem("auge_pref_salvo", "1");
+        } catch {}
+      }
     } else {
       setPerfil("comunidade");
     }
@@ -7920,26 +7934,62 @@ function Retomada({ anc, back, tk, setRet }) {
 }
 
 // ─── CALENDÁRIO ───────────────────────────────────────────────────────────────
-function Calendario({ back }) {
-  const dias = Array.from({ length: 31 }, (_, i) => i + 1);
-  const rdCor = (d) => {
-    const t = CAL_D[d];
-    if (t === "f") return { bg: C.ouro, tc: C.obs, bo: "none" };
-    if (t === "p")
+function Calendario({ back, historico, dataCadastro }) {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const nomeMes = hoje.toLocaleString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  });
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+  const rdCor = (dataStr) => {
+    const d = historico[dataStr];
+    if (!d)
+      return {
+        bg: "transparent",
+        tc: `rgba(255,255,255,.2)`,
+        bo: `1px solid ${C.ouro}10`,
+      };
+    if (d.retomada) return { bg: `${C.blush}40`, tc: C.blush, bo: "none" };
+    if (d.total > 0 && d.feitos === d.total)
+      return { bg: C.ouro, tc: C.obs, bo: "none" };
+    if (d.feitos > 0)
       return { bg: `${C.ouroLt}30`, tc: C.ouroDk, bo: `1.5px solid ${C.ouro}` };
-    if (t === "k") return { bg: `${C.blush}40`, tc: C.blush, bo: "none" };
-    if (t === "*") return { bg: C.ouro, tc: C.obs, bo: "none", ex: "★" };
-    if (t === "h")
-      return { bg: C.ouroDk, tc: C.branco, bo: `2px solid ${C.ouro}` };
     return {
       bg: "transparent",
       tc: `rgba(255,255,255,.2)`,
       bo: `1px solid ${C.ouro}10`,
     };
   };
+
+  // Barras de semanas baseadas em checkins reais
+  const semanas = dataCadastro
+    ? Array.from({ length: 12 }, (_, s) => {
+        const ini = new Date(dataCadastro);
+        ini.setDate(ini.getDate() + s * 7);
+        let dias = 0,
+          feitos = 0;
+        for (let d = 0; d < 7; d++) {
+          const dt = new Date(ini);
+          dt.setDate(dt.getDate() + d);
+          const k = dt.toISOString().split("T")[0];
+          if (historico[k]) {
+            dias++;
+            if (historico[k].feitos > 0 || historico[k].retomada) feitos++;
+          }
+        }
+        return dias > 0 ? feitos / dias : 0;
+      })
+    : Array(12).fill(0);
+
+  const todayStr = hoje.toISOString().split("T")[0];
+
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Calendário" voltar={back} />
+      <Cab titulo="Meu progresso" voltar={back} />
       <Grain style={{ padding: "18px 18px 32px" }}>
         <div
           style={{
@@ -7954,12 +8004,20 @@ function Calendario({ back }) {
         >
           As 12 semanas
         </div>
-        <div style={{ display: "flex", gap: 4, marginBottom: 22 }}>
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((s) => {
-            const h = s < 3 ? 42 : s === 3 ? 21 : 8;
+        <div
+          style={{
+            display: "flex",
+            gap: 4,
+            marginBottom: 22,
+            alignItems: "flex-end",
+          }}
+        >
+          {semanas.map((pct, i) => {
+            const h = Math.max(6, Math.round(pct * 42));
+            const op = pct === 0 ? 0.12 : 0.3 + pct * 0.7;
             return (
               <div
-                key={s}
+                key={i}
                 style={{
                   flex: 1,
                   display: "flex",
@@ -7971,7 +8029,7 @@ function Calendario({ back }) {
                 <div
                   style={{
                     width: "100%",
-                    background: `rgba(196,168,130,${s <= 2 ? 0.7 : s === 3 ? 0.4 : 0.12})`,
+                    background: `rgba(196,168,130,${op})`,
                     borderRadius: 4,
                     height: h,
                   }}
@@ -7984,12 +8042,13 @@ function Calendario({ back }) {
                     color: `rgba(255,255,255,.25)`,
                   }}
                 >
-                  {s}
+                  {i + 1}
                 </div>
               </div>
             );
           })}
         </div>
+
         <div
           style={{
             fontFamily: FB,
@@ -8001,7 +8060,7 @@ function Calendario({ back }) {
             marginBottom: 12,
           }}
         >
-          Maio 2026
+          {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
         </div>
         <div
           style={{
@@ -8026,29 +8085,33 @@ function Calendario({ back }) {
               {d}
             </div>
           ))}
-          {Array.from({ length: 4 }, (_, i) => (
+          {Array.from({ length: primeiroDia }, (_, i) => (
             <div key={"e" + i} />
           ))}
-          {dias.map((d) => {
-            const { bg, tc, bo, ex } = rdCor(d);
+          {Array.from({ length: diasNoMes }, (_, i) => {
+            const dia = i + 1;
+            const dataStr = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+            const { bg, tc, bo } = rdCor(dataStr);
+            const isHoje = dataStr === todayStr;
             return (
               <div
-                key={d}
+                key={dia}
                 style={{
                   aspectRatio: "1",
                   borderRadius: 7,
                   background: bg,
-                  border: bo || "none",
+                  border: isHoje ? `2px solid ${C.ouro}` : bo || "none",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: ex ? 8 : 10,
+                  fontSize: 10,
                   fontFamily: FS,
                   fontWeight: 300,
                   color: tc,
+                  boxShadow: isHoje ? `0 0 0 1px ${C.ouro}44` : "none",
                 }}
               >
-                {ex || d}
+                {dia}
               </div>
             );
           })}
@@ -10009,7 +10072,7 @@ function Perfil({
         )}
 
         {/* Preferências para o radar de amigas */}
-        <PrefRadar />
+        <PrefRadar authUserId={authUserId} />
         <EditarHabitos
           habAngulares={habAngulares}
           setHabAngulares={setHabAngulares}
@@ -10043,7 +10106,7 @@ function Perfil({
   );
 }
 
-function PrefRadar() {
+function PrefRadar({ authUserId }) {
   const INTERESSES = [
     "Caminhada",
     "Corrida",
@@ -10087,6 +10150,16 @@ function PrefRadar() {
       localStorage.setItem("auge_pref_sels", JSON.stringify(sels));
       localStorage.setItem("auge_pref_salvo", "1");
     } catch {}
+    if (authUserId) {
+      supabase
+        .from("profiles")
+        .update({
+          radar_cidade: cidade,
+          radar_interesses: sels,
+        })
+        .eq("id", authUserId)
+        .then(() => {});
+    }
     setSalvo(true);
     setEditando(false);
   };
