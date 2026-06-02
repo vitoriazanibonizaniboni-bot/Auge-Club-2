@@ -7098,12 +7098,7 @@ function Jornada({
             sub: "Autodiagnóstico das 5 dimensões · 25 perguntas",
             sc: S.RODA,
           },
-          {
-            icon: "📅",
-            tit: "Calendário completo",
-            sub: "Sua evolução nas 12 semanas",
-            sc: S.CAL,
-          },
+
           {
             icon: "✍️",
             tit: "Espaços de escrita",
@@ -8119,6 +8114,10 @@ function Escritas({
 }) {
   const [nv, setNv] = useState("");
   const [na, setNa] = useState(anc);
+  const [editAnc, setEditAnc] = useState(
+    !anc || anc === "Eu sou a mulher que volta.",
+  );
+  const [editPq, setEditPq] = useState(false);
   const [isaVit, setIsaVit] = useState(null);
   const [isaVitLoad, setIsaVitLoad] = useState(false);
   const salvarVit = async () => {
@@ -8302,127 +8301,258 @@ function Escritas({
         )}
         {escT === "ancora" && (
           <div>
-            <div
-              style={{
-                background: `${C.ouro}10`,
-                border: `1px solid ${C.ouro}18`,
-                borderRadius: 10,
-                padding: "22px 18px",
-                textAlign: "center",
-                marginBottom: 16,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: FS,
-                  fontStyle: "italic",
-                  fontSize: 20,
-                  color: C.ouro,
-                  lineHeight: 1.5,
-                }}
-              >
-                "{na || anc}"
+            {anc && anc !== "Eu sou a mulher que volta." && !editAnc ? (
+              <div>
+                <div
+                  style={{
+                    background: `${C.ouro}10`,
+                    border: `1px solid ${C.ouro}28`,
+                    borderRadius: 10,
+                    padding: "26px 18px",
+                    textAlign: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: FB,
+                      fontWeight: 300,
+                      fontSize: 9,
+                      color: C.ouro,
+                      letterSpacing: "0.3em",
+                      textTransform: "uppercase",
+                      marginBottom: 12,
+                    }}
+                  >
+                    Minha âncora
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: FS,
+                      fontStyle: "italic",
+                      fontSize: 20,
+                      color: C.ouro,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    "{anc}"
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setNa(anc);
+                    setEditAnc(true);
+                  }}
+                  style={{
+                    width: "100%",
+                    background: "none",
+                    border: `1px solid ${C.ouro}20`,
+                    borderRadius: 50,
+                    padding: "12px",
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 12,
+                    color: `rgba(255,255,255,.3)`,
+                    cursor: "pointer",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  Reescrever minha âncora
+                </button>
               </div>
-            </div>
-            <textarea
-              value={na}
-              onChange={(e) => setNa(e.target.value)}
-              placeholder="A frase que vai te trazer de volta..."
-              style={{
-                width: "100%",
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}15`,
-                borderRadius: 10,
-                padding: "13px",
-                fontSize: 15,
-                fontFamily: FS,
-                fontStyle: "italic",
-                color: `rgba(255,255,255,.65)`,
-                resize: "none",
-                height: 80,
-                lineHeight: 1.6,
-                marginBottom: 12,
-              }}
-            />
-            <BtnPill
-              onClick={() => {
-                setAnc(na);
-                syncDB("ancora", { texto: na });
-                tk("Âncora salva 💖");
-              }}
-            >
-              Salvar minha âncora
-            </BtnPill>
+            ) : (
+              <div>
+                <div
+                  style={{
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 12,
+                    color: `rgba(255,255,255,.35)`,
+                    marginBottom: 12,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Escreva a frase que vai te trazer de volta nos dias difíceis.
+                </div>
+                <textarea
+                  value={na}
+                  onChange={(e) => setNa(e.target.value)}
+                  placeholder="A frase que vai te trazer de volta..."
+                  style={{
+                    width: "100%",
+                    background: `rgba(255,255,255,.04)`,
+                    border: `1px solid ${C.ouro}15`,
+                    borderRadius: 10,
+                    padding: "13px",
+                    fontSize: 15,
+                    fontFamily: FS,
+                    fontStyle: "italic",
+                    color: `rgba(255,255,255,.65)`,
+                    resize: "none",
+                    height: 80,
+                    lineHeight: 1.6,
+                    marginBottom: 12,
+                  }}
+                />
+                <BtnPill
+                  onClick={() => {
+                    if (!na.trim()) return;
+                    setAnc(na);
+                    syncDB("ancora", { texto: na });
+                    setEditAnc(false);
+                    tk("Âncora salva 💖");
+                  }}
+                  style={{ opacity: na.trim() ? 1 : 0.4 }}
+                >
+                  Salvar minha âncora
+                </BtnPill>
+              </div>
+            )}
           </div>
         )}
         {escT === "porques" && (
           <div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 12,
-                color: `rgba(255,255,255,.25)`,
-                lineHeight: 1.7,
-                marginBottom: 16,
-              }}
-            >
-              Essas respostas são só suas. Ninguém mais acessa.
-            </div>
-            {[
-              ["Por que isso importa para você de verdade?", pq1, setPq1],
-              [
-                "O que você está perdendo hoje por estar onde está?",
-                pq2,
-                setPq2,
-              ],
-              ["Como você quer se sentir daqui a 5 anos?", pq3, setPq3],
-            ].map(([q, v, s], i) => (
-              <div key={i} style={{ marginBottom: 18 }}>
+            {pq1 && pq2 && pq3 && !editPq ? (
+              <div>
                 <div
                   style={{
-                    fontFamily: FS,
-                    fontStyle: "italic",
-                    fontSize: 15,
-                    color: `rgba(255,255,255,.6)`,
-                    lineHeight: 1.5,
-                    marginBottom: 8,
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 9,
+                    color: `rgba(255,255,255,.25)`,
+                    lineHeight: 1.6,
+                    marginBottom: 16,
                   }}
                 >
-                  {q}
+                  Essas respostas são só suas. Ninguém mais acessa.
                 </div>
-                <textarea
-                  value={v}
-                  onChange={(e) => s(e.target.value)}
-                  placeholder="Escreva com honestidade..."
+                {[
+                  ["Por que isso importa para você de verdade?", pq1],
+                  ["O que você está perdendo hoje por estar onde está?", pq2],
+                  ["Como você quer se sentir daqui a 5 anos?", pq3],
+                ].map(([q, v], i) => (
+                  <div key={i} style={{ marginBottom: 18 }}>
+                    <div
+                      style={{
+                        fontFamily: FS,
+                        fontStyle: "italic",
+                        fontSize: 14,
+                        color: `rgba(255,255,255,.45)`,
+                        lineHeight: 1.5,
+                        marginBottom: 8,
+                      }}
+                    >
+                      {q}
+                    </div>
+                    <div
+                      style={{
+                        background: `rgba(255,255,255,.04)`,
+                        border: `1px solid ${C.ouro}12`,
+                        borderRadius: 10,
+                        padding: "13px 14px",
+                        fontFamily: FS,
+                        fontSize: 15,
+                        color: `rgba(255,255,255,.75)`,
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {v}
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setEditPq(true)}
                   style={{
                     width: "100%",
-                    background: `rgba(255,255,255,.04)`,
-                    border: `1px solid ${C.ouro}12`,
-                    borderRadius: 10,
-                    padding: "11px 12px",
-                    fontSize: 14,
-                    fontFamily: FS,
-                    color: `rgba(255,255,255,.6)`,
-                    resize: "none",
-                    height: 80,
-                    lineHeight: 1.6,
+                    background: "none",
+                    border: `1px solid ${C.ouro}20`,
+                    borderRadius: 50,
+                    padding: "12px",
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 12,
+                    color: `rgba(255,255,255,.3)`,
+                    cursor: "pointer",
+                    letterSpacing: "0.1em",
+                    marginTop: 4,
                   }}
-                />
+                >
+                  Reescrever meus porquês
+                </button>
               </div>
-            ))}
-            <BtnPill
-              onClick={() => {
-                syncDB(
-                  "porques",
-                  { p1: pq1, p2: pq2, p3: pq3 },
-                  { onConflict: "user_id" },
-                );
-                tk("Porquês salvos 💖");
-              }}
-            >
-              Salvar meus porquês
-            </BtnPill>
+            ) : (
+              <div>
+                <div
+                  style={{
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 12,
+                    color: `rgba(255,255,255,.25)`,
+                    lineHeight: 1.7,
+                    marginBottom: 16,
+                  }}
+                >
+                  Essas respostas são só suas. Ninguém mais acessa.
+                </div>
+                {[
+                  ["Por que isso importa para você de verdade?", pq1, setPq1],
+                  [
+                    "O que você está perdendo hoje por estar onde está?",
+                    pq2,
+                    setPq2,
+                  ],
+                  ["Como você quer se sentir daqui a 5 anos?", pq3, setPq3],
+                ].map(([q, v, s], i) => (
+                  <div key={i} style={{ marginBottom: 18 }}>
+                    <div
+                      style={{
+                        fontFamily: FS,
+                        fontStyle: "italic",
+                        fontSize: 15,
+                        color: `rgba(255,255,255,.6)`,
+                        lineHeight: 1.5,
+                        marginBottom: 8,
+                      }}
+                    >
+                      {q}
+                    </div>
+                    <textarea
+                      value={v}
+                      onChange={(e) => s(e.target.value)}
+                      placeholder="Escreva com honestidade..."
+                      style={{
+                        width: "100%",
+                        background: `rgba(255,255,255,.04)`,
+                        border: `1px solid ${C.ouro}12`,
+                        borderRadius: 10,
+                        padding: "11px 12px",
+                        fontSize: 14,
+                        fontFamily: FS,
+                        color: `rgba(255,255,255,.6)`,
+                        resize: "none",
+                        height: 80,
+                        lineHeight: 1.6,
+                      }}
+                    />
+                  </div>
+                ))}
+                <BtnPill
+                  onClick={() => {
+                    if (!pq1 || !pq2 || !pq3) return;
+                    syncDB(
+                      "porques",
+                      { p1: pq1, p2: pq2, p3: pq3 },
+                      { onConflict: "user_id" },
+                    );
+                    setEditPq(false);
+                    tk("Porquês salvos 💖");
+                  }}
+                  style={{ opacity: pq1 && pq2 && pq3 ? 1 : 0.4 }}
+                >
+                  Salvar meus porquês
+                </BtnPill>
+              </div>
+            )}
           </div>
         )}
         {escT === "carta" && (
@@ -9635,27 +9765,6 @@ function Perfil({
               Sair
             </button>
           )}
-          {recarregarPerfil && (
-            <button
-              onClick={async () => {
-                await recarregarPerfil();
-              }}
-              style={{
-                background: "transparent",
-                border: `1px solid ${C.ouro}30`,
-                borderRadius: 20,
-                padding: "6px 16px",
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 11,
-                color: C.ouro,
-                cursor: "pointer",
-                letterSpacing: "0.1em",
-              }}
-            >
-              🔄 Atualizar
-            </button>
-          )}
         </div>
       </div>
 
@@ -9947,11 +10056,41 @@ function PrefRadar() {
     "Leitura",
     "Meditação",
   ];
-  const [cidade, setCidade] = useState("");
-  const [sels, setSels] = useState([]);
-  const [salvo, setSalvo] = useState(false);
+  const [cidade, setCidade] = useState(() => {
+    try {
+      return localStorage.getItem("auge_pref_cidade") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [sels, setSels] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("auge_pref_sels") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [salvo, setSalvo] = useState(() => {
+    try {
+      return !!localStorage.getItem("auge_pref_salvo");
+    } catch {
+      return false;
+    }
+  });
+  const [editando, setEditando] = useState(false);
   const toggle = (i) =>
     setSels((s) => (s.includes(i) ? s.filter((x) => x !== i) : [...s, i]));
+
+  const salvar = () => {
+    try {
+      localStorage.setItem("auge_pref_cidade", cidade);
+      localStorage.setItem("auge_pref_sels", JSON.stringify(sels));
+      localStorage.setItem("auge_pref_salvo", "1");
+    } catch {}
+    setSalvo(true);
+    setEditando(false);
+  };
+
   return (
     <div
       style={{
@@ -9975,87 +10114,163 @@ function PrefRadar() {
       >
         Minhas preferências · Radar de Amigas
       </div>
-      <div
-        style={{
-          fontFamily: FB,
-          fontWeight: 300,
-          fontSize: 12,
-          color: `rgba(255,255,255,.35)`,
-          marginBottom: 8,
-        }}
-      >
-        Cidade
-      </div>
-      <input
-        value={cidade}
-        onChange={(e) => setCidade(e.target.value)}
-        placeholder="Ex: Florianópolis"
-        style={{
-          width: "100%",
-          background: "transparent",
-          border: "none",
-          borderBottom: `1px solid rgba(255,255,255,.2)`,
-          color: C.branco,
-          fontFamily: FB,
-          fontWeight: 300,
-          fontSize: 15,
-          padding: "7px 0",
-          marginBottom: 18,
-        }}
-      />
-      <div
-        style={{
-          fontFamily: FB,
-          fontWeight: 300,
-          fontSize: 12,
-          color: `rgba(255,255,255,.35)`,
-          marginBottom: 10,
-        }}
-      >
-        Interesses (selecione os seus)
-      </div>
-      <div
-        style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}
-      >
-        {INTERESSES.map((i) => {
-          const s = sels.includes(i);
-          return (
-            <button
-              key={i}
-              onClick={() => toggle(i)}
-              style={{
-                background: s ? `${C.ouro}22` : `rgba(255,255,255,.04)`,
-                border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`,
-                borderRadius: 50,
-                padding: "7px 13px",
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 12,
-                color: s ? C.ouro : `rgba(255,255,255,.4)`,
-                cursor: "pointer",
-              }}
-            >
-              {i}
-            </button>
-          );
-        })}
-      </div>
-      {salvo ? (
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 12,
-            color: C.augeZ,
-            textAlign: "center",
-          }}
-        >
-          ✓ Preferências salvas!
+
+      {salvo && !editando ? (
+        <div>
+          {cidade && (
+            <div style={{ marginBottom: 10 }}>
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 11,
+                  color: `rgba(255,255,255,.35)`,
+                  marginBottom: 4,
+                }}
+              >
+                Cidade
+              </div>
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 15,
+                  color: `rgba(255,255,255,.75)`,
+                }}
+              >
+                {cidade}
+              </div>
+            </div>
+          )}
+          {sels.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 11,
+                  color: `rgba(255,255,255,.35)`,
+                  marginBottom: 8,
+                }}
+              >
+                Interesses
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {sels.map((i) => (
+                  <span
+                    key={i}
+                    style={{
+                      background: `${C.ouro}22`,
+                      border: `1px solid ${C.ouro}44`,
+                      borderRadius: 50,
+                      padding: "6px 13px",
+                      fontFamily: FB,
+                      fontWeight: 300,
+                      fontSize: 12,
+                      color: C.ouro,
+                    }}
+                  >
+                    {i}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <button
+            onClick={() => setEditando(true)}
+            style={{
+              width: "100%",
+              background: "none",
+              border: `1px solid ${C.ouro}20`,
+              borderRadius: 50,
+              padding: "11px",
+              fontFamily: FB,
+              fontWeight: 300,
+              fontSize: 12,
+              color: `rgba(255,255,255,.3)`,
+              cursor: "pointer",
+              letterSpacing: "0.1em",
+            }}
+          >
+            Editar preferências
+          </button>
         </div>
       ) : (
-        <BtnPill onClick={() => setSalvo(true)} style={{ fontSize: 13 }}>
-          Salvar preferências
-        </BtnPill>
+        <div>
+          <div
+            style={{
+              fontFamily: FB,
+              fontWeight: 300,
+              fontSize: 12,
+              color: `rgba(255,255,255,.35)`,
+              marginBottom: 8,
+            }}
+          >
+            Cidade
+          </div>
+          <input
+            value={cidade}
+            onChange={(e) => setCidade(e.target.value)}
+            placeholder="Ex: Florianópolis"
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1px solid rgba(255,255,255,.2)`,
+              color: C.branco,
+              fontFamily: FB,
+              fontWeight: 300,
+              fontSize: 15,
+              padding: "7px 0",
+              marginBottom: 18,
+            }}
+          />
+          <div
+            style={{
+              fontFamily: FB,
+              fontWeight: 300,
+              fontSize: 12,
+              color: `rgba(255,255,255,.35)`,
+              marginBottom: 10,
+            }}
+          >
+            Interesses (selecione os seus)
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 7,
+              marginBottom: 16,
+            }}
+          >
+            {INTERESSES.map((i) => {
+              const s = sels.includes(i);
+              return (
+                <button
+                  key={i}
+                  onClick={() => toggle(i)}
+                  style={{
+                    background: s ? `${C.ouro}22` : `rgba(255,255,255,.04)`,
+                    border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`,
+                    borderRadius: 50,
+                    padding: "7px 13px",
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 12,
+                    color: s ? C.ouro : `rgba(255,255,255,.4)`,
+                    cursor: "pointer",
+                  }}
+                >
+                  {i}
+                </button>
+              );
+            })}
+          </div>
+          <BtnPill onClick={salvar} style={{ fontSize: 13 }}>
+            Salvar preferências
+          </BtnPill>
+        </div>
       )}
     </div>
   );
