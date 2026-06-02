@@ -9606,6 +9606,7 @@ function Perfil({
   setUsuario,
   logout,
   recarregarPerfil,
+  authUserId,
 }) {
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(usuario?.nome || "");
