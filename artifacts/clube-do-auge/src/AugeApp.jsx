@@ -1320,6 +1320,7 @@ export default function App() {
     setPq3,
     authUserId: authUser?.id,
     logout,
+    recarregarPerfil: () => loadUserData(authUser?.id),
   };
 
   const SEM_NAV = [S.SPLASH, S.LEGAL, S.LOGIN, S.DIAG, S.VOZ, S.CHAT, S.RODA];
@@ -1421,7 +1422,11 @@ export default function App() {
           <TelaConvite back={back} />
         );
       case S.CAL:
-        return <Calendario {...ctx} />;
+        return perfil === "jornada" ? (
+          <Calendario {...ctx} />
+        ) : (
+          <TelaConvite back={back} />
+        );
       case S.ESC:
         return perfil === "jornada" ? (
           <Escritas {...ctx} />
@@ -9411,12 +9416,21 @@ function Perfil({
   usuario,
   setUsuario,
   logout,
+  recarregarPerfil,
 }) {
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(usuario?.nome || "");
   const [emailEdit, setEmailEdit] = useState(usuario?.email || "");
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEdit.trim());
   const editOk = nomeEdit.trim().length >= 2 && emailOk;
+  const fotoRef = useRef(null);
+  const [fotoPerfil, setFotoPerfil] = useState(() => {
+    try {
+      return localStorage.getItem("auge_foto") || null;
+    } catch {
+      return null;
+    }
+  });
 
   const iniciais = usuario?.nome
     ? usuario.nome
@@ -9446,12 +9460,31 @@ function Perfil({
           borderBottom: `1px solid ${C.ouro}12`,
         }}
       >
+        <input
+          ref={fotoRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = (ev) => {
+              setFotoPerfil(ev.target.result);
+              try {
+                localStorage.setItem("auge_foto", ev.target.result);
+              } catch {}
+            };
+            r.readAsDataURL(f);
+          }}
+        />
         <div
+          onClick={() => fotoRef.current?.click()}
           style={{
             width: 80,
             height: 80,
             borderRadius: "50%",
-            background: `${C.ouro}18`,
+            background: fotoPerfil ? "transparent" : `${C.ouro}18`,
             border: `1px solid ${C.ouro}33`,
             display: "flex",
             alignItems: "center",
@@ -9459,10 +9492,48 @@ function Perfil({
             fontFamily: FS,
             fontSize: 28,
             color: C.ouro,
-            margin: "0 auto 12px",
+            margin: "0 auto 4px",
+            cursor: "pointer",
+            overflow: "hidden",
+            position: "relative",
           }}
         >
-          {iniciais}
+          {fotoPerfil ? (
+            <img
+              src={fotoPerfil}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            iniciais
+          )}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: "rgba(0,0,0,.45)",
+              fontSize: 9,
+              fontFamily: FB,
+              color: "rgba(255,255,255,.7)",
+              padding: "3px 0",
+              letterSpacing: "0.05em",
+            }}
+          >
+            📷
+          </div>
+        </div>
+        <div
+          style={{
+            fontFamily: FB,
+            fontWeight: 300,
+            fontSize: 10,
+            color: `rgba(255,255,255,.2)`,
+            marginBottom: 8,
+          }}
+        >
+          Toque para alterar foto
         </div>
         <div
           style={{
@@ -9562,6 +9633,27 @@ function Perfil({
               }}
             >
               Sair
+            </button>
+          )}
+          {recarregarPerfil && (
+            <button
+              onClick={async () => {
+                await recarregarPerfil();
+              }}
+              style={{
+                background: "transparent",
+                border: `1px solid ${C.ouro}30`,
+                borderRadius: 20,
+                padding: "6px 16px",
+                fontFamily: FB,
+                fontWeight: 300,
+                fontSize: 11,
+                color: C.ouro,
+                cursor: "pointer",
+                letterSpacing: "0.1em",
+              }}
+            >
+              🔄 Atualizar
             </button>
           )}
         </div>
