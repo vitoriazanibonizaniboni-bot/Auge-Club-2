@@ -925,6 +925,12 @@ export default function App() {
   ); // "pending"|"granted"|"denied"|"dismissed"
 
   const [toast, setToast] = useState(null);
+  const [mentoria, setMentoria] = useState({
+    data: "A definir",
+    semana: "",
+    duracao: "75 min",
+    zoom: "",
+  });
 
   // Dados de onboarding — nome e e-mail persistidos entre sessões
   const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
@@ -1069,34 +1075,68 @@ export default function App() {
       setPq3(porquesRes.data.p3 || "");
     }
 
-    // Carregar posts públicos do feed
-    const feedRes = await supabase
-      .from("feed")
-      .select(
-        "id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id",
-      )
-      .eq("publica", true)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    // Carregar posts públicos + posts privados da própria aluna
+    const [feedPublicoRes, feedPrivadoRes, configRes] = await Promise.all([
+      supabase
+        .from("feed")
+        .select(
+          "id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id",
+        )
+        .eq("publica", true)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("feed")
+        .select(
+          "id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id",
+        )
+        .eq("user_id", userId)
+        .eq("publica", false)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase.from("config").select("*"),
+    ]);
 
-    if (feedRes.data?.length) {
-      const postsReais = feedRes.data.map((p) => ({
-        id: p.id,
-        aut: p.autor_nome,
-        ini: p.autor_ini,
-        cor: p.autor_cor,
-        fundo: "#1E252E",
-        tit: p.titulo,
-        desc: p.descricao,
-        imgSrc: p.img_url || null,
-        tempo: formatTempo(p.created_at),
-        publica: p.publica,
-        cur: p.curtidas || [],
-        com: p.comentarios || [],
-        dbId: p.id,
-        userId: p.user_id,
-      }));
-      setFeed((f) => [...postsReais, ...FEED0]);
+    const mapPost = (p) => ({
+      id: p.id,
+      aut: p.autor_nome,
+      ini: p.autor_ini,
+      cor: p.autor_cor,
+      fundo: "#1E252E",
+      tit: p.titulo,
+      desc: p.descricao,
+      imgSrc: p.img_url || null,
+      tempo: formatTempo(p.created_at),
+      publica: p.publica,
+      cur: p.curtidas || [],
+      com: p.comentarios || [],
+      dbId: p.id,
+      userId: p.user_id,
+    });
+
+    const postsPublicos = feedPublicoRes.data?.map(mapPost) || [];
+    const postsPrivados = feedPrivadoRes.data?.map(mapPost) || [];
+    const todosIds = new Set(postsPublicos.map((p) => p.id));
+    const privadosUnicos = postsPrivados.filter((p) => !todosIds.has(p.id));
+    const postsReais = [...postsPublicos, ...privadosUnicos].sort(
+      (a, b) => new Date(b.tempo) - new Date(a.tempo),
+    );
+
+    if (postsReais.length > 0) {
+      setFeed([...postsReais, ...FEED0]);
+    }
+
+    // Carregar configurações (mentoria)
+    if (configRes.data?.length) {
+      const cfg = Object.fromEntries(
+        configRes.data.map((c) => [c.id, c.valor]),
+      );
+      setMentoria({
+        data: cfg.mentoria_data || "A definir",
+        semana: cfg.mentoria_semana || "",
+        duracao: cfg.mentoria_duracao || "75 min",
+        zoom: cfg.mentoria_zoom || "",
+      });
     }
   };
 
@@ -1416,6 +1456,7 @@ export default function App() {
     setPq3,
     authUserId: authUser?.id,
     logout,
+    mentoria,
     recarregarPerfil: () => loadUserData(authUser?.id),
   };
 
@@ -3310,6 +3351,7 @@ function Home({
   notifStatus,
   setNotifStatus,
   setEscT,
+  mentoria,
 }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
@@ -4120,7 +4162,11 @@ function Home({
               border: `1px solid ${C.ouro}18`,
               borderRadius: 10,
               padding: "12px 14px",
+              cursor: mentoria?.zoom ? "pointer" : "default",
             }}
+            onClick={() =>
+              mentoria?.zoom && window.open(mentoria.zoom, "_blank")
+            }
           >
             <div
               style={{
@@ -4133,7 +4179,7 @@ function Home({
                 marginBottom: 4,
               }}
             >
-              Próxima mentoria
+              Próxima mentoria {mentoria?.zoom && "· toque para entrar"}
             </div>
             <div
               style={{
@@ -4142,7 +4188,7 @@ function Home({
                 color: `rgba(255,255,255,.95)`,
               }}
             >
-              Quinta, 29/05 · 19h30
+              {mentoria?.data || "A definir"}
             </div>
             <div
               style={{
@@ -4153,7 +4199,8 @@ function Home({
                 marginTop: 2,
               }}
             >
-              Semana 4 · Zoom · 75 min
+              {mentoria?.semana ? `${mentoria.semana} · ` : ""}Zoom ·{" "}
+              {mentoria?.duracao || "75 min"}
             </div>
           </div>
         )}
@@ -5818,25 +5865,19 @@ function MatchDet({ selM, setSelM, ir, back }) {
             >
               Conexão feita!
             </div>
-            <a
-              href={`https://wa.me/5548999999999`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <div
               style={{
-                display: "block",
-                background: C.ouroLt,
-                borderRadius: 50,
-                padding: "13px",
                 fontFamily: FB,
-                fontSize: 14,
-                color: C.obs2,
-                textDecoration: "none",
+                fontWeight: 300,
+                fontSize: 13,
+                color: `rgba(255,255,255,.55)`,
                 textAlign: "center",
                 marginTop: 12,
+                lineHeight: 1.5,
               }}
             >
-              📱 Conversar no WhatsApp
-            </a>
+              💚 Conexão feita! Entre em contato pelo grupo da Jornada.
+            </div>
           </div>
         )}
       </Grain>
@@ -6253,10 +6294,7 @@ function TelaConvite({ back }) {
             — Maria, 54 anos · Florianópolis
           </div>
         </div>
-        <BtnPill
-          onClick={() => window.open("https://wa.me/5548999999999", "_blank")}
-          style={{ marginBottom: 12 }}
-        >
+        <BtnPill onClick={() => {}} style={{ marginBottom: 12 }}>
           Quero entrar na lista de espera
         </BtnPill>
         <BtnOut onClick={back}>Voltar</BtnOut>
@@ -6738,10 +6776,7 @@ function JornadaClube({ ir }) {
           </div>
         </div>
 
-        <BtnPill
-          onClick={() => window.open("https://wa.me/5548999999999", "_blank")}
-          style={{ marginBottom: 10, fontSize: 13 }}
-        >
+        <BtnPill onClick={() => {}} style={{ marginBottom: 10, fontSize: 13 }}>
           Quero entrar na Jornada AUGE
         </BtnPill>
         <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 13 }}>
@@ -6898,10 +6933,7 @@ function VitJornada({ ir, onLogin }) {
           </div>
         </div>
 
-        <BtnPill
-          onClick={() => window.open("https://wa.me/5548999999999", "_blank")}
-          style={{ marginBottom: 12 }}
-        >
+        <BtnPill onClick={() => {}} style={{ marginBottom: 12 }}>
           Quero participar da próxima turma
         </BtnPill>
         <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 13 }}>
@@ -9732,6 +9764,9 @@ function Perfil({
   logout,
   recarregarPerfil,
   authUserId,
+  sem,
+  historico,
+  mentoria,
 }) {
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(usuario?.nome || "");
@@ -9905,7 +9940,7 @@ function Perfil({
           }}
         >
           {perfil === "jornada"
-            ? "Aluna da Jornada · Semana 3 de 12"
+            ? `Aluna da Jornada · Semana ${sem} de 12`
             : "Assinante da Comunidade"}
         </div>
         {perfil === "jornada" && (
@@ -10078,8 +10113,7 @@ function Perfil({
         >
           {[
             ["💚", "Conexões", `${matches?.length || 0}`],
-            ["📋", "Check-ins", "8"],
-            ["▶", "Conteúdos", "12"],
+            ["📋", "Check-ins", `${Object.keys(historico || {}).length}`],
             ["⭐", "Pontos AUGE", `${pontos || 0}`],
           ].map(([ic, l, v]) => (
             <div
@@ -10179,7 +10213,11 @@ function Perfil({
               borderRadius: 10,
               padding: "14px 16px",
               marginBottom: 14,
+              cursor: mentoria?.zoom ? "pointer" : "default",
             }}
+            onClick={() =>
+              mentoria?.zoom && window.open(mentoria.zoom, "_blank")
+            }
           >
             <div
               style={{
@@ -10192,7 +10230,7 @@ function Perfil({
                 marginBottom: 5,
               }}
             >
-              Próxima mentoria
+              Próxima mentoria {mentoria?.zoom && "· toque para entrar"}
             </div>
             <div
               style={{
@@ -10201,7 +10239,7 @@ function Perfil({
                 color: `rgba(255,255,255,.95)`,
               }}
             >
-              Quinta, 29/05 às 19h30
+              {mentoria?.data || "A definir"}
             </div>
             <div
               style={{
@@ -10212,7 +10250,8 @@ function Perfil({
                 marginTop: 3,
               }}
             >
-              Semana 4 · via Zoom · 75 minutos
+              {mentoria?.semana ? `${mentoria.semana} · ` : ""}via Zoom ·{" "}
+              {mentoria?.duracao || "75 min"}
             </div>
           </div>
         )}
