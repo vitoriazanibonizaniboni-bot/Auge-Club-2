@@ -1441,7 +1441,7 @@ export default function App() {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 13,
-              color: `rgba(255,255,255,.25)`,
+              color: `rgba(255,255,255,.82)`,
               animation: "pulse 1.5s ease-in-out infinite",
               letterSpacing: "0.2em",
             }}
@@ -1821,13 +1821,13 @@ function AvisoLegal({ onAceitar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.5)`,
+            color: `rgba(255,255,255,.82)`,
             lineHeight: 1.8,
           }}
         >
           <p style={{ marginBottom: 12 }}>
             Este aplicativo é um{" "}
-            <b style={{ color: `rgba(255,255,255,.7)` }}>
+            <b style={{ color: `rgba(255,255,255,.88)` }}>
               programa de desenvolvimento de hábitos e estilo de vida
             </b>
             . Não substitui consulta médica, acompanhamento clínico individual,
@@ -1906,7 +1906,7 @@ function AvisoLegal({ onAceitar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 11,
-            color: `rgba(255,255,255,.2)`,
+            color: `rgba(255,255,255,.45)`,
             textAlign: "center",
             marginTop: 10,
           }}
@@ -1969,7 +1969,7 @@ function Onboarding({ onConcluir }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 13,
-          color: `rgba(255,255,255,.35)`,
+          color: `rgba(255,255,255,.92)`,
           marginBottom: 40,
           textAlign: "center",
           lineHeight: 1.65,
@@ -2003,7 +2003,7 @@ function Onboarding({ onConcluir }) {
             width: "100%",
             background: "transparent",
             border: "none",
-            borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(255,255,255,.2)"}`,
+            borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
             color: C.branco,
             fontFamily: FS,
             fontSize: 17,
@@ -2038,7 +2038,7 @@ function Onboarding({ onConcluir }) {
             width: "100%",
             background: "transparent",
             border: "none",
-            borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(255,255,255,.2)"}`,
+            borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
             color: C.branco,
             fontFamily: FS,
             fontSize: 17,
@@ -2131,7 +2131,7 @@ function ModalTermos({ onAceitar, onFechar }) {
             style={{
               background: "none",
               border: "none",
-              color: `rgba(255,255,255,.3)`,
+              color: `rgba(255,255,255,.88)`,
               fontSize: 20,
               cursor: "pointer",
               lineHeight: 1,
@@ -2156,7 +2156,7 @@ function ModalTermos({ onAceitar, onFechar }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 13,
-              color: `rgba(255,255,255,.65)`,
+              color: `rgba(255,255,255,.82)`,
               margin: 0,
             }}
           >
@@ -2201,7 +2201,7 @@ function ModalTermos({ onAceitar, onFechar }) {
                 width: 18,
                 height: 18,
                 borderRadius: 4,
-                border: `1.5px solid ${marcou ? C.ouro : "rgba(255,255,255,.3)"}`,
+                border: `1.5px solid ${marcou ? C.ouro : "rgba(255,255,255,.88)"}`,
                 background: marcou ? `${C.ouro}22` : "transparent",
                 flexShrink: 0,
                 display: "flex",
@@ -2217,7 +2217,7 @@ function ModalTermos({ onAceitar, onFechar }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.5)`,
+                color: `rgba(255,255,255,.82)`,
                 lineHeight: 1.5,
               }}
             >
@@ -2326,7 +2326,7 @@ function TelaAuth({ onAuth }) {
   const inp = {
     background: "transparent",
     border: "none",
-    borderBottom: `1px solid rgba(255,255,255,.25)`,
+    borderBottom: `1px solid rgba(255,255,255,.82)`,
     color: C.branco,
     fontFamily: FB,
     fontWeight: 300,
@@ -2386,7 +2386,7 @@ function TelaAuth({ onAuth }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.6)`,
+                color: `rgba(255,255,255,.92)`,
                 lineHeight: 1.7,
               }}
             >
@@ -2439,7 +2439,7 @@ function TelaAuth({ onAuth }) {
             marginTop: 24,
             background: "none",
             border: "none",
-            color: `rgba(255,255,255,.3)`,
+            color: `rgba(255,255,255,.88)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
@@ -2482,7 +2482,7 @@ function TelaAuth({ onAuth }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 12,
-            color: `rgba(255,255,255,.3)`,
+            color: `rgba(255,255,255,.88)`,
             marginBottom: 28,
             textAlign: "center",
           }}
@@ -2507,7 +2507,7 @@ function TelaAuth({ onAuth }) {
                 fontFamily: FS,
                 fontStyle: "italic",
                 fontSize: 16,
-                color: `rgba(255,255,255,.7)`,
+                color: `rgba(255,255,255,.88)`,
                 lineHeight: 1.6,
                 marginBottom: 8,
               }}
@@ -2524,7 +2524,9 @@ function TelaAuth({ onAuth }) {
               }}
             >
               Enviamos um link de confirmação para{" "}
-              <strong style={{ color: `rgba(255,255,255,.7)` }}>{email}</strong>
+              <strong style={{ color: `rgba(255,255,255,.88)` }}>
+                {email}
+              </strong>
               . Clique no link e depois faça login.
             </div>
             <button
@@ -2612,7 +2614,7 @@ function TelaAuth({ onAuth }) {
               width: 18,
               height: 18,
               borderRadius: 4,
-              border: `1.5px solid ${lgpd ? C.ouro : leuTermos ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.15)"}`,
+              border: `1.5px solid ${lgpd ? C.ouro : leuTermos ? "rgba(255,255,255,.92)" : "rgba(255,255,255,.15)"}`,
               background: lgpd ? `${C.ouro}22` : "transparent",
               flexShrink: 0,
               display: "flex",
@@ -2687,7 +2689,7 @@ function TelaAuth({ onAuth }) {
             marginTop: 20,
             background: "none",
             border: "none",
-            color: `rgba(255,255,255,.3)`,
+            color: `rgba(255,255,255,.88)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
@@ -2731,7 +2733,7 @@ function TelaAuth({ onAuth }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 13,
-          color: `rgba(255,255,255,.35)`,
+          color: `rgba(255,255,255,.92)`,
           marginBottom: 40,
           textAlign: "center",
         }}
@@ -2785,7 +2787,7 @@ function TelaAuth({ onAuth }) {
         style={{
           background: "none",
           border: "none",
-          color: `rgba(255,255,255,.25)`,
+          color: `rgba(255,255,255,.82)`,
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 12,
@@ -2904,7 +2906,7 @@ function Diagnostico({ onConcluir }) {
             fontFamily: FS,
             fontSize: 19,
             fontWeight: 300,
-            color: `rgba(255,255,255,.85)`,
+            color: `rgba(255,255,255,.97)`,
             lineHeight: 1.55,
             marginBottom: "2rem",
           }}
@@ -2925,7 +2927,7 @@ function Diagnostico({ onConcluir }) {
                 textAlign: "left",
                 fontFamily: FB,
                 fontSize: 14,
-                color: `rgba(255,255,255,.55)`,
+                color: `rgba(255,255,255,.88)`,
                 lineHeight: 1.4,
               }}
             >
@@ -2938,7 +2940,7 @@ function Diagnostico({ onConcluir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 11,
-            color: `rgba(255,255,255,.2)`,
+            color: `rgba(255,255,255,.45)`,
             textAlign: "center",
             marginTop: "1.5rem",
             lineHeight: 1.6,
@@ -2975,7 +2977,7 @@ function DefinirHabitos({ onSalvar }) {
           fontFamily: FS,
           fontSize: 20,
           fontWeight: 300,
-          color: "rgba(255,255,255,.85)",
+          color: "rgba(255,255,255,.97)",
           marginBottom: 6,
         }}
       >
@@ -2986,7 +2988,7 @@ function DefinirHabitos({ onSalvar }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 13,
-          color: "rgba(255,255,255,.35)",
+          color: "rgba(255,255,255,.92)",
           lineHeight: 1.65,
           marginBottom: 22,
         }}
@@ -3020,7 +3022,7 @@ function DefinirHabitos({ onSalvar }) {
               width: "100%",
               background: "transparent",
               border: "none",
-              borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(255,255,255,.2)"}`,
+              borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
               color: C.branco,
               fontFamily: FS,
               fontSize: 17,
@@ -3087,7 +3089,7 @@ function IsaCard({ text, loading }) {
               fontFamily: FB,
               fontWeight: 500,
               fontSize: 13,
-              color: `rgba(255,255,255,.85)`,
+              color: `rgba(255,255,255,.97)`,
             }}
           >
             ISA — Inteligência do Clube do Auge
@@ -3126,7 +3128,7 @@ function IsaCard({ text, loading }) {
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 13,
-              color: `rgba(255,255,255,.35)`,
+              color: `rgba(255,255,255,.92)`,
             }}
           >
             ISA está respondendo...
@@ -3138,7 +3140,7 @@ function IsaCard({ text, loading }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.6)`,
+            color: `rgba(255,255,255,.92)`,
             lineHeight: 1.75,
             whiteSpace: "pre-wrap",
           }}
@@ -3263,7 +3265,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 9,
-              color: `rgba(255,255,255,.3)`,
+              color: `rgba(255,255,255,.88)`,
               letterSpacing: "0.1em",
             }}
           >
@@ -3379,7 +3381,7 @@ function Home({
       return { bg: C.ouroDk, tc: C.branco, bo: `2px solid ${C.ouro}` };
     return {
       bg: "transparent",
-      tc: `rgba(255,255,255,.2)`,
+      tc: `rgba(255,255,255,.45)`,
       bo: `1px solid ${C.ouro}12`,
     };
   };
@@ -3621,7 +3623,7 @@ function Home({
                   style={{
                     background: "none",
                     border: "none",
-                    color: `rgba(255,255,255,.2)`,
+                    color: `rgba(255,255,255,.45)`,
                     fontSize: 16,
                     cursor: "pointer",
                     lineHeight: 1,
@@ -3718,7 +3720,7 @@ function Home({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 12,
-                    color: `rgba(255,255,255,.35)`,
+                    color: `rgba(255,255,255,.92)`,
                   }}
                 >
                   Toque para registrar seus hábitos
@@ -3760,7 +3762,7 @@ function Home({
                   style={{
                     background: "none",
                     border: "none",
-                    color: `rgba(255,255,255,.3)`,
+                    color: `rgba(255,255,255,.88)`,
                     fontFamily: FB,
                     fontSize: 11,
                     cursor: "pointer",
@@ -3790,7 +3792,7 @@ function Home({
                 fontFamily: FS,
                 fontSize: 22,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.85)`,
+                color: `rgba(255,255,255,.97)`,
                 marginBottom: 6,
               }}
             >
@@ -3801,7 +3803,7 @@ function Home({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginBottom: 20,
               }}
             >
@@ -3864,7 +3866,7 @@ function Home({
                 fontFamily: FS,
                 fontSize: 22,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.85)`,
+                color: `rgba(255,255,255,.97)`,
                 marginBottom: 18,
               }}
             >
@@ -3894,7 +3896,7 @@ function Home({
                     height: 24,
                     borderRadius: "50%",
                     flexShrink: 0,
-                    border: `1.5px solid ${habF[h.id] ? C.ouro : `rgba(255,255,255,.2)`}`,
+                    border: `1.5px solid ${habF[h.id] ? C.ouro : `rgba(255,255,255,.45)`}`,
                     background: habF[h.id] ? C.ouro : "transparent",
                     display: "flex",
                     alignItems: "center",
@@ -3911,7 +3913,7 @@ function Home({
                     fontFamily: FS,
                     fontSize: 17,
                     fontWeight: 300,
-                    color: habF[h.id] ? C.ouro : `rgba(255,255,255,.75)`,
+                    color: habF[h.id] ? C.ouro : `rgba(255,255,255,.92)`,
                   }}
                 >
                   {h.t}
@@ -3950,7 +3952,7 @@ function Home({
                 fontFamily: FS,
                 fontSize: 22,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.85)`,
+                color: `rgba(255,255,255,.97)`,
                 marginBottom: 6,
               }}
             >
@@ -3961,7 +3963,7 @@ function Home({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginBottom: 18,
               }}
             >
@@ -3979,7 +3981,7 @@ function Home({
                 padding: "13px",
                 fontSize: 14,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.7)`,
+                color: `rgba(255,255,255,.88)`,
                 resize: "none",
                 height: 120,
                 lineHeight: 1.7,
@@ -3994,7 +3996,7 @@ function Home({
                 width: "100%",
                 background: "none",
                 border: "none",
-                color: `rgba(255,255,255,.25)`,
+                color: `rgba(255,255,255,.82)`,
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
@@ -4027,7 +4029,7 @@ function Home({
                   fontFamily: FS,
                   fontSize: 18,
                   fontWeight: 300,
-                  color: `rgba(255,255,255,.75)`,
+                  color: `rgba(255,255,255,.92)`,
                   lineHeight: 1.4,
                   marginBottom: 8,
                 }}
@@ -4067,7 +4069,7 @@ function Home({
               style={{
                 background: "none",
                 border: "none",
-                color: `rgba(255,255,255,.3)`,
+                color: `rgba(255,255,255,.88)`,
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
@@ -4137,7 +4139,7 @@ function Home({
               style={{
                 fontFamily: FS,
                 fontSize: 16,
-                color: `rgba(255,255,255,.8)`,
+                color: `rgba(255,255,255,.95)`,
               }}
             >
               Quinta, 29/05 · 19h30
@@ -4245,7 +4247,7 @@ function Feed({ feed, setFeed, ir }) {
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 15,
-              color: `rgba(255,255,255,.35)`,
+              color: `rgba(255,255,255,.92)`,
             }}
           >
             O que você fez por você hoje?
@@ -4300,7 +4302,7 @@ function Feed({ feed, setFeed, ir }) {
                 fontFamily: FS,
                 fontSize: 16,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.85)`,
+                color: `rgba(255,255,255,.97)`,
               }}
             >
               Encontre mulheres como você
@@ -4310,7 +4312,7 @@ function Feed({ feed, setFeed, ir }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginTop: 3,
               }}
             >
@@ -4383,7 +4385,7 @@ function Feed({ feed, setFeed, ir }) {
                       style={{
                         fontFamily: FB,
                         fontSize: 9,
-                        color: `rgba(255,255,255,.6)`,
+                        color: `rgba(255,255,255,.92)`,
                       }}
                     >
                       Só você
@@ -4409,7 +4411,7 @@ function Feed({ feed, setFeed, ir }) {
                   </div>
                   <div
                     style={{
-                      color: `rgba(255,255,255,.6)`,
+                      color: `rgba(255,255,255,.92)`,
                       fontSize: 11,
                       fontFamily: FB,
                       fontWeight: 300,
@@ -4435,7 +4437,7 @@ function Feed({ feed, setFeed, ir }) {
                       fontFamily: FB,
                       fontWeight: 500,
                       fontSize: 13,
-                      color: `rgba(255,255,255,.8)`,
+                      color: `rgba(255,255,255,.95)`,
                     }}
                   >
                     {p.aut}
@@ -4446,7 +4448,7 @@ function Feed({ feed, setFeed, ir }) {
                     fontSize: 14,
                     fontFamily: FB,
                     fontWeight: 300,
-                    color: `rgba(255,255,255,.5)`,
+                    color: `rgba(255,255,255,.82)`,
                     lineHeight: 1.65,
                     marginBottom: 10,
                   }}
@@ -4468,7 +4470,7 @@ function Feed({ feed, setFeed, ir }) {
                       border: "none",
                       cursor: "pointer",
                       fontSize: 12,
-                      color: cu ? C.ouro : `rgba(255,255,255,.35)`,
+                      color: cu ? C.ouro : `rgba(255,255,255,.92)`,
                       fontFamily: FB,
                       fontWeight: 300,
                       display: "flex",
@@ -4499,7 +4501,7 @@ function Feed({ feed, setFeed, ir }) {
                       border: "none",
                       cursor: "pointer",
                       fontSize: 14,
-                      color: `rgba(255,255,255,.35)`,
+                      color: `rgba(255,255,255,.92)`,
                       fontFamily: FB,
                       display: "flex",
                       alignItems: "center",
@@ -4548,7 +4550,7 @@ function Feed({ feed, setFeed, ir }) {
                             padding: "6px 10px",
                             fontSize: 13,
                             fontFamily: FB,
-                            color: `rgba(255,255,255,.65)`,
+                            color: `rgba(255,255,255,.82)`,
                             flex: 1,
                           }}
                         >
@@ -4823,7 +4825,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: publica ? C.ouro : `rgba(255,255,255,.35)`,
+                  color: publica ? C.ouro : `rgba(255,255,255,.92)`,
                 }}
               >
                 Público
@@ -4833,7 +4835,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 9,
-                  color: `rgba(255,255,255,.2)`,
+                  color: `rgba(255,255,255,.45)`,
                   marginTop: 2,
                 }}
               >
@@ -4858,7 +4860,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: !publica ? C.ouro : `rgba(255,255,255,.35)`,
+                  color: !publica ? C.ouro : `rgba(255,255,255,.92)`,
                 }}
               >
                 Só para mim
@@ -4868,7 +4870,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 9,
-                  color: `rgba(255,255,255,.2)`,
+                  color: `rgba(255,255,255,.45)`,
                   marginTop: 2,
                 }}
               >
@@ -4989,7 +4991,7 @@ function Voz({ back, postTreino, tk }) {
                     fontSize: 12,
                     fontFamily: FS,
                     fontStyle: "italic",
-                    color: `rgba(255,255,255,.35)`,
+                    color: `rgba(255,255,255,.92)`,
                     textAlign: "left",
                   }}
                 >
@@ -5020,7 +5022,7 @@ function Voz({ back, postTreino, tk }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
               }}
             >
               Toque para falar
@@ -5085,7 +5087,7 @@ function Voz({ back, postTreino, tk }) {
                 style={{
                   fontFamily: FS,
                   fontSize: 16,
-                  color: tr ? `rgba(255,255,255,.8)` : `rgba(255,255,255,.3)`,
+                  color: tr ? `rgba(255,255,255,.95)` : `rgba(255,255,255,.88)`,
                   fontStyle: tr ? "normal" : "italic",
                   lineHeight: 1.6,
                 }}
@@ -5147,7 +5149,7 @@ function Voz({ back, postTreino, tk }) {
               style={{
                 fontFamily: FS,
                 fontSize: 18,
-                color: `rgba(255,255,255,.7)`,
+                color: `rgba(255,255,255,.88)`,
                 marginBottom: 6,
               }}
             >
@@ -5184,7 +5186,7 @@ function Voz({ back, postTreino, tk }) {
                   fontFamily: FS,
                   fontStyle: "italic",
                   fontSize: 14,
-                  color: `rgba(255,255,255,.6)`,
+                  color: `rgba(255,255,255,.92)`,
                 }}
               >
                 "{res.texto}"
@@ -5214,7 +5216,7 @@ function Voz({ back, postTreino, tk }) {
                       fontFamily: FB,
                       fontWeight: 500,
                       fontSize: 13,
-                      color: `rgba(255,255,255,.85)`,
+                      color: `rgba(255,255,255,.97)`,
                     }}
                   >
                     ISA — Inteligência do Clube do Auge
@@ -5236,7 +5238,7 @@ function Voz({ back, postTreino, tk }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 14,
-                  color: `rgba(255,255,255,.6)`,
+                  color: `rgba(255,255,255,.92)`,
                   lineHeight: 1.75,
                 }}
               >
@@ -5262,7 +5264,7 @@ function Voz({ back, postTreino, tk }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 11,
-                    color: publica ? C.ouro : `rgba(255,255,255,.3)`,
+                    color: publica ? C.ouro : `rgba(255,255,255,.88)`,
                   }}
                 >
                   🌍 Público
@@ -5287,7 +5289,7 @@ function Voz({ back, postTreino, tk }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 11,
-                    color: !publica ? C.ouro : `rgba(255,255,255,.3)`,
+                    color: !publica ? C.ouro : `rgba(255,255,255,.88)`,
                   }}
                 >
                   🔒 Só para mim
@@ -5359,7 +5361,7 @@ function Cx({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 12,
-            color: `rgba(255,255,255,.35)`,
+            color: `rgba(255,255,255,.92)`,
             marginBottom: 18,
             textAlign: "center",
           }}
@@ -5460,7 +5462,7 @@ function Cx({
                   </div>
                   <div
                     style={{
-                      color: `rgba(255,255,255,.6)`,
+                      color: `rgba(255,255,255,.92)`,
                       fontSize: 12,
                       fontFamily: FB,
                       fontWeight: 300,
@@ -5476,7 +5478,7 @@ function Cx({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 13,
-                    color: `rgba(255,255,255,.5)`,
+                    color: `rgba(255,255,255,.82)`,
                     lineHeight: 1.7,
                     marginBottom: 10,
                   }}
@@ -5555,7 +5557,7 @@ function Cx({
               style={{
                 fontFamily: FS,
                 fontSize: 20,
-                color: `rgba(255,255,255,.5)`,
+                color: `rgba(255,255,255,.82)`,
                 marginBottom: 8,
               }}
             >
@@ -5566,7 +5568,7 @@ function Cx({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.3)`,
+                color: `rgba(255,255,255,.88)`,
                 lineHeight: 1.6,
               }}
             >
@@ -5615,7 +5617,7 @@ function Cx({
                       fontFamily: FB,
                       fontWeight: 500,
                       fontSize: 14,
-                      color: `rgba(255,255,255,.8)`,
+                      color: `rgba(255,255,255,.95)`,
                     }}
                   >
                     {m.nome}
@@ -5625,14 +5627,14 @@ function Cx({
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 11,
-                      color: `rgba(255,255,255,.3)`,
+                      color: `rgba(255,255,255,.88)`,
                       marginTop: 2,
                     }}
                   >
                     Toque para enviar mensagem
                   </div>
                 </div>
-                <span style={{ color: `rgba(255,255,255,.2)`, fontSize: 17 }}>
+                <span style={{ color: `rgba(255,255,255,.45)`, fontSize: 17 }}>
                   ›
                 </span>
               </div>
@@ -5680,7 +5682,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
             width: 76,
             height: 76,
             borderRadius: "50%",
-            background: `rgba(255,255,255,.2)`,
+            background: `rgba(255,255,255,.45)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -5704,7 +5706,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
         </div>
         <div
           style={{
-            color: `rgba(255,255,255,.7)`,
+            color: `rgba(255,255,255,.88)`,
             fontSize: 13,
             fontFamily: FB,
             fontWeight: 300,
@@ -5736,7 +5738,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.5)`,
+            color: `rgba(255,255,255,.82)`,
             lineHeight: 1.7,
             marginBottom: 14,
           }}
@@ -5810,7 +5812,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
               style={{
                 fontFamily: FS,
                 fontSize: 18,
-                color: `rgba(255,255,255,.85)`,
+                color: `rgba(255,255,255,.97)`,
                 marginBottom: 6,
               }}
             >
@@ -5903,7 +5905,7 @@ function Chat({ selM, setMatches, back }) {
           style={{
             background: "none",
             border: "none",
-            color: `rgba(255,255,255,.35)`,
+            color: `rgba(255,255,255,.92)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
@@ -5919,7 +5921,7 @@ function Chat({ selM, setMatches, back }) {
               fontFamily: FB,
               fontWeight: 500,
               fontSize: 13,
-              color: `rgba(255,255,255,.85)`,
+              color: `rgba(255,255,255,.97)`,
             }}
           >
             {m.nome.split(" ")[0]}
@@ -5929,7 +5931,7 @@ function Chat({ selM, setMatches, back }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 10,
-              color: `rgba(255,255,255,.3)`,
+              color: `rgba(255,255,255,.88)`,
             }}
           >
             {m.compat}% compatível · {m.cidade}
@@ -5954,7 +5956,7 @@ function Chat({ selM, setMatches, back }) {
                 fontFamily: FS,
                 fontStyle: "italic",
                 fontSize: 14,
-                color: `rgba(255,255,255,.3)`,
+                color: `rgba(255,255,255,.88)`,
                 lineHeight: 1.6,
               }}
             >
@@ -5993,7 +5995,7 @@ function Chat({ selM, setMatches, back }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 13,
-                    color: eu ? C.ouroLt : `rgba(255,255,255,.65)`,
+                    color: eu ? C.ouroLt : `rgba(255,255,255,.82)`,
                     lineHeight: 1.6,
                   }}
                 >
@@ -6004,7 +6006,7 @@ function Chat({ selM, setMatches, back }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 9,
-                    color: `rgba(255,255,255,.2)`,
+                    color: `rgba(255,255,255,.45)`,
                     marginTop: 3,
                   }}
                 >
@@ -6126,7 +6128,7 @@ function CartaEditor({ setCarta, tk }) {
           fontSize: 14,
           fontFamily: FS,
           fontStyle: "italic",
-          color: `rgba(255,255,255,.7)`,
+          color: `rgba(255,255,255,.88)`,
           resize: "none",
           height: 180,
           lineHeight: 1.8,
@@ -6166,7 +6168,7 @@ function TelaConvite({ back }) {
             fontFamily: FS,
             fontStyle: "italic",
             fontSize: 18,
-            color: `rgba(255,255,255,.7)`,
+            color: `rgba(255,255,255,.88)`,
             textAlign: "center",
             lineHeight: 1.4,
             marginBottom: 24,
@@ -6211,7 +6213,7 @@ function TelaConvite({ back }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.5)`,
+                color: `rgba(255,255,255,.82)`,
                 lineHeight: 1.5,
               }}
             >
@@ -6231,7 +6233,7 @@ function TelaConvite({ back }) {
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 14,
-              color: `rgba(255,255,255,.55)`,
+              color: `rgba(255,255,255,.88)`,
               lineHeight: 1.6,
               marginBottom: 6,
             }}
@@ -6373,7 +6375,7 @@ function JornadaClube({ ir }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 12,
-                  color: `rgba(255,255,255,.35)`,
+                  color: `rgba(255,255,255,.92)`,
                   marginBottom: 10,
                 }}
               >
@@ -6500,7 +6502,7 @@ function JornadaClube({ ir }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 10,
-              color: `rgba(255,255,255,.2)`,
+              color: `rgba(255,255,255,.45)`,
               lineHeight: 1.5,
             }}
           >
@@ -6777,7 +6779,7 @@ function VitJornada({ ir, onLogin }) {
             fontFamily: FS,
             fontSize: 28,
             fontWeight: 300,
-            color: `rgba(255,255,255,.85)`,
+            color: `rgba(255,255,255,.97)`,
             lineHeight: 1.3,
             marginBottom: 8,
           }}
@@ -6840,7 +6842,7 @@ function VitJornada({ ir, onLogin }) {
                   fontFamily: FS,
                   fontSize: 16,
                   fontWeight: 300,
-                  color: `rgba(255,255,255,.8)`,
+                  color: `rgba(255,255,255,.95)`,
                   marginBottom: 3,
                 }}
               >
@@ -6851,7 +6853,7 @@ function VitJornada({ ir, onLogin }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 12,
-                  color: `rgba(255,255,255,.35)`,
+                  color: `rgba(255,255,255,.92)`,
                   lineHeight: 1.5,
                 }}
               >
@@ -6875,7 +6877,7 @@ function VitJornada({ ir, onLogin }) {
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 15,
-              color: `rgba(255,255,255,.6)`,
+              color: `rgba(255,255,255,.92)`,
               lineHeight: 1.6,
               marginBottom: 6,
             }}
@@ -7058,7 +7060,7 @@ function Jornada({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 9,
-                color: `rgba(255,255,255,.3)`,
+                color: `rgba(255,255,255,.88)`,
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
                 marginBottom: 4,
@@ -7078,7 +7080,7 @@ function Jornada({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 9,
-            color: `rgba(255,255,255,.3)`,
+            color: `rgba(255,255,255,.88)`,
             letterSpacing: "0.3em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -7124,7 +7126,7 @@ function Jornada({
                         ? C.obs
                         : cor === C.ouroLt
                           ? C.obs2
-                          : `rgba(255,255,255,.2)`,
+                          : `rgba(255,255,255,.45)`,
                   }}
                 >
                   {d}
@@ -7138,7 +7140,7 @@ function Jornada({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 10,
-            color: `rgba(255,255,255,.2)`,
+            color: `rgba(255,255,255,.45)`,
             marginBottom: 18,
             lineHeight: 1.5,
           }}
@@ -7190,7 +7192,7 @@ function Jornada({
                     fontWeight: 300,
                     fontSize: 9,
                     color: ok
-                      ? `rgba(255,255,255,.5)`
+                      ? `rgba(255,255,255,.82)`
                       : `rgba(255,255,255,.15)`,
                     marginTop: 4,
                     lineHeight: 1.4,
@@ -7265,7 +7267,7 @@ function Jornada({
                   fontFamily: FS,
                   fontSize: item.destaque ? 17 : 16,
                   fontWeight: 300,
-                  color: item.destaque ? C.blush : `rgba(255,255,255,.8)`,
+                  color: item.destaque ? C.blush : `rgba(255,255,255,.95)`,
                   marginBottom: 3,
                 }}
               >
@@ -7278,7 +7280,7 @@ function Jornada({
                   fontSize: 11,
                   color: item.destaque
                     ? `rgba(226,185,168,.45)`
-                    : `rgba(255,255,255,.3)`,
+                    : `rgba(255,255,255,.88)`,
                   lineHeight: 1.4,
                 }}
               >
@@ -7287,7 +7289,7 @@ function Jornada({
             </div>
             <div
               style={{
-                color: item.destaque ? C.blush : `rgba(255,255,255,.2)`,
+                color: item.destaque ? C.blush : `rgba(255,255,255,.45)`,
                 fontSize: 16,
               }}
             >
@@ -7415,7 +7417,7 @@ function Roda({
               fontSize: 9,
               letterSpacing: "0.35em",
               textTransform: "uppercase",
-              color: `rgba(255,255,255,.3)`,
+              color: `rgba(255,255,255,.88)`,
               marginBottom: 24,
             }}
           >
@@ -7426,7 +7428,7 @@ function Roda({
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 9,
-              color: `rgba(255,255,255,.3)`,
+              color: `rgba(255,255,255,.88)`,
               letterSpacing: "0.25em",
               textTransform: "uppercase",
               marginBottom: 10,
@@ -7466,7 +7468,7 @@ function Roda({
                       ? `rgba(255,255,255,.18)`
                       : momento === m
                         ? C.ouro
-                        : `rgba(255,255,255,.3)`,
+                        : `rgba(255,255,255,.88)`,
                     fontFamily: FB,
                     fontSize: 12,
                     letterSpacing: "0.2em",
@@ -7533,7 +7535,7 @@ function Roda({
             <span style={{ opacity: 0.4 }}> · </span>
             <span>{posInDim} de 5</span>
             <span style={{ opacity: 0.4, margin: "0 .4em" }}>·</span>
-            <span style={{ color: `rgba(255,255,255,.3)` }}>
+            <span style={{ color: `rgba(255,255,255,.88)` }}>
               {rodaI + 1} / 25
             </span>
           </div>
@@ -7564,7 +7566,7 @@ function Roda({
               fontFamily: FS,
               fontSize: 20,
               fontWeight: 300,
-              color: `rgba(255,255,255,.85)`,
+              color: `rgba(255,255,255,.97)`,
               lineHeight: 1.6,
               marginBottom: "2rem",
               minHeight: 80,
@@ -7586,7 +7588,7 @@ function Roda({
                   textAlign: "left",
                   fontFamily: FB,
                   fontSize: 14,
-                  color: `rgba(255,255,255,.55)`,
+                  color: `rgba(255,255,255,.88)`,
                   lineHeight: 1.4,
                 }}
               >
@@ -7599,7 +7601,7 @@ function Roda({
             style={{
               background: "transparent",
               border: "none",
-              color: `rgba(255,255,255,.25)`,
+              color: `rgba(255,255,255,.82)`,
               fontFamily: FB,
               fontSize: 11,
               letterSpacing: "0.15em",
@@ -7642,7 +7644,7 @@ function Roda({
             fontSize: 9,
             letterSpacing: "0.4em",
             textTransform: "uppercase",
-            color: `rgba(255,255,255,.3)`,
+            color: `rgba(255,255,255,.88)`,
             textAlign: "center",
             marginBottom: "0.5rem",
           }}
@@ -7698,7 +7700,7 @@ function Roda({
             const n = notas[d];
             const dc =
               n === null
-                ? { c: `rgba(255,255,255,.2)` }
+                ? { c: `rgba(255,255,255,.45)` }
                 : n <= 3.9
                   ? { c: C.atencao }
                   : n <= 6.9
@@ -7747,7 +7749,7 @@ function Roda({
               fontSize: 14,
               fontWeight: 300,
               fontStyle: "italic",
-              color: `rgba(255,255,255,.55)`,
+              color: `rgba(255,255,255,.88)`,
               lineHeight: 1.6,
               fontFamily: FS,
             }}
@@ -7838,7 +7840,7 @@ function Retomada({ anc, back, tk, setRet }) {
             fontFamily: FS,
             fontSize: 24,
             fontWeight: 300,
-            color: `rgba(255,255,255,.85)`,
+            color: `rgba(255,255,255,.97)`,
             lineHeight: 1.25,
             marginBottom: 16,
           }}
@@ -7922,7 +7924,7 @@ function Retomada({ anc, back, tk, setRet }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginBottom: 8,
               }}
             >
@@ -7940,7 +7942,7 @@ function Retomada({ anc, back, tk, setRet }) {
                 padding: "12px",
                 fontSize: 14,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.82)`,
                 resize: "none",
                 height: 76,
                 lineHeight: 1.6,
@@ -7955,7 +7957,7 @@ function Retomada({ anc, back, tk, setRet }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginBottom: 8,
               }}
             >
@@ -7978,7 +7980,7 @@ function Retomada({ anc, back, tk, setRet }) {
                     border: `1px solid ${onde === op ? C.ouro + "55" : C.ouro + "15"}`,
                     background:
                       onde === op ? `${C.ouro}20` : `rgba(255,255,255,.03)`,
-                    color: onde === op ? C.ouro : `rgba(255,255,255,.3)`,
+                    color: onde === op ? C.ouro : `rgba(255,255,255,.88)`,
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 13,
@@ -8028,7 +8030,7 @@ function Retomada({ anc, back, tk, setRet }) {
                   fontFamily: FS,
                   fontStyle: "italic",
                   fontSize: 14,
-                  color: `rgba(255,255,255,.55)`,
+                  color: `rgba(255,255,255,.88)`,
                   lineHeight: 1.6,
                 }}
               >
@@ -8069,7 +8071,7 @@ function Calendario({ back, historico, dataCadastro }) {
     if (!d)
       return {
         bg: "transparent",
-        tc: `rgba(255,255,255,.2)`,
+        tc: `rgba(255,255,255,.45)`,
         bo: `1px solid ${C.ouro}10`,
       };
     if (d.retomada) return { bg: `${C.blush}40`, tc: C.blush, bo: "none" };
@@ -8079,7 +8081,7 @@ function Calendario({ back, historico, dataCadastro }) {
       return { bg: `${C.ouroLt}30`, tc: C.ouroDk, bo: `1.5px solid ${C.ouro}` };
     return {
       bg: "transparent",
-      tc: `rgba(255,255,255,.2)`,
+      tc: `rgba(255,255,255,.45)`,
       bo: `1px solid ${C.ouro}10`,
     };
   };
@@ -8158,7 +8160,7 @@ function Calendario({ back, historico, dataCadastro }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 8,
-                    color: `rgba(255,255,255,.25)`,
+                    color: `rgba(255,255,255,.82)`,
                   }}
                 >
                   {i + 1}
@@ -8197,7 +8199,7 @@ function Calendario({ back, historico, dataCadastro }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 9,
-                color: `rgba(255,255,255,.25)`,
+                color: `rgba(255,255,255,.82)`,
                 padding: "2px 0",
               }}
             >
@@ -8261,7 +8263,7 @@ function Calendario({ back, historico, dataCadastro }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 12,
-                  color: `rgba(255,255,255,.3)`,
+                  color: `rgba(255,255,255,.88)`,
                 }}
               >
                 {l}
@@ -8347,7 +8349,7 @@ function Escritas({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 10,
-                color: escT === id ? C.ouro : `rgba(255,255,255,.3)`,
+                color: escT === id ? C.ouro : `rgba(255,255,255,.88)`,
                 cursor: "pointer",
                 transition: "all .2s",
               }}
@@ -8363,7 +8365,7 @@ function Escritas({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginBottom: 10,
               }}
             >
@@ -8381,7 +8383,7 @@ function Escritas({
                 padding: "13px",
                 fontSize: 15,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.7)`,
+                color: `rgba(255,255,255,.88)`,
                 resize: "none",
                 height: 110,
                 lineHeight: 1.7,
@@ -8422,7 +8424,7 @@ function Escritas({
                         fontFamily: FS,
                         fontStyle: "italic",
                         fontSize: 13,
-                        color: `rgba(255,255,255,.35)`,
+                        color: `rgba(255,255,255,.92)`,
                       }}
                     >
                       ISA está respondendo...
@@ -8434,7 +8436,7 @@ function Escritas({
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 13,
-                      color: `rgba(255,255,255,.6)`,
+                      color: `rgba(255,255,255,.92)`,
                       lineHeight: 1.75,
                       whiteSpace: "pre-wrap",
                     }}
@@ -8471,7 +8473,7 @@ function Escritas({
                     fontFamily: FS,
                     fontStyle: "italic",
                     fontSize: 14,
-                    color: `rgba(255,255,255,.6)`,
+                    color: `rgba(255,255,255,.92)`,
                     lineHeight: 1.5,
                   }}
                 >
@@ -8534,7 +8536,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 12,
-                    color: `rgba(255,255,255,.3)`,
+                    color: `rgba(255,255,255,.88)`,
                     cursor: "pointer",
                     letterSpacing: "0.1em",
                   }}
@@ -8549,7 +8551,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 12,
-                    color: `rgba(255,255,255,.35)`,
+                    color: `rgba(255,255,255,.92)`,
                     marginBottom: 12,
                     lineHeight: 1.6,
                   }}
@@ -8569,7 +8571,7 @@ function Escritas({
                     fontSize: 15,
                     fontFamily: FS,
                     fontStyle: "italic",
-                    color: `rgba(255,255,255,.65)`,
+                    color: `rgba(255,255,255,.82)`,
                     resize: "none",
                     height: 80,
                     lineHeight: 1.6,
@@ -8601,7 +8603,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 9,
-                    color: `rgba(255,255,255,.25)`,
+                    color: `rgba(255,255,255,.82)`,
                     lineHeight: 1.6,
                     marginBottom: 16,
                   }}
@@ -8634,7 +8636,7 @@ function Escritas({
                         padding: "13px 14px",
                         fontFamily: FS,
                         fontSize: 15,
-                        color: `rgba(255,255,255,.75)`,
+                        color: `rgba(255,255,255,.92)`,
                         lineHeight: 1.6,
                       }}
                     >
@@ -8653,7 +8655,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 12,
-                    color: `rgba(255,255,255,.3)`,
+                    color: `rgba(255,255,255,.88)`,
                     cursor: "pointer",
                     letterSpacing: "0.1em",
                     marginTop: 4,
@@ -8669,7 +8671,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 12,
-                    color: `rgba(255,255,255,.25)`,
+                    color: `rgba(255,255,255,.82)`,
                     lineHeight: 1.7,
                     marginBottom: 16,
                   }}
@@ -8691,7 +8693,7 @@ function Escritas({
                         fontFamily: FS,
                         fontStyle: "italic",
                         fontSize: 15,
-                        color: `rgba(255,255,255,.6)`,
+                        color: `rgba(255,255,255,.92)`,
                         lineHeight: 1.5,
                         marginBottom: 8,
                       }}
@@ -8710,7 +8712,7 @@ function Escritas({
                         padding: "11px 12px",
                         fontSize: 14,
                         fontFamily: FS,
-                        color: `rgba(255,255,255,.6)`,
+                        color: `rgba(255,255,255,.92)`,
                         resize: "none",
                         height: 80,
                         lineHeight: 1.6,
@@ -8754,7 +8756,7 @@ function Escritas({
                     fontFamily: FS,
                     fontSize: 18,
                     fontWeight: 300,
-                    color: `rgba(255,255,255,.8)`,
+                    color: `rgba(255,255,255,.95)`,
                   }}
                 >
                   Carta para o Futuro
@@ -8764,7 +8766,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 11,
-                    color: `rgba(255,255,255,.3)`,
+                    color: `rgba(255,255,255,.88)`,
                     marginTop: 2,
                   }}
                 >
@@ -8816,7 +8818,7 @@ function Escritas({
                           style={{
                             fontFamily: FS,
                             fontSize: 14,
-                            color: `rgba(255,255,255,.65)`,
+                            color: `rgba(255,255,255,.82)`,
                             lineHeight: 1.8,
                             whiteSpace: "pre-wrap",
                           }}
@@ -8866,7 +8868,7 @@ function Escritas({
                                 fontFamily: FB,
                                 fontWeight: 300,
                                 fontSize: 14,
-                                color: `rgba(255,255,255,.75)`,
+                                color: `rgba(255,255,255,.92)`,
                                 lineHeight: 1.7,
                                 marginBottom: 10,
                               }}
@@ -8900,7 +8902,7 @@ function Escritas({
                           fontFamily: FB,
                           fontWeight: 300,
                           fontSize: 11,
-                          color: `rgba(255,255,255,.25)`,
+                          color: `rgba(255,255,255,.82)`,
                           cursor: "pointer",
                           letterSpacing: "0.1em",
                         }}
@@ -8918,7 +8920,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 12,
-                    color: `rgba(255,255,255,.3)`,
+                    color: `rgba(255,255,255,.88)`,
                     lineHeight: 1.7,
                     marginBottom: 16,
                   }}
@@ -8995,7 +8997,7 @@ function Emergencia({
             fontFamily: FS,
             fontSize: 24,
             fontWeight: 300,
-            color: `rgba(255,255,255,.85)`,
+            color: `rgba(255,255,255,.97)`,
             lineHeight: 1.2,
           }}
         >
@@ -9085,7 +9087,7 @@ function Emergencia({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginBottom: 6,
               }}
             >
@@ -9096,7 +9098,7 @@ function Emergencia({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 10,
-                color: `rgba(255,255,255,.2)`,
+                color: `rgba(255,255,255,.45)`,
                 marginBottom: 10,
                 lineHeight: 1.6,
               }}
@@ -9115,7 +9117,7 @@ function Emergencia({
                 padding: "11px",
                 fontSize: 14,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.82)`,
                 resize: "none",
                 height: 76,
                 lineHeight: 1.6,
@@ -9127,7 +9129,7 @@ function Emergencia({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.35)`,
+                color: `rgba(255,255,255,.92)`,
                 marginBottom: 6,
               }}
             >
@@ -9145,7 +9147,7 @@ function Emergencia({
                 padding: "11px",
                 fontSize: 14,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.82)`,
                 resize: "none",
                 height: 76,
                 lineHeight: 1.6,
@@ -9170,7 +9172,7 @@ function Emergencia({
                 width: "100%",
                 background: "none",
                 border: "none",
-                color: `rgba(255,255,255,.2)`,
+                color: `rgba(255,255,255,.45)`,
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
@@ -9208,7 +9210,7 @@ function Emergencia({
                 style={{
                   fontFamily: FS,
                   fontSize: 16,
-                  color: `rgba(255,255,255,.7)`,
+                  color: `rgba(255,255,255,.88)`,
                   lineHeight: 1.6,
                 }}
               >
@@ -9243,7 +9245,7 @@ function Emergencia({
                     style={{
                       fontFamily: FS,
                       fontSize: 16,
-                      color: `rgba(255,255,255,.7)`,
+                      color: `rgba(255,255,255,.88)`,
                       lineHeight: 1.6,
                     }}
                   >
@@ -9300,7 +9302,7 @@ function Emergencia({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.25)`,
+                color: `rgba(255,255,255,.82)`,
                 cursor: "pointer",
                 letterSpacing: "0.1em",
               }}
@@ -9504,7 +9506,7 @@ function Conteudo({ perfil }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 9,
-            color: `rgba(255,255,255,.3)`,
+            color: `rgba(255,255,255,.88)`,
             letterSpacing: "0.3em",
             textTransform: "uppercase",
             marginBottom: 10,
@@ -9558,7 +9560,7 @@ function Conteudo({ perfil }) {
                     color: ativa
                       ? C.ouro
                       : bloq
-                        ? `rgba(255,255,255,.2)`
+                        ? `rgba(255,255,255,.45)`
                         : `rgba(255,255,255,.45)`,
                     lineHeight: 1.3,
                   }}
@@ -9587,7 +9589,7 @@ function Conteudo({ perfil }) {
               fontFamily: FS,
               fontSize: 18,
               fontWeight: 300,
-              color: `rgba(255,255,255,.85)`,
+              color: `rgba(255,255,255,.97)`,
             }}
           >
             {catAtual?.label}
@@ -9626,7 +9628,7 @@ function Conteudo({ perfil }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.5)`,
+                color: `rgba(255,255,255,.82)`,
                 lineHeight: 1.6,
                 marginBottom: 12,
               }}
@@ -9667,7 +9669,7 @@ function Conteudo({ perfil }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: bloqCat ? 18 : 22,
-                color: `rgba(255,255,255,.3)`,
+                color: `rgba(255,255,255,.88)`,
               }}
             >
               {bloqCat ? "🔒" : "▶"}
@@ -9678,8 +9680,8 @@ function Conteudo({ perfil }) {
                   fontFamily: FS,
                   fontSize: 15,
                   color: bloqCat
-                    ? `rgba(255,255,255,.35)`
-                    : `rgba(255,255,255,.85)`,
+                    ? `rgba(255,255,255,.92)`
+                    : `rgba(255,255,255,.97)`,
                   marginBottom: 3,
                   lineHeight: 1.3,
                 }}
@@ -9691,7 +9693,7 @@ function Conteudo({ perfil }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 10,
-                  color: `rgba(255,255,255,.3)`,
+                  color: `rgba(255,255,255,.88)`,
                   marginBottom: 2,
                 }}
               >
@@ -9702,7 +9704,7 @@ function Conteudo({ perfil }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 10,
-                  color: bloqCat ? C.ouro : `rgba(255,255,255,.2)`,
+                  color: bloqCat ? C.ouro : `rgba(255,255,255,.45)`,
                 }}
               >
                 {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
@@ -9853,7 +9855,7 @@ function Perfil({
               background: "rgba(0,0,0,.45)",
               fontSize: 9,
               fontFamily: FB,
-              color: "rgba(255,255,255,.7)",
+              color: "rgba(255,255,255,.88)",
               padding: "3px 0",
               letterSpacing: "0.05em",
             }}
@@ -9866,7 +9868,7 @@ function Perfil({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 10,
-            color: `rgba(255,255,255,.2)`,
+            color: `rgba(255,255,255,.45)`,
             marginBottom: 8,
           }}
         >
@@ -9877,7 +9879,7 @@ function Perfil({
             fontFamily: FS,
             fontSize: 22,
             fontWeight: 300,
-            color: `rgba(255,255,255,.85)`,
+            color: `rgba(255,255,255,.97)`,
           }}
         >
           {usuario?.nome || "—"}
@@ -9887,7 +9889,7 @@ function Perfil({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 11,
-            color: `rgba(255,255,255,.3)`,
+            color: `rgba(255,255,255,.88)`,
             marginTop: 3,
           }}
         >
@@ -9964,7 +9966,7 @@ function Perfil({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.3)`,
+                color: `rgba(255,255,255,.88)`,
                 cursor: "pointer",
                 letterSpacing: "0.1em",
               }}
@@ -10019,7 +10021,7 @@ function Perfil({
                 width: "100%",
                 background: "transparent",
                 border: "none",
-                borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(255,255,255,.2)"}`,
+                borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
                 color: C.branco,
                 fontFamily: FS,
                 fontSize: 16,
@@ -10050,7 +10052,7 @@ function Perfil({
                 width: "100%",
                 background: "transparent",
                 border: "none",
-                borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(255,255,255,.2)"}`,
+                borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
                 color: C.branco,
                 fontFamily: FS,
                 fontSize: 16,
@@ -10094,7 +10096,7 @@ function Perfil({
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: `rgba(255,255,255,.35)`,
+                  color: `rgba(255,255,255,.92)`,
                   marginBottom: 4,
                 }}
               >
@@ -10196,7 +10198,7 @@ function Perfil({
               style={{
                 fontFamily: FS,
                 fontSize: 17,
-                color: `rgba(255,255,255,.8)`,
+                color: `rgba(255,255,255,.95)`,
               }}
             >
               Quinta, 29/05 às 19h30
@@ -10237,7 +10239,7 @@ function Perfil({
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 10,
-              color: `rgba(255,255,255,.2)`,
+              color: `rgba(255,255,255,.45)`,
               lineHeight: 1.6,
             }}
           >
@@ -10341,7 +10343,7 @@ function PrefRadar({ authUserId }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: `rgba(255,255,255,.35)`,
+                  color: `rgba(255,255,255,.92)`,
                   marginBottom: 4,
                 }}
               >
@@ -10352,7 +10354,7 @@ function PrefRadar({ authUserId }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 15,
-                  color: `rgba(255,255,255,.75)`,
+                  color: `rgba(255,255,255,.92)`,
                 }}
               >
                 {cidade}
@@ -10366,7 +10368,7 @@ function PrefRadar({ authUserId }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: `rgba(255,255,255,.35)`,
+                  color: `rgba(255,255,255,.92)`,
                   marginBottom: 8,
                 }}
               >
@@ -10404,7 +10406,7 @@ function PrefRadar({ authUserId }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.3)`,
+              color: `rgba(255,255,255,.88)`,
               cursor: "pointer",
               letterSpacing: "0.1em",
             }}
@@ -10419,7 +10421,7 @@ function PrefRadar({ authUserId }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.35)`,
+              color: `rgba(255,255,255,.92)`,
               marginBottom: 8,
             }}
           >
@@ -10433,7 +10435,7 @@ function PrefRadar({ authUserId }) {
               width: "100%",
               background: "transparent",
               border: "none",
-              borderBottom: `1px solid rgba(255,255,255,.2)`,
+              borderBottom: `1px solid rgba(255,255,255,.45)`,
               color: C.branco,
               fontFamily: FB,
               fontWeight: 300,
@@ -10447,7 +10449,7 @@ function PrefRadar({ authUserId }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.35)`,
+              color: `rgba(255,255,255,.92)`,
               marginBottom: 10,
             }}
           >
@@ -10542,7 +10544,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 10,
-              color: "rgba(255,255,255,.35)",
+              color: "rgba(255,255,255,.92)",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
               marginBottom: 6,
@@ -10562,7 +10564,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
               width: "100%",
               background: "transparent",
               border: "none",
-              borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(255,255,255,.2)"}`,
+              borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(255,255,255,.45)"}`,
               color: C.branco,
               fontFamily: FS,
               fontSize: 16,
