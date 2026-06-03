@@ -931,6 +931,7 @@ export default function App() {
     duracao: "75 min",
     zoom: "",
   });
+  const [videos, setVideos] = useState([]);
 
   // Dados de onboarding — nome e e-mail persistidos entre sessões
   const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
@@ -1137,6 +1138,18 @@ export default function App() {
         duracao: cfg.mentoria_duracao || "75 min",
         zoom: cfg.mentoria_zoom || "",
       });
+    }
+
+    // Carregar vídeos do Supabase
+    const videosRes = await supabase
+      .from("videos")
+      .select("*")
+      .eq("ativo", true)
+      .order("ordem", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (videosRes.data?.length) {
+      setVideos(videosRes.data);
     }
   };
 
@@ -1457,6 +1470,7 @@ export default function App() {
     authUserId: authUser?.id,
     logout,
     mentoria,
+    videos,
     recarregarPerfil: () => loadUserData(authUser?.id),
   };
 
@@ -9498,14 +9512,28 @@ const VIDS = {
   ],
 };
 
-function Conteudo({ perfil }) {
+function Conteudo({ perfil, videos: videosDB }) {
   const [catSel, setCatSel] = useState("yoga");
   const [showConvite, setShowConvite] = useState(false);
   if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
 
   const catAtual = CATS.find((c) => c.id === catSel);
   const bloqCat = catAtual?.lock && perfil !== "jornada";
-  const videos = VIDS[catSel] || [];
+
+  // Usa vídeos do Supabase se disponíveis, senão usa os estáticos
+  const videosCategoria = videosDB?.length
+    ? videosDB
+        .filter((v) => v.categoria === catSel)
+        .map((v) => ({
+          id: v.id,
+          titulo: v.titulo,
+          sub: v.descricao || "",
+          dur: v.duracao || "30 min",
+          url: v.url_youtube,
+          plano: v.plano_minimo,
+        }))
+    : VIDS[catSel] || [];
+  const videos = videosCategoria;
 
   return (
     <div style={{ animation: "fadeUp .35s ease" }}>
@@ -9678,72 +9706,79 @@ function Conteudo({ perfil }) {
         )}
 
         {/* Lista de vídeos */}
-        {videos.map((v) => (
-          <div
-            key={v.id}
-            style={{
-              background: `rgba(255,255,255,.04)`,
-              border: `1px solid ${C.ouro}12`,
-              borderRadius: 10,
-              marginBottom: 9,
-              overflow: "hidden",
-              display: "flex",
-              cursor: "pointer",
-              opacity: bloqCat ? 0.5 : 1,
-            }}
-          >
+        {videos.map((v) => {
+          const bloqVideo =
+            (v.plano === "jornada" && perfil !== "jornada") || bloqCat;
+          return (
             <div
+              key={v.id}
+              onClick={() =>
+                !bloqVideo && v.url && window.open(v.url, "_blank")
+              }
               style={{
-                width: 80,
-                background: catAtual?.cor || "#1E252E",
-                flexShrink: 0,
+                background: `rgba(255,255,255,.04)`,
+                border: `1px solid ${C.ouro}12`,
+                borderRadius: 10,
+                marginBottom: 9,
+                overflow: "hidden",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: bloqCat ? 18 : 22,
-                color: `rgba(255,255,255,.88)`,
+                cursor: bloqVideo ? "default" : "pointer",
+                opacity: bloqVideo ? 0.5 : 1,
               }}
             >
-              {bloqCat ? "🔒" : "▶"}
+              <div
+                style={{
+                  width: 80,
+                  background: catAtual?.cor || "#1E252E",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: bloqVideo ? 18 : 22,
+                  color: `rgba(255,255,255,.55)`,
+                }}
+              >
+                {bloqVideo ? "🔒" : "▶"}
+              </div>
+              <div style={{ padding: "11px 13px", flex: 1 }}>
+                <div
+                  style={{
+                    fontFamily: FS,
+                    fontSize: 15,
+                    color: bloqCat
+                      ? `rgba(255,255,255,.92)`
+                      : `rgba(255,255,255,.97)`,
+                    marginBottom: 3,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {v.titulo}
+                </div>
+                <div
+                  style={{
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 10,
+                    color: `rgba(255,255,255,.88)`,
+                    marginBottom: 2,
+                  }}
+                >
+                  {v.sub}
+                </div>
+                <div
+                  style={{
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 10,
+                    color: bloqCat ? C.ouro : `rgba(255,255,255,.45)`,
+                  }}
+                >
+                  {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
+                </div>
+              </div>
             </div>
-            <div style={{ padding: "11px 13px", flex: 1 }}>
-              <div
-                style={{
-                  fontFamily: FS,
-                  fontSize: 15,
-                  color: bloqCat
-                    ? `rgba(255,255,255,.92)`
-                    : `rgba(255,255,255,.97)`,
-                  marginBottom: 3,
-                  lineHeight: 1.3,
-                }}
-              >
-                {v.titulo}
-              </div>
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 10,
-                  color: `rgba(255,255,255,.88)`,
-                  marginBottom: 2,
-                }}
-              >
-                {v.sub}
-              </div>
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 10,
-                  color: bloqCat ? C.ouro : `rgba(255,255,255,.45)`,
-                }}
-              >
-                {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </Grain>
     </div>
   );
