@@ -705,6 +705,7 @@ function Phone({ children }) {
           flexDirection: "column",
         }}
       >
+
         {children}
       </div>
     </div>
@@ -1012,16 +1013,11 @@ export default function App() {
         } catch {}
       }
       if (p.radar_cidade) {
-        try {
-          localStorage.setItem("auge_pref_cidade", p.radar_cidade);
-        } catch {}
+        try { localStorage.setItem("auge_pref_cidade", p.radar_cidade); } catch {}
       }
       if (p.radar_interesses?.length) {
         try {
-          localStorage.setItem(
-            "auge_pref_sels",
-            JSON.stringify(p.radar_interesses),
-          );
+          localStorage.setItem("auge_pref_sels", JSON.stringify(p.radar_interesses));
           localStorage.setItem("auge_pref_salvo", "1");
         } catch {}
       }
@@ -1039,6 +1035,11 @@ export default function App() {
         };
       }
       setHist(hist);
+      // Sincronizar ckOk com o checkin de hoje vindo do Supabase
+      const hoje = new Date().toISOString().split("T")[0];
+      if (hist[hoje] && (hist[hoje].feitos > 0 || hist[hoje].retomada)) {
+        setCkOk(true);
+      }
     }
 
     if (habRes.data && !habRes.error) {
@@ -1080,17 +1081,13 @@ export default function App() {
     const [feedPublicoRes, feedPrivadoRes, configRes] = await Promise.all([
       supabase
         .from("feed")
-        .select(
-          "id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id",
-        )
+        .select("id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
         .eq("publica", true)
         .order("created_at", { ascending: false })
         .limit(50),
       supabase
         .from("feed")
-        .select(
-          "id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id",
-        )
+        .select("id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
         .eq("user_id", userId)
         .eq("publica", false)
         .order("created_at", { ascending: false })
@@ -1120,7 +1117,7 @@ export default function App() {
     const todosIds = new Set(postsPublicos.map((p) => p.id));
     const privadosUnicos = postsPrivados.filter((p) => !todosIds.has(p.id));
     const postsReais = [...postsPublicos, ...privadosUnicos].sort(
-      (a, b) => new Date(b.tempo) - new Date(a.tempo),
+      (a, b) => new Date(b.tempo) - new Date(a.tempo)
     );
 
     if (postsReais.length > 0) {
@@ -1129,9 +1126,7 @@ export default function App() {
 
     // Carregar configurações (mentoria)
     if (configRes.data?.length) {
-      const cfg = Object.fromEntries(
-        configRes.data.map((c) => [c.id, c.valor]),
-      );
+      const cfg = Object.fromEntries(configRes.data.map((c) => [c.id, c.valor]));
       setMentoria({
         data: cfg.mentoria_data || "A definir",
         semana: cfg.mentoria_semana || "",
@@ -1198,20 +1193,13 @@ export default function App() {
 
   const postTreino = async (entry) => {
     const ini = usuario?.nome
-      ? usuario.nome
-          .trim()
-          .split(/\s+/)
-          .slice(0, 2)
-          .map((n) => n[0].toUpperCase())
-          .join("")
+      ? usuario.nome.trim().split(/\s+/).slice(0, 2).map((n) => n[0].toUpperCase()).join("")
       : "?";
     let imgUrl = null;
 
     // Upload da imagem se post público e tem foto
     if (entry.publica !== false && entry.imgSrc && entry.imgFile) {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const f = entry.imgFile;
         const ext = f.name.split(".").pop();
@@ -1220,9 +1208,7 @@ export default function App() {
           .from("posts")
           .upload(path, f, { contentType: f.type });
         if (!error) {
-          const { data: urlData } = supabase.storage
-            .from("posts")
-            .getPublicUrl(path);
+          const { data: urlData } = supabase.storage.from("posts").getPublicUrl(path);
           imgUrl = urlData?.publicUrl || null;
         }
       }
@@ -1246,19 +1232,16 @@ export default function App() {
     if (entry.publica !== false) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session?.user) return;
-        supabase
-          .from("feed")
-          .insert({
-            user_id: session.user.id,
-            autor_nome: usuario?.nome || "Aluna",
-            autor_ini: ini,
-            autor_cor: C.ouroDk,
-            titulo: entry.tit || "",
-            descricao: entry.desc || "",
-            publica: entry.publica !== false,
-            img_url: imgUrl,
-          })
-          .then(() => {});
+        supabase.from("feed").insert({
+          user_id: session.user.id,
+          autor_nome: usuario?.nome || "Aluna",
+          autor_ini: ini,
+          autor_cor: C.ouroDk,
+          titulo: entry.tit || "",
+          descricao: entry.desc || "",
+          publica: entry.publica !== false,
+          img_url: imgUrl,
+        }).then(() => {});
       });
     }
     ir(S.FEED);
@@ -1535,20 +1518,14 @@ export default function App() {
               // Salva respostas no Supabase
               supabase.auth.getSession().then(({ data: { session } }) => {
                 if (!session?.user) return;
-                supabase
-                  .from("diagnostico")
-                  .upsert(
-                    {
-                      user_id: session.user.id,
-                      p1: respostas[1] || null,
-                      p2: respostas[2] || null,
-                      p3: respostas[3] || null,
-                      p4: respostas[4] || null,
-                      p5: respostas[5] || null,
-                    },
-                    { onConflict: "user_id" },
-                  )
-                  .then(() => {});
+                supabase.from("diagnostico").upsert({
+                  user_id: session.user.id,
+                  p1: respostas[1] || null,
+                  p2: respostas[2] || null,
+                  p3: respostas[3] || null,
+                  p4: respostas[4] || null,
+                  p5: respostas[5] || null,
+                }, { onConflict: "user_id" }).then(() => {});
               });
               ir(S.HOME);
             }}
@@ -2579,9 +2556,7 @@ function TelaAuth({ onAuth }) {
               }}
             >
               Enviamos um link de confirmação para{" "}
-              <strong style={{ color: `rgba(255,255,255,.88)` }}>
-                {email}
-              </strong>
+              <strong style={{ color: `rgba(255,255,255,.88)` }}>{email}</strong>
               . Clique no link e depois faça login.
             </div>
             <button
@@ -3512,9 +3487,7 @@ function Home({
           }}
         >
           BOM DIA
-          {usuario?.nome
-            ? `, ${usuario.nome.split(" ")[0].toUpperCase()}`
-            : ""}{" "}
+          {usuario?.nome ? `, ${usuario.nome.split(" ")[0].toUpperCase()}` : ""}{" "}
           ☀️
         </div>
         <div
@@ -3532,13 +3505,45 @@ function Home({
           "{anc}"
         </div>
 
+        {/* Banner boas-vindas para quem nunca fez checkin */}
+        {diasSemTreino === -1 && !ckOk && (
+          <div style={{
+            background: `${C.ouro}10`,
+            border: `1px solid ${C.ouro}28`,
+            borderRadius: 12,
+            padding: "16px 18px",
+            marginBottom: 16,
+            animation: "fadeUp .4s ease",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <Av ini="ISA" cor={C.ouroDk} sz={34} />
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 12, color: `rgba(255,255,255,.97)` }}>
+                Dra. Isadora Zaniboni
+              </div>
+            </div>
+            <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15, color: C.ouro, lineHeight: 1.6 }}>
+              "Olá, {usuario?.nome?.split(" ")[0] || "bem-vinda"}! Que bom te ter aqui. Vamos começar pelo checkin?"
+            </div>
+          </div>
+        )}
+
         {/* Banner motivacional estilo Duolingo */}
-        <MotivBanner
-          ckOk={ckOk}
-          streakAtual={streakAtual}
-          diasSemTreino={diasSemTreino}
-          ir={ir}
-        />
+        {diasSemTreino !== -1 && (
+          <MotivBanner
+            ckOk={ckOk}
+            streakAtual={streakAtual}
+            diasSemTreino={diasSemTreino}
+            ir={ir}
+          />
+        )}
+        {diasSemTreino === -1 && ckOk && (
+          <MotivBanner
+            ckOk={ckOk}
+            streakAtual={streakAtual}
+            diasSemTreino={diasSemTreino}
+            ir={ir}
+          />
+        )}
 
         {/* Banner carta semana 12 */}
         {carta && sem >= 12 && (
@@ -4178,9 +4183,7 @@ function Home({
               padding: "12px 14px",
               cursor: mentoria?.zoom ? "pointer" : "default",
             }}
-            onClick={() =>
-              mentoria?.zoom && window.open(mentoria.zoom, "_blank")
-            }
+            onClick={() => mentoria?.zoom && window.open(mentoria.zoom, "_blank")}
           >
             <div
               style={{
@@ -4195,26 +4198,11 @@ function Home({
             >
               Próxima mentoria {mentoria?.zoom && "· toque para entrar"}
             </div>
-            <div
-              style={{
-                fontFamily: FS,
-                fontSize: 16,
-                color: `rgba(255,255,255,.95)`,
-              }}
-            >
+            <div style={{ fontFamily: FS, fontSize: 16, color: `rgba(255,255,255,.95)` }}>
               {mentoria?.data || "A definir"}
             </div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 11,
-                color: C.ouro,
-                marginTop: 2,
-              }}
-            >
-              {mentoria?.semana ? `${mentoria.semana} · ` : ""}Zoom ·{" "}
-              {mentoria?.duracao || "75 min"}
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, marginTop: 2 }}>
+              {mentoria?.semana ? `${mentoria.semana} · ` : ""}Zoom · {mentoria?.duracao || "75 min"}
             </div>
           </div>
         )}
@@ -4235,16 +4223,10 @@ function Feed({ feed, setFeed, ir }) {
         if (p.id !== id) return p;
         const userId = authUser?.id || "RF";
         const j = p.cur.includes(userId);
-        const newCur = j
-          ? p.cur.filter((x) => x !== userId)
-          : [...p.cur, userId];
+        const newCur = j ? p.cur.filter((x) => x !== userId) : [...p.cur, userId];
         // Salva curtida no Supabase se for post real (UUID)
         if (p.dbId) {
-          supabase
-            .from("feed")
-            .update({ curtidas: newCur })
-            .eq("id", p.dbId)
-            .then(() => {});
+          supabase.from("feed").update({ curtidas: newCur }).eq("id", p.dbId).then(() => {});
         }
         return { ...p, cur: newCur };
       }),
@@ -4258,11 +4240,7 @@ function Feed({ feed, setFeed, ir }) {
         const newCom = [...p.com, { q: "Você", t: txt }];
         // Salva comentário no Supabase se for post real
         if (p.dbId) {
-          supabase
-            .from("feed")
-            .update({ comentarios: newCom })
-            .eq("id", p.dbId)
-            .then(() => {});
+          supabase.from("feed").update({ comentarios: newCom }).eq("id", p.dbId).then(() => {});
         }
         return { ...p, com: newCom };
       }),
@@ -5831,69 +5809,9 @@ function MatchDet({ selM, setSelM, ir, back }) {
             </span>
           ))}
         </div>
-        {!matched ? (
-          <>
-            <BtnPill
-              onClick={() => setMatched(true)}
-              style={{ marginBottom: 10 }}
-            >
-              💪 Confirmar conexão
-            </BtnPill>
-            <button
-              onClick={() => ir(S.CHAT)}
-              style={{
-                width: "100%",
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}18`,
-                borderRadius: 50,
-                padding: "14px",
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 13,
-                color: `rgba(255,255,255,.4)`,
-                cursor: "pointer",
-              }}
-            >
-              💬 Enviar mensagem
-            </button>
-          </>
-        ) : (
-          <div
-            style={{
-              background: `${C.augeZ}18`,
-              border: `1px solid ${C.augeZ}44`,
-              borderRadius: 12,
-              padding: "20px",
-              textAlign: "center",
-              marginBottom: 14,
-            }}
-          >
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
-            <div
-              style={{
-                fontFamily: FS,
-                fontSize: 18,
-                color: `rgba(255,255,255,.97)`,
-                marginBottom: 6,
-              }}
-            >
-              Conexão feita!
-            </div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 13,
-                color: `rgba(255,255,255,.55)`,
-                textAlign: "center",
-                marginTop: 12,
-                lineHeight: 1.5,
-              }}
-            >
-              💚 Conexão feita! Entre em contato pelo grupo da Jornada.
-            </div>
-          </div>
-        )}
+        <BtnPill onClick={() => ir(S.CHAT)} style={{ marginBottom: 10 }}>
+          💬 Enviar mensagem
+        </BtnPill>
       </Grain>
     </div>
   );
@@ -6308,7 +6226,10 @@ function TelaConvite({ back }) {
             — Maria, 54 anos · Florianópolis
           </div>
         </div>
-        <BtnPill onClick={() => {}} style={{ marginBottom: 12 }}>
+        <BtnPill
+          onClick={() => {}}
+          style={{ marginBottom: 12 }}
+        >
           Quero entrar na lista de espera
         </BtnPill>
         <BtnOut onClick={back}>Voltar</BtnOut>
@@ -6790,7 +6711,10 @@ function JornadaClube({ ir }) {
           </div>
         </div>
 
-        <BtnPill onClick={() => {}} style={{ marginBottom: 10, fontSize: 13 }}>
+        <BtnPill
+          onClick={() => {}}
+          style={{ marginBottom: 10, fontSize: 13 }}
+        >
           Quero entrar na Jornada AUGE
         </BtnPill>
         <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 13 }}>
@@ -6947,7 +6871,10 @@ function VitJornada({ ir, onLogin }) {
           </div>
         </div>
 
-        <BtnPill onClick={() => {}} style={{ marginBottom: 12 }}>
+        <BtnPill
+          onClick={() => {}}
+          style={{ marginBottom: 12 }}
+        >
           Quero participar da próxima turma
         </BtnPill>
         <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 13 }}>
@@ -8105,52 +8032,32 @@ function Calendario({ back, historico, dataCadastro }) {
   const hoje = new Date();
   const ano = hoje.getFullYear();
   const mes = hoje.getMonth();
-  const nomeMes = hoje.toLocaleString("pt-BR", {
-    month: "long",
-    year: "numeric",
-  });
+  const nomeMes = hoje.toLocaleString("pt-BR", { month: "long", year: "numeric" });
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
 
   const rdCor = (dataStr) => {
     const d = historico[dataStr];
-    if (!d)
-      return {
-        bg: "transparent",
-        tc: `rgba(255,255,255,.45)`,
-        bo: `1px solid ${C.ouro}10`,
-      };
+    if (!d) return { bg: "transparent", tc: `rgba(255,255,255,.45)`, bo: `1px solid ${C.ouro}10` };
     if (d.retomada) return { bg: `${C.blush}40`, tc: C.blush, bo: "none" };
-    if (d.total > 0 && d.feitos === d.total)
-      return { bg: C.ouro, tc: C.obs, bo: "none" };
-    if (d.feitos > 0)
-      return { bg: `${C.ouroLt}30`, tc: C.ouroDk, bo: `1.5px solid ${C.ouro}` };
-    return {
-      bg: "transparent",
-      tc: `rgba(255,255,255,.45)`,
-      bo: `1px solid ${C.ouro}10`,
-    };
+    if (d.total > 0 && d.feitos === d.total) return { bg: C.ouro, tc: C.obs, bo: "none" };
+    if (d.feitos > 0) return { bg: `${C.ouroLt}30`, tc: C.ouroDk, bo: `1.5px solid ${C.ouro}` };
+    return { bg: "transparent", tc: `rgba(255,255,255,.45)`, bo: `1px solid ${C.ouro}10` };
   };
 
   // Barras de semanas baseadas em checkins reais
-  const semanas = dataCadastro
-    ? Array.from({ length: 12 }, (_, s) => {
-        const ini = new Date(dataCadastro);
-        ini.setDate(ini.getDate() + s * 7);
-        let dias = 0,
-          feitos = 0;
-        for (let d = 0; d < 7; d++) {
-          const dt = new Date(ini);
-          dt.setDate(dt.getDate() + d);
-          const k = dt.toISOString().split("T")[0];
-          if (historico[k]) {
-            dias++;
-            if (historico[k].feitos > 0 || historico[k].retomada) feitos++;
-          }
-        }
-        return dias > 0 ? feitos / dias : 0;
-      })
-    : Array(12).fill(0);
+  const semanas = dataCadastro ? Array.from({ length: 12 }, (_, s) => {
+    const ini = new Date(dataCadastro);
+    ini.setDate(ini.getDate() + s * 7);
+    let dias = 0, feitos = 0;
+    for (let d = 0; d < 7; d++) {
+      const dt = new Date(ini);
+      dt.setDate(dt.getDate() + d);
+      const k = dt.toISOString().split("T")[0];
+      if (historico[k]) { dias++; if (historico[k].feitos > 0 || historico[k].retomada) feitos++; }
+    }
+    return dias > 0 ? feitos / dias : 0;
+  }) : Array(12).fill(0);
 
   const todayStr = hoje.toISOString().split("T")[0];
 
@@ -8158,126 +8065,43 @@ function Calendario({ back, historico, dataCadastro }) {
     <div style={{ animation: "fadeUp .4s ease" }}>
       <Cab titulo="Meu progresso" voltar={back} />
       <Grain style={{ padding: "18px 18px 32px" }}>
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 9,
-            color: C.ouro,
-            letterSpacing: "0.35em",
-            textTransform: "uppercase",
-            marginBottom: 12,
-          }}
-        >
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 12 }}>
           As 12 semanas
         </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            marginBottom: 22,
-            alignItems: "flex-end",
-          }}
-        >
+        <div style={{ display: "flex", gap: 4, marginBottom: 22, alignItems: "flex-end" }}>
           {semanas.map((pct, i) => {
             const h = Math.max(6, Math.round(pct * 42));
             const op = pct === 0 ? 0.12 : 0.3 + pct * 0.7;
             return (
-              <div
-                key={i}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 3,
-                }}
-              >
-                <div
-                  style={{
-                    width: "100%",
-                    background: `rgba(196,168,130,${op})`,
-                    borderRadius: 4,
-                    height: h,
-                  }}
-                />
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 8,
-                    color: `rgba(255,255,255,.82)`,
-                  }}
-                >
-                  {i + 1}
-                </div>
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div style={{ width: "100%", background: `rgba(196,168,130,${op})`, borderRadius: 4, height: h }} />
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 8, color: `rgba(255,255,255,.82)` }}>{i + 1}</div>
               </div>
             );
           })}
         </div>
 
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 9,
-            color: C.ouro,
-            letterSpacing: "0.35em",
-            textTransform: "uppercase",
-            marginBottom: 12,
-          }}
-        >
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 12 }}>
           {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(7,1fr)",
-            gap: 4,
-            marginBottom: 16,
-          }}
-        >
-          {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
-            <div
-              key={i}
-              style={{
-                textAlign: "center",
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 9,
-                color: `rgba(255,255,255,.82)`,
-                padding: "2px 0",
-              }}
-            >
-              {d}
-            </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 16 }}>
+          {["D","S","T","Q","Q","S","S"].map((d, i) => (
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 9, color: `rgba(255,255,255,.82)`, padding: "2px 0" }}>{d}</div>
           ))}
-          {Array.from({ length: primeiroDia }, (_, i) => (
-            <div key={"e" + i} />
-          ))}
+          {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
           {Array.from({ length: diasNoMes }, (_, i) => {
             const dia = i + 1;
-            const dataStr = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+            const dataStr = `${ano}-${String(mes + 1).padStart(2,"0")}-${String(dia).padStart(2,"0")}`;
             const { bg, tc, bo } = rdCor(dataStr);
             const isHoje = dataStr === todayStr;
             return (
-              <div
-                key={dia}
-                style={{
-                  aspectRatio: "1",
-                  borderRadius: 7,
-                  background: bg,
-                  border: isHoje ? `2px solid ${C.ouro}` : bo || "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 10,
-                  fontFamily: FS,
-                  fontWeight: 300,
-                  color: tc,
-                  boxShadow: isHoje ? `0 0 0 1px ${C.ouro}44` : "none",
-                }}
-              >
+              <div key={dia} style={{
+                aspectRatio: "1", borderRadius: 7,
+                background: bg, border: isHoje ? `2px solid ${C.ouro}` : (bo || "none"),
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontFamily: FS, fontWeight: 300, color: tc,
+                boxShadow: isHoje ? `0 0 0 1px ${C.ouro}44` : "none",
+              }}>
                 {dia}
               </div>
             );
@@ -8290,30 +8114,9 @@ function Calendario({ back, historico, dataCadastro }) {
             [`${C.blush}40`, "Kit / Retomada"],
             ["transparent", "Sem registro"],
           ].map(([c, l]) => (
-            <div
-              key={l}
-              style={{ display: "flex", alignItems: "center", gap: 9 }}
-            >
-              <div
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: 4,
-                  background: c,
-                  border: `1px solid ${C.ouro}25`,
-                  flexShrink: 0,
-                }}
-              />
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 12,
-                  color: `rgba(255,255,255,.88)`,
-                }}
-              >
-                {l}
-              </div>
+            <div key={l} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div style={{ width: 12, height: 12, borderRadius: 4, background: c, border: `1px solid ${C.ouro}25`, flexShrink: 0 }} />
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.88)` }}>{l}</div>
             </div>
           ))}
         </div>
@@ -8344,9 +8147,7 @@ function Escritas({
 }) {
   const [nv, setNv] = useState("");
   const [na, setNa] = useState(anc);
-  const [editAnc, setEditAnc] = useState(
-    !anc || anc === "Eu sou a mulher que volta.",
-  );
+  const [editAnc, setEditAnc] = useState(!anc || anc === "Eu sou a mulher que volta.");
   const [editPq, setEditPq] = useState(false);
   const [isaVit, setIsaVit] = useState(null);
   const [isaVitLoad, setIsaVitLoad] = useState(false);
@@ -8543,48 +8344,21 @@ function Escritas({
                     marginBottom: 16,
                   }}
                 >
-                  <div
-                    style={{
-                      fontFamily: FB,
-                      fontWeight: 300,
-                      fontSize: 9,
-                      color: C.ouro,
-                      letterSpacing: "0.3em",
-                      textTransform: "uppercase",
-                      marginBottom: 12,
-                    }}
-                  >
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 12 }}>
                     Minha âncora
                   </div>
-                  <div
-                    style={{
-                      fontFamily: FS,
-                      fontStyle: "italic",
-                      fontSize: 20,
-                      color: C.ouro,
-                      lineHeight: 1.5,
-                    }}
-                  >
+                  <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 20, color: C.ouro, lineHeight: 1.5 }}>
                     "{anc}"
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    setNa(anc);
-                    setEditAnc(true);
-                  }}
+                  onClick={() => { setNa(anc); setEditAnc(true); }}
                   style={{
-                    width: "100%",
-                    background: "none",
-                    border: `1px solid ${C.ouro}20`,
-                    borderRadius: 50,
-                    padding: "12px",
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 12,
-                    color: `rgba(255,255,255,.88)`,
-                    cursor: "pointer",
-                    letterSpacing: "0.1em",
+                    width: "100%", background: "none",
+                    border: `1px solid ${C.ouro}20`, borderRadius: 50,
+                    padding: "12px", fontFamily: FB, fontWeight: 300,
+                    fontSize: 12, color: `rgba(255,255,255,.88)`,
+                    cursor: "pointer", letterSpacing: "0.1em",
                   }}
                 >
                   Reescrever minha âncora
@@ -8592,16 +8366,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 12,
-                    color: `rgba(255,255,255,.92)`,
-                    marginBottom: 12,
-                    lineHeight: 1.6,
-                  }}
-                >
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
                   Escreva a frase que vai te trazer de volta nos dias difíceis.
                 </div>
                 <textarea
@@ -8609,19 +8374,11 @@ function Escritas({
                   onChange={(e) => setNa(e.target.value)}
                   placeholder="A frase que vai te trazer de volta..."
                   style={{
-                    width: "100%",
-                    background: `rgba(255,255,255,.04)`,
-                    border: `1px solid ${C.ouro}15`,
-                    borderRadius: 10,
-                    padding: "13px",
-                    fontSize: 15,
-                    fontFamily: FS,
-                    fontStyle: "italic",
-                    color: `rgba(255,255,255,.82)`,
-                    resize: "none",
-                    height: 80,
-                    lineHeight: 1.6,
-                    marginBottom: 12,
+                    width: "100%", background: `rgba(255,255,255,.04)`,
+                    border: `1px solid ${C.ouro}15`, borderRadius: 10,
+                    padding: "13px", fontSize: 15, fontFamily: FS,
+                    fontStyle: "italic", color: `rgba(255,255,255,.82)`,
+                    resize: "none", height: 80, lineHeight: 1.6, marginBottom: 12,
                   }}
                 />
                 <BtnPill
@@ -8644,16 +8401,7 @@ function Escritas({
           <div>
             {pq1 && pq2 && pq3 && !editPq ? (
               <div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 9,
-                    color: `rgba(255,255,255,.82)`,
-                    lineHeight: 1.6,
-                    marginBottom: 16,
-                  }}
-                >
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: `rgba(255,255,255,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
                   Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -8662,30 +8410,8 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3],
                 ].map(([q, v], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div
-                      style={{
-                        fontFamily: FS,
-                        fontStyle: "italic",
-                        fontSize: 14,
-                        color: `rgba(255,255,255,.45)`,
-                        lineHeight: 1.5,
-                        marginBottom: 8,
-                      }}
-                    >
-                      {q}
-                    </div>
-                    <div
-                      style={{
-                        background: `rgba(255,255,255,.04)`,
-                        border: `1px solid ${C.ouro}12`,
-                        borderRadius: 10,
-                        padding: "13px 14px",
-                        fontFamily: FS,
-                        fontSize: 15,
-                        color: `rgba(255,255,255,.92)`,
-                        lineHeight: 1.6,
-                      }}
-                    >
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 14, color: `rgba(255,255,255,.45)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FS, fontSize: 15, color: `rgba(255,255,255,.92)`, lineHeight: 1.6 }}>
                       {v}
                     </div>
                   </div>
@@ -8693,18 +8419,11 @@ function Escritas({
                 <button
                   onClick={() => setEditPq(true)}
                   style={{
-                    width: "100%",
-                    background: "none",
-                    border: `1px solid ${C.ouro}20`,
-                    borderRadius: 50,
-                    padding: "12px",
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 12,
-                    color: `rgba(255,255,255,.88)`,
-                    cursor: "pointer",
-                    letterSpacing: "0.1em",
-                    marginTop: 4,
+                    width: "100%", background: "none",
+                    border: `1px solid ${C.ouro}20`, borderRadius: 50,
+                    padding: "12px", fontFamily: FB, fontWeight: 300,
+                    fontSize: 12, color: `rgba(255,255,255,.88)`,
+                    cursor: "pointer", letterSpacing: "0.1em", marginTop: 4,
                   }}
                 >
                   Reescrever meus porquês
@@ -8712,68 +8431,28 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 12,
-                    color: `rgba(255,255,255,.82)`,
-                    lineHeight: 1.7,
-                    marginBottom: 16,
-                  }}
-                >
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
                   Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
                   ["Por que isso importa para você de verdade?", pq1, setPq1],
-                  [
-                    "O que você está perdendo hoje por estar onde está?",
-                    pq2,
-                    setPq2,
-                  ],
+                  ["O que você está perdendo hoje por estar onde está?", pq2, setPq2],
                   ["Como você quer se sentir daqui a 5 anos?", pq3, setPq3],
                 ].map(([q, v, s], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div
-                      style={{
-                        fontFamily: FS,
-                        fontStyle: "italic",
-                        fontSize: 15,
-                        color: `rgba(255,255,255,.92)`,
-                        lineHeight: 1.5,
-                        marginBottom: 8,
-                      }}
-                    >
-                      {q}
-                    </div>
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15, color: `rgba(255,255,255,.92)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
                     <textarea
                       value={v}
                       onChange={(e) => s(e.target.value)}
                       placeholder="Escreva com honestidade..."
-                      style={{
-                        width: "100%",
-                        background: `rgba(255,255,255,.04)`,
-                        border: `1px solid ${C.ouro}12`,
-                        borderRadius: 10,
-                        padding: "11px 12px",
-                        fontSize: 14,
-                        fontFamily: FS,
-                        color: `rgba(255,255,255,.92)`,
-                        resize: "none",
-                        height: 80,
-                        lineHeight: 1.6,
-                      }}
+                      style={{ width: "100%", background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 14, fontFamily: FS, color: `rgba(255,255,255,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
                     />
                   </div>
                 ))}
                 <BtnPill
                   onClick={() => {
                     if (!pq1 || !pq2 || !pq3) return;
-                    syncDB(
-                      "porques",
-                      { p1: pq1, p2: pq2, p3: pq3 },
-                      { onConflict: "user_id" },
-                    );
+                    syncDB("porques", { p1: pq1, p2: pq2, p3: pq3 }, { onConflict: "user_id" });
                     setEditPq(false);
                     tk("Porquês salvos 💖");
                   }}
@@ -9532,7 +9211,7 @@ function Conteudo({ perfil, videos: videosDB }) {
           url: v.url_youtube,
           plano: v.plano_minimo,
         }))
-    : VIDS[catSel] || [];
+    : (VIDS[catSel] || []);
   const videos = videosCategoria;
 
   return (
@@ -9707,76 +9386,73 @@ function Conteudo({ perfil, videos: videosDB }) {
 
         {/* Lista de vídeos */}
         {videos.map((v) => {
-          const bloqVideo =
-            (v.plano === "jornada" && perfil !== "jornada") || bloqCat;
+          const bloqVideo = (v.plano === "jornada" && perfil !== "jornada") || bloqCat;
           return (
+          <div
+            key={v.id}
+            onClick={() => !bloqVideo && v.url && window.open(v.url, "_blank")}
+            style={{
+              background: `rgba(255,255,255,.04)`,
+              border: `1px solid ${C.ouro}12`,
+              borderRadius: 10,
+              marginBottom: 9,
+              overflow: "hidden",
+              display: "flex",
+              cursor: bloqVideo ? "default" : "pointer",
+              opacity: bloqVideo ? 0.5 : 1,
+            }}
+          >
             <div
-              key={v.id}
-              onClick={() =>
-                !bloqVideo && v.url && window.open(v.url, "_blank")
-              }
               style={{
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}12`,
-                borderRadius: 10,
-                marginBottom: 9,
-                overflow: "hidden",
+                width: 80,
+                background: catAtual?.cor || "#1E252E",
+                flexShrink: 0,
                 display: "flex",
-                cursor: bloqVideo ? "default" : "pointer",
-                opacity: bloqVideo ? 0.5 : 1,
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: bloqVideo ? 18 : 22,
+                color: `rgba(255,255,255,.55)`,
               }}
             >
+              {bloqVideo ? "🔒" : "▶"}
+            </div>
+            <div style={{ padding: "11px 13px", flex: 1 }}>
               <div
                 style={{
-                  width: 80,
-                  background: catAtual?.cor || "#1E252E",
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: bloqVideo ? 18 : 22,
-                  color: `rgba(255,255,255,.55)`,
+                  fontFamily: FS,
+                  fontSize: 15,
+                  color: bloqCat
+                    ? `rgba(255,255,255,.92)`
+                    : `rgba(255,255,255,.97)`,
+                  marginBottom: 3,
+                  lineHeight: 1.3,
                 }}
               >
-                {bloqVideo ? "🔒" : "▶"}
+                {v.titulo}
               </div>
-              <div style={{ padding: "11px 13px", flex: 1 }}>
-                <div
-                  style={{
-                    fontFamily: FS,
-                    fontSize: 15,
-                    color: bloqCat
-                      ? `rgba(255,255,255,.92)`
-                      : `rgba(255,255,255,.97)`,
-                    marginBottom: 3,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {v.titulo}
-                </div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 10,
-                    color: `rgba(255,255,255,.88)`,
-                    marginBottom: 2,
-                  }}
-                >
-                  {v.sub}
-                </div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 10,
-                    color: bloqCat ? C.ouro : `rgba(255,255,255,.45)`,
-                  }}
-                >
-                  {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
-                </div>
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 10,
+                  color: `rgba(255,255,255,.88)`,
+                  marginBottom: 2,
+                }}
+              >
+                {v.sub}
+              </div>
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 10,
+                  color: bloqCat ? C.ouro : `rgba(255,255,255,.45)`,
+                }}
+              >
+                {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
               </div>
             </div>
+          </div>
           );
         })}
       </Grain>
@@ -9810,11 +9486,7 @@ function Perfil({
   const editOk = nomeEdit.trim().length >= 2 && emailOk;
   const fotoRef = useRef(null);
   const [fotoPerfil, setFotoPerfil] = useState(() => {
-    try {
-      return localStorage.getItem("auge_foto") || null;
-    } catch {
-      return null;
-    }
+    try { return localStorage.getItem("auge_foto") || null; } catch { return null; }
   });
 
   const iniciais = usuario?.nome
@@ -9856,15 +9528,11 @@ function Perfil({
             const r = new FileReader();
             r.onload = (ev) => {
               setFotoPerfil(ev.target.result);
-              try {
-                localStorage.setItem("auge_foto", ev.target.result);
-              } catch {}
+              try { localStorage.setItem("auge_foto", ev.target.result); } catch {}
             };
             r.readAsDataURL(f);
             // Upload para Supabase Storage
-            const {
-              data: { session },
-            } = await supabase.auth.getSession();
+            const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user) return;
             const ext = f.name.split(".").pop() || "jpg";
             const path = `${session.user.id}/avatar.${ext}`;
@@ -9872,17 +9540,10 @@ function Perfil({
               .from("avatars")
               .upload(path, f, { upsert: true, contentType: f.type });
             if (!error) {
-              const { data: urlData } = supabase.storage
-                .from("avatars")
-                .getPublicUrl(path);
+              const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
               if (urlData?.publicUrl) {
-                await supabase
-                  .from("profiles")
-                  .update({ avatar_url: urlData.publicUrl })
-                  .eq("id", session.user.id);
-                try {
-                  localStorage.setItem("auge_foto_url", urlData.publicUrl);
-                } catch {}
+                await supabase.from("profiles").update({ avatar_url: urlData.publicUrl }).eq("id", session.user.id);
+                try { localStorage.setItem("auge_foto_url", urlData.publicUrl); } catch {}
               }
             }
           }}
@@ -9908,40 +9569,18 @@ function Perfil({
           }}
         >
           {fotoPerfil ? (
-            <img
-              src={fotoPerfil}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+            <img src={fotoPerfil} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             iniciais
           )}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: "rgba(0,0,0,.45)",
-              fontSize: 9,
-              fontFamily: FB,
-              color: "rgba(255,255,255,.88)",
-              padding: "3px 0",
-              letterSpacing: "0.05em",
-            }}
-          >
-            📷
-          </div>
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            background: "rgba(0,0,0,.45)", fontSize: 9,
+            fontFamily: FB, color: "rgba(255,255,255,.88)",
+            padding: "3px 0", letterSpacing: "0.05em",
+          }}>📷</div>
         </div>
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 10,
-            color: `rgba(255,255,255,.45)`,
-            marginBottom: 8,
-          }}
-        >
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.45)`, marginBottom: 8 }}>
           Toque para alterar foto
         </div>
         <div
@@ -10044,6 +9683,7 @@ function Perfil({
               Sair
             </button>
           )}
+
         </div>
       </div>
 
@@ -10250,9 +9890,7 @@ function Perfil({
               marginBottom: 14,
               cursor: mentoria?.zoom ? "pointer" : "default",
             }}
-            onClick={() =>
-              mentoria?.zoom && window.open(mentoria.zoom, "_blank")
-            }
+            onClick={() => mentoria?.zoom && window.open(mentoria.zoom, "_blank")}
           >
             <div
               style={{
@@ -10267,26 +9905,11 @@ function Perfil({
             >
               Próxima mentoria {mentoria?.zoom && "· toque para entrar"}
             </div>
-            <div
-              style={{
-                fontFamily: FS,
-                fontSize: 17,
-                color: `rgba(255,255,255,.95)`,
-              }}
-            >
+            <div style={{ fontFamily: FS, fontSize: 17, color: `rgba(255,255,255,.95)` }}>
               {mentoria?.data || "A definir"}
             </div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 12,
-                color: C.ouro,
-                marginTop: 3,
-              }}
-            >
-              {mentoria?.semana ? `${mentoria.semana} · ` : ""}via Zoom ·{" "}
-              {mentoria?.duracao || "75 min"}
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, marginTop: 3 }}>
+              {mentoria?.semana ? `${mentoria.semana} · ` : ""}via Zoom · {mentoria?.duracao || "75 min"}
             </div>
           </div>
         )}
@@ -10328,41 +9951,20 @@ function Perfil({
 
 function PrefRadar({ authUserId }) {
   const INTERESSES = [
-    "Caminhada",
-    "Corrida",
-    "Pilates",
-    "Yoga",
-    "Musculação",
-    "Natação",
-    "Dança",
-    "Funcional",
-    "Leitura",
-    "Meditação",
+    "Caminhada", "Corrida", "Pilates", "Yoga", "Musculação",
+    "Natação", "Dança", "Funcional", "Leitura", "Meditação",
   ];
   const [cidade, setCidade] = useState(() => {
-    try {
-      return localStorage.getItem("auge_pref_cidade") || "";
-    } catch {
-      return "";
-    }
+    try { return localStorage.getItem("auge_pref_cidade") || ""; } catch { return ""; }
   });
   const [sels, setSels] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("auge_pref_sels") || "[]");
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem("auge_pref_sels") || "[]"); } catch { return []; }
   });
   const [salvo, setSalvo] = useState(() => {
-    try {
-      return !!localStorage.getItem("auge_pref_salvo");
-    } catch {
-      return false;
-    }
+    try { return !!localStorage.getItem("auge_pref_salvo"); } catch { return false; }
   });
   const [editando, setEditando] = useState(false);
-  const toggle = (i) =>
-    setSels((s) => (s.includes(i) ? s.filter((x) => x !== i) : [...s, i]));
+  const toggle = (i) => setSels((s) => s.includes(i) ? s.filter((x) => x !== i) : [...s, i]);
 
   const salvar = () => {
     try {
@@ -10371,40 +9973,18 @@ function PrefRadar({ authUserId }) {
       localStorage.setItem("auge_pref_salvo", "1");
     } catch {}
     if (authUserId) {
-      supabase
-        .from("profiles")
-        .update({
-          radar_cidade: cidade,
-          radar_interesses: sels,
-        })
-        .eq("id", authUserId)
-        .then(() => {});
+      supabase.from("profiles").update({
+        radar_cidade: cidade,
+        radar_interesses: sels,
+      }).eq("id", authUserId).then(() => {});
     }
     setSalvo(true);
     setEditando(false);
   };
 
   return (
-    <div
-      style={{
-        background: `rgba(255,255,255,.04)`,
-        border: `1px solid ${C.ouro}15`,
-        borderRadius: 10,
-        padding: "16px",
-        marginBottom: 14,
-      }}
-    >
-      <div
-        style={{
-          fontFamily: FB,
-          fontWeight: 300,
-          fontSize: 9,
-          color: C.ouro,
-          letterSpacing: "0.35em",
-          textTransform: "uppercase",
-          marginBottom: 14,
-        }}
-      >
+    <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "16px", marginBottom: 14 }}>
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 14 }}>
         Minhas preferências · Radar de Amigas
       </div>
 
@@ -10412,57 +9992,16 @@ function PrefRadar({ authUserId }) {
         <div>
           {cidade && (
             <div style={{ marginBottom: 10 }}>
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 11,
-                  color: `rgba(255,255,255,.92)`,
-                  marginBottom: 4,
-                }}
-              >
-                Cidade
-              </div>
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 15,
-                  color: `rgba(255,255,255,.92)`,
-                }}
-              >
-                {cidade}
-              </div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.92)`, marginBottom: 4 }}>Cidade</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.92)` }}>{cidade}</div>
             </div>
           )}
           {sels.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 11,
-                  color: `rgba(255,255,255,.92)`,
-                  marginBottom: 8,
-                }}
-              >
-                Interesses
-              </div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Interesses</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {sels.map((i) => (
-                  <span
-                    key={i}
-                    style={{
-                      background: `${C.ouro}22`,
-                      border: `1px solid ${C.ouro}44`,
-                      borderRadius: 50,
-                      padding: "6px 13px",
-                      fontFamily: FB,
-                      fontWeight: 300,
-                      fontSize: 12,
-                      color: C.ouro,
-                    }}
-                  >
+                  <span key={i} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 50, padding: "6px 13px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro }}>
                     {i}
                   </span>
                 ))}
@@ -10471,90 +10010,26 @@ function PrefRadar({ authUserId }) {
           )}
           <button
             onClick={() => setEditando(true)}
-            style={{
-              width: "100%",
-              background: "none",
-              border: `1px solid ${C.ouro}20`,
-              borderRadius: 50,
-              padding: "11px",
-              fontFamily: FB,
-              fontWeight: 300,
-              fontSize: 12,
-              color: `rgba(255,255,255,.88)`,
-              cursor: "pointer",
-              letterSpacing: "0.1em",
-            }}
+            style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}20`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.88)`, cursor: "pointer", letterSpacing: "0.1em" }}
           >
             Editar preferências
           </button>
         </div>
       ) : (
         <div>
-          <div
-            style={{
-              fontFamily: FB,
-              fontWeight: 300,
-              fontSize: 12,
-              color: `rgba(255,255,255,.92)`,
-              marginBottom: 8,
-            }}
-          >
-            Cidade
-          </div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Cidade</div>
           <input
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex: Florianópolis"
-            style={{
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              borderBottom: `1px solid rgba(255,255,255,.45)`,
-              color: C.branco,
-              fontFamily: FB,
-              fontWeight: 300,
-              fontSize: 15,
-              padding: "7px 0",
-              marginBottom: 18,
-            }}
+            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.45)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "7px 0", marginBottom: 18 }}
           />
-          <div
-            style={{
-              fontFamily: FB,
-              fontWeight: 300,
-              fontSize: 12,
-              color: `rgba(255,255,255,.92)`,
-              marginBottom: 10,
-            }}
-          >
-            Interesses (selecione os seus)
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 7,
-              marginBottom: 16,
-            }}
-          >
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
             {INTERESSES.map((i) => {
               const s = sels.includes(i);
               return (
-                <button
-                  key={i}
-                  onClick={() => toggle(i)}
-                  style={{
-                    background: s ? `${C.ouro}22` : `rgba(255,255,255,.04)`,
-                    border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`,
-                    borderRadius: 50,
-                    padding: "7px 13px",
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 12,
-                    color: s ? C.ouro : `rgba(255,255,255,.4)`,
-                    cursor: "pointer",
-                  }}
-                >
+                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: s ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
                   {i}
                 </button>
               );
