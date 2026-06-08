@@ -3969,10 +3969,8 @@ function Home({
               style={{
                 display: "flex",
                 gap: 8,
-                overflowX: "auto",
-                paddingBottom: 4,
+                flexWrap: "wrap",
                 marginBottom: 24,
-                WebkitOverflowScrolling: "touch",
               }}
             >
               {CHIPS.map((c) => {
@@ -3985,15 +3983,14 @@ function Home({
                       background: s ? `${C.ouro}22` : `rgba(255,255,255,.05)`,
                       border: `1px solid ${s ? C.ouro + "55" : C.ouro + "15"}`,
                       borderRadius: 50,
-                      padding: "9px 14px",
+                      padding: "8px 12px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: 6,
-                      flexShrink: 0,
+                      gap: 5,
                     }}
                   >
-                    <span style={{ fontSize: 15 }}>{c.e}</span>
+                    <span style={{ fontSize: 14 }}>{c.e}</span>
                     <span
                       style={{
                         fontFamily: FB,
