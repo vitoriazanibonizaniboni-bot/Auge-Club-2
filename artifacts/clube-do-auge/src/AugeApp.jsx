@@ -4665,6 +4665,7 @@ function Novo({ back, postTreino }) {
     "Fiz algo só pra mim hoje, sem culpa",
     "Bebi água antes do café da manhã",
     "Dormi antes da meia-noite",
+    "Outros",
   ];
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
@@ -4714,18 +4715,20 @@ function Novo({ back, postTreino }) {
           {SUGESTOES.map((s) => (
             <button
               key={s}
-              onClick={() => setTit(s)}
+              onClick={() => s === "Outros" ? setTit("") : setTit(s)}
               style={{
-                background: tit === s ? `${C.ouro}18` : `rgba(255,255,255,.04)`,
-                color: tit === s ? C.ouro : `rgba(255,255,255,.45)`,
-                border: `1px solid ${tit === s ? C.ouro + "40" : C.ouro + "12"}`,
+                background: s === "Outros"
+                  ? `rgba(255,255,255,.04)`
+                  : tit === s ? `${C.ouro}18` : `rgba(255,255,255,.04)`,
+                color: s === "Outros" ? `rgba(255,255,255,.55)` : tit === s ? C.ouro : `rgba(255,255,255,.45)`,
+                border: `1px solid ${s !== "Outros" && tit === s ? C.ouro + "40" : C.ouro + "12"}`,
                 borderRadius: 50,
                 padding: "7px 13px",
                 fontSize: 12,
                 fontFamily: FB,
                 fontWeight: 300,
                 cursor: "pointer",
-                fontStyle: "italic",
+                fontStyle: s === "Outros" ? "normal" : "italic",
               }}
             >
               {s}
@@ -5564,7 +5567,7 @@ function Cx({
                   cursor: "pointer",
                 }}
               >
-                💛 Vamos caminhar juntas?
+                💛 Quero me conectar
               </button>
             </div>
           </>
@@ -5811,7 +5814,7 @@ function Chat({ selM, setMatches, back }) {
   const SUGE = [
     "Oi! Vi que você também curte pilates 🌸",
     "Que horários têm mais energia pra você?",
-    "Vamos nos mover juntas essa semana?",
+    "Topa conversar essa semana?",
     "Topa um café esta semana?",
   ];
   const enviar = () => {
