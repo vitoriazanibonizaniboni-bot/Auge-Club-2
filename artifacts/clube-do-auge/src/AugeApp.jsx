@@ -4659,10 +4659,10 @@ function Novo({ back, postTreino }) {
   const ref = useRef();
   const ok = tit.trim().length > 0;
   const SUGESTOES = [
-    "Sentei pra ler 15 min em vez de scrollar",
+    "Sentei pra ler 15 min em vez de ficar no celular",
     "Almocei sentada, sem pressa",
     "Voltei depois de dias parada",
-    "Disse não para uma reunião na hora do almoço",
+    "Fiz algo só pra mim hoje, sem culpa",
     "Bebi água antes do café da manhã",
     "Dormi antes da meia-noite",
   ];
