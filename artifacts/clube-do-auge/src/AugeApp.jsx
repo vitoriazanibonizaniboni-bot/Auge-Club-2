@@ -3863,80 +3863,6 @@ function Home({
                 fontSize: 22,
                 fontWeight: 300,
                 color: `rgba(255,255,255,.97)`,
-                marginBottom: 6,
-              }}
-            >
-              Como você chegou hoje?
-            </div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 12,
-                color: `rgba(255,255,255,.92)`,
-                marginBottom: 20,
-              }}
-            >
-              Selecione até 2
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                flexWrap: "wrap",
-                marginBottom: 24,
-              }}
-            >
-              {CHIPS.map((c) => {
-                const s = chips.includes(c.id);
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => toggle(c.id)}
-                    style={{
-                      background: s ? `${C.ouro}22` : `rgba(255,255,255,.05)`,
-                      border: `1px solid ${s ? C.ouro + "55" : C.ouro + "15"}`,
-                      borderRadius: 50,
-                      padding: "9px 14px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <span style={{ fontSize: 15 }}>{c.e}</span>
-                    <span
-                      style={{
-                        fontFamily: FB,
-                        fontWeight: 300,
-                        fontSize: 12,
-                        color: s ? C.ouro : `rgba(255,255,255,.4)`,
-                      }}
-                    >
-                      {c.l}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <BtnPill
-              onClick={() => chips.length > 0 && setPasso(2)}
-              style={{ opacity: chips.length > 0 ? 1 : 0.4 }}
-            >
-              Continuar
-            </BtnPill>
-          </div>
-        )}
-
-        {/* Passo 2 — hábitos */}
-        {passo === 2 && (
-          <div>
-            <div
-              style={{
-                fontFamily: FS,
-                fontSize: 22,
-                fontWeight: 300,
-                color: `rgba(255,255,255,.97)`,
                 marginBottom: 18,
               }}
             >
@@ -4010,7 +3936,84 @@ function Home({
                 {feitos} de {total} · {pct}%
               </div>
             </div>
-            <BtnPill onClick={() => setPasso(3)}>Continuar</BtnPill>
+            <BtnPill onClick={() => setPasso(2)}>Continuar</BtnPill>
+          </div>
+        )}
+
+        {/* Passo 2 — chips emocionais (horizontal) */}
+        {passo === 2 && (
+          <div>
+            <div
+              style={{
+                fontFamily: FS,
+                fontSize: 22,
+                fontWeight: 300,
+                color: `rgba(255,255,255,.97)`,
+                marginBottom: 6,
+              }}
+            >
+              Como você chegou hoje?
+            </div>
+            <div
+              style={{
+                fontFamily: FB,
+                fontWeight: 300,
+                fontSize: 12,
+                color: `rgba(255,255,255,.92)`,
+                marginBottom: 20,
+              }}
+            >
+              Selecione até 2
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                overflowX: "auto",
+                paddingBottom: 4,
+                marginBottom: 24,
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              {CHIPS.map((c) => {
+                const s = chips.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => toggle(c.id)}
+                    style={{
+                      background: s ? `${C.ouro}22` : `rgba(255,255,255,.05)`,
+                      border: `1px solid ${s ? C.ouro + "55" : C.ouro + "15"}`,
+                      borderRadius: 50,
+                      padding: "9px 14px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 15 }}>{c.e}</span>
+                    <span
+                      style={{
+                        fontFamily: FB,
+                        fontWeight: 300,
+                        fontSize: 12,
+                        color: s ? C.ouro : `rgba(255,255,255,.4)`,
+                      }}
+                    >
+                      {c.l}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <BtnPill
+              onClick={() => chips.length > 0 && setPasso(3)}
+              style={{ opacity: chips.length > 0 ? 1 : 0.4 }}
+            >
+              Continuar
+            </BtnPill>
           </div>
         )}
 
@@ -8005,9 +8008,24 @@ function Retomada({ anc, back, tk, setRet }) {
             )}
             {(isaLoad || isaMsg) && <IsaCard text={isaMsg} loading={isaLoad} />}
             {registrado && !isaLoad && (
-              <BtnPill onClick={back} style={{ marginTop: 12 }}>
-                Concluir ←
-              </BtnPill>
+              <>
+              <p
+                style={{
+                  fontFamily: FS,
+                  fontStyle: 'italic',
+                  fontSize: 13,
+                  color: C.ouro,
+                  lineHeight: 1.6,
+                  marginTop: 14,
+                  textAlign: 'center',
+                }}
+              >
+                "O auge não é o que você foi. É o que você está construindo."
+              </p>
+                <BtnPill onClick={back} style={{ marginTop: 16 }}>
+                  Concluir ←
+                </BtnPill>
+              </>
             )}
           </div>
         )}
@@ -8282,6 +8300,20 @@ function Escritas({
                 )}
               </div>
             )}
+
+              <p
+                style={{
+                  fontFamily: FS,
+                  fontStyle: 'italic',
+                  fontSize: 13,
+                  color: C.ouro,
+                  lineHeight: 1.6,
+                  marginTop: 14,
+                  textAlign: 'center',
+                }}
+              >
+                "O auge não é o que você foi. É o que você está construindo."
+              </p>
             {vit.map((v, i) => (
               <div
                 key={i}
