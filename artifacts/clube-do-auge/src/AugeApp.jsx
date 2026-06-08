@@ -3841,6 +3841,15 @@ function Home({
           <DefinirHabitos
             onSalvar={(habs) => {
               setHabAngulares(habs);
+              // Persiste imediatamente em profiles para não perder no reload
+              supabase.auth.getSession().then(({ data: { session } }) => {
+                if (!session?.user) return;
+                supabase.from("profiles").update({
+                  habito_1: habs[0]?.t || null,
+                  habito_2: habs[1]?.t || null,
+                  habito_3: habs[2]?.t || null,
+                }).eq("id", session.user.id).then(() => {});
+              });
               setPasso(1);
             }}
           />
@@ -10048,6 +10057,12 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
   const [vals, setVals] = useState(
     habAngulares.length > 0 ? habAngulares.map((h) => h.t) : ["", "", ""],
   );
+  // Sincroniza quando habAngulares chega do banco após mount
+  useEffect(() => {
+    if (habAngulares.length > 0) {
+      setVals(habAngulares.map((h) => h.t));
+    }
+  }, [habAngulares]);
   const [salvo, setSalvo] = useState(false);
   const ok = vals.every((v) => v.trim());
   const salvar = () => {
