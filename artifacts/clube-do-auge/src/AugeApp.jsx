@@ -9970,7 +9970,7 @@ function Perfil({
 function PrefRadar({ authUserId }) {
   const INTERESSES = [
     "Caminhada", "Corrida", "Pilates", "Yoga", "Musculação",
-    "Natação", "Dança", "Funcional", "Leitura", "Meditação",
+    "Natação", "Dança", "Funcional", "Leitura", "Meditação", "Outros",
   ];
   const [cidade, setCidade] = useState(() => {
     try { return localStorage.getItem("auge_pref_cidade") || ""; } catch { return ""; }
