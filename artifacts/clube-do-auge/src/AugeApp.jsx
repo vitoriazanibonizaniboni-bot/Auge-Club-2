@@ -933,6 +933,7 @@ export default function App() {
     zoom: "",
   });
   const [videos, setVideos] = useState([]);
+  const postando = useRef(false);
 
   // Dados de onboarding — nome e e-mail persistidos entre sessões
   const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
@@ -976,7 +977,6 @@ export default function App() {
     const [
       profileRes,
       checkinsRes,
-      habRes,
       kitRes,
       ancRes,
       vitRes,
@@ -985,11 +985,6 @@ export default function App() {
     ] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("checkins").select("*").eq("user_id", userId),
-      supabase
-        .from("habitos_angulares")
-        .select("*")
-        .eq("user_id", userId)
-        .single(),
       supabase
         .from("kit_emergencia")
         .select("*")
@@ -1007,6 +1002,11 @@ export default function App() {
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
+      // Carregar hábitos angulares de profiles.habito_1/2/3
+      const habsP = [p.habito_1, p.habito_2, p.habito_3]
+        .filter(Boolean)
+        .map((t, i) => ({ id: `ha${i + 1}`, t }));
+      if (habsP.length) setHabAngulares(habsP);
       if (p.avatar_url) {
         try {
           localStorage.setItem("auge_foto", p.avatar_url);
@@ -1023,6 +1023,14 @@ export default function App() {
       }
     } else {
       setPerfil("comunidade");
+      // Perfil não existe ainda — usar metadata do auth como fallback
+      const { data: { session: _s } } = await supabase.auth.getSession();
+      if (_s?.user) {
+        setUsuario({
+          nome: _s.user.user_metadata?.nome || "",
+          email: _s.user.email || "",
+        });
+      }
     }
 
     if (checkinsRes.data?.length) {
@@ -1040,14 +1048,6 @@ export default function App() {
       if (hist[hoje] && (hist[hoje].feitos > 0 || hist[hoje].retomada)) {
         setCkOk(true);
       }
-    }
-
-    if (habRes.data && !habRes.error) {
-      const { hab1, hab2, hab3 } = habRes.data;
-      const habs = [hab1, hab2, hab3]
-        .filter(Boolean)
-        .map((t, i) => ({ id: `ha${i + 1}`, t }));
-      if (habs.length) setHabAngulares(habs);
     }
 
     if (kitRes.data && !kitRes.error) {
@@ -1120,9 +1120,7 @@ export default function App() {
       (a, b) => new Date(b.tempo) - new Date(a.tempo)
     );
 
-    if (postsReais.length > 0) {
-      setFeed([...postsReais, ...FEED0]);
-    }
+    setFeed(postsReais.length > 0 ? [...postsReais, ...FEED0] : [...FEED0]);
 
     // Carregar configurações (mentoria)
     if (configRes.data?.length) {
@@ -1192,6 +1190,9 @@ export default function App() {
   };
 
   const postTreino = async (entry) => {
+    if (postando.current) return;
+    postando.current = true;
+    try {
     const ini = usuario?.nome
       ? usuario.nome.trim().split(/\s+/).slice(0, 2).map((n) => n[0].toUpperCase()).join("")
       : "?";
@@ -1230,9 +1231,9 @@ export default function App() {
 
     // Salva no Supabase se público
     if (entry.publica !== false) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session?.user) return;
-        supabase.from("feed").insert({
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: inserted, error: insErr } = await supabase.from("feed").insert({
           user_id: session.user.id,
           autor_nome: usuario?.nome || "Aluna",
           autor_ini: ini,
@@ -1241,10 +1242,19 @@ export default function App() {
           descricao: entry.desc || "",
           publica: entry.publica !== false,
           img_url: imgUrl,
-        }).then(() => {});
-      });
+        }).select("id").single();
+        if (!insErr && inserted) {
+          // Atualiza post local com dbId real — evita duplicata no próximo fetch
+          setFeed((f) => f.map((p) =>
+            p.id === novoPost.id ? { ...p, dbId: inserted.id } : p
+          ));
+        }
+      }
     }
     ir(S.FEED);
+    } finally {
+      postando.current = false;
+    }
   };
 
   const calcRoda = () =>
@@ -1310,14 +1320,17 @@ export default function App() {
   {
     const d = new Date(TODAY);
     if (!_ativo(TODAY)) {
-      d.setDate(d.getDate() - 1);
-      while (true) {
-        const k = d.toISOString().split("T")[0];
-        if (_ativo(k) || diasSemTreino > 60) break;
-        diasSemTreino++;
+      if (!_sortedKeys.some(_ativo)) {
+        diasSemTreino = -1; // nunca treinou — exibir mensagem de boas-vindas
+      } else {
         d.setDate(d.getDate() - 1);
+        while (true) {
+          const k = d.toISOString().split("T")[0];
+          if (_ativo(k) || diasSemTreino > 60) break;
+          diasSemTreino++;
+          d.setDate(d.getDate() - 1);
+        }
       }
-      if (diasSemTreino === 0 && !_sortedKeys.some(_ativo)) diasSemTreino = -1; // nunca treinou
     }
   }
   const medC = [
@@ -1368,7 +1381,10 @@ export default function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session?.user) setAuthUser(session.user);
+      if (event === "SIGNED_IN" && session?.user) {
+        setAuthUser(session.user);
+        loadUserData(session.user.id);
+      }
       else if (event === "SIGNED_OUT") {
         setAuthUser(null);
         setPerfil(null);
@@ -1378,10 +1394,10 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Diagnóstico de Sabotadores: dispara ao carregar perfil jornada ────────────
-  useEffect(() => {
-    if (perfil === "jornada" && !diagOk && authUser) setTela(S.DIAG);
-  }, [perfil, diagOk, authUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ── Diagnóstico de Sabotadores: desativado temporariamente (demo) ────────────
+  // useEffect(() => {
+  //   if (perfil === "jornada" && !diagOk && authUser) setTela(S.DIAG);
+  // }, [perfil, diagOk, authUser]);
 
   const ctx = {
     perfil,
@@ -1554,33 +1570,17 @@ export default function App() {
       case S.CHAT:
         return selM ? <Chat {...ctx} /> : <Cx {...ctx} />;
       case S.JOR:
-        return perfil === "jornada" ? (
-          <Jornada {...ctx} />
-        ) : (
-          <JornadaClube ir={ir} />
-        );
+        return <Jornada {...ctx} />;
       case S.RODA:
         return <Roda {...ctx} />;
       case S.RET:
-        return perfil === "jornada" ? (
-          <Retomada {...ctx} />
-        ) : (
-          <TelaConvite back={back} />
-        );
+        return <Retomada {...ctx} />;
       case S.CAL:
         return <Calendario {...ctx} />;
       case S.ESC:
-        return perfil === "jornada" ? (
-          <Escritas {...ctx} />
-        ) : (
-          <TelaConvite back={back} />
-        );
+        return <Escritas {...ctx} />;
       case S.EM:
-        return perfil === "jornada" ? (
-          <Emergencia {...ctx} />
-        ) : (
-          <TelaConvite back={back} />
-        );
+        return <Emergencia {...ctx} />;
       case S.CT:
         return <Conteudo {...ctx} />;
       case S.PF:
@@ -2639,19 +2639,19 @@ function TelaAuth({ onAuth }) {
           }}
         >
           <div
-            onClick={() => leuTermos && setLgpd((v) => !v)}
+            onClick={() => setLgpd((v) => !v)}
             style={{
               width: 18,
               height: 18,
               borderRadius: 4,
-              border: `1.5px solid ${lgpd ? C.ouro : leuTermos ? "rgba(255,255,255,.92)" : "rgba(255,255,255,.15)"}`,
+              border: `1.5px solid ${lgpd ? C.ouro : "rgba(255,255,255,.92)"}`,
               background: lgpd ? `${C.ouro}22` : "transparent",
               flexShrink: 0,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginTop: 1,
-              cursor: leuTermos ? "pointer" : "default",
+              cursor: "pointer",
             }}
           >
             {lgpd && <span style={{ color: C.ouro, fontSize: 11 }}>✓</span>}
@@ -2702,8 +2702,7 @@ function TelaAuth({ onAuth }) {
               !nome.trim() ||
               !email.trim() ||
               senha.length < 6 ||
-              !lgpd ||
-              !leuTermos
+              !lgpd
                 ? 0.45
                 : 1,
           }}
@@ -7422,7 +7421,7 @@ function Roda({
               ["S6", "Meio"],
               ["S12", "Fim"],
             ].map(([m, sub]) => {
-              const bloqMom = perfil !== "jornada" && m !== "S1";
+              const bloqMom = false; // demo: todas as semanas desbloqueadas
               return (
                 <button
                   key={m}
@@ -9197,7 +9196,7 @@ function Conteudo({ perfil, videos: videosDB }) {
   if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
 
   const catAtual = CATS.find((c) => c.id === catSel);
-  const bloqCat = catAtual?.lock && perfil !== "jornada";
+  const bloqCat = false; // demo: todos os conteúdos desbloqueados
 
   // Usa vídeos do Supabase se disponíveis, senão usa os estáticos
   const videosCategoria = videosDB?.length
@@ -9262,7 +9261,7 @@ function Conteudo({ perfil, videos: videosDB }) {
           }}
         >
           {CATS.map((cat) => {
-            const bloq = cat.lock && perfil !== "jornada";
+            const bloq = false; // demo: categorias desbloqueadas
             const ativa = catSel === cat.id;
             return (
               <button
@@ -9386,7 +9385,7 @@ function Conteudo({ perfil, videos: videosDB }) {
 
         {/* Lista de vídeos */}
         {videos.map((v) => {
-          const bloqVideo = (v.plano === "jornada" && perfil !== "jornada") || bloqCat;
+          const bloqVideo = false; // demo: todos os vídeos desbloqueados
           return (
           <div
             key={v.id}
@@ -10054,10 +10053,13 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
     if (!ok) return;
     const habs = vals.map((t, i) => ({ id: "ha" + (i + 1), t: t.trim() }));
     setHabAngulares(habs);
-    syncDB("habitos_angulares", {
-      hab1: habs[0]?.t || null,
-      hab2: habs[1]?.t || null,
-      hab3: habs[2]?.t || null,
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return;
+      supabase.from("profiles").update({
+        habito_1: habs[0]?.t || null,
+        habito_2: habs[1]?.t || null,
+        habito_3: habs[2]?.t || null,
+      }).eq("id", session.user.id).then(() => {});
     });
     setSalvo(true);
     setTimeout(() => setSalvo(false), 2000);
