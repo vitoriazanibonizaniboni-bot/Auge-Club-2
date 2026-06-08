@@ -1226,11 +1226,12 @@ export default function App() {
       tempo: "agora",
       cur: [],
       com: [],
+      userId: authUser?.id || null,
     };
     setFeed((f) => [novoPost, ...f]);
 
-    // Salva no Supabase se público
-    if (entry.publica !== false) {
+    // Salva no Supabase (público ou privado)
+    {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const { data: inserted, error: insErr } = await supabase.from("feed").insert({
@@ -4247,7 +4248,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
     setTxt("");
   };
   // Feed só mostra posts públicos (ou posts da própria usuária)
-  const visiveis = feed.filter((p) => p.publica || p.aut === "Você");
+  const visiveis = feed.filter((p) => p.publica || p.userId === authUserId || p.aut === "Você");
   return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div
