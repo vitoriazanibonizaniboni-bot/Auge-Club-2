@@ -4213,14 +4213,14 @@ function Home({
 // ═══════════════════════════════════════════════════════════════════
 // ABA: FEED — posts públicos e privados
 // ═══════════════════════════════════════════════════════════════════
-function Feed({ feed, setFeed, ir }) {
+function Feed({ feed, setFeed, ir, authUserId }) {
   const [open, setOpen] = useState(null);
   const [txt, setTxt] = useState("");
   const curtir = (id) => {
     setFeed((f) =>
       f.map((p) => {
         if (p.id !== id) return p;
-        const userId = authUser?.id || "RF";
+        const userId = authUserId || "RF";
         const j = p.cur.includes(userId);
         const newCur = j ? p.cur.filter((x) => x !== userId) : [...p.cur, userId];
         // Salva curtida no Supabase se for post real (UUID)
