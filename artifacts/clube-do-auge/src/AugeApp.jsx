@@ -1183,7 +1183,7 @@ export default function App() {
       setSw(null);
       if (dir === "right") {
         setMatches((m) => [...m, { ...p, msgs: [] }]);
-        tk(`Conexão com ${p.nome.split(" ")[0]}! 💚`);
+        tk(`Conexão com ${p.nome.split(" ")[0]}! 💛`);
       }
       setCi((i) => i + 1);
     }, 380);
@@ -3207,14 +3207,14 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
   } else if (diasSemTreino === -1) {
     icon = "🌟";
     titulo = "Comece hoje!";
-    sub = "Registre seu primeiro treino e inicie sua sequência.";
+    sub = "Registre seu primeiro check-in e inicie sua sequência.";
     cor = C.ouro;
     bg = `${C.ouro}12`;
     onClick = () => ir(S.HOME);
   } else if (diasSemTreino === 0) {
     icon = "⚡";
     titulo = "Ainda falta o checkin de hoje";
-    sub = "Você treinou ontem — não quebre agora!";
+    sub = "Você registrou ontem — não quebre agora!";
     cor = "#F97316";
     bg = "rgba(249,115,22,.1)";
   } else if (diasSemTreino <= 2) {
@@ -3625,7 +3625,7 @@ function Home({
               }}
             >
               Faz {diasSemTreino} dia{diasSemTreino !== 1 ? "s" : ""} sem
-              registro. O que aconteceu?
+              registro. Amanhã vira o limite. Quer voltar agora?
             </div>
             <button
               onClick={() => ir(S.RET)}
@@ -4649,45 +4649,134 @@ function Feed({ feed, setFeed, ir, authUserId }) {
   );
 }
 
-// Novo treino com opção público/privado
+// Novo post — micro-ação comportamental ou de mentalidade
 function Novo({ back, postTreino }) {
-  const [ex, setEx] = useState("");
-  const [dur, setDur] = useState("");
+  const [tit, setTit] = useState("");
   const [cap, setCap] = useState("");
   const [foto, setFoto] = useState(null);
   const [fotoFile, setFotoFile] = useState(null);
   const [publica, setPublica] = useState(true);
   const ref = useRef();
-  const ok = ex && dur; // cap opcional
-  const EX = [
-    "Caminhada",
-    "Corrida",
-    "Pilates",
-    "Yoga",
-    "Musculação",
-    "Natação",
-    "Dança",
-    "Funcional",
-    "Trilha",
-    "Alongamento",
+  const ok = tit.trim().length > 0;
+  const SUGESTOES = [
+    "Sentei pra ler 15 min em vez de scrollar",
+    "Almocei sentada, sem pressa",
+    "Voltei depois de dias parada",
+    "Disse não para uma reunião na hora do almoço",
+    "Bebi água antes do café da manhã",
+    "Dormi antes da meia-noite",
   ];
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Registrar movimento" voltar={back} />
+      <Cab titulo="Compartilhar no Mural" voltar={back} />
       <Grain style={{ padding: "20px 20px 36px" }}>
+        <div
+          style={{
+            fontFamily: FB,
+            fontWeight: 300,
+            fontSize: 11,
+            color: C.lt,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            marginBottom: 10,
+          }}
+        >
+          O que você fez por você hoje?
+        </div>
+        <textarea
+          value={tit}
+          onChange={(e) => setTit(e.target.value)}
+          placeholder="Uma linha é o suficiente."
+          style={{
+            width: "100%",
+            background: `rgba(255,255,255,.04)`,
+            border: `1px solid ${C.ouro}25`,
+            borderRadius: 10,
+            padding: "13px 14px",
+            fontSize: 15,
+            fontFamily: FS,
+            fontStyle: "italic",
+            color: `rgba(255,255,255,.92)`,
+            resize: "none",
+            height: 72,
+            lineHeight: 1.6,
+            marginBottom: 12,
+          }}
+        />
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 7,
+            marginBottom: 18,
+          }}
+        >
+          {SUGESTOES.map((s) => (
+            <button
+              key={s}
+              onClick={() => setTit(s)}
+              style={{
+                background: tit === s ? `${C.ouro}18` : `rgba(255,255,255,.04)`,
+                color: tit === s ? C.ouro : `rgba(255,255,255,.45)`,
+                border: `1px solid ${tit === s ? C.ouro + "40" : C.ouro + "12"}`,
+                borderRadius: 50,
+                padding: "7px 13px",
+                fontSize: 12,
+                fontFamily: FB,
+                fontWeight: 300,
+                cursor: "pointer",
+                fontStyle: "italic",
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <div
+          style={{
+            fontFamily: FB,
+            fontWeight: 300,
+            fontSize: 11,
+            color: C.lt,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            marginBottom: 10,
+          }}
+        >
+          Quer acrescentar algo? (opcional)
+        </div>
+        <textarea
+          value={cap}
+          onChange={(e) => setCap(e.target.value)}
+          placeholder="Conta mais para as amigas..."
+          style={{
+            width: "100%",
+            background: `rgba(255,255,255,.04)`,
+            border: `1px solid ${C.ouro}18`,
+            borderRadius: 8,
+            padding: "12px 14px",
+            fontSize: 14,
+            fontFamily: FB,
+            color: C.branco,
+            resize: "none",
+            height: 72,
+            lineHeight: 1.65,
+            marginBottom: 16,
+          }}
+        />
         <div
           onClick={() => ref.current?.click()}
           style={{
-            height: 148,
-            borderRadius: 12,
-            border: `1.5px dashed ${C.ouro}33`,
+            height: 100,
+            borderRadius: 10,
+            border: `1.5px dashed ${C.ouro}25`,
             background: `rgba(255,255,255,.03)`,
             overflow: "hidden",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            marginBottom: 20,
+            marginBottom: 18,
           }}
         >
           {foto ? (
@@ -4698,17 +4787,17 @@ function Novo({ back, postTreino }) {
             />
           ) : (
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 28 }}>📷</div>
+              <div style={{ fontSize: 22 }}>📷</div>
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: 12,
                   fontFamily: FB,
                   fontWeight: 300,
                   color: C.lt,
-                  marginTop: 7,
+                  marginTop: 5,
                 }}
               >
-                Toque para adicionar foto
+                Foto opcional
               </div>
             </div>
           )}
@@ -4727,120 +4816,8 @@ function Novo({ back, postTreino }) {
             r.readAsDataURL(f);
           }}
         />
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 11,
-            color: C.lt,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            marginBottom: 10,
-          }}
-        >
-          Exercício
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
-            marginBottom: 18,
-          }}
-        >
-          {EX.map((e) => (
-            <button
-              key={e}
-              onClick={() => setEx(e)}
-              style={{
-                background: ex === e ? `${C.ouro}22` : `rgba(255,255,255,.04)`,
-                color: ex === e ? C.ouro : `rgba(255,255,255,.45)`,
-                border: `1px solid ${ex === e ? C.ouro + "55" : C.ouro + "15"}`,
-                borderRadius: 8,
-                padding: "12px 8px",
-                fontSize: 13,
-                fontFamily: FB,
-                fontWeight: 300,
-                cursor: "pointer",
-              }}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 11,
-            color: C.lt,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            marginBottom: 10,
-          }}
-        >
-          Duração
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 8,
-            marginBottom: 18,
-          }}
-        >
-          {["15 min", "30 min", "45 min", "1 hora", "1h30", "2h+"].map((d) => (
-            <button
-              key={d}
-              onClick={() => setDur(d)}
-              style={{
-                background: dur === d ? C.ouroLt : `rgba(255,255,255,.04)`,
-                color: dur === d ? C.obs2 : `rgba(255,255,255,.45)`,
-                border: `1px solid ${dur === d ? C.ouro + "88" : C.ouro + "15"}`,
-                borderRadius: 50,
-                padding: "9px 14px",
-                fontSize: 13,
-                fontFamily: FB,
-                cursor: "pointer",
-              }}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 11,
-            color: C.lt,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            marginBottom: 10,
-          }}
-        >
-          Como foi?
-        </div>
-        <textarea
-          value={cap}
-          onChange={(e) => setCap(e.target.value)}
-          placeholder="Conta para as amigas..."
-          style={{
-            width: "100%",
-            background: `rgba(255,255,255,.04)`,
-            border: `1px solid ${C.ouro}18`,
-            borderRadius: 8,
-            padding: "12px 14px",
-            fontSize: 14,
-            fontFamily: FB,
-            color: C.branco,
-            resize: "none",
-            height: 85,
-            lineHeight: 1.65,
-          }}
-        />
         {/* Visibilidade */}
-        <div style={{ marginTop: 16, marginBottom: 18 }}>
+        <div style={{ marginBottom: 18 }}>
           <div
             style={{
               fontFamily: FB,
@@ -4932,8 +4909,8 @@ function Novo({ back, postTreino }) {
             ok &&
             postTreino({
               fundo: "#1E252E",
-              tit: ex,
-              desc: `${cap} (${dur})`,
+              tit: tit.trim(),
+              desc: cap.trim(),
               publica,
               imgSrc: foto,
               imgFile: fotoFile,
@@ -5025,9 +5002,9 @@ function Voz({ back, postTreino, tk }) {
                 Toque no microfone e conte o que você fez por você hoje:
               </div>
               {[
-                "Corri 5km em 35 minutos",
-                "Fiz yoga por 40 minutos",
-                "Caminhei no parque por meia hora",
+                "Sentei pra ler 15 min em vez de scrollar",
+                "Almocei sentada, sem pressa, sem tela",
+                "Voltei depois de dias parada. Contou.",
               ].map((ex, i) => (
                 <div
                   key={i}
@@ -5484,7 +5461,7 @@ function Cx({
                   <span
                     style={{ color: C.branco, fontSize: 11, fontWeight: 500 }}
                   >
-                    💚 {p.compat}%
+                    💛 {p.compat}%
                   </span>
                 </div>
                 <div
@@ -5587,7 +5564,7 @@ function Cx({
                   cursor: "pointer",
                 }}
               >
-                💚 Vamos nos mover juntas?
+                💛 Vamos caminhar juntas?
               </button>
             </div>
           </>
@@ -9796,7 +9773,7 @@ function Perfil({
           }}
         >
           {[
-            ["💚", "Conexões", `${matches?.length || 0}`],
+            ["💛", "Conexões", `${matches?.length || 0}`],
             ["📋", "Check-ins", `${Object.keys(historico || {}).length}`],
             ["⭐", "Pontos AUGE", `${pontos || 0}`],
           ].map(([ic, l, v]) => (
