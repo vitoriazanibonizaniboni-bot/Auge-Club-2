@@ -4648,7 +4648,7 @@ function Novo({ back, postTreino }) {
   const [fotoFile, setFotoFile] = useState(null);
   const [publica, setPublica] = useState(true);
   const ref = useRef();
-  const ok = ex && dur && cap;
+  const ok = ex && dur; // cap opcional
   const EX = [
     "Caminhada",
     "Corrida",
