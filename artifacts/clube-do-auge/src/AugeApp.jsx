@@ -4400,7 +4400,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
         <div style={{ width: 40 }} />
       </div>
       {/* Filtro Todas / Minhas */}
-      <div style={{ background: C.obs, padding: "0 16px 12px", display: "flex", gap: 8, borderBottom: `1px solid ${C.ouro}10` }}>
+      <div style={{ background: C.obs, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
           <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: filtro === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
             {label}
