@@ -134,47 +134,7 @@ const PERFIS_CX = [
   },
 ];
 
-const FEED0 = [
-  {
-    id: 1,
-    aut: "Mariana Costa",
-    ini: "MC",
-    cor: "#8B4A6B",
-    fundo: "#2A2030",
-    tit: "Sentei pra ler 15 min",
-    desc: "Em vez de scrollar antes de dormir. Primeira vez em semanas que a noite foi minha.",
-    tempo: "há 1h",
-    publica: true,
-    cur: ["CA"],
-    com: [{ q: "CA", t: "Comigo também 💛" }],
-  },
-  {
-    id: 2,
-    aut: "Cecília Alves",
-    ini: "CA",
-    cor: "#3A6B5C",
-    fundo: "#1E2E28",
-    tit: "Almocei sentada, sem pressa",
-    desc: "Sem tela. Primeira vez na semana. Parece pouco, mas é tudo.",
-    tempo: "há 3h",
-    publica: true,
-    cur: [],
-    com: [],
-  },
-  {
-    id: 3,
-    aut: "Você",
-    ini: "RF",
-    cor: C.ouroDk,
-    fundo: "#1E252E",
-    tit: "Voltei depois de 3 dias",
-    desc: "Caminhei 10 min. Conta.",
-    tempo: "há 6h",
-    publica: true,
-    cur: ["MC", "CA"],
-    com: [],
-  },
-];
+const FEED0 = [];
 
 const RODA_Q = [
   {
@@ -946,7 +906,7 @@ export default function App() {
   const [tela, setTela] = useState(S.HOME);
 
   // Feed
-  const [feed, setFeed] = useState(FEED0);
+  const [feed, setFeed] = useState([]);
 
   // Checkin / Hábitos — chave diária: reseta automaticamente no dia seguinte
   const [habF, setHabF] = useLocalStorage(`auge_habF_${TODAY}`, {});
@@ -1249,7 +1209,7 @@ export default function App() {
       (a, b) => new Date(b.tempo) - new Date(a.tempo)
     );
 
-    setFeed(postsReais.length > 0 ? [...postsReais, ...FEED0] : [...FEED0]);
+    setFeed(postsReais);
 
     // Carregar configurações (mentoria)
     if (configRes.data?.length) {
