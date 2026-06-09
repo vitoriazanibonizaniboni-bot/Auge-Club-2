@@ -1125,8 +1125,21 @@ export default function App() {
         } catch {}
       }
       setProfileLoaded(true);
+      // Cache local do perfil para evitar tela errada se Supabase falhar
+      try {
+        localStorage.setItem("auge_perfil_plano", p.plano || "jornada");
+        if (p.data_cadastro) localStorage.setItem("auge_perfil_datacad", p.data_cadastro);
+      } catch {}
     } else {
-      setPerfil("jornada");
+      // Tentar recuperar do cache local
+      const cachedPlano = (() => { try { return localStorage.getItem("auge_perfil_plano"); } catch { return null; } })();
+      const cachedDataCad = (() => { try { return localStorage.getItem("auge_perfil_datacad"); } catch { return null; } })();
+      if (cachedPlano) {
+        setPerfil(cachedPlano);
+        if (cachedDataCad) setDataCadastro(new Date(cachedDataCad));
+      } else {
+        setPerfil("jornada");
+      }
       setProfileLoaded(true);
       // Perfil não existe ainda — usar metadata do auth como fallback
       const { data: { session: _s } } = await supabase.auth.getSession();
@@ -1499,6 +1512,7 @@ export default function App() {
         setPerfil(null);
         setProfileLoaded(false);
         setUsuario(null);
+        try { localStorage.removeItem("auge_perfil_plano"); localStorage.removeItem("auge_perfil_datacad"); } catch {}
       }
     });
     return () => subscription.unsubscribe();
