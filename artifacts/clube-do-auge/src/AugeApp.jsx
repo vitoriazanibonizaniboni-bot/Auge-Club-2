@@ -1643,11 +1643,12 @@ export default function App() {
                 setHabAngulares(habs);
                 supabase.auth.getSession().then(({ data: { session } }) => {
                   if (!session?.user) return;
-                  supabase.from("profiles").update({
+                  supabase.from("profiles").upsert({
+                    id: session.user.id,
                     habito_1: habs[0]?.t || null,
                     habito_2: habs[1]?.t || null,
                     habito_3: habs[2]?.t || null,
-                  }).eq("id", session.user.id).then(() => {});
+                  }, { onConflict: "id" }).then(() => {});
                 });
                 ir(S.HOME);
               }}
@@ -10515,11 +10516,12 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
     setHabAngulares(habs);
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session?.user) return;
-      supabase.from("profiles").update({
+      supabase.from("profiles").upsert({
+        id: session.user.id,
         habito_1: habs[0]?.t || null,
         habito_2: habs[1]?.t || null,
         habito_3: habs[2]?.t || null,
-      }).eq("id", session.user.id).then(() => {});
+      }, { onConflict: "id" }).then(() => {});
     });
     setSalvo(true);
     setTimeout(() => setSalvo(false), 2000);
