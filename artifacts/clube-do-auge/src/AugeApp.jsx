@@ -6205,7 +6205,7 @@ function CartaEditor({ setCarta, tk }) {
     syncDB("carta_futuro", {
       texto: txt.trim(),
       data_escrita: new Date().toISOString(),
-    });
+    }, { onConflict: "user_id" });
     tk("Carta guardada. Ela espera por você na Semana 12. 💖");
   };
   return (
@@ -8546,7 +8546,7 @@ function Escritas({
                   onClick={() => {
                     if (!na.trim()) return;
                     setAnc(na);
-                    syncDB("ancora", { texto: na });
+                    syncDB("ancora", { texto: na }, { onConflict: "user_id" });
                     setEditAnc(false);
                     tk("Âncora salva 💖");
                   }}
@@ -9044,7 +9044,7 @@ function Emergencia({
               onClick={() => {
                 setKitMin(tm);
                 setKitApoio(ta);
-                syncDB("kit_emergencia", { min_viavel: tm, onde_apoio: ta });
+                syncDB("kit_emergencia", { min_viavel: tm, onde_apoio: ta }, { onConflict: "user_id" });
                 setEdit(false);
                 tk("Kit salvo 💖");
               }}
