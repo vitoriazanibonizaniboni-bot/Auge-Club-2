@@ -49,6 +49,8 @@ const S = {
   EM: "em",
   // Diagnóstico
   DIAG: "diag",
+  // Onboarding — setup de hábitos
+  HABSETUP: "habsetup",
 };
 
 const ABA_ORIGEM = {
@@ -380,7 +382,7 @@ const DIAG_Q = [
       "Recomeçar do zero na semana seguinte",
       "Continuar do ponto onde parei",
       "Desistir completamente",
-      "Reduzir a meta e manter",
+      "Reduzir a meta e manter o ritmo",
     ],
   },
   {
@@ -389,7 +391,7 @@ const DIAG_Q = [
     opts: [
       "Amo rotinas, me sinto perdida sem elas",
       "Prefiro flexibilidade total",
-      "Começo bem mas dificulto manter",
+      "Começo bem mas tenho dificuldade em manter",
       "Funciona por períodos, depois abandono",
     ],
   },
@@ -398,7 +400,7 @@ const DIAG_Q = [
     q: "Quando não estou com motivação para algo saudável:",
     opts: [
       "Espero a vontade aparecer",
-      "Faço mesmo sem vontade, ainda que menor",
+      "Faço mesmo sem vontade, ainda que menos",
       "Compenso depois com mais intensidade",
       "Busco alguém para me apoiar",
     ],
@@ -409,7 +411,7 @@ const DIAG_Q = [
     opts: [
       "Começar",
       "Manter consistência",
-      "Retomar após pausa",
+      "Retomar após uma pausa",
       "Não me cobrar demais",
     ],
   },
@@ -417,10 +419,60 @@ const DIAG_Q = [
     id: 5,
     q: "Diante de um imprevisto que muda minha rotina:",
     opts: [
-      "Fico ansiosa e busco alternativa",
+      "Fico ansiosa e busco uma alternativa",
       "Aceito que o dia foi perdido",
       "Faço uma versão reduzida do que planejei",
       "Ajusto na semana seguinte",
+    ],
+  },
+  {
+    id: 6,
+    q: "Quando sinto que não estou conseguindo fazer tudo como planejei:",
+    opts: [
+      "Me cobro muito e fico desmotivada",
+      "Ajusto o plano sem me culpar",
+      "Paro tudo e recomeço depois",
+      "Peço ajuda ou busco apoio",
+    ],
+  },
+  {
+    id: 7,
+    q: "Quando dedico tempo para mim mesma, eu:",
+    opts: [
+      "Me sinto culpada — parece egoísmo",
+      "Aproveito sem culpa, sei que preciso",
+      "Consigo, mas preciso me convencer primeiro",
+      "Raramente consigo — sempre tem outra prioridade",
+    ],
+  },
+  {
+    id: 8,
+    q: "Em qual momento do dia você tem mais energia e autonomia?",
+    opts: [
+      "Manhã cedo, antes de tudo começar",
+      "Durante o dia, entre os compromissos",
+      "Final da tarde ou noite",
+      "Varia muito — não tenho um padrão",
+    ],
+  },
+  {
+    id: 9,
+    q: "Quando preciso manter um hábito por conta própria (sem grupo ou parceira):",
+    opts: [
+      "Consigo bem, prefiro seguir no meu ritmo",
+      "É difícil, me sinto mais motivada em grupo",
+      "Começo, mas preciso de lembretes externos",
+      "Depende do hábito — alguns consigo, outros não",
+    ],
+  },
+  {
+    id: 10,
+    q: "O que mais te motivaria a permanecer consistente nas próximas 12 semanas?",
+    opts: [
+      "Ver resultados concretos no meu corpo e saúde",
+      "Sentir que estou cuidando de mim de verdade",
+      "Fazer parte de uma comunidade que me apoia",
+      "Provar para mim mesma que consigo ser consistente",
     ],
   },
 ];
@@ -1395,10 +1447,12 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Diagnóstico de Sabotadores: desativado temporariamente (demo) ────────────
-  // useEffect(() => {
-  //   if (perfil === "jornada" && !diagOk && authUser) setTela(S.DIAG);
-  // }, [perfil, diagOk, authUser]);
+  // ── Onboarding obrigatório: Diagnóstico → Setup de hábitos ────────────────
+  useEffect(() => {
+    if (perfil === "jornada" && !diagOk && authUser) {
+      setTela(S.DIAG);
+    }
+  }, [perfil, diagOk, authUser]);
 
   const ctx = {
     perfil,
@@ -1474,7 +1528,7 @@ export default function App() {
     recarregarPerfil: () => loadUserData(authUser?.id),
   };
 
-  const SEM_NAV = [S.SPLASH, S.LEGAL, S.LOGIN, S.DIAG, S.VOZ, S.CHAT, S.RODA];
+  const SEM_NAV = [S.SPLASH, S.LEGAL, S.LOGIN, S.DIAG, S.HABSETUP, S.VOZ, S.CHAT, S.RODA];
 
   // Aguardando verificação de sessão Supabase
   if (loadingAuth)
@@ -1542,11 +1596,50 @@ export default function App() {
                   p3: respostas[3] || null,
                   p4: respostas[4] || null,
                   p5: respostas[5] || null,
+                  p6: respostas[6] || null,
+                  p7: respostas[7] || null,
+                  p8: respostas[8] || null,
+                  p9: respostas[9] || null,
+                  p10: respostas[10] || null,
                 }, { onConflict: "user_id" }).then(() => {});
               });
-              ir(S.HOME);
+              // Após diagnóstico → setup de hábitos se ainda não definidos
+              if (habAngulares.length === 0) ir(S.HABSETUP);
+              else ir(S.HOME);
             }}
           />
+        </Rolar>
+        <Estilos />
+      </Phone>
+    );
+
+  // Setup de hábitos (após diagnóstico, primeiro acesso)
+  if (tela === S.HABSETUP)
+    return (
+      <Phone>
+        <Rolar>
+          <Grain style={{ minHeight: 760, padding: "40px 26px 48px", animation: "fadeUp .4s ease" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 32 }}>
+              <Logo width={120} fundo="escuro" />
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.4em", textTransform: "uppercase" }}>
+                Primeiro acesso
+              </div>
+            </div>
+            <DefinirHabitos
+              onSalvar={(habs) => {
+                setHabAngulares(habs);
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                  if (!session?.user) return;
+                  supabase.from("profiles").update({
+                    habito_1: habs[0]?.t || null,
+                    habito_2: habs[1]?.t || null,
+                    habito_3: habs[2]?.t || null,
+                  }).eq("id", session.user.id).then(() => {});
+                });
+                ir(S.HOME);
+              }}
+            />
+          </Grain>
         </Rolar>
         <Estilos />
       </Phone>
