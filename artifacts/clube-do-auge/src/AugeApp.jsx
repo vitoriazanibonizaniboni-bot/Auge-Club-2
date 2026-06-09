@@ -1060,11 +1060,6 @@ export default function App() {
     setPq2("");
     setPq3("");
 
-    // Checar diagOk por userId antes de ir ao Supabase
-    if (checkDiagOkLocal(userId)) {
-      setDiagOk(true);
-    }
-
     const [
       profileRes,
       checkinsRes,
@@ -1106,14 +1101,11 @@ export default function App() {
       setRodaResultados(rodaRes.data);
     }
 
-    // diagOk ANTES de setPerfil para evitar race condition no onboarding
-    if (diagRes.data) {
+    // diagOk combinado com localStorage — mesmo batch que setProfileLoaded
+    if (diagRes.data || checkDiagOkLocal(userId)) {
       markDiagOk(userId);
     }
 
-    console.log("[AUGE] profileRes:", JSON.stringify({ data: profileRes.data, error: profileRes.error }));
-    console.log("[AUGE] diagRes:", JSON.stringify({ data: diagRes.data, error: diagRes.error }));
-    console.log("[AUGE] habsAngRes:", JSON.stringify({ data: habsAngRes?.data, error: habsAngRes?.error }));
     if (profileRes.data) {
       const p = profileRes.data;
       setPerfil(p.plano || "jornada");
