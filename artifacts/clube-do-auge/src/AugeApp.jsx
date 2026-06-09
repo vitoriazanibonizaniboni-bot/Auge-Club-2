@@ -1016,6 +1016,7 @@ export default function App() {
 
   // ── Carrega todos os dados da aluna do Supabase após autenticação ────────────
   const loadUserData = async (userId) => {
+    try {
     // Supabase é a fonte de verdade — resetar estado local antes de popular
     setHist({});
     setVit([]);
@@ -1204,6 +1205,9 @@ export default function App() {
 
     if (videosRes.data?.length) {
       setVideos(videosRes.data);
+    }
+    } catch (e) {
+      console.error("loadUserData error:", e);
     }
   };
 
