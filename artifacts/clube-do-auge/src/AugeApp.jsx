@@ -1053,6 +1053,11 @@ export default function App() {
       supabase.from("diagnostico").select("user_id").eq("user_id", userId).single(),
     ]);
 
+    // diagOk ANTES de setPerfil para evitar race condition no onboarding
+    if (diagRes.data) {
+      setDiagOk(true);
+    }
+
     if (profileRes.data) {
       const p = profileRes.data;
       setPerfil(p.plano || "jornada");
@@ -1088,11 +1093,6 @@ export default function App() {
           email: _s.user.email || "",
         });
       }
-    }
-
-    // Diagnóstico já preenchido no Supabase → marcar como feito (sincroniza entre dispositivos)
-    if (diagRes.data) {
-      setDiagOk(true);
     }
 
     if (checkinsRes.data?.length) {
