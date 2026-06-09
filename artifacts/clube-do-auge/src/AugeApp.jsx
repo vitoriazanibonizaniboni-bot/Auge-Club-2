@@ -10115,6 +10115,10 @@ function Perfil({
         >
           {perfil === "jornada"
             ? `Aluna da Jornada · Semana ${sem} de 12`
+            : perfil === "admin"
+            ? "Dra. Isadora Zaniboni · Mentora"
+            : perfil === "pendente"
+            ? "Conta em ativação"
             : "Assinante da Comunidade"}
         </div>
         {perfil === "jornada" && (
