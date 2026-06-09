@@ -9896,6 +9896,7 @@ function Perfil({
   sem,
   historico,
   mentoria,
+  ir,
 }) {
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(usuario?.nome || "");
