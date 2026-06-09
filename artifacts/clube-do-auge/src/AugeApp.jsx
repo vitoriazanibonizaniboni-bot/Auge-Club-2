@@ -9697,12 +9697,11 @@ function Conteudo({ perfil, videos: videosDB }) {
 
 // ─── PAINEL DA MENTORA ────────────────────────────────────────────────────────
 const CATS_ADMIN = [
-  { id: "yoga", label: "Yoga" },
-  { id: "meditacao", label: "Meditação" },
-  { id: "pilates", label: "Pilates" },
-  { id: "nutricao", label: "Nutrição" },
-  { id: "longevidade", label: "Longevidade" },
-  { id: "mentalidade", label: "Mentalidade" },
+  { id: "yoga", label: "Yoga e meditação" },
+  { id: "nutri", label: "Nutrição" },
+  { id: "podcast", label: "Podcast com a Isa" },
+  { id: "convid", label: "Convidadas" },
+  { id: "jornada", label: "Jornada ao vivo" },
 ];
 
 function PainelMentora({ ir }) {
