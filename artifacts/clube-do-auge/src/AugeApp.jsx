@@ -1238,11 +1238,12 @@ export default function App() {
     // Carregar perfis do Radar de Amigas
     const { data: radarData } = await supabase.rpc("get_radar_profiles", { uid: userId });
     if (radarData?.length) {
-      setRadarPerfis(radarData.map((p, i) => ({
+      const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
+      const mapPerfil = (p, i) => ({
         id: p.id,
         nome: p.nome || "Aluna",
         ini: (p.nome || "A").slice(0, 2).toUpperCase(),
-        cor: ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"][i % 5],
+        cor: CORES[i % 5],
         cidade: p.cidade || "",
         interesses: p.interesses || [],
         hab: p.interesses || [],
@@ -1252,7 +1253,42 @@ export default function App() {
         ok: true,
         compat: Math.floor(70 + Math.random() * 25),
         msgs: [],
-      })));
+      });
+      setRadarPerfis(radarData.map(mapPerfil));
+    }
+
+    // Carregar conexões persistidas
+    const { data: conexoesData } = await supabase
+      .from("conexoes")
+      .select("user1_id, user2_id")
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+    if (conexoesData?.length) {
+      const partnerIds = conexoesData.map((c) =>
+        c.user1_id === userId ? c.user2_id : c.user1_id
+      );
+      const { data: partnerProfiles } = await supabase
+        .from("profiles")
+        .select("id, nome, radar_cidade, radar_interesses, avatar_url")
+        .in("id", partnerIds);
+      if (partnerProfiles?.length) {
+        const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
+        setMatches(
+          partnerProfiles.map((p, i) => ({
+            id: p.id,
+            nome: p.nome || "Aluna",
+            ini: (p.nome || "A").slice(0, 2).toUpperCase(),
+            cor: CORES[i % 5],
+            cidade: p.radar_cidade || "",
+            interesses: p.radar_interesses || [],
+            hab: p.radar_interesses || [],
+            bio: p.radar_cidade ? `De ${p.radar_cidade}` : "Membro do Clube do Auge",
+            idade: null,
+            ok: true,
+            compat: Math.floor(70 + Math.random() * 25),
+            msgs: [],
+          }))
+        );
+      }
     }
     } catch (e) {
       console.error("loadUserData error:", e);
@@ -1295,8 +1331,21 @@ export default function App() {
     setTimeout(() => {
       setSw(null);
       if (dir === "right") {
-        setMatches((m) => [...m, { ...p, msgs: [] }]);
+        setMatches((m) => {
+          if (m.find((x) => x.id === p.id)) return m;
+          return [...m, { ...p, msgs: [] }];
+        });
         tk(`Conexão com ${p.nome.split(" ")[0]}! 💛`);
+        // Persiste conexão no Supabase
+        const uid = authUser?.id;
+        if (uid) {
+          const u1 = uid < p.id ? uid : p.id;
+          const u2 = uid < p.id ? p.id : uid;
+          supabase.from("conexoes").upsert(
+            { user1_id: u1, user2_id: u2 },
+            { ignoreDuplicates: true }
+          ).then(() => {});
+        }
       }
       setCi((i) => i + 1);
     }, 380);
@@ -5984,28 +6033,86 @@ function MatchDet({ selM, setSelM, ir, back }) {
   );
 }
 
-function Chat({ selM, setMatches, back }) {
+function Chat({ selM, setMatches, back, authUserId }) {
   const m = selM;
-  const [msgs, setMsgs] = useState(m.msgs || []);
+  const [msgs, setMsgs] = useState([]);
   const [txt, setTxt] = useState("");
+  const [carregando, setCarregando] = useState(true);
   const bot = useRef();
+  const subRef = useRef(null);
   const SUGE = [
-    "Oi! Vi que você também curte pilates 🌸",
+    "Oi! Que bom nos conectarmos 💛",
     "Que horários têm mais energia pra você?",
     "Topa conversar essa semana?",
-    "Topa um café esta semana?",
+    "Topa um café virtual esta semana?",
   ];
-  const enviar = () => {
-    if (!txt.trim()) return;
-    const n = { de: "RF", texto: txt.trim(), hora: "agora" };
-    setMsgs((ms) => [...ms, n]);
-    setMatches((ms) =>
-      ms.map((mm) =>
-        mm.id === m.id ? { ...mm, msgs: [...(mm.msgs || []), n] } : mm,
-      ),
-    );
-    setTxt("");
 
+  const fmtHora = (iso) =>
+    new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+  const msgDoBanco = (row) => ({
+    id: row.id,
+    de: row.de_user_id === authUserId ? "RF" : m.ini,
+    texto: row.texto,
+    hora: fmtHora(row.created_at),
+  });
+
+  useEffect(() => {
+    if (!authUserId || !m?.id) return;
+    setCarregando(true);
+
+    supabase
+      .from("mensagens")
+      .select("*")
+      .or(
+        `and(de_user_id.eq.${authUserId},para_user_id.eq.${m.id}),and(de_user_id.eq.${m.id},para_user_id.eq.${authUserId})`
+      )
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        if (data) setMsgs(data.map(msgDoBanco));
+        setCarregando(false);
+      });
+
+    const channel = supabase
+      .channel(`chat_${[authUserId, m.id].sort().join("_")}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "mensagens",
+          filter: `para_user_id=eq.${authUserId}`,
+        },
+        (payload) => {
+          const row = payload.new;
+          if (row.de_user_id !== m.id) return;
+          setMsgs((prev) => [...prev, msgDoBanco(row)]);
+        }
+      )
+      .subscribe();
+
+    subRef.current = channel;
+    return () => {
+      if (subRef.current) supabase.removeChannel(subRef.current);
+    };
+  }, [authUserId, m?.id]);
+
+  useEffect(() => {
+    bot.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs]);
+
+  const enviar = async () => {
+    if (!txt.trim() || !authUserId) return;
+    const texto = txt.trim();
+    setTxt("");
+    const { data, error } = await supabase
+      .from("mensagens")
+      .insert({ de_user_id: authUserId, para_user_id: m.id, texto })
+      .select()
+      .single();
+    if (!error && data) {
+      setMsgs((prev) => [...prev, msgDoBanco(data)]);
+    }
   };
   return (
     <div
