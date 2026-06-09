@@ -4420,7 +4420,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
     if (!post) return;
     setFeed((f) => f.filter((p) => p.id !== id));
     if (post.dbId) {
-      supabase.from("posts").delete().eq("id", post.dbId).then(() => {});
+      supabase.from("feed").delete().eq("id", post.dbId).then(() => {});
     }
   };
   // Feed: filtra por visibilidade e filtro ativo
