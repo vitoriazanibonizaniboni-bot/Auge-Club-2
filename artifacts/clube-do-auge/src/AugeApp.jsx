@@ -1096,6 +1096,9 @@ export default function App() {
       setDiagOk(true);
     }
 
+    console.log("[AUGE] profileRes:", JSON.stringify({ data: profileRes.data, error: profileRes.error }));
+    console.log("[AUGE] diagRes:", JSON.stringify({ data: diagRes.data, error: diagRes.error }));
+    console.log("[AUGE] habsAngRes:", JSON.stringify({ data: habsAngRes?.data, error: habsAngRes?.error }));
     if (profileRes.data) {
       const p = profileRes.data;
       setPerfil(p.plano || "jornada");
