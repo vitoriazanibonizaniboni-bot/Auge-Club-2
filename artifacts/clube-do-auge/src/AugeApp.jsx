@@ -1245,6 +1245,9 @@ export default function App() {
         cor: ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"][i % 5],
         cidade: p.cidade || "",
         interesses: p.interesses || [],
+        hab: p.interesses || [],
+        bio: p.cidade ? `De ${p.cidade}` : "Membro do Clube do Auge",
+        idade: null,
         avatar_url: p.avatar_url || null,
         ok: true,
         compat: Math.floor(70 + Math.random() * 25),
@@ -5671,7 +5674,7 @@ function Cx({
                       fontWeight: 300,
                     }}
                   >
-                    {p.idade} anos · {p.cidade}
+                    {p.idade ? `${p.idade} anos · ` : ''}{p.cidade}
                   </div>
                 </div>
               </div>
@@ -5689,7 +5692,7 @@ function Cx({
                   {p.bio}
                 </div>
                 <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                  {p.hab.map((h) => (
+                  {(p.hab || []).map((h) => (
                     <span
                       key={h}
                       style={{
