@@ -924,6 +924,7 @@ export default function App() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [perfil, setPerfil] = useState(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const loadedRef = useRef(false);
   const [lgpdOk, setLgpdOk] = useState(() => {
     try {
       return localStorage.getItem("auge_lgpd") === "true";
@@ -931,7 +932,7 @@ export default function App() {
       return false;
     }
   });
-  const [diagOk, setDiagOk] = useLocalStorage("auge_diagOk", false);
+  const [diagOk, setDiagOk] = useState(false);
   // Helper: marcar diagOk persistindo também por userId para cross-device sem depender de Supabase
   const markDiagOk = (userId) => {
     setDiagOk(true);
@@ -1101,10 +1102,8 @@ export default function App() {
       setRodaResultados(rodaRes.data);
     }
 
-    // diagOk combinado com localStorage — mesmo batch que setProfileLoaded
-    if (diagRes.data || checkDiagOkLocal(userId)) {
-      markDiagOk(userId);
-    }
+    // diagOk: determinar ANTES de setar profileLoaded para evitar flash de diagnóstico
+    const diagDone = !!(diagRes.data) || checkDiagOkLocal(userId);
 
     if (profileRes.data) {
       const p = profileRes.data;
@@ -1131,7 +1130,10 @@ export default function App() {
           localStorage.setItem("auge_pref_salvo", "1");
         } catch {}
       }
+      // Marcar diagOk ANTES de setProfileLoaded — garante que o effect vê diagOk=true
+      if (diagDone) markDiagOk(userId);
       setProfileLoaded(true);
+      loadedRef.current = true;
       // Cache local do perfil para evitar tela errada se Supabase falhar
       try {
         localStorage.setItem("auge_perfil_plano", p.plano || "jornada");
@@ -1147,7 +1149,9 @@ export default function App() {
       } else {
         setPerfil("jornada");
       }
+      if (diagDone) markDiagOk(userId);
       setProfileLoaded(true);
+      loadedRef.current = true;
       // Perfil não existe ainda — usar metadata do auth como fallback
       const { data: { session: _s } } = await supabase.auth.getSession();
       if (_s?.user) {
@@ -1527,9 +1531,12 @@ export default function App() {
 
   // ── Onboarding obrigatório: Diagnóstico → Setup de hábitos ────────────────
   useEffect(() => {
-    if (perfil === "jornada" && !diagOk && authUser && profileLoaded) {
-      setTela(S.DIAG);
-    }
+    // Só dispara depois de loadUserData completar (loadedRef garante que diagOk já foi setado)
+    if (!loadedRef.current) return;
+    if (!authUser) return;
+    if (perfil !== "jornada") return; // admin, pendente, comunidade nunca veem o diagnóstico
+    if (diagOk) return;
+    setTela(S.DIAG);
   }, [perfil, diagOk, authUser, profileLoaded]);
 
   const ctx = {
