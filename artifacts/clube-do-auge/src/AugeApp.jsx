@@ -6005,21 +6005,7 @@ function Chat({ selM, setMatches, back }) {
       ),
     );
     setTxt("");
-    setTimeout(() => {
-      const rs = [
-        "Que ótimo! Eu também adoro me mover cedo ☀️",
-        "Vamos combinar! Qual horário você prefere?",
-        "Perfeito! Manda seu contato e a gente acerta 💛",
-      ];
-      setMsgs((ms) => [
-        ...ms,
-        {
-          de: m.ini,
-          texto: rs[Math.floor(Math.random() * rs.length)],
-          hora: "agora",
-        },
-      ]);
-    }, 1200);
+
   };
   return (
     <div
