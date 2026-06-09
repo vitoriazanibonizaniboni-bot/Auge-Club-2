@@ -3445,6 +3445,9 @@ function Home({
   setNotifStatus,
   setEscT,
   mentoria,
+  pq1,
+  pq2,
+  pq3,
 }) {
   const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
   const CHIPS = [
@@ -3497,7 +3500,22 @@ function Home({
     const notaTxt = notas.trim()
       ? `"${notas.trim()}"`
       : "não registrou nota hoje";
-    const msg = `A aluna acabou de completar o checkin do dia.\nHábitos que ela marcou como feitos: ${habNomes.length > 0 ? habNomes.join(", ") : "nenhum"}\nHábitos que ela não marcou: ${naoFezNomes.length > 0 ? naoFezNomes.join(", ") : "nenhum"}\nTotal: fez ${feitos} de ${total} hábitos (${pct}%)\nComo ela se sentiu hoje (chips): ${chipsTxt}\nNota/microdiário: ${notaTxt}\nPersonalize sua resposta considerando TUDO isso. Se ela escreveu algo no microdiário, mencione. Se marcou Cansada mas fez os hábitos, celebre a coragem. Se fez parcial, acolha sem dramatizar.`;
+    const hora = new Date().getHours();
+    const periodo = hora >= 5 && hora < 12 ? "manhã" : hora >= 12 && hora < 18 ? "tarde" : "noite";
+    const nomeAluna = usuario?.nome ? usuario.nome.split(" ")[0] : null;
+    const porques = [pq1, pq2, pq3].filter(Boolean);
+    const msg = [
+      `A aluna acabou de completar o check-in do dia (período: ${periodo}).`,
+      nomeAluna ? `Nome dela: ${nomeAluna}.` : null,
+      `Hábitos feitos: ${habNomes.length > 0 ? habNomes.join(", ") : "nenhum"}.`,
+      `Hábitos não feitos: ${naoFezNomes.length > 0 ? naoFezNomes.join(", ") : "nenhum"}.`,
+      `Total: ${feitos} de ${total} hábitos (${pct}%).`,
+      `Como ela se sentiu: ${chipsTxt}.`,
+      `Nota/microdiário: ${notaTxt}.`,
+      streakAtual > 1 ? `Sequência atual: ${streakAtual} dias seguidos.` : null,
+      porques.length > 0 ? `Os porquês dela (por que quer mudar): ${porques.join(" / ")}.` : null,
+      `Personalize sua resposta considerando TUDO isso. Se ela escreveu algo no microdiário, mencione diretamente. Se marcou Cansada mas fez os hábitos, celebre a coragem. Se fez parcial, acolha sem dramatizar. Se tiver porquês, conecte a resposta a eles quando fizer sentido.`,
+    ].filter(Boolean).join("\n");
     const resp = await callISA(msg);
     setIsaRes(resp);
     setIsaLoad(false);
@@ -7864,7 +7882,7 @@ function Roda({
 }
 
 // ─── RETOMADA ─────────────────────────────────────────────────────────────────
-function Retomada({ anc, back, tk, setRet }) {
+function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
   const [mot, setMot] = useState("");
   const [onde, setOnde] = useState("");
   const [p, setP] = useState(1);
@@ -7891,8 +7909,18 @@ function Retomada({ anc, back, tk, setRet }) {
     setRegistrado(true);
     setIsaLoad(true);
     const motTxt = mot.trim() ? `"${mot.trim()}"` : "não descreveu";
+    const porquesRet = [pq1, pq2, pq3].filter(Boolean);
+    const nomeRet = usuario?.nome ? usuario.nome.split(" ")[0] : null;
     const resp = await callISA(
-      `A aluna acabou de ativar o Protocolo de Retomada — clicou em "Estou voltando agora".\nO que aconteceu segundo ela: ${motTxt}\nOnde ela disse que quebrou: ${onde || "não especificou"}\nÂncora de identidade dela: "${anc}"\nAcolha o que ela compartilhou diretamente, sem generalizar. Convoque ao movimento com a energia do método: acolhe e chama. Termine com a frase da marca se fizer sentido natural: "O auge não é o que você foi. É o que você está construindo."`,
+      [
+        `A aluna acabou de ativar o Protocolo de Retomada — clicou em "Estou voltando agora".`,
+        nomeRet ? `Nome dela: ${nomeRet}.` : null,
+        `O que aconteceu segundo ela: ${motTxt}.`,
+        `Onde ela disse que quebrou: ${onde || "não especificou"}.`,
+        `Âncora de identidade dela: "${anc}".`,
+        porquesRet.length > 0 ? `Os porquês dela: ${porquesRet.join(" / ")}.` : null,
+        `Acolha o que ela compartilhou diretamente, sem generalizar. Convoque ao movimento com a energia do método: acolhe e chama. Conecte aos porquês dela se existirem. Termine com a frase da marca se fizer sentido natural: "O auge não é o que você foi. É o que você está construindo."`,
+      ].filter(Boolean).join("\n"),
     );
     setIsaMsg(resp);
     setIsaLoad(false);
