@@ -1007,6 +1007,25 @@ export default function App() {
   const hDia = habAngulares.length > 0 ? habAngulares : HAB[mes];
   const feitos = hDia.filter((h) => habF[h.id]).length;
 
+  const salvarHabitos = async (habs) => {
+    setHabAngulares(habs);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const uid = session.user.id;
+    supabase.from("habitos_angulares").upsert({
+      user_id: uid,
+      hab1: habs[0]?.t || null,
+      hab2: habs[1]?.t || null,
+      hab3: habs[2]?.t || null,
+    }, { onConflict: "user_id" }).then(() => {});
+    supabase.from("profiles").upsert({
+      id: uid,
+      habito_1: habs[0]?.t || null,
+      habito_2: habs[1]?.t || null,
+      habito_3: habs[2]?.t || null,
+    }, { onConflict: "id" }).then(() => {});
+  };
+
   const ir = (t) => setTela(t);
   const tk = (m) => {
     setToast(m);
@@ -1038,6 +1057,7 @@ export default function App() {
       cartaRes,
       porquesRes,
       diagRes,
+      habsAngRes,
     ] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("checkins").select("*").eq("user_id", userId),
@@ -1051,7 +1071,17 @@ export default function App() {
       supabase.from("carta_futuro").select("*").eq("user_id", userId).single(),
       supabase.from("porques").select("*").eq("user_id", userId).single(),
       supabase.from("diagnostico").select("user_id").eq("user_id", userId).single(),
+      supabase.from("habitos_angulares").select("*").eq("user_id", userId).single(),
     ]);
+
+    // habitos_angulares tem prioridade sobre profiles.habito_1/2/3
+    if (habsAngRes?.data) {
+      const ha = habsAngRes.data;
+      const habs = [ha.hab1, ha.hab2, ha.hab3]
+        .filter(Boolean)
+        .map((t, i) => ({ id: `ha${i + 1}`, t }));
+      if (habs.length) setHabAngulares(habs);
+    }
 
     // diagOk ANTES de setPerfil para evitar race condition no onboarding
     if (diagRes.data) {
@@ -1064,7 +1094,7 @@ export default function App() {
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
-      // Carregar hábitos angulares de profiles.habito_1/2/3
+      // Carregar hábitos angulares de profiles.habito_1/2/3 (fallback)
       const habsP = [p.habito_1, p.habito_2, p.habito_3]
         .filter(Boolean)
         .map((t, i) => ({ id: `ha${i + 1}`, t }));
@@ -1641,15 +1671,7 @@ export default function App() {
             <DefinirHabitos
               onSalvar={(habs) => {
                 setHabAngulares(habs);
-                supabase.auth.getSession().then(({ data: { session } }) => {
-                  if (!session?.user) return;
-                  supabase.from("profiles").upsert({
-                    id: session.user.id,
-                    habito_1: habs[0]?.t || null,
-                    habito_2: habs[1]?.t || null,
-                    habito_3: habs[2]?.t || null,
-                  }, { onConflict: "id" }).then(() => {});
-                });
+                salvarHabitos(habs);
                 ir(S.HOME);
               }}
             />
