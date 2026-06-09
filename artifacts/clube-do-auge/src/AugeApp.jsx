@@ -9660,8 +9660,7 @@ function PainelMentora({ ir }) {
   const adicionarVideo = async () => {
     if (!formV.titulo.trim() || !formV.url.trim()) return;
     setSalvandoV(true);
-    const ytId = formV.url.match(/(?:v=|youtu\.be\/)([^&
-?]+)/)?.[1] || "";
+    const ytId = formV.url.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1] || "";
     const { data, error } = await supabase.from("videos").insert({
       titulo: formV.titulo.trim(),
       url_youtube: formV.url.trim(),
