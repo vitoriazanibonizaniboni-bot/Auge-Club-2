@@ -1034,6 +1034,7 @@ export default function App() {
       vitRes,
       cartaRes,
       porquesRes,
+      diagRes,
     ] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("checkins").select("*").eq("user_id", userId),
@@ -1046,6 +1047,7 @@ export default function App() {
       supabase.from("vitorias").select("*").eq("user_id", userId),
       supabase.from("carta_futuro").select("*").eq("user_id", userId).single(),
       supabase.from("porques").select("*").eq("user_id", userId).single(),
+      supabase.from("diagnostico").select("user_id").eq("user_id", userId).single(),
     ]);
 
     if (profileRes.data) {
@@ -1083,6 +1085,11 @@ export default function App() {
           email: _s.user.email || "",
         });
       }
+    }
+
+    // Diagnóstico já preenchido no Supabase → marcar como feito (sincroniza entre dispositivos)
+    if (diagRes.data) {
+      setDiagOk(true);
     }
 
     if (checkinsRes.data?.length) {
