@@ -9772,7 +9772,6 @@ function PainelMentora({ ir }) {
     const { data, error } = await supabase.from("videos").insert({
       titulo: formV.titulo.trim(),
       url_youtube: formV.url.trim(),
-      youtube_id: ytId,
       categoria: formV.categoria,
       duracao: formV.duracao.trim() || "30 min",
       descricao: formV.descricao.trim(),
