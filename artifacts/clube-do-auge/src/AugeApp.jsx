@@ -946,6 +946,7 @@ export default function App() {
   // Roda AUGE
   const [rodaR, setRodaR] = useState({});
   const [rodaI, setRodaI] = useState(0);
+  const [rodaResultados, setRodaResultados] = useState([]); // resultados salvos no Supabase
 
   // Conexões
   const [matches, setMatches] = useState([]);
@@ -1059,6 +1060,7 @@ export default function App() {
       porquesRes,
       diagRes,
       habsAngRes,
+      rodaRes,
     ] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("checkins").select("*").eq("user_id", userId),
@@ -1073,6 +1075,7 @@ export default function App() {
       supabase.from("porques").select("*").eq("user_id", userId).single(),
       supabase.from("diagnostico").select("user_id").eq("user_id", userId).single(),
       supabase.from("habitos_angulares").select("*").eq("user_id", userId).single(),
+      supabase.from("roda_auge").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
     ]);
 
     // habitos_angulares tem prioridade sobre profiles.habito_1/2/3
@@ -1082,6 +1085,10 @@ export default function App() {
         .filter(Boolean)
         .map((t, i) => ({ id: `ha${i + 1}`, t }));
       if (habs.length) setHabAngulares(habs);
+    }
+
+    if (rodaRes?.data?.length) {
+      setRodaResultados(rodaRes.data);
     }
 
     // diagOk ANTES de setPerfil para evitar race condition no onboarding
@@ -1520,6 +1527,7 @@ export default function App() {
     setRodaR,
     rodaI,
     setRodaI,
+    rodaResultados,
     matches,
     setMatches,
     ci,
@@ -7441,6 +7449,7 @@ function Roda({
   tk,
   perfil,
   dataCadastro,
+  rodaResultados = [],
 }) {
   const [fase, setFase] = useState("intro");
   const [momento, setMom] = useState(null);
@@ -7623,14 +7632,21 @@ function Roda({
           <BtnPill
             onClick={() => {
               if (momento) {
-                setRodaR({});
-                setRodaI(0);
-                setFase("perguntas");
+                const saved = rodaResultados.find((r) => r.momento === momento);
+                if (saved?.respostas) {
+                  setRodaR(saved.respostas);
+                  setRodaI(24);
+                  setFase("resultado");
+                } else {
+                  setRodaR({});
+                  setRodaI(0);
+                  setFase("perguntas");
+                }
               }
             }}
             style={{ opacity: momento ? 1 : 0.4 }}
           >
-            Iniciar diagnóstico
+            {momento && rodaResultados.find((r) => r.momento === momento) ? "Ver resultado" : "Iniciar diagnóstico"}
           </BtnPill>
         </div>
       </Grain>
