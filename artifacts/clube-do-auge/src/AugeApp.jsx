@@ -4348,6 +4348,7 @@ function Home({
 function Feed({ feed, setFeed, ir, authUserId }) {
   const [open, setOpen] = useState(null);
   const [txt, setTxt] = useState("");
+  const [filtro, setFiltro] = useState("todas"); // "todas" | "minhas"
   const curtir = (id) => {
     setFeed((f) =>
       f.map((p) => {
@@ -4378,8 +4379,10 @@ function Feed({ feed, setFeed, ir, authUserId }) {
     );
     setTxt("");
   };
-  // Feed só mostra posts públicos (ou posts da própria usuária)
-  const visiveis = feed.filter((p) => p.publica || p.userId === authUserId || p.aut === "Você");
+  // Feed: filtra por visibilidade e filtro ativo
+  const visiveis = feed
+    .filter((p) => p.publica || p.userId === authUserId || p.aut === "Você")
+    .filter((p) => filtro === "minhas" ? (p.userId === authUserId || p.aut === "Você") : true);
   return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div
@@ -4395,6 +4398,14 @@ function Feed({ feed, setFeed, ir, authUserId }) {
         <div style={{ width: 40 }} />
         <Logo width={100} fundo="escuro" />
         <div style={{ width: 40 }} />
+      </div>
+      {/* Filtro Todas / Minhas */}
+      <div style={{ background: C.obs, padding: "0 16px 12px", display: "flex", gap: 8, borderBottom: `1px solid ${C.ouro}10` }}>
+        {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
+          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: filtro === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+            {label}
+          </button>
+        ))}
       </div>
       <Grain style={{ padding: "14px 14px 8px" }}>
         {/* Botão registrar */}
