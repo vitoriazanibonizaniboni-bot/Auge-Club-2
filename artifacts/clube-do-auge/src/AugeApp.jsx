@@ -9745,9 +9745,7 @@ function PainelMentora({ ir }) {
   useEffect(() => {
     if (aba !== "alunas") return;
     setLoadingA(true);
-    supabase.from("profiles").select("id, nome, plano, data_cadastro, habito_1, habito_2, habito_3")
-      .neq("plano", "pendente")
-      .order("data_cadastro", { ascending: false })
+    supabase.rpc("get_profiles_admin")
       .then(async ({ data: perfis }) => {
         if (!perfis?.length) { setAlunas([]); setLoadingA(false); return; }
         // Buscar último checkin de cada aluna
@@ -9942,14 +9940,9 @@ function PainelMentora({ ir }) {
                     <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)` }}>{a.nome || "—"}</div>
                     <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: statusCor }}>{statusTxt}</div>
                   </div>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.4)`, marginBottom: a.habito_1 ? 8 : 0 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.4)` }}>
                     {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
                   </div>
-                  {a.habito_1 && (
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.35)` }}>
-                      {[a.habito_1, a.habito_2, a.habito_3].filter(Boolean).join(" · ")}
-                    </div>
-                  )}
                 </div>
               );
             })}
