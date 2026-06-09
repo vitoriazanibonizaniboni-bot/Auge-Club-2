@@ -51,6 +51,8 @@ const S = {
   DIAG: "diag",
   // Onboarding — setup de hábitos
   HABSETUP: "habsetup",
+  // Painel da Mentora
+  ADMIN: "admin",
 };
 
 const ABA_ORIGEM = {
@@ -1535,7 +1537,7 @@ export default function App() {
     recarregarPerfil: () => loadUserData(authUser?.id),
   };
 
-  const SEM_NAV = [S.SPLASH, S.LEGAL, S.LOGIN, S.DIAG, S.HABSETUP, S.VOZ, S.CHAT, S.RODA];
+  const SEM_NAV = [S.SPLASH, S.LEGAL, S.LOGIN, S.DIAG, S.HABSETUP, S.ADMIN, S.VOZ, S.CHAT, S.RODA];
 
   // Aguardando verificação de sessão Supabase
   if (loadingAuth)
@@ -1692,6 +1694,8 @@ export default function App() {
             setHabAngulares={setHabAngulares}
           />
         );
+      case S.ADMIN:
+        return <PainelMentora ir={ir} />;
       default:
         return <Home {...ctx} />;
     }
@@ -9581,6 +9585,275 @@ function Conteudo({ perfil, videos: videosDB }) {
 // ═══════════════════════════════════════════════════════════════════
 // ABA: PERFIL
 // ═══════════════════════════════════════════════════════════════════
+
+// ─── PAINEL DA MENTORA ────────────────────────────────────────────────────────
+const CATS_ADMIN = [
+  { id: "yoga", label: "Yoga" },
+  { id: "meditacao", label: "Meditação" },
+  { id: "pilates", label: "Pilates" },
+  { id: "nutricao", label: "Nutrição" },
+  { id: "longevidade", label: "Longevidade" },
+  { id: "mentalidade", label: "Mentalidade" },
+];
+
+function PainelMentora({ ir }) {
+  const [aba, setAba] = useState("videos"); // "videos" | "mentoria" | "alunas"
+  // ── estado vídeos ──
+  const [videos, setVideos] = useState([]);
+  const [loadingV, setLoadingV] = useState(true);
+  const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "" });
+  const [salvandoV, setSalvandoV] = useState(false);
+  const [mostrarForm, setMostrarForm] = useState(false);
+  // ── estado mentoria ──
+  const [ment, setMent] = useState({ data: "", semana: "", duracao: "75 min", zoom: "" });
+  const [salvandoM, setSalvandoM] = useState(false);
+  const [salvoM, setSalvoM] = useState(false);
+  // ── estado alunas ──
+  const [alunas, setAlunas] = useState([]);
+  const [loadingA, setLoadingA] = useState(false);
+
+  // Carregar vídeos ao montar
+  useEffect(() => {
+    supabase.from("videos").select("*").order("ordem", { ascending: true }).order("created_at", { ascending: false })
+      .then(({ data }) => { setVideos(data || []); setLoadingV(false); });
+  }, []);
+
+  // Carregar mentoria ao montar
+  useEffect(() => {
+    supabase.from("configuracoes").select("*")
+      .then(({ data }) => {
+        if (!data?.length) return;
+        const cfg = Object.fromEntries(data.map((c) => [c.id, c.valor]));
+        setMent({
+          data: cfg.mentoria_data || "",
+          semana: cfg.mentoria_semana || "",
+          duracao: cfg.mentoria_duracao || "75 min",
+          zoom: cfg.mentoria_zoom || "",
+        });
+      });
+  }, []);
+
+  // Carregar alunas ao clicar na aba
+  useEffect(() => {
+    if (aba !== "alunas") return;
+    setLoadingA(true);
+    supabase.from("profiles").select("id, nome, plano, data_cadastro, habito_1, habito_2, habito_3")
+      .neq("plano", "pendente")
+      .order("data_cadastro", { ascending: false })
+      .then(async ({ data: perfis }) => {
+        if (!perfis?.length) { setAlunas([]); setLoadingA(false); return; }
+        // Buscar último checkin de cada aluna
+        const ids = perfis.map((p) => p.id);
+        const { data: cks } = await supabase.from("checkins")
+          .select("user_id, data, percentual")
+          .in("user_id", ids)
+          .order("data", { ascending: false });
+        const ultimoCk = {};
+        for (const ck of (cks || [])) {
+          if (!ultimoCk[ck.user_id]) ultimoCk[ck.user_id] = ck;
+        }
+        setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null })));
+        setLoadingA(false);
+      });
+  }, [aba]);
+
+  const adicionarVideo = async () => {
+    if (!formV.titulo.trim() || !formV.url.trim()) return;
+    setSalvandoV(true);
+    const ytId = formV.url.match(/(?:v=|youtu\.be\/)([^&
+?]+)/)?.[1] || "";
+    const { data, error } = await supabase.from("videos").insert({
+      titulo: formV.titulo.trim(),
+      url_youtube: formV.url.trim(),
+      youtube_id: ytId,
+      categoria: formV.categoria,
+      duracao: formV.duracao.trim() || "30 min",
+      descricao: formV.descricao.trim(),
+      ativo: true,
+      ordem: videos.length + 1,
+      plano_minimo: "comunidade",
+    }).select().single();
+    if (!error && data) {
+      setVideos((v) => [data, ...v]);
+      setFormV({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "" });
+      setMostrarForm(false);
+    }
+    setSalvandoV(false);
+  };
+
+  const removerVideo = async (id) => {
+    await supabase.from("videos").delete().eq("id", id);
+    setVideos((v) => v.filter((x) => x.id !== id));
+  };
+
+  const salvarMentoria = async () => {
+    setSalvandoM(true);
+    const upserts = [
+      { id: "mentoria_data", valor: ment.data },
+      { id: "mentoria_semana", valor: ment.semana },
+      { id: "mentoria_duracao", valor: ment.duracao },
+      { id: "mentoria_zoom", valor: ment.zoom },
+    ];
+    await Promise.all(upserts.map((u) => supabase.from("configuracoes").upsert(u, { onConflict: "id" })));
+    setSalvandoM(false);
+    setSalvoM(true);
+    setTimeout(() => setSalvoM(false), 2500);
+  };
+
+  const diasSemCk = (ultimoCk) => {
+    if (!ultimoCk) return null;
+    const diff = Date.now() - new Date(ultimoCk.data).getTime();
+    return Math.floor(diff / 86400000);
+  };
+
+  return (
+    <Grain style={{ minHeight: 760, animation: "fadeUp .35s ease" }}>
+      {/* Header */}
+      <div style={{ background: C.obs, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.ouro}18` }}>
+        <button onClick={() => ir(S.PF)} style={{ background: "transparent", border: "none", color: C.ouro, cursor: "pointer", fontSize: 18, padding: 0 }}>←</button>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>Painel da Mentora</div>
+      </div>
+
+      {/* Abas */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.obs }}>
+        {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["alunas", "Alunas"]].map(([id, label]) => (
+          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 12, color: aba === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer", transition: "all .2s" }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: "20px 18px 48px" }}>
+
+        {/* ── ABA VÍDEOS ── */}
+        {aba === "videos" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)` }}>Aulas no YouTube</div>
+              <button onClick={() => setMostrarForm((v) => !v)} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 20, padding: "6px 14px", fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, cursor: "pointer" }}>
+                {mostrarForm ? "Cancelar" : "+ Adicionar"}
+              </button>
+            </div>
+
+            {/* Formulário de novo vídeo */}
+            {mostrarForm && (
+              <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 14 }}>Novo vídeo</div>
+                {[
+                  ["Título", "titulo", "Ex: Yoga para mobilidade"],
+                  ["Link do YouTube", "url", "https://youtube.com/watch?v=..."],
+                  ["Duração", "duracao", "Ex: 30 min"],
+                  ["Descrição (opcional)", "descricao", "Breve descrição da aula"],
+                ].map(([lb, field, ph]) => (
+                  <div key={field} style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.5)`, marginBottom: 5 }}>{lb}</div>
+                    <input
+                      value={formV[field]}
+                      onChange={(e) => setFormV((f) => ({ ...f, [field]: e.target.value }))}
+                      placeholder={ph}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 13, padding: "6px 0" }}
+                    />
+                  </div>
+                ))}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.5)`, marginBottom: 5 }}>Categoria</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {CATS_ADMIN.map((cat) => (
+                      <button key={cat.id} onClick={() => setFormV((f) => ({ ...f, categoria: cat.id }))}
+                        style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 300, fontSize: 11, color: formV.categoria === cat.id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 13 }}>
+                  {salvandoV ? "Salvando..." : "Salvar vídeo"}
+                </BtnPill>
+              </div>
+            )}
+
+            {/* Lista de vídeos */}
+            {loadingV ? (
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+            ) : videos.length === 0 ? (
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
+            ) : videos.map((v) => (
+              <div key={v.id} style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
+                {v.youtube_id && (
+                  <img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" style={{ width: 60, height: 45, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.92)`, marginBottom: 3 }}>{v.titulo}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.4)` }}>{v.categoria} · {v.duracao}</div>
+                </div>
+                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(255,255,255,.25)`, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── ABA MENTORIA ── */}
+        {aba === "mentoria" && (
+          <div>
+            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)`, marginBottom: 20 }}>Próxima mentoria</div>
+            {[
+              ["Data e horário", "data", "Ex: 15 de julho · 19h"],
+              ["Semana da jornada", "semana", "Ex: Semana 3"],
+              ["Duração", "duracao", "Ex: 75 min"],
+              ["Link do Zoom", "zoom", "https://zoom.us/j/..."],
+            ].map(([lb, field, ph]) => (
+              <div key={field} style={{ marginBottom: 20 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.5)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
+                <input
+                  value={ment[field]}
+                  onChange={(e) => setMent((m) => ({ ...m, [field]: e.target.value }))}
+                  placeholder={ph}
+                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 14, padding: "7px 0" }}
+                />
+              </div>
+            ))}
+            <BtnPill onClick={salvarMentoria} style={{ fontSize: 13 }}>
+              {salvoM ? "✓ Salvo!" : salvandoM ? "Salvando..." : "Salvar mentoria"}
+            </BtnPill>
+          </div>
+        )}
+
+        {/* ── ABA ALUNAS ── */}
+        {aba === "alunas" && (
+          <div>
+            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)`, marginBottom: 16 }}>Alunas ativas</div>
+            {loadingA ? (
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+            ) : alunas.length === 0 ? (
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
+            ) : alunas.map((a) => {
+              const dias = diasSemCk(a.ultimoCk);
+              const statusCor = dias === null ? `rgba(255,255,255,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
+              const statusTxt = dias === null ? "Sem checkin" : dias === 0 ? "Checkin hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
+              return (
+                <div key={a.id} style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)` }}>{a.nome || "—"}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: statusCor }}>{statusTxt}</div>
+                  </div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.4)`, marginBottom: a.habito_1 ? 8 : 0 }}>
+                    {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
+                  </div>
+                  {a.habito_1 && (
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.35)` }}>
+                      {[a.habito_1, a.habito_2, a.habito_3].filter(Boolean).join(" · ")}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </Grain>
+  );
+}
+
 function Perfil({
   perfil,
   matches,
@@ -9782,6 +10055,25 @@ function Perfil({
           >
             {editando ? "Cancelar" : "✏️ Editar dados"}
           </button>
+          {perfil === "admin" && (
+            <button
+              onClick={() => ir(S.ADMIN)}
+              style={{
+                background: `${C.ouro}18`,
+                border: `1px solid ${C.ouro}44`,
+                borderRadius: 20,
+                padding: "6px 16px",
+                fontFamily: FB,
+                fontWeight: 300,
+                fontSize: 11,
+                color: C.ouro,
+                cursor: "pointer",
+                letterSpacing: "0.1em",
+              }}
+            >
+              ⚙️ Painel da Mentora
+            </button>
+          )}
           {logout && (
             <button
               onClick={logout}
