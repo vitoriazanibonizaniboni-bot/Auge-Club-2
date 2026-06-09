@@ -924,6 +924,7 @@ export default function App() {
   const [ci, setCi] = useState(0);
   const [sw, setSw] = useState(null);
   const [selM, setSelM] = useState(null);
+  const [radarPerfis, setRadarPerfis] = useState([]);
 
   // Jornada — persistidos entre sessões
   const [anc, setAnc] = useLocalStorage(
@@ -1233,6 +1234,23 @@ export default function App() {
     if (videosRes.data?.length) {
       setVideos(videosRes.data);
     }
+
+    // Carregar perfis do Radar de Amigas
+    const { data: radarData } = await supabase.rpc("get_radar_profiles", { uid: userId });
+    if (radarData?.length) {
+      setRadarPerfis(radarData.map((p, i) => ({
+        id: p.id,
+        nome: p.nome || "Aluna",
+        ini: (p.nome || "A").slice(0, 2).toUpperCase(),
+        cor: ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"][i % 5],
+        cidade: p.cidade || "",
+        interesses: p.interesses || [],
+        avatar_url: p.avatar_url || null,
+        ok: true,
+        compat: Math.floor(70 + Math.random() * 25),
+        msgs: [],
+      })));
+    }
     } catch (e) {
       console.error("loadUserData error:", e);
     }
@@ -1269,7 +1287,7 @@ export default function App() {
   };
 
   const doSwipe = (dir) => {
-    const p = PERFIS_CX[ci];
+    const p = radarPerfis[ci];
     setSw(dir);
     setTimeout(() => {
       setSw(null);
@@ -1571,6 +1589,7 @@ export default function App() {
     logout,
     mentoria,
     videos,
+    radarPerfis,
     recarregarPerfil: () => loadUserData(authUser?.id),
   };
 
@@ -5533,8 +5552,9 @@ function Cx({
   ir,
   back,
   tk,
+  radarPerfis,
 }) {
-  const p = PERFIS_CX[ci];
+  const p = radarPerfis[ci];
   return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <Cab titulo="Conexões" voltar={back} />
