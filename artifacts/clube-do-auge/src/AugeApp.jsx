@@ -1054,7 +1054,7 @@ export default function App() {
 
     if (profileRes.data) {
       const p = profileRes.data;
-      setPerfil(p.plano || "comunidade");
+      setPerfil(p.plano || "jornada");
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
@@ -1078,7 +1078,7 @@ export default function App() {
         } catch {}
       }
     } else {
-      setPerfil("comunidade");
+      setPerfil("jornada");
       // Perfil não existe ainda — usar metadata do auth como fallback
       const { data: { session: _s } } = await supabase.auth.getSession();
       if (_s?.user) {
@@ -2437,7 +2437,7 @@ function TelaAuth({ onAuth }) {
         id: data.user.id,
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
-        plano: "comunidade",
+        plano: "jornada",
         lgpd_aceito: true,
         lgpd_data: new Date().toISOString(),
         data_cadastro: new Date().toISOString(),
