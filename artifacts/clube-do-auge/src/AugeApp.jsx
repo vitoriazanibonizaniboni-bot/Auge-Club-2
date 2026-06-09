@@ -923,6 +923,7 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [perfil, setPerfil] = useState(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [lgpdOk, setLgpdOk] = useState(() => {
     try {
       return localStorage.getItem("auge_lgpd") === "true";
@@ -1113,8 +1114,10 @@ export default function App() {
           localStorage.setItem("auge_pref_salvo", "1");
         } catch {}
       }
+      setProfileLoaded(true);
     } else {
       setPerfil("jornada");
+      setProfileLoaded(true);
       // Perfil não existe ainda — usar metadata do auth como fallback
       const { data: { session: _s } } = await supabase.auth.getSession();
       if (_s?.user) {
@@ -1484,6 +1487,7 @@ export default function App() {
       else if (event === "SIGNED_OUT") {
         setAuthUser(null);
         setPerfil(null);
+        setProfileLoaded(false);
         setUsuario(null);
       }
     });
@@ -1492,10 +1496,10 @@ export default function App() {
 
   // ── Onboarding obrigatório: Diagnóstico → Setup de hábitos ────────────────
   useEffect(() => {
-    if (perfil === "jornada" && !diagOk && authUser) {
+    if (perfil === "jornada" && !diagOk && authUser && profileLoaded) {
       setTela(S.DIAG);
     }
-  }, [perfil, diagOk, authUser]);
+  }, [perfil, diagOk, authUser, profileLoaded]);
 
   const ctx = {
     perfil,
