@@ -4374,39 +4374,6 @@ function Home({
           <span style={{ color: C.ouro, fontSize: 16 }}>›</span>
         </button>
 
-        {/* Próximo encontro */}
-        {perfil === "jornada" && (
-          <div
-            style={{
-              background: `${C.ouro}10`,
-              border: `1px solid ${C.ouro}18`,
-              borderRadius: 10,
-              padding: "12px 14px",
-              cursor: mentoria?.zoom ? "pointer" : "default",
-            }}
-            onClick={() => mentoria?.zoom && window.open(mentoria.zoom, "_blank")}
-          >
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 9,
-                color: C.ouro,
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                marginBottom: 4,
-              }}
-            >
-              Próxima mentoria {mentoria?.zoom && "· toque para entrar"}
-            </div>
-            <div style={{ fontFamily: FS, fontSize: 16, color: `rgba(255,255,255,.95)` }}>
-              {mentoria?.data || "A definir"}
-            </div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, marginTop: 2 }}>
-              {mentoria?.semana ? `${mentoria.semana} · ` : ""}Zoom · {mentoria?.duracao || "75 min"}
-            </div>
-          </div>
-        )}
       </Grain>
     </div>
   );
@@ -10406,40 +10373,6 @@ function Perfil({
           </div>
         )}
 
-        {/* Próximo encontro */}
-        {perfil === "jornada" && (
-          <div
-            style={{
-              background: `${C.ouro}10`,
-              border: `1px solid ${C.ouro}20`,
-              borderRadius: 10,
-              padding: "14px 16px",
-              marginBottom: 14,
-              cursor: mentoria?.zoom ? "pointer" : "default",
-            }}
-            onClick={() => mentoria?.zoom && window.open(mentoria.zoom, "_blank")}
-          >
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 9,
-                color: C.ouro,
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                marginBottom: 5,
-              }}
-            >
-              Próxima mentoria {mentoria?.zoom && "· toque para entrar"}
-            </div>
-            <div style={{ fontFamily: FS, fontSize: 17, color: `rgba(255,255,255,.95)` }}>
-              {mentoria?.data || "A definir"}
-            </div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, marginTop: 3 }}>
-              {mentoria?.semana ? `${mentoria.semana} · ` : ""}via Zoom · {mentoria?.duracao || "75 min"}
-            </div>
-          </div>
-        )}
 
         {/* Preferências para o radar de amigas */}
         <PrefRadar authUserId={authUserId} />
