@@ -932,6 +932,16 @@ export default function App() {
     }
   });
   const [diagOk, setDiagOk] = useLocalStorage("auge_diagOk", false);
+  // Helper: marcar diagOk persistindo também por userId para cross-device sem depender de Supabase
+  const markDiagOk = (userId) => {
+    setDiagOk(true);
+    if (userId) {
+      try { localStorage.setItem("auge_diagOk_" + userId, "1"); } catch {}
+    }
+  };
+  const checkDiagOkLocal = (userId) => {
+    try { return localStorage.getItem("auge_diagOk_" + userId) === "1"; } catch { return false; }
+  };
   const [tela, setTela] = useState(S.HOME);
 
   // Feed
@@ -1050,6 +1060,11 @@ export default function App() {
     setPq2("");
     setPq3("");
 
+    // Checar diagOk por userId antes de ir ao Supabase
+    if (checkDiagOkLocal(userId)) {
+      setDiagOk(true);
+    }
+
     const [
       profileRes,
       checkinsRes,
@@ -1093,7 +1108,7 @@ export default function App() {
 
     // diagOk ANTES de setPerfil para evitar race condition no onboarding
     if (diagRes.data) {
-      setDiagOk(true);
+      markDiagOk(userId);
     }
 
     console.log("[AUGE] profileRes:", JSON.stringify({ data: profileRes.data, error: profileRes.error }));
@@ -1657,9 +1672,8 @@ export default function App() {
         <Rolar>
           <Diagnostico
             onConcluir={(respostas) => {
-              setDiagOk(true);
-              // Salva respostas no Supabase
               supabase.auth.getSession().then(({ data: { session } }) => {
+                markDiagOk(session?.user?.id);
                 if (!session?.user) return;
                 supabase.from("diagnostico").upsert({
                   user_id: session.user.id,
