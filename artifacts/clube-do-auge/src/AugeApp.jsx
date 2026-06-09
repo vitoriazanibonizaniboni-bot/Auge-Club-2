@@ -9648,7 +9648,7 @@ function PainelMentora({ ir }) {
 
   // Carregar mentoria ao montar
   useEffect(() => {
-    supabase.from("configuracoes").select("*")
+    supabase.from("config").select("*")
       .then(({ data }) => {
         if (!data?.length) return;
         const cfg = Object.fromEntries(data.map((c) => [c.id, c.valor]));
@@ -9721,7 +9721,7 @@ function PainelMentora({ ir }) {
       { id: "mentoria_duracao", valor: ment.duracao },
       { id: "mentoria_zoom", valor: ment.zoom },
     ];
-    await Promise.all(upserts.map((u) => supabase.from("configuracoes").upsert(u, { onConflict: "id" })));
+    await Promise.all(upserts.map((u) => supabase.from("config").upsert(u, { onConflict: "id" })));
     setSalvandoM(false);
     setSalvoM(true);
     setTimeout(() => setSalvoM(false), 2500);
