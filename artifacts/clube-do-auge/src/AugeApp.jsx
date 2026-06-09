@@ -4408,6 +4408,14 @@ function Feed({ feed, setFeed, ir, authUserId }) {
     );
     setTxt("");
   };
+  const deletar = (id) => {
+    const post = feed.find((p) => p.id === id);
+    if (!post) return;
+    setFeed((f) => f.filter((p) => p.id !== id));
+    if (post.dbId) {
+      supabase.from("posts").delete().eq("id", post.dbId).then(() => {});
+    }
+  };
   // Feed: filtra por visibilidade e filtro ativo
   const visiveis = feed
     .filter((p) => p.publica || p.userId === authUserId || p.aut === "Você")
@@ -4722,6 +4730,24 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                   >
                     💬<span style={{ fontSize: 12 }}>{p.com.length}</span>
                   </button>
+                  {(p.userId === authUserId || p.aut === "Você") && (
+                    <button
+                      onClick={() => { if (window.confirm("Excluir esta publicação?")) deletar(p.id); }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: 14,
+                        color: `rgba(255,255,255,.25)`,
+                        padding: "5px 8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
                 {ab && (
                   <div
