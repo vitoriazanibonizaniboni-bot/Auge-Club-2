@@ -3634,7 +3634,7 @@ function Home({
       `Nota/microdiário: ${notaTxt}.`,
       streakAtual > 1 ? `Sequência atual: ${streakAtual} dias seguidos.` : null,
       porques.length > 0 ? `Os porquês dela (por que quer mudar): ${porques.join(" / ")}.` : null,
-      `Personalize sua resposta considerando TUDO isso. Se ela escreveu algo no microdiário, mencione diretamente. Se marcou Cansada mas fez os hábitos, celebre a coragem. Se fez parcial, acolha sem dramatizar. Se tiver porquês, conecte a resposta a eles quando fizer sentido.`,
+      `Personalize sua resposta considerando TUDO isso. Se ela escreveu algo no microdiário, mencione diretamente. Se marcou Cansada mas fez os hábitos, celebre a coragem. Se fez parcial, acolha sem dramatizar. Se tiver porquês, conecte a resposta a eles quando fizer sentido. OBRIGATÓRIO: use a saudação correta para o período '${periodo}' — se for noite diga 'boa noite', se for tarde diga 'boa tarde', se for manhã diga 'bom dia'. Nunca use saudação errada para o horário.`,
     ].filter(Boolean).join("\n");
     const resp = await callISA(msg);
     setIsaRes(resp);
