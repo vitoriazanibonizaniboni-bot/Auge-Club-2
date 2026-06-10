@@ -1589,6 +1589,7 @@ export default function App() {
     rodaI,
     setRodaI,
     rodaResultados,
+    setRodaResultados,
     matches,
     setMatches,
     ci,
@@ -7549,6 +7550,7 @@ function Roda({
   perfil,
   dataCadastro,
   rodaResultados = [],
+  setRodaResultados,
 }) {
   const [fase, setFase] = useState("intro");
   const [momento, setMom] = useState(null);
@@ -7999,14 +8001,18 @@ function Roda({
           </p>
         </div>
         <BtnPill
-          onClick={() => {
+          onClick={async () => {
             const notas = calcRoda();
             const vals = Object.values(notas).filter((v) => v !== null);
             const indice = vals.length
               ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
               : 0;
-            syncInsert("roda_auge", {
-              momento: momento || "S1",
+            const mom = momento || "S1";
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) { tk("Erro: não autenticada"); return; }
+            const row = {
+              user_id: session.user.id,
+              momento: mom,
               data: new Date().toISOString().split("T")[0],
               respostas: rodaR,
               nota_energia: notas["Energia"] ?? null,
@@ -8015,7 +8021,23 @@ function Roda({
               nota_autocuidado: notas["Autocuidado"] ?? null,
               nota_protagonismo: notas["Protagonismo"] ?? null,
               indice_auge: indice,
-            });
+            };
+            const { data: saved, error } = await supabase
+              .from("roda_auge")
+              .upsert(row, { onConflict: "user_id,momento" })
+              .select()
+              .single();
+            if (error) {
+              console.error("Erro ao salvar roda:", error);
+              tk("Erro ao salvar. Tente novamente.");
+              return;
+            }
+            if (setRodaResultados) {
+              setRodaResultados((prev) => {
+                const sem = prev.filter((r) => r.momento !== mom);
+                return [...sem, saved];
+              });
+            }
             tk("Roda salva! Repita na semana 6 e 12 💖");
             back();
           }}
