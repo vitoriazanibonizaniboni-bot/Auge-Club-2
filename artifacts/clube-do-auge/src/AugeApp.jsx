@@ -3729,9 +3729,9 @@ function Home({
             marginBottom: 4,
           }}
         >
-          BOM DIA
+          {(() => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "BOM DIA" : h >= 12 && h < 18 ? "BOA TARDE" : "BOA NOITE"; })()}
           {usuario?.nome ? `, ${usuario.nome.split(" ")[0].toUpperCase()}` : ""}{" "}
-          ☀️
+          {(() => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "☀️" : h >= 12 && h < 18 ? "🌤️" : "🌙"; })()}
         </div>
         <div
           style={{
