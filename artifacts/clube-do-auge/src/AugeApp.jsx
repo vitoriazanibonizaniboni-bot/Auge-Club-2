@@ -1239,6 +1239,16 @@ export default function App() {
     const { data: radarData } = await supabase.rpc("get_radar_profiles", { uid: userId });
     if (radarData?.length) {
       const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
+      const meusInteresses = profileRes.data?.radar_interesses || [];
+      const calcCompat = (outrosInteresses) => {
+        const outros = outrosInteresses || [];
+        if (!meusInteresses.length || !outros.length) return 65;
+        const shared = meusInteresses.filter((x) => outros.includes(x)).length;
+        const total = new Set([...meusInteresses, ...outros]).size;
+        const jaccard = shared / total;
+        // Escala: 0 interesses em comum = 45%, 100% em comum = 99%
+        return Math.round(45 + jaccard * 54);
+      };
       const mapPerfil = (p, i) => ({
         id: p.id,
         nome: p.nome || "Aluna",
@@ -1251,10 +1261,10 @@ export default function App() {
         idade: null,
         avatar_url: p.avatar_url || null,
         ok: true,
-        compat: Math.floor(70 + Math.random() * 25),
+        compat: calcCompat(p.interesses),
         msgs: [],
       });
-      setRadarPerfis(radarData.map(mapPerfil));
+      setRadarPerfis(radarData.map(mapPerfil).sort((a, b) => b.compat - a.compat));
     }
 
     } catch (e) {
