@@ -1257,42 +1257,44 @@ export default function App() {
       setRadarPerfis(radarData.map(mapPerfil));
     }
 
-    // Carregar conexões persistidas
-    const { data: conexoesData } = await supabase
-      .from("conexoes")
-      .select("user1_id, user2_id")
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
-    if (conexoesData?.length) {
-      const partnerIds = conexoesData.map((c) =>
-        c.user1_id === userId ? c.user2_id : c.user1_id
-      );
-      const { data: partnerProfiles } = await supabase
-        .from("profiles")
-        .select("id, nome, radar_cidade, radar_interesses, avatar_url")
-        .in("id", partnerIds);
-      if (partnerProfiles?.length) {
-        const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
-        setMatches(
-          partnerProfiles.map((p, i) => ({
-            id: p.id,
-            nome: p.nome || "Aluna",
-            ini: (p.nome || "A").slice(0, 2).toUpperCase(),
-            cor: CORES[i % 5],
-            cidade: p.radar_cidade || "",
-            interesses: p.radar_interesses || [],
-            hab: p.radar_interesses || [],
-            bio: p.radar_cidade ? `De ${p.radar_cidade}` : "Membro do Clube do Auge",
-            idade: null,
-            ok: true,
-            compat: Math.floor(70 + Math.random() * 25),
-            msgs: [],
-          }))
-        );
-      }
-    }
     } catch (e) {
       console.error("loadUserData error:", e);
     }
+    // Carregar conexões em paralelo (não bloqueia carregamento principal)
+    supabase
+      .from("conexoes")
+      .select("user1_id, user2_id")
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .then(async ({ data: conexoesData }) => {
+        if (!conexoesData?.length) return;
+        const partnerIds = conexoesData.map((c) =>
+          c.user1_id === userId ? c.user2_id : c.user1_id
+        );
+        const { data: partnerProfiles } = await supabase
+          .from("profiles")
+          .select("id, nome, radar_cidade, radar_interesses, avatar_url")
+          .in("id", partnerIds);
+        if (partnerProfiles?.length) {
+          const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
+          setMatches(
+            partnerProfiles.map((p, i) => ({
+              id: p.id,
+              nome: p.nome || "Aluna",
+              ini: (p.nome || "A").slice(0, 2).toUpperCase(),
+              cor: CORES[i % 5],
+              cidade: p.radar_cidade || "",
+              interesses: p.radar_interesses || [],
+              hab: p.radar_interesses || [],
+              bio: p.radar_cidade ? `De ${p.radar_cidade}` : "Membro do Clube do Auge",
+              idade: null,
+              ok: true,
+              compat: Math.floor(70 + Math.random() * 25),
+              msgs: [],
+            }))
+          );
+        }
+      })
+      .catch((e) => console.warn("conexoes load error:", e));
   };
 
   const formatTempo = (iso) => {
@@ -1536,7 +1538,12 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setAuthUser(session.user);
-        loadUserData(session.user.id).finally(() => setLoadingAuth(false));
+        // Timeout de segurança: nunca fica preso no carregando
+        const loadTimeout = setTimeout(() => setLoadingAuth(false), 8000);
+        loadUserData(session.user.id).finally(() => {
+          clearTimeout(loadTimeout);
+          setLoadingAuth(false);
+        });
       } else {
         setLoadingAuth(false);
       }
