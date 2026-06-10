@@ -3680,20 +3680,23 @@ function Home({
           <button
             onClick={() => ir(S.EM)}
             style={{
+              position: "absolute",
+              top: 14,
+              right: 16,
               background: `${C.blush}22`,
               border: `1px solid ${C.blush}44`,
               borderRadius: 20,
-              padding: "5px 10px",
+              padding: "5px 12px",
               color: C.blush,
               fontFamily: FB,
               fontSize: 10,
               cursor: "pointer",
+              zIndex: 2,
             }}
           >
             SOS
           </button>
         )}
-        {perfil !== "jornada" && <div style={{ width: 40 }} />}
       </div>
 
       <Grain style={{ padding: "18px 18px 24px" }}>
