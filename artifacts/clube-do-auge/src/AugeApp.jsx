@@ -3687,21 +3687,19 @@ function Home({
           <button
             onClick={() => ir(S.EM)}
             style={{
-              position: "absolute",
-              top: 14,
-              right: 16,
+              marginTop: 10,
               background: `${C.blush}22`,
               border: `1px solid ${C.blush}44`,
               borderRadius: 20,
-              padding: "5px 12px",
+              padding: "6px 22px",
               color: C.blush,
               fontFamily: FB,
-              fontSize: 10,
+              fontSize: 11,
               cursor: "pointer",
-              zIndex: 2,
+              letterSpacing: "0.1em",
             }}
           >
-            SOS
+            SOS · Kit de Emergência
           </button>
         )}
       </div>
@@ -3882,9 +3880,7 @@ function Home({
 
         {/* Card de permissão de notificações (Jornada, primeira vez) */}
         {perfil === "jornada" &&
-          notifStatus === "pending" &&
-          "Notification" in window &&
-          Notification.permission !== "denied" && (
+          notifStatus === "pending" && (
             <div
               style={{
                 background: `${C.ouro}0A`,
