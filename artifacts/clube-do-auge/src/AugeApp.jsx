@@ -877,7 +877,11 @@ function Cab({ titulo, voltar, acao }) {
 }
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
-const TODAY = new Date().toISOString().split("T")[0];
+// Data local (evita bug de timezone: toISOString usa UTC, no Brasil pode virar +1 dia)
+function localDateStr(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+const TODAY = localDateStr();
 
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
@@ -1134,7 +1138,7 @@ export default function App() {
       }
       setHist(hist);
       // Sincronizar ckOk com o checkin de hoje vindo do Supabase
-      const hoje = new Date().toISOString().split("T")[0];
+      const hoje = localDateStr();
       if (hist[hoje] && (hist[hoje].feitos > 0 || hist[hoje].retomada)) {
         setCkOk(true);
       }
@@ -7908,7 +7912,7 @@ function Roda({
             const row = {
               user_id: session.user.id,
               momento: mom,
-              data: new Date().toISOString().split("T")[0],
+              data: localDateStr(),
               respostas: rodaR,
               nota_energia: notas["Energia"] ?? null,
               nota_consciencia: notas["Consciência"] ?? null,
@@ -8239,10 +8243,12 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
 
 // ─── CALENDÁRIO ───────────────────────────────────────────────────────────────
 function Calendario({ back, historico, dataCadastro }) {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = hoje.getMonth();
-  const nomeMes = hoje.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+  const hojeReal = new Date();
+  const [offset, setOffset] = useState(0); // 0 = mês atual, -1 = mês anterior, etc.
+  const vizData = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + offset, 1);
+  const ano = vizData.getFullYear();
+  const mes = vizData.getMonth();
+  const nomeMes = vizData.toLocaleString("pt-BR", { month: "long", year: "numeric" });
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
 
@@ -8269,7 +8275,7 @@ function Calendario({ back, historico, dataCadastro }) {
     return dias > 0 ? feitos / dias : 0;
   }) : Array(12).fill(0);
 
-  const todayStr = hoje.toISOString().split("T")[0];
+  const todayStr = localDateStr(hojeReal);
 
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
@@ -8291,8 +8297,12 @@ function Calendario({ back, historico, dataCadastro }) {
           })}
         </div>
 
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 12 }}>
-          {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(255,255,255,.5)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>
+            {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
+          </div>
+          <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? `rgba(255,255,255,.5)` : `rgba(255,255,255,.15)`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 16 }}>
           {["D","S","T","Q","Q","S","S"].map((d, i) => (
