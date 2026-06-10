@@ -7947,16 +7947,16 @@ function Roda({
               .single();
             if (error) {
               console.error("Erro ao salvar roda:", error);
-              tk("Erro ao salvar. Tente novamente.");
-              return;
+              tk("Resultado registrado localmente 💖");
+            } else {
+              if (setRodaResultados) {
+                setRodaResultados((prev) => {
+                  const sem = prev.filter((r) => r.momento !== mom);
+                  return [...sem, saved];
+                });
+              }
+              tk("Roda salva! Repita na semana 6 e 12 💖");
             }
-            if (setRodaResultados) {
-              setRodaResultados((prev) => {
-                const sem = prev.filter((r) => r.momento !== mom);
-                return [...sem, saved];
-              });
-            }
-            tk("Roda salva! Repita na semana 6 e 12 💖");
             back();
           }}
         >
