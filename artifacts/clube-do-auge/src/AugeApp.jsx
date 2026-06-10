@@ -1720,11 +1720,13 @@ export default function App() {
         <Rolar>
           <Diagnostico
             onConcluir={(respostas) => {
-              supabase.auth.getSession().then(({ data: { session } }) => {
-                markDiagOk(session?.user?.id);
-                if (!session?.user) return;
+              // Marcar diagOk imediatamente (síncrono) com authUser já disponível
+              markDiagOk(authUser?.id);
+              // Salvar respostas no Supabase em background
+              const uid = authUser?.id;
+              if (uid) {
                 supabase.from("diagnostico").upsert({
-                  user_id: session.user.id,
+                  user_id: uid,
                   p1: respostas[1] || null,
                   p2: respostas[2] || null,
                   p3: respostas[3] || null,
@@ -1736,7 +1738,7 @@ export default function App() {
                   p9: respostas[9] || null,
                   p10: respostas[10] || null,
                 }, { onConflict: "user_id" }).then(() => {});
-              });
+              }
               // Após diagnóstico → setup de hábitos se ainda não definidos
               if (habAngulares.length === 0) ir(S.HABSETUP);
               else ir(S.HOME);
