@@ -4885,15 +4885,7 @@ function Novo({ back, postTreino }) {
   const [publica, setPublica] = useState(true);
   const ref = useRef();
   const ok = tit.trim().length > 0;
-  const SUGESTOES = [
-    "Sentei pra ler 15 min em vez de ficar no celular",
-    "Almocei sentada, sem pressa",
-    "Voltei depois de dias parada",
-    "Fiz algo só pra mim hoje, sem culpa",
-    "Bebi água antes do café da manhã",
-    "Dormi antes da meia-noite",
-    "Outros",
-  ];
+  const SUGESTOES = [];
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
       <Cab titulo="Compartilhar no Mural" voltar={back} />
@@ -4931,37 +4923,7 @@ function Novo({ back, postTreino }) {
             marginBottom: 12,
           }}
         />
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 7,
-            marginBottom: 18,
-          }}
-        >
-          {SUGESTOES.map((s) => (
-            <button
-              key={s}
-              onClick={() => s === "Outros" ? setTit("") : setTit(s)}
-              style={{
-                background: s === "Outros"
-                  ? `rgba(255,255,255,.04)`
-                  : tit === s ? `${C.ouro}18` : `rgba(255,255,255,.04)`,
-                color: s === "Outros" ? `rgba(255,255,255,.55)` : tit === s ? C.ouro : `rgba(255,255,255,.45)`,
-                border: `1px solid ${s !== "Outros" && tit === s ? C.ouro + "40" : C.ouro + "12"}`,
-                borderRadius: 50,
-                padding: "7px 13px",
-                fontSize: 12,
-                fontFamily: FB,
-                fontWeight: 300,
-                cursor: "pointer",
-                fontStyle: s === "Outros" ? "normal" : "italic",
-              }}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+
         <div
           style={{
             fontFamily: FB,
