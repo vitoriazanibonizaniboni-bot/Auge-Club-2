@@ -7277,20 +7277,6 @@ function Jornada({
           </div>
         </div>
 
-        {/* Tagline */}
-        <div
-          style={{
-            fontFamily: FS,
-            fontStyle: "italic",
-            fontSize: 11,
-            color: `rgba(255,255,255,.35)`,
-            marginBottom: 18,
-            letterSpacing: "0.05em",
-          }}
-        >
-          Pequeno, repetido e infinito. Qualquer cor é uma vitória.
-        </div>
-
         {/* Medalhas */}
         <div
           style={{
@@ -8343,6 +8329,9 @@ function Calendario({ back, historico, dataCadastro }) {
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.88)` }}>{l}</div>
             </div>
           ))}
+        </div>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 11, color: `rgba(255,255,255,.35)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
+          Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
       </Grain>
     </div>
