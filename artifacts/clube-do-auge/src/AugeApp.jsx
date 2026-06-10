@@ -7286,75 +7286,15 @@ function Jornada({
           </div>
         </div>
 
-        {/* Calendário semanal */}
+        {/* Tagline */}
         <div
           style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 9,
-            color: `rgba(255,255,255,.88)`,
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            marginBottom: 8,
-          }}
-        >
-          Esta semana
-        </div>
-        <div style={{ display: "flex", gap: 5, marginBottom: 6 }}>
-          {SEMANA.map((d, i) => {
-            const dia = hist[`day${i}`] || {
-              feitos: 0,
-              total: 1,
-              retomada: false,
-            };
-            const cor = dia.retomada
-              ? C.blush
-              : dia.feitos === dia.total && dia.total > 0
-                ? C.ouro
-                : dia.feitos > 0
-                  ? C.ouroLt
-                  : "transparent";
-            return (
-              <div
-                key={i}
-                style={{
-                  flex: 1,
-                  aspectRatio: "1",
-                  borderRadius: 6,
-                  background: cor,
-                  border: `1px solid ${cor === "transparent" ? C.ouro + "12" : cor}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 9,
-                    color:
-                      cor === C.ouro
-                        ? C.obs
-                        : cor === C.ouroLt
-                          ? C.obs2
-                          : `rgba(255,255,255,.45)`,
-                  }}
-                >
-                  {d}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div
-          style={{
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 10,
-            color: `rgba(255,255,255,.45)`,
+            fontFamily: FS,
+            fontStyle: "italic",
+            fontSize: 11,
+            color: `rgba(255,255,255,.35)`,
             marginBottom: 18,
-            lineHeight: 1.5,
+            letterSpacing: "0.05em",
           }}
         >
           Pequeno, repetido e infinito. Qualquer cor é uma vitória.
