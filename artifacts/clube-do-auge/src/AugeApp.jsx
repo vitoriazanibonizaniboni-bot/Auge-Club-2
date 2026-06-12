@@ -10,7 +10,7 @@ const C = {
   obs: "#1C1A17",
   obs2: "#2E2825",
   mid: "#5A4B43",
-  lt: "#9C8880",
+  lt: "#B7A89F",
   ouro: "#C4A882",
   ouroDk: "#A8865A",
   ouroLt: "#EAD8B8",
@@ -91,48 +91,6 @@ const HAB = {
     { id: 6, t: "Respeitei meu horário de dormir" },
   ],
 };
-
-const PERFIS_CX = [
-  {
-    id: 1,
-    nome: "Mariana Costa",
-    ini: "MC",
-    cor: "#8B4A6B",
-    idade: 52,
-    cidade: "São Paulo",
-    bio: "Pilates e caminhada. Busco parceira de manhã!",
-    hab: ["Pilates", "Caminhada"],
-    ok: true,
-    compat: 92,
-    msgs: [],
-  },
-  {
-    id: 2,
-    nome: "Cecília Alves",
-    ini: "CA",
-    cor: "#3A6B5C",
-    idade: 60,
-    cidade: "Curitiba",
-    bio: "Musculação 4x semana. Energia total!",
-    hab: ["Musculação", "Funcional"],
-    ok: true,
-    compat: 85,
-    msgs: [],
-  },
-  {
-    id: 3,
-    nome: "Lúcia Mendes",
-    ini: "LM",
-    cor: "#5C4A8B",
-    idade: 56,
-    cidade: "Florianópolis",
-    bio: "Amo nadar e estar perto do mar.",
-    hab: ["Natação", "Caminhada"],
-    ok: false,
-    compat: 78,
-    msgs: [],
-  },
-];
 
 const FEED0 = [];
 
@@ -440,12 +398,12 @@ const DIAG_Q = [
 ];
 
 const MEDALHAS = [
-  { id: "momentum", icon: "🥇", nome: "Largada de Momentum", cor: C.ouro },
-  { id: "retomada", icon: "🛡️", nome: "Mestre da Retomada", cor: C.ouroDk },
+  { id: "momentum", icon: "🥇", nome: "Constância em Movimento", cor: C.ouro },
+  { id: "retomada", icon: "💛", nome: "A Mulher que Volta", cor: C.ouroDk },
   {
     id: "protagonista",
     icon: "👑",
-    nome: "Protagonista Consistente",
+    nome: "Protagonista da Longevidade",
     cor: C.ouroLt,
   },
 ];
@@ -1025,6 +983,19 @@ export default function App() {
 
   // ── Carrega todos os dados da aluna do Supabase após autenticação ────────────
   const loadUserData = async (userId) => {
+    // Interesses da própria aluna — usados para calcular compatibilidade real
+    let meusInteresses = [];
+    // Compatibilidade real por interesses em comum (Jaccard).
+    // Sem dados dos dois lados, retorna null e o % não é exibido.
+    const calcCompat = (outrosInteresses) => {
+      const outros = outrosInteresses || [];
+      if (!meusInteresses.length || !outros.length) return null;
+      const shared = meusInteresses.filter((x) => outros.includes(x)).length;
+      const total = new Set([...meusInteresses, ...outros]).size;
+      const jaccard = shared / total;
+      // Escala: 0 interesses em comum = 45%, 100% em comum = 99%
+      return Math.round(45 + jaccard * 54);
+    };
     try {
     // Supabase é a fonte de verdade — resetar estado local antes de popular
     setHist({});
@@ -1084,6 +1055,7 @@ export default function App() {
 
     if (profileRes.data) {
       const p = profileRes.data;
+      meusInteresses = p.radar_interesses || [];
       setPerfil(p.plano || "jornada");
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
@@ -1278,16 +1250,6 @@ export default function App() {
     const { data: radarData } = await supabase.rpc("get_radar_profiles", { uid: userId });
     if (radarData?.length) {
       const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
-      const meusInteresses = profileRes.data?.radar_interesses || [];
-      const calcCompat = (outrosInteresses) => {
-        const outros = outrosInteresses || [];
-        if (!meusInteresses.length || !outros.length) return 65;
-        const shared = meusInteresses.filter((x) => outros.includes(x)).length;
-        const total = new Set([...meusInteresses, ...outros]).size;
-        const jaccard = shared / total;
-        // Escala: 0 interesses em comum = 45%, 100% em comum = 99%
-        return Math.round(45 + jaccard * 54);
-      };
       const mapPerfil = (p, i) => ({
         id: p.id,
         nome: p.nome || "Aluna",
@@ -1297,33 +1259,38 @@ export default function App() {
         interesses: p.interesses || [],
         hab: p.interesses || [],
         bio: p.cidade ? `De ${p.cidade}` : "Membro do Clube do Auge",
-        idade: null,
         avatar_url: p.avatar_url || null,
-        ok: true,
         compat: calcCompat(p.interesses),
         msgs: [],
       });
-      setRadarPerfis(radarData.map(mapPerfil).sort((a, b) => b.compat - a.compat));
+      setRadarPerfis(
+        radarData.map(mapPerfil).sort((a, b) => (b.compat ?? 0) - (a.compat ?? 0))
+      );
     }
 
     } catch (e) {
       console.error("loadUserData error:", e);
     }
     const CORES_CX = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
-    const mapAmiga = (p, i) => ({
-      id: p.id,
-      nome: p.nome || "Aluna",
-      ini: (p.nome || "A").slice(0, 2).toUpperCase(),
-      cor: CORES_CX[i % 5],
-      cidade: p.cidade || "",
-      interesses: p.interesses || [],
-      hab: p.interesses || [],
-      bio: p.cidade ? `De ${p.cidade}` : "Membro do Clube do Auge",
-      idade: null,
-      ok: true,
-      compat: Math.floor(70 + Math.random() * 25),
-      msgs: [],
-    });
+    // As RPCs de conexões retornam a linha completa de profiles
+    // (radar_cidade / radar_interesses); o radar retorna com alias.
+    const mapAmiga = (p, i) => {
+      const cidade = p.radar_cidade || p.cidade || "";
+      const interesses = p.radar_interesses || p.interesses || [];
+      return {
+        id: p.id,
+        nome: p.nome || "Aluna",
+        ini: (p.nome || "A").slice(0, 2).toUpperCase(),
+        cor: CORES_CX[i % 5],
+        cidade,
+        interesses,
+        hab: interesses,
+        bio: cidade ? `De ${cidade}` : "Membro do Clube do Auge",
+        avatar_url: p.avatar_url || null,
+        compat: calcCompat(interesses),
+        msgs: [],
+      };
+    };
 
     // Conexões aceitas via RPC (bypassa RLS de profiles)
     supabase
@@ -1332,6 +1299,21 @@ export default function App() {
         if (error) { console.warn("conexoes load error:", error); return; }
         if (!partnerProfiles?.length) return;
         setMatches(partnerProfiles.map(mapAmiga));
+        // Notificação amigável de conexões novas desde o último acesso
+        try {
+          const key = `auge_matches_${userId}`;
+          const conhecidas = JSON.parse(localStorage.getItem(key) || "[]");
+          const novas = partnerProfiles.filter((p) => !conhecidas.includes(p.id));
+          if (conhecidas.length && novas.length) {
+            const nome = novas[0].nome ? novas[0].nome.split(" ")[0] : "Uma amiga";
+            tk(
+              novas.length === 1
+                ? `💛 Nova conexão: ${nome}! Vocês já podem trocar mensagens.`
+                : `💛 Você tem ${novas.length} novas conexões!`
+            );
+          }
+          localStorage.setItem(key, JSON.stringify(partnerProfiles.map((p) => p.id)));
+        } catch {}
       });
 
     // Solicitações de conexão recebidas (pendentes) via RPC
@@ -1656,6 +1638,47 @@ export default function App() {
         (payload) => {
           const de = payload.new.de_user_id;
           setNaoLidas((n) => ({ ...n, [de]: (n[de] || 0) + 1 }));
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "conexoes",
+          filter: `solicitante_id=eq.${authUser.id}`,
+        },
+        (payload) => {
+          // Amiga aceitou o pedido → notificação amigável + atualiza conexões
+          if (payload.new?.status !== "aceita") return;
+          supabase
+            .rpc("get_conexoes_profiles", { uid: authUser.id })
+            .then(({ data }) => {
+              if (!data?.length) return;
+              const nova = data.find((p) => p.id === payload.new.destinataria_id);
+              const nome = nova?.nome ? nova.nome.split(" ")[0] : "Uma amiga";
+              tk(`💛 ${nome} aceitou seu pedido — vocês estão conectadas!`);
+              const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
+              setMatches(
+                data.map((p, i) => {
+                  const cidade = p.radar_cidade || "";
+                  const interesses = p.radar_interesses || [];
+                  return {
+                    id: p.id,
+                    nome: p.nome || "Aluna",
+                    ini: (p.nome || "A").slice(0, 2).toUpperCase(),
+                    cor: CORES[i % 5],
+                    cidade,
+                    interesses,
+                    hab: interesses,
+                    bio: cidade ? `De ${cidade}` : "Membro do Clube do Auge",
+                    avatar_url: p.avatar_url || null,
+                    compat: null,
+                    msgs: [],
+                  };
+                })
+              );
+            });
         }
       )
       .subscribe();
@@ -2263,7 +2286,7 @@ function AvisoLegal({ onAceitar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
-            color: `rgba(255,255,255,.65)`,
+            color: `rgba(255,255,255,.8)`,
             lineHeight: 1.5,
           }}
         >
@@ -2282,7 +2305,7 @@ function AvisoLegal({ onAceitar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.65)`,
+            color: `rgba(255,255,255,.8)`,
             textAlign: "center",
             marginTop: 10,
           }}
@@ -2360,7 +2383,7 @@ function Onboarding({ onConcluir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.65)`,
+            color: `rgba(255,255,255,.8)`,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -2395,7 +2418,7 @@ function Onboarding({ onConcluir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.65)`,
+            color: `rgba(255,255,255,.8)`,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -2433,7 +2456,7 @@ function Onboarding({ onConcluir }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 13,
-          color: `rgba(255,255,255,.55)`,
+          color: `rgba(255,255,255,.78)`,
           marginTop: 20,
           textAlign: "center",
           lineHeight: 1.7,
@@ -2547,7 +2570,7 @@ function ModalTermos({ onAceitar, onFechar }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.55)`,
+                color: `rgba(255,255,255,.78)`,
                 letterSpacing: "0.15em",
               }}
             >
@@ -2715,7 +2738,7 @@ function TelaAuth({ onAuth }) {
     fontFamily: FB,
     fontWeight: 300,
     fontSize: 14,
-    color: `rgba(255,255,255,.65)`,
+    color: `rgba(255,255,255,.8)`,
     marginBottom: 7,
   };
 
@@ -2895,7 +2918,7 @@ function TelaAuth({ onAuth }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.8)`,
                 lineHeight: 1.7,
               }}
             >
@@ -3005,7 +3028,7 @@ function TelaAuth({ onAuth }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 14,
-              color: `rgba(255,255,255,.65)`,
+              color: `rgba(255,255,255,.8)`,
               lineHeight: 1.6,
             }}
           >
@@ -3313,7 +3336,7 @@ function Diagnostico({ onConcluir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.65)`,
+            color: `rgba(255,255,255,.8)`,
             textAlign: "center",
             marginTop: "1.5rem",
             lineHeight: 1.6,
@@ -3612,7 +3635,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.65)`,
+            color: `rgba(255,255,255,.8)`,
             marginTop: 2,
           }}
         >
@@ -3934,7 +3957,7 @@ function Home({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.8)`,
                 lineHeight: 1.5,
                 marginBottom: 12,
               }}
@@ -4044,7 +4067,7 @@ function Home({
                   style={{
                     background: "none",
                     border: "none",
-                    color: `rgba(255,255,255,.65)`,
+                    color: `rgba(255,255,255,.8)`,
                     fontSize: 16,
                     cursor: "pointer",
                     lineHeight: 1,
@@ -4059,7 +4082,7 @@ function Home({
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 14,
-                  color: `rgba(255,255,255,.65)`,
+                  color: `rgba(255,255,255,.8)`,
                   lineHeight: 1.6,
                   marginBottom: 10,
                 }}
@@ -4233,7 +4256,7 @@ function Home({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.7)`,
+                color: `rgba(255,255,255,.82)`,
                 marginBottom: 18,
               }}
             >
@@ -4537,7 +4560,7 @@ function Home({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 14,
-            color: `rgba(255,255,255,.65)`,
+            color: `rgba(255,255,255,.8)`,
             cursor: "pointer",
             letterSpacing: "0.06em",
             display: "flex",
@@ -4929,7 +4952,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                       <span
                         style={{
                           fontSize: 12,
-                          color: `rgba(255,255,255,.55)`,
+                          color: `rgba(255,255,255,.78)`,
                           marginLeft: 4,
                         }}
                       >
@@ -4964,7 +4987,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                         border: "none",
                         cursor: "pointer",
                         fontSize: 16,
-                        color: `rgba(255,255,255,.55)`,
+                        color: `rgba(255,255,255,.78)`,
                         padding: "5px 8px",
                         display: "flex",
                         alignItems: "center",
@@ -5128,7 +5151,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                         fontFamily: FB,
                         fontWeight: 300,
                         fontSize: 13,
-                        color: `rgba(255,255,255,.72)`,
+                        color: `rgba(255,255,255,.82)`,
                       }}
                     >
                       {dp.tempo}
@@ -5219,7 +5242,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                     {dcu ? "💛 Me identifico" : "💛 Te entendo"}
                     {dp.cur.length > 0 && (
                       <span
-                        style={{ fontSize: 13, color: `rgba(255,255,255,.68)` }}
+                        style={{ fontSize: 13, color: `rgba(255,255,255,.82)` }}
                       >
                         {dp.cur.length} se identificaram
                       </span>
@@ -5539,7 +5562,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: `rgba(255,255,255,.65)`,
+                  color: `rgba(255,255,255,.8)`,
                   marginTop: 2,
                 }}
               >
@@ -5574,7 +5597,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: `rgba(255,255,255,.65)`,
+                  color: `rgba(255,255,255,.8)`,
                   marginTop: 2,
                 }}
               >
@@ -5673,7 +5696,7 @@ function Voz({ back, postTreino, tk }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 15,
-                  color: `rgba(255,255,255,.65)`,
+                  color: `rgba(255,255,255,.8)`,
                   marginBottom: 12,
                   lineHeight: 1.6,
                 }}
@@ -6180,7 +6203,7 @@ function Cx({
                     height: 34,
                     fontFamily: FB,
                     fontSize: 15,
-                    color: `rgba(255,255,255,.72)`,
+                    color: `rgba(255,255,255,.82)`,
                     cursor: "pointer",
                     flexShrink: 0,
                   }}
@@ -6228,13 +6251,13 @@ function Cx({
                 >
                   {p.ini}
                 </div>
-                {p.ok && (
+                {p.compat != null && (
                   <div
                     style={{
                       position: "absolute",
                       top: 12,
-                      right: 12,
-                      background: `rgba(15,110,86,.8)`,
+                      left: 12,
+                      background: `rgba(0,0,0,.5)`,
                       borderRadius: 20,
                       padding: "4px 10px",
                     }}
@@ -6242,26 +6265,10 @@ function Cx({
                     <span
                       style={{ color: C.branco, fontSize: 13, fontWeight: 500 }}
                     >
-                      ✓ Verificada
+                      💛 {p.compat}% em comum
                     </span>
                   </div>
                 )}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    left: 12,
-                    background: `rgba(0,0,0,.5)`,
-                    borderRadius: 20,
-                    padding: "4px 10px",
-                  }}
-                >
-                  <span
-                    style={{ color: C.branco, fontSize: 13, fontWeight: 500 }}
-                  >
-                    💛 {p.compat}%
-                  </span>
-                </div>
                 <div
                   style={{
                     position: "absolute",
@@ -6291,7 +6298,7 @@ function Cx({
                       fontWeight: 300,
                     }}
                   >
-                    {p.idade ? `${p.idade} anos · ` : ''}{p.cidade}
+                    {p.cidade}
                   </div>
                 </div>
               </div>
@@ -6338,7 +6345,7 @@ function Cx({
                   borderRadius: 50,
                   background: `rgba(255,255,255,.04)`,
                   border: `1px solid ${C.ouro}18`,
-                  color: `rgba(255,255,255,.65)`,
+                  color: `rgba(255,255,255,.8)`,
                   fontSize: 16,
                   fontFamily: FB,
                   fontWeight: 300,
@@ -6422,7 +6429,7 @@ function Cx({
                 key={m.id}
                 onClick={() => {
                   setSelM(m);
-                  ir(S.MATCH);
+                  ir(S.CHAT);
                 }}
                 style={{
                   background: `rgba(255,255,255,.04)`,
@@ -6482,7 +6489,7 @@ function Cx({
                     {naoLidas[m.id]}
                   </div>
                 )}
-                <span style={{ color: `rgba(255,255,255,.65)`, fontSize: 17 }}>
+                <span style={{ color: `rgba(255,255,255,.8)`, fontSize: 17 }}>
                   ›
                 </span>
               </div>
@@ -6554,31 +6561,17 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
         >
           {m.nome}
         </div>
-        <div
-          style={{
-            color: `rgba(255,255,255,.88)`,
-            fontSize: 15,
-            fontFamily: FB,
-            fontWeight: 300,
-            marginTop: 3,
-          }}
-        >
-          {m.idade} anos · {m.cidade}
-        </div>
-        {m.ok && (
+        {m.cidade && (
           <div
             style={{
-              display: "inline-block",
-              background: `rgba(255,255,255,.15)`,
-              borderRadius: 20,
-              padding: "4px 13px",
-              marginTop: 10,
-              color: C.branco,
-              fontSize: 13,
+              color: `rgba(255,255,255,.88)`,
+              fontSize: 15,
               fontFamily: FB,
+              fontWeight: 300,
+              marginTop: 3,
             }}
           >
-            ✓ Verificada
+            {m.cidade}
           </div>
         )}
       </div>
@@ -6777,7 +6770,9 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
               color: `rgba(255,255,255,.88)`,
             }}
           >
-            {m.compat}% compatível · {m.cidade}
+            {[m.compat != null ? `${m.compat}% em comum` : null, m.cidade]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
         </div>
       </div>
@@ -6813,7 +6808,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
           const eu = msg.de === "RF";
           return (
             <div
-              key={i}
+              key={msg.id || i}
               style={{
                 display: "flex",
                 justifyContent: eu ? "flex-end" : "flex-start",
@@ -6822,6 +6817,35 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
               }}
             >
               {!eu && <Av ini={m.ini} cor={m.cor} sz={26} />}
+              {eu && msg.id && (
+                <button
+                  onClick={() => {
+                    if (!window.confirm("Apagar esta mensagem?")) return;
+                    supabase
+                      .from("mensagens")
+                      .delete()
+                      .eq("id", msg.id)
+                      .then(({ error }) => {
+                        if (!error) {
+                          setMsgs((prev) => prev.filter((x) => x.id !== msg.id));
+                        }
+                      });
+                  }}
+                  aria-label="Apagar mensagem"
+                  title="Apagar mensagem"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: `rgba(255,255,255,.7)`,
+                    fontSize: 15,
+                    padding: "4px 6px",
+                    flexShrink: 0,
+                  }}
+                >
+                  🗑️
+                </button>
+              )}
               <div
                 style={{
                   maxWidth: "73%",
@@ -6849,7 +6873,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 11,
-                    color: `rgba(255,255,255,.65)`,
+                    color: `rgba(255,255,255,.8)`,
                     marginTop: 3,
                   }}
                 >
@@ -7253,7 +7277,7 @@ function JornadaClube({ ir }) {
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 15,
-                      color: `rgba(255,255,255,.65)`,
+                      color: `rgba(255,255,255,.8)`,
                     }}
                   >
                     {h}
@@ -7318,7 +7342,7 @@ function JornadaClube({ ir }) {
                   borderRadius: 10,
                   padding: "14px 0",
                   cursor: "pointer",
-                  color: `rgba(255,255,255,.55)`,
+                  color: `rgba(255,255,255,.78)`,
                   fontFamily: FB,
                   fontSize: 14,
                   letterSpacing: "0.2em",
@@ -7346,7 +7370,7 @@ function JornadaClube({ ir }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.65)`,
+              color: `rgba(255,255,255,.8)`,
               lineHeight: 1.5,
             }}
           >
@@ -7409,7 +7433,7 @@ function JornadaClube({ ir }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 14,
-                    color: `rgba(255,255,255,.62)`,
+                    color: `rgba(255,255,255,.8)`,
                     lineHeight: 1.5,
                   }}
                 >
@@ -7437,7 +7461,7 @@ function JornadaClube({ ir }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.55)`,
+                color: `rgba(255,255,255,.78)`,
                 letterSpacing: "0.04em",
               }}
             >
@@ -7509,7 +7533,7 @@ function JornadaClube({ ir }) {
                     fontFamily: FS,
                     fontStyle: "italic",
                     fontSize: 15,
-                    color: `rgba(255,255,255,.55)`,
+                    color: `rgba(255,255,255,.78)`,
                     textAlign: "center",
                   }}
                 >
@@ -7573,7 +7597,7 @@ function JornadaClube({ ir }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.55)`,
+                color: `rgba(255,255,255,.78)`,
                 textAlign: "center",
               }}
             >
@@ -8504,7 +8528,7 @@ function Roda({
                     fontSize: 13,
                     letterSpacing: "0.2em",
                     textTransform: "uppercase",
-                    color: `rgba(255,255,255,.65)`,
+                    color: `rgba(255,255,255,.8)`,
                   }}
                 >
                   {d}
@@ -8717,7 +8741,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 15,
-                  color: `rgba(255,255,255,.65)`,
+                  color: `rgba(255,255,255,.8)`,
                   lineHeight: 1.5,
                 }}
               >
@@ -8935,7 +8959,7 @@ function Calendario({ back, historico, dataCadastro }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(255,255,255,.68)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(255,255,255,.82)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>
             {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
           </div>
@@ -8977,7 +9001,7 @@ function Calendario({ back, historico, dataCadastro }) {
             </div>
           ))}
         </div>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: `rgba(255,255,255,.62)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: `rgba(255,255,255,.8)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
           Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
       </Grain>
@@ -9284,7 +9308,7 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3],
                 ].map(([q, v], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: `rgba(255,255,255,.65)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: `rgba(255,255,255,.8)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
                     <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FS, fontSize: 17, color: `rgba(255,255,255,.92)`, lineHeight: 1.6 }}>
                       {v}
                     </div>
@@ -9666,7 +9690,7 @@ function Emergencia({
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 15,
-                  color: `rgba(255,255,255,.65)`,
+                  color: `rgba(255,255,255,.8)`,
                   lineHeight: 1.7,
                 }}
               >
@@ -9697,7 +9721,7 @@ function Emergencia({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.8)`,
                 marginBottom: 10,
                 lineHeight: 1.6,
               }}
@@ -9771,7 +9795,7 @@ function Emergencia({
                 width: "100%",
                 background: "none",
                 border: "none",
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.8)`,
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
@@ -10285,7 +10309,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: bloqVideo ? 18 : 22,
-                color: `rgba(255,255,255,.7)`,
+                color: `rgba(255,255,255,.82)`,
               }}
             >
               {bloqVideo ? "🔒" : "▶"}
@@ -10493,7 +10517,7 @@ function PainelMentora({ ir }) {
                   ["Descrição (opcional)", "descricao", "Breve descrição da aula"],
                 ].map(([lb, field, ph]) => (
                   <div key={field} style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.68)`, marginBottom: 5 }}>{lb}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, marginBottom: 5 }}>{lb}</div>
                     <input
                       value={formV[field]}
                       onChange={(e) => setFormV((f) => ({ ...f, [field]: e.target.value }))}
@@ -10503,7 +10527,7 @@ function PainelMentora({ ir }) {
                   </div>
                 ))}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.68)`, marginBottom: 5 }}>Categoria</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, marginBottom: 5 }}>Categoria</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {CATS_ADMIN.map((cat) => (
                       <button key={cat.id} onClick={() => setFormV((f) => ({ ...f, categoria: cat.id }))}
@@ -10521,9 +10545,9 @@ function PainelMentora({ ir }) {
 
             {/* Lista de vídeos */}
             {loadingV ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : videos.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
             ) : videos.map((v) => (
               <div key={v.id} style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
                 {v.youtube_id && (
@@ -10531,9 +10555,9 @@ function PainelMentora({ ir }) {
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.92)`, marginBottom: 3 }}>{v.titulo}</div>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.65)` }}>{v.categoria} · {v.duracao}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.8)` }}>{v.categoria} · {v.duracao}</div>
                 </div>
-                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(255,255,255,.55)`, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
+                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(255,255,255,.78)`, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
               </div>
             ))}
           </div>
@@ -10550,7 +10574,7 @@ function PainelMentora({ ir }) {
               ["Link do Zoom", "zoom", "https://zoom.us/j/..."],
             ].map(([lb, field, ph]) => (
               <div key={field} style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.68)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
                 <input
                   value={ment[field]}
                   onChange={(e) => setMent((m) => ({ ...m, [field]: e.target.value }))}
@@ -10570,9 +10594,9 @@ function PainelMentora({ ir }) {
           <div>
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)`, marginBottom: 16 }}>Alunas ativas</div>
             {loadingA ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : alunas.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
             ) : alunas.map((a) => {
               const dias = diasSemCk(a.ultimoCk);
               const statusCor = dias === null ? `rgba(255,255,255,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
@@ -10583,7 +10607,7 @@ function PainelMentora({ ir }) {
                     <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 16, color: `rgba(255,255,255,.92)` }}>{a.nome || "—"}</div>
                     <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: statusCor }}>{statusTxt}</div>
                   </div>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.65)` }}>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.8)` }}>
                     {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
                   </div>
                 </div>
@@ -10714,7 +10738,7 @@ function Perfil({
             padding: "3px 0", letterSpacing: "0.05em",
           }}>📷</div>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.65)`, marginBottom: 8 }}>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.8)`, marginBottom: 8 }}>
           Toque para alterar foto
         </div>
         <div
@@ -10873,7 +10897,7 @@ function Perfil({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.8)`,
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
                 marginBottom: 6,
@@ -10903,7 +10927,7 @@ function Perfil({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.65)`,
+                color: `rgba(255,255,255,.8)`,
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
                 marginBottom: 6,
@@ -11059,7 +11083,7 @@ function Perfil({
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.65)`,
+              color: `rgba(255,255,255,.8)`,
               lineHeight: 1.6,
             }}
           >
