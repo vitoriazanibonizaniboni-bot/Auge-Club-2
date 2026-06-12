@@ -61,8 +61,8 @@ const ABA_ORIGEM = {
   [S.NOVO]: S.FEED,
   [S.VOZ]: S.FEED,
   [S.CX]: S.FEED,
-  [S.MATCH]: S.FEED,
-  [S.CHAT]: S.FEED,
+  [S.MATCH]: S.CX,
+  [S.CHAT]: S.CX,
   [S.JOR]: S.JOR,
   [S.RODA]: S.JOR,
   [S.RET]: S.JOR,
@@ -799,7 +799,7 @@ function BtnOut({ children, onClick, style = {} }) {
     </button>
   );
 }
-function Cab({ titulo, voltar, acao }) {
+function Cab({ titulo, voltar, acao, destino }) {
   return (
     <div
       style={{
@@ -827,7 +827,7 @@ function Cab({ titulo, voltar, acao }) {
             whiteSpace: "nowrap",
           }}
         >
-          ← Voltar
+          ← {destino || "Voltar"}
         </button>
       ) : (
         <div style={{ width: 84 }} />
@@ -2032,7 +2032,10 @@ function Estilos() {
 
 // ─── NAV BAR ──────────────────────────────────────────────────────────────────
 function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
-  const aba = ABA_ORIGEM[tela] || S.HOME;
+  let aba = ABA_ORIGEM[tela] || S.HOME;
+  if (![S.HOME, S.FEED, S.JOR, S.CT, S.PF].includes(aba)) {
+    aba = ABA_ORIGEM[aba] || S.HOME;
+  }
   const tabs = [
     { id: S.HOME, label: "Início", icon: Ico.home },
     { id: S.FEED, label: "Mural", icon: Ico.feed, badge: !ckOk ? 1 : 0, msgCount },
@@ -4268,7 +4271,7 @@ function Home({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  ✏️ Editar
+                  Editar
                 </button>
               </div>
             )}
@@ -5439,7 +5442,7 @@ function Novo({ back, postTreino }) {
   const SUGESTOES = [];
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Compartilhar no Mural" voltar={back} />
+      <Cab titulo="Compartilhar no Mural" voltar={back} destino="Mural" />
       <Grain style={{ padding: "20px 20px 36px" }}>
         <div
           style={{
@@ -5757,7 +5760,7 @@ function Voz({ back, postTreino, tk }) {
   const [publica, setPublica] = useState(true);
   return (
     <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Registrar por voz" voltar={back} />
+      <Cab titulo="Registrar por voz" voltar={back} destino="Mural" />
       <div style={{ padding: "28px 22px" }}>
         {fase === "idle" && (
           <div style={{ textAlign: "center" }}>
@@ -6187,7 +6190,7 @@ function Cx({
   };
   return (
     <div style={{ animation: "fadeUp .35s ease" }}>
-      <Cab titulo="Conexões" voltar={back} />
+      <Cab titulo="Conexões" voltar={back} destino="Mural" />
       <Grain style={{ padding: "18px 16px 8px" }}>
         <div
           style={{
@@ -6845,7 +6848,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
             flexShrink: 0,
           }}
         >
-          ← Voltar
+          ← Conexões
         </button>
         <Av ini={m.ini} cor={m.cor} sz={36} src={m.avatar_url} />
         <div>
@@ -8287,7 +8290,7 @@ function Roda({
   if (fase === "intro")
     return (
       <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
-        <Cab titulo="Roda AUGE" voltar={back} />
+        <Cab titulo="Roda AUGE" voltar={back} destino="Jornada" />
         <div style={{ padding: "24px 20px 36px", textAlign: "center" }}>
           <Logo width={130} fundo="escuro" />
           <div
@@ -8535,7 +8538,7 @@ function Roda({
       : null;
   return (
     <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Resultado" voltar={back} />
+      <Cab titulo="Resultado" voltar={back} destino="Jornada" />
       <div style={{ padding: "1.5rem 1.25rem" }}>
         <div
           style={{
@@ -8763,7 +8766,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
   };
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Protocolo de Retomada" voltar={back} />
+      <Cab titulo="Protocolo de Retomada" voltar={back} destino="Jornada" />
       <Grain style={{ padding: "20px 20px 36px" }}>
         <div
           style={{
@@ -9037,7 +9040,7 @@ function Calendario({ back, historico, dataCadastro }) {
 
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Meu progresso" voltar={back} />
+      <Cab titulo="Meu progresso" voltar={back} destino="Início" />
       <Grain style={{ padding: "18px 18px 32px" }}>
         <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 12 }}>
           As 12 semanas
@@ -9150,7 +9153,7 @@ function Escritas({
   };
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Espaços de escrita" voltar={back} />
+      <Cab titulo="Espaços de escrita" voltar={back} destino="Jornada" />
       <Grain style={{ padding: "0 18px 24px" }}>
         <div
           style={{
