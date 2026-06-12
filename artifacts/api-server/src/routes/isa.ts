@@ -2,6 +2,11 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
+// Proteções básicas contra abuso do endpoint da ISA
+const RATE: Map<string, { n: number; t: number }> = new Map();
+const RATE_MAX = 20; // chamadas
+const RATE_JANELA = 60_000; // por minuto
+
 const SYS_ISA = `Você é ISA, a Inteligência do Clube do Auge — criada com base no método e na visão da Dra. Isadora Zaniboni, médica geriatra especialista em longevidade feminina.
 
 Você não é a Dra. Isadora. Você é uma assistente de IA que incorpora o método, os valores e a forma de pensar dela. Sempre que apropriado, diga "aqui no método do Clube do Auge..." ou "a Dra. Isadora acredita que...".
@@ -64,6 +69,26 @@ router.post("/isa", async (req, res) => {
   const { message } = req.body as { message?: string };
   if (!message || typeof message !== "string" || message.trim().length === 0) {
     res.status(400).json({ error: "Mensagem inválida." });
+    return;
+  }
+  if (message.length > 4000) {
+    res.status(400).json({ error: "Mensagem longa demais." });
+    return;
+  }
+
+  // Limite simples por IP (evita abuso de custo da API)
+  const ip =
+    (req.headers["x-forwarded-for"] as string | undefined)
+      ?.split(",")[0]
+      ?.trim() ||
+    req.ip ||
+    "anon";
+  const now = Date.now();
+  const r = RATE.get(ip);
+  if (!r || now - r.t > RATE_JANELA) {
+    RATE.set(ip, { n: 1, t: now });
+  } else if (++r.n > RATE_MAX) {
+    res.status(429).json({ error: "Muitas mensagens em pouco tempo. Tente daqui a pouquinho." });
     return;
   }
 

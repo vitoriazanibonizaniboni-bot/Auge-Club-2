@@ -716,6 +716,95 @@ function Brinde({ msg }) {
     </div>
   );
 }
+function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
+  return (
+    <div
+      onClick={onNao}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        background: "rgba(0,0,0,.72)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(340px, 100%)",
+          background: C.obs,
+          border: `1px solid ${C.ouro}33`,
+          borderRadius: 18,
+          padding: "22px 20px",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: FS,
+            fontSize: 20,
+            fontWeight: 300,
+            color: `rgba(255,255,255,.97)`,
+            marginBottom: 8,
+          }}
+        >
+          {titulo}
+        </div>
+        {descricao && (
+          <div
+            style={{
+              fontFamily: FB,
+              fontWeight: 300,
+              fontSize: 15,
+              color: `rgba(255,255,255,.82)`,
+              lineHeight: 1.6,
+              marginBottom: 16,
+            }}
+          >
+            {descricao}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={onNao}
+            style={{
+              flex: 1,
+              padding: "13px",
+              borderRadius: 50,
+              background: "rgba(255,255,255,.06)",
+              border: `1px solid ${C.ouro}22`,
+              color: `rgba(255,255,255,.92)`,
+              fontFamily: FB,
+              fontSize: 15,
+              cursor: "pointer",
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onSim}
+            style={{
+              flex: 1,
+              padding: "13px",
+              borderRadius: 50,
+              background: `${C.ouro}22`,
+              border: `1px solid ${C.ouro}55`,
+              color: C.ouro,
+              fontFamily: FB,
+              fontSize: 15,
+              cursor: "pointer",
+            }}
+          >
+            {textoSim || "Confirmar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Av({ ini, cor, sz = 40, src }) {
   if (src)
     return (
@@ -955,6 +1044,13 @@ export default function App() {
   const postando = useRef(false);
   // Foto de perfil da própria aluna (para posts, comentários e chat)
   const [minhaFoto, setMinhaFoto] = useState(null);
+  // Nova versão do app disponível (service worker atualizado)
+  const [novaVersao, setNovaVersao] = useState(false);
+  useEffect(() => {
+    const fn = () => setNovaVersao(true);
+    window.addEventListener("sw-update-available", fn);
+    return () => window.removeEventListener("sw-update-available", fn);
+  }, []);
 
   // Dados de onboarding — nome e e-mail persistidos entre sessões
   const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
@@ -993,7 +1089,83 @@ export default function App() {
     }, { onConflict: "id" }).then(() => {});
   };
 
-  const ir = (t) => setTela(t);
+  // Busca os posts do Mural (usada no login e ao abrir a aba)
+  const carregarFeed = async (userId) => {
+    if (!userId) return;
+    const [feedPublicoRes, feedPrivadoRes] = await Promise.all([
+      supabase
+        .from("feed")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
+        .eq("publica", true)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("feed")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
+        .eq("user_id", userId)
+        .eq("publica", false)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    const mapPost = (p) => ({
+      id: p.id,
+      aut: p.autor_nome,
+      ini: p.autor_ini,
+      cor: p.autor_cor,
+      avatar: p.autor_avatar || null,
+      fundo: "#1E252E",
+      tit: p.titulo,
+      desc: p.descricao,
+      imgSrc: p.img_url || null,
+      tempo: formatTempo(p.created_at),
+      publica: p.publica,
+      cur: p.curtidas || [],
+      com: p.comentarios || [],
+      dbId: p.id,
+      userId: p.user_id,
+    });
+
+    const postsPublicos = feedPublicoRes.data?.map(mapPost) || [];
+    const postsPrivados = feedPrivadoRes.data?.map(mapPost) || [];
+    const todosIds = new Set(postsPublicos.map((p) => p.id));
+    const privadosUnicos = postsPrivados.filter((p) => !todosIds.has(p.id));
+    const postsReais = [...postsPublicos, ...privadosUnicos].sort(
+      (a, b) => new Date(b.tempo) - new Date(a.tempo)
+    );
+
+    // Comentários persistentes — tabela comentarios (com nome da autora)
+    const postIds = postsReais.map((p) => p.dbId).filter(Boolean);
+    if (postIds.length) {
+      const { data: comData, error: comErr } = await supabase
+        .from("comentarios")
+        .select("id, post_id, user_id, texto, autor_nome, autor_avatar, created_at")
+        .in("post_id", postIds)
+        .order("created_at", { ascending: true });
+      if (!comErr && comData?.length) {
+        const comPorPost = {};
+        comData.forEach((c) => {
+          (comPorPost[c.post_id] = comPorPost[c.post_id] || []).push({
+            q: c.autor_nome || "Aluna",
+            t: c.texto,
+            userId: c.user_id,
+            av: c.autor_avatar || null,
+          });
+        });
+        postsReais.forEach((p) => {
+          if (comPorPost[p.dbId]) p.com = [...p.com, ...comPorPost[p.dbId]];
+        });
+      }
+    }
+
+    setFeed(postsReais);
+  };
+
+  const ir = (t) => {
+    // Mural sempre atualizado ao abrir a aba
+    if (t === S.FEED) carregarFeed(authUser?.id);
+    setTela(t);
+  };
   const tk = (m) => {
     setToast(m);
     setTimeout(() => setToast(null), 3000);
@@ -1203,77 +1375,10 @@ export default function App() {
       setPq3(porquesRes.data.p3 || "");
     }
 
-    // Carregar posts públicos + posts privados da própria aluna
-    const [feedPublicoRes, feedPrivadoRes, configRes] = await Promise.all([
-      supabase
-        .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
-        .eq("publica", true)
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabase
-        .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
-        .eq("user_id", userId)
-        .eq("publica", false)
-        .order("created_at", { ascending: false })
-        .limit(20),
-      supabase.from("config").select("*"),
-    ]);
-
-    const mapPost = (p) => ({
-      id: p.id,
-      aut: p.autor_nome,
-      ini: p.autor_ini,
-      cor: p.autor_cor,
-      avatar: p.autor_avatar || null,
-      fundo: "#1E252E",
-      tit: p.titulo,
-      desc: p.descricao,
-      imgSrc: p.img_url || null,
-      tempo: formatTempo(p.created_at),
-      publica: p.publica,
-      cur: p.curtidas || [],
-      com: p.comentarios || [],
-      dbId: p.id,
-      userId: p.user_id,
-    });
-
-    const postsPublicos = feedPublicoRes.data?.map(mapPost) || [];
-    const postsPrivados = feedPrivadoRes.data?.map(mapPost) || [];
-    const todosIds = new Set(postsPublicos.map((p) => p.id));
-    const privadosUnicos = postsPrivados.filter((p) => !todosIds.has(p.id));
-    const postsReais = [...postsPublicos, ...privadosUnicos].sort(
-      (a, b) => new Date(b.tempo) - new Date(a.tempo)
-    );
-
-    // Comentários persistentes — tabela comentarios (com nome da autora)
-    const postIds = postsReais.map((p) => p.dbId).filter(Boolean);
-    if (postIds.length) {
-      const { data: comData, error: comErr } = await supabase
-        .from("comentarios")
-        .select("id, post_id, user_id, texto, autor_nome, autor_avatar, created_at")
-        .in("post_id", postIds)
-        .order("created_at", { ascending: true });
-      if (!comErr && comData?.length) {
-        const comPorPost = {};
-        comData.forEach((c) => {
-          (comPorPost[c.post_id] = comPorPost[c.post_id] || []).push({
-            q: c.autor_nome || "Aluna",
-            t: c.texto,
-            userId: c.user_id,
-            av: c.autor_avatar || null,
-          });
-        });
-        postsReais.forEach((p) => {
-          if (comPorPost[p.dbId]) p.com = [...p.com, ...comPorPost[p.dbId]];
-        });
-      }
-    }
-
-    setFeed(postsReais);
+    await carregarFeed(userId);
 
     // Carregar configurações (mentoria)
+    const configRes = await supabase.from("config").select("*");
     if (configRes.data?.length) {
       const cfg = Object.fromEntries(configRes.data.map((c) => [c.id, c.valor]));
       setMentoria({
@@ -1994,6 +2099,30 @@ export default function App() {
   return (
     <Phone>
       {toast && <Brinde msg={toast} />}
+      {novaVersao && (
+        <div
+          onClick={() => window.location.reload()}
+          style={{
+            position: "absolute",
+            top: 14,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 300,
+            background: C.obs2,
+            border: `1px solid ${C.ouro}66`,
+            borderRadius: 50,
+            padding: "11px 18px",
+            color: C.ouro,
+            fontFamily: FB,
+            fontSize: 14,
+            cursor: "pointer",
+            boxShadow: "0 8px 24px rgba(0,0,0,.5)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Nova versão disponível — toque para atualizar
+        </div>
+      )}
       <Rolar>{renderTela()}</Rolar>
       {!SEM_NAV.includes(tela) && (
         <NavBar
@@ -4649,6 +4778,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
   const [txt, setTxt] = useState("");
   const [filtro, setFiltro] = useState("todas"); // "todas" | "minhas"
   const [det, setDet] = useState(null); // id do post aberto em detalhe
+  const [confirmaExcluir, setConfirmaExcluir] = useState(null);
   const curtir = (id) => {
     setFeed((f) =>
       f.map((p) => {
@@ -4851,6 +4981,42 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
           <div style={{ fontFamily: FB, fontSize: 18, color: C.ouro }}>›</div>
         </div>
 
+        {visiveis.length === 0 && (
+          <div
+            style={{
+              background: `rgba(255,255,255,.04)`,
+              border: `1px solid ${C.ouro}15`,
+              borderRadius: 12,
+              padding: "40px 24px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: FS,
+                fontSize: 20,
+                fontWeight: 300,
+                color: `rgba(255,255,255,.92)`,
+                marginBottom: 8,
+              }}
+            >
+              {filtro === "minhas"
+                ? "Você ainda não publicou nada"
+                : "O Mural começa com você"}
+            </div>
+            <div
+              style={{
+                fontFamily: FB,
+                fontWeight: 300,
+                fontSize: 15,
+                color: `rgba(255,255,255,.8)`,
+                lineHeight: 1.6,
+              }}
+            >
+              Toque em "+ Postar" e compartilhe uma pequena vitória do seu dia.
+            </div>
+          </div>
+        )}
         {visiveis.map((p) => {
           const cu = p.cur.includes("RF");
           const ab = open === p.id;
@@ -5047,7 +5213,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   </button>
                   {(p.userId === authUserId || p.aut === "Você") && (
                     <button
-                      onClick={() => { if (window.confirm("Excluir esta publicação?")) deletar(p.id); }}
+                      onClick={() => setConfirmaExcluir(p.id)}
                       style={{
                         background: "none",
                         border: "none",
@@ -5166,6 +5332,18 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
           );
         })}
       </Grain>
+      {confirmaExcluir != null && (
+        <Confirma
+          titulo="Excluir esta publicação?"
+          descricao="Ela sai do Mural e não dá para desfazer."
+          textoSim="Excluir"
+          onSim={() => {
+            deletar(confirmaExcluir);
+            setConfirmaExcluir(null);
+          }}
+          onNao={() => setConfirmaExcluir(null)}
+        />
+      )}
       {(() => {
         const dp = det ? feed.find((p) => p.id === det) : null;
         if (!dp) return null;
@@ -5437,6 +5615,7 @@ function Novo({ back, postTreino }) {
   const [foto, setFoto] = useState(null);
   const [fotoFile, setFotoFile] = useState(null);
   const [publica, setPublica] = useState(true);
+  const [enviando, setEnviando] = useState(false);
   const ref = useRef();
   const ok = tit.trim().length > 0;
   const SUGESTOES = [];
@@ -5689,20 +5868,29 @@ function Novo({ back, postTreino }) {
           </div>
         </div>
         <BtnPill
-          onClick={() =>
-            ok &&
-            postTreino({
-              fundo: "#1E252E",
-              tit: tit.trim(),
-              desc: cap.trim(),
-              publica,
-              imgSrc: foto,
-              imgFile: fotoFile,
-            })
-          }
-          style={{ opacity: ok ? 1 : 0.4 }}
+          onClick={async () => {
+            if (!ok || enviando) return;
+            setEnviando(true);
+            try {
+              await postTreino({
+                fundo: "#1E252E",
+                tit: tit.trim(),
+                desc: cap.trim(),
+                publica,
+                imgSrc: foto,
+                imgFile: fotoFile,
+              });
+            } finally {
+              setEnviando(false);
+            }
+          }}
+          style={{ opacity: ok && !enviando ? 1 : 0.4 }}
         >
-          {publica ? "Publicar no Mural" : "Salvar para mim"}
+          {enviando
+            ? "Publicando..."
+            : publica
+            ? "Publicar no Mural"
+            : "Salvar para mim"}
         </BtnPill>
       </Grain>
     </div>
@@ -5885,7 +6073,7 @@ function Voz({ back, postTreino, tk }) {
                   fontWeight: 300,
                   fontSize: 12,
                   color: C.ouro,
-                  letterSpacing: "0.3em",
+                  letterSpacing: "0.18em",
                   textTransform: "uppercase",
                   marginBottom: 10,
                 }}
@@ -5983,7 +6171,7 @@ function Voz({ back, postTreino, tk }) {
                   fontWeight: 300,
                   fontSize: 11,
                   color: C.ouro,
-                  letterSpacing: "0.3em",
+                  letterSpacing: "0.18em",
                   textTransform: "uppercase",
                   marginBottom: 5,
                 }}
@@ -6212,7 +6400,7 @@ function Cx({
                 fontWeight: 300,
                 fontSize: 11,
                 color: C.ouro,
-                letterSpacing: "0.3em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
                 marginBottom: 12,
               }}
@@ -6513,7 +6701,7 @@ function Cx({
                 fontWeight: 300,
                 fontSize: 11,
                 color: C.ouro,
-                letterSpacing: "0.3em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
                 marginBottom: 12,
               }}
@@ -6724,6 +6912,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
   const [msgs, setMsgs] = useState([]);
   const [txt, setTxt] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [confirmaMsg, setConfirmaMsg] = useState(null);
   const bot = useRef();
   const subRef = useRef(null);
   const SUGE = [
@@ -6919,18 +7108,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
               {!eu && <Av ini={m.ini} cor={m.cor} sz={26} src={m.avatar_url} />}
               {eu && msg.id && (
                 <button
-                  onClick={() => {
-                    if (!window.confirm("Apagar esta mensagem?")) return;
-                    supabase
-                      .from("mensagens")
-                      .delete()
-                      .eq("id", msg.id)
-                      .then(({ error }) => {
-                        if (!error) {
-                          setMsgs((prev) => prev.filter((x) => x.id !== msg.id));
-                        }
-                      });
-                  }}
+                  onClick={() => setConfirmaMsg(msg.id)}
                   aria-label="Apagar mensagem"
                   title="Apagar mensagem"
                   style={{
@@ -7061,6 +7239,27 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
           →
         </button>
       </div>
+      {confirmaMsg != null && (
+        <Confirma
+          titulo="Apagar esta mensagem?"
+          descricao="Ela some para vocês duas."
+          textoSim="Apagar"
+          onSim={() => {
+            const id = confirmaMsg;
+            setConfirmaMsg(null);
+            supabase
+              .from("mensagens")
+              .delete()
+              .eq("id", id)
+              .then(({ error }) => {
+                if (!error) {
+                  setMsgs((prev) => prev.filter((x) => x.id !== id));
+                }
+              });
+          }}
+          onNao={() => setConfirmaMsg(null)}
+        />
+      )}
     </div>
   );
 }
@@ -7322,7 +7521,7 @@ function JornadaClube({ ir }) {
               fontWeight: 300,
               fontSize: 11,
               color: C.ouro,
-              letterSpacing: "0.3em",
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
               marginBottom: 8,
             }}
@@ -7396,7 +7595,7 @@ function JornadaClube({ ir }) {
               fontWeight: 300,
               fontSize: 11,
               color: C.ouro,
-              letterSpacing: "0.3em",
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
               marginBottom: 8,
             }}
@@ -7486,7 +7685,7 @@ function JornadaClube({ ir }) {
               fontWeight: 300,
               fontSize: 11,
               color: C.ouro,
-              letterSpacing: "0.3em",
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
               marginBottom: 8,
             }}
@@ -7579,7 +7778,7 @@ function JornadaClube({ ir }) {
               fontWeight: 300,
               fontSize: 11,
               color: C.ouro,
-              letterSpacing: "0.3em",
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
               marginBottom: 8,
             }}
@@ -7660,7 +7859,7 @@ function JornadaClube({ ir }) {
                 fontWeight: 300,
                 fontSize: 11,
                 color: C.ouro,
-                letterSpacing: "0.3em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
               }}
             >
@@ -8003,7 +8202,7 @@ function Jornada({
                 fontWeight: 300,
                 fontSize: 11,
                 color: C.ouro,
-                letterSpacing: "0.3em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
                 marginBottom: 4,
               }}
@@ -8029,7 +8228,7 @@ function Jornada({
                 fontWeight: 300,
                 fontSize: 11,
                 color: `rgba(255,255,255,.88)`,
-                letterSpacing: "0.3em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
                 marginBottom: 4,
               }}
@@ -8049,7 +8248,7 @@ function Jornada({
             fontWeight: 300,
             fontSize: 11,
             color: C.ouro,
-            letterSpacing: "0.3em",
+            letterSpacing: "0.18em",
             textTransform: "uppercase",
             marginBottom: 10,
           }}
@@ -8106,7 +8305,7 @@ function Jornada({
             fontWeight: 300,
             fontSize: 11,
             color: C.ouro,
-            letterSpacing: "0.3em",
+            letterSpacing: "0.18em",
             textTransform: "uppercase",
             marginBottom: 12,
           }}
@@ -8951,7 +9150,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                   fontWeight: 300,
                   fontSize: 11,
                   color: C.ouro,
-                  letterSpacing: "0.3em",
+                  letterSpacing: "0.18em",
                   textTransform: "uppercase",
                   marginBottom: 8,
                 }}
@@ -9342,7 +9541,7 @@ function Escritas({
                     marginBottom: 16,
                   }}
                 >
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 12 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>
                     Minha âncora
                   </div>
                   <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 20, color: C.ouro, lineHeight: 1.5 }}>
@@ -9521,7 +9720,7 @@ function Escritas({
                           fontWeight: 300,
                           fontSize: 11,
                           color: C.ouro,
-                          letterSpacing: "0.3em",
+                          letterSpacing: "0.18em",
                           textTransform: "uppercase",
                           marginBottom: 8,
                         }}
@@ -9778,7 +9977,7 @@ function Emergencia({
                   fontWeight: 300,
                   fontSize: 11,
                   color: C.ouro,
-                  letterSpacing: "0.3em",
+                  letterSpacing: "0.18em",
                   textTransform: "uppercase",
                   marginBottom: 8,
                 }}
@@ -9913,7 +10112,7 @@ function Emergencia({
                 fontWeight: 300,
                 fontSize: 11,
                 color: C.ouro,
-                letterSpacing: "0.3em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
                 marginBottom: 10,
               }}
@@ -9948,7 +10147,7 @@ function Emergencia({
                     fontWeight: 300,
                     fontSize: 11,
                     color: C.ouro,
-                    letterSpacing: "0.3em",
+                    letterSpacing: "0.18em",
                     textTransform: "uppercase",
                     marginBottom: 10,
                   }}
@@ -10244,7 +10443,7 @@ function Conteudo({ perfil, videos: videosDB }) {
             fontWeight: 300,
             fontSize: 11,
             color: `rgba(255,255,255,.88)`,
-            letterSpacing: "0.3em",
+            letterSpacing: "0.18em",
             textTransform: "uppercase",
             marginBottom: 10,
           }}
@@ -10609,7 +10808,7 @@ function PainelMentora({ ir }) {
             {/* Formulário de novo vídeo */}
             {mostrarForm && (
               <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 14 }}>Novo vídeo</div>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>Novo vídeo</div>
                 {[
                   ["Título", "titulo", "Ex: Yoga para mobilidade"],
                   ["Link do YouTube", "url", "https://youtube.com/watch?v=..."],
@@ -10967,7 +11166,7 @@ function Perfil({
               fontWeight: 300,
               fontSize: 11,
               color: C.ouro,
-              letterSpacing: "0.3em",
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
               marginBottom: 16,
             }}
@@ -11091,7 +11290,7 @@ function Perfil({
                 fontWeight: 300,
                 fontSize: 11,
                 color: C.ouro,
-                letterSpacing: "0.3em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
                 marginBottom: 12,
               }}
