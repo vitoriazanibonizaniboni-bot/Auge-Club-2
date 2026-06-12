@@ -745,7 +745,7 @@ function Brinde({ msg }) {
         color: C.ouro,
         padding: "10px 20px",
         borderRadius: 20,
-        fontSize: 13,
+        fontSize: 15,
         fontFamily: FS,
         fontStyle: "italic",
         boxShadow: "0 8px 24px rgba(0,0,0,.5)",
@@ -792,7 +792,7 @@ function BtnPill({ children, onClick, style = {} }) {
         padding: "16px",
         fontFamily: FB,
         fontWeight: 400,
-        fontSize: 15,
+        fontSize: 17,
         color: C.obs2,
         cursor: "pointer",
         letterSpacing: "0.06em",
@@ -815,7 +815,7 @@ function BtnOut({ children, onClick, style = {} }) {
         padding: "15px",
         fontFamily: FB,
         fontWeight: 300,
-        fontSize: 14,
+        fontSize: 16,
         color: C.ouro,
         cursor: "pointer",
         letterSpacing: "0.06em",
@@ -847,7 +847,7 @@ function Cab({ titulo, voltar, acao }) {
             color: C.lt,
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
+            fontSize: 15,
             cursor: "pointer",
             width: 60,
           }}
@@ -929,6 +929,18 @@ export default function App() {
   const [sw, setSw] = useState(null);
   const [selM, setSelM] = useState(null);
   const [radarPerfis, setRadarPerfis] = useState([]);
+  // Mensagens não lidas — { [de_user_id]: contagem }
+  const [naoLidas, setNaoLidas] = useState({});
+  const marcarLidas = (partnerId) => {
+    setNaoLidas((n) => {
+      if (!n[partnerId]) return n;
+      const { [partnerId]: _, ...resto } = n;
+      return resto;
+    });
+  };
+  // Solicitações de conexão recebidas (status pendente) e enviadas
+  const [solicitacoes, setSolicitacoes] = useState([]);
+  const [solicitadas, setSolicitadas] = useState([]); // ids para quem já enviei
 
   // Jornada — persistidos entre sessões
   const [anc, setAnc] = useLocalStorage(
@@ -1214,6 +1226,29 @@ export default function App() {
       (a, b) => new Date(b.tempo) - new Date(a.tempo)
     );
 
+    // Comentários persistentes — tabela comentarios (com nome da autora)
+    const postIds = postsReais.map((p) => p.dbId).filter(Boolean);
+    if (postIds.length) {
+      const { data: comData, error: comErr } = await supabase
+        .from("comentarios")
+        .select("id, post_id, user_id, texto, autor_nome, created_at")
+        .in("post_id", postIds)
+        .order("created_at", { ascending: true });
+      if (!comErr && comData?.length) {
+        const comPorPost = {};
+        comData.forEach((c) => {
+          (comPorPost[c.post_id] = comPorPost[c.post_id] || []).push({
+            q: c.autor_nome || "Aluna",
+            t: c.texto,
+            userId: c.user_id,
+          });
+        });
+        postsReais.forEach((p) => {
+          if (comPorPost[p.dbId]) p.com = [...p.com, ...comPorPost[p.dbId]];
+        });
+      }
+    }
+
     setFeed(postsReais);
 
     // Carregar configurações (mentoria)
@@ -1274,29 +1309,66 @@ export default function App() {
     } catch (e) {
       console.error("loadUserData error:", e);
     }
-    // Carregar conexões via RPC (bypassa RLS de profiles)
+    const CORES_CX = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
+    const mapAmiga = (p, i) => ({
+      id: p.id,
+      nome: p.nome || "Aluna",
+      ini: (p.nome || "A").slice(0, 2).toUpperCase(),
+      cor: CORES_CX[i % 5],
+      cidade: p.cidade || "",
+      interesses: p.interesses || [],
+      hab: p.interesses || [],
+      bio: p.cidade ? `De ${p.cidade}` : "Membro do Clube do Auge",
+      idade: null,
+      ok: true,
+      compat: Math.floor(70 + Math.random() * 25),
+      msgs: [],
+    });
+
+    // Conexões aceitas via RPC (bypassa RLS de profiles)
     supabase
       .rpc("get_conexoes_profiles", { uid: userId })
       .then(({ data: partnerProfiles, error }) => {
         if (error) { console.warn("conexoes load error:", error); return; }
         if (!partnerProfiles?.length) return;
-        const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
-        setMatches(
-          partnerProfiles.map((p, i) => ({
-            id: p.id,
-            nome: p.nome || "Aluna",
-            ini: (p.nome || "A").slice(0, 2).toUpperCase(),
-            cor: CORES[i % 5],
-            cidade: p.cidade || "",
-            interesses: p.interesses || [],
-            hab: p.interesses || [],
-            bio: p.cidade ? `De ${p.cidade}` : "Membro do Clube do Auge",
-            idade: null,
-            ok: true,
-            compat: Math.floor(70 + Math.random() * 25),
-            msgs: [],
-          }))
-        );
+        setMatches(partnerProfiles.map(mapAmiga));
+      });
+
+    // Solicitações de conexão recebidas (pendentes) via RPC
+    supabase
+      .rpc("get_solicitacoes_profiles", { uid: userId })
+      .then(({ data: sols, error }) => {
+        if (error) { console.warn("solicitacoes load error:", error); return; }
+        setSolicitacoes((sols || []).map(mapAmiga));
+      });
+
+    // Solicitações que eu enviei e ainda estão pendentes
+    supabase
+      .from("conexoes")
+      .select("destinataria_id, status")
+      .eq("solicitante_id", userId)
+      .then(({ data }) => {
+        if (data) {
+          setSolicitadas(
+            data.filter((c) => c.status === "pendente").map((c) => c.destinataria_id)
+          );
+        }
+      });
+
+    // Mensagens não lidas — contagem por remetente
+    supabase
+      .from("mensagens")
+      .select("de_user_id")
+      .eq("para_user_id", userId)
+      .eq("lida", false)
+      .then(({ data }) => {
+        if (data) {
+          const counts = {};
+          data.forEach((r) => {
+            counts[r.de_user_id] = (counts[r.de_user_id] || 0) + 1;
+          });
+          setNaoLidas(counts);
+        }
       });
   };
 
@@ -1336,21 +1408,20 @@ export default function App() {
     setTimeout(() => {
       setSw(null);
       if (dir === "right") {
-        setMatches((m) => {
-          if (m.find((x) => x.id === p.id)) return m;
-          return [...m, { ...p, msgs: [] }];
-        });
-        tk(`Conexão com ${p.nome.split(" ")[0]}! 💛`);
-        // Persiste conexão no Supabase
         const uid = authUser?.id;
-        if (uid) {
-          const u1 = uid < p.id ? uid : p.id;
-          const u2 = uid < p.id ? p.id : uid;
-          supabase.from("conexoes").upsert(
-            { user1_id: u1, user2_id: u2 },
-            { ignoreDuplicates: true }
-          ).then(() => {});
+        const jaConectada = matches.find((x) => x.id === p.id);
+        if (uid && !jaConectada && !solicitadas.includes(p.id)) {
+          // Cria solicitação pendente — a destinatária decide
+          supabase
+            .from("conexoes")
+            .upsert(
+              { solicitante_id: uid, destinataria_id: p.id, status: "pendente" },
+              { onConflict: "solicitante_id,destinataria_id", ignoreDuplicates: true }
+            )
+            .then(() => {});
+          setSolicitadas((s) => (s.includes(p.id) ? s : [...s, p.id]));
         }
+        tk(`Pedido enviado para ${p.nome.split(" ")[0]} 💛`);
       }
       setCi((i) => i + 1);
     }, 380);
@@ -1569,6 +1640,30 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Mensagens não lidas em tempo real ─────────────────────────────────────
+  useEffect(() => {
+    if (!authUser?.id) return;
+    const ch = supabase
+      .channel(`inbox_${authUser.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "mensagens",
+          filter: `para_user_id=eq.${authUser.id}`,
+        },
+        (payload) => {
+          const de = payload.new.de_user_id;
+          setNaoLidas((n) => ({ ...n, [de]: (n[de] || 0) + 1 }));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [authUser?.id]);
+
   // ── Onboarding obrigatório: Diagnóstico → Setup de hábitos ────────────────
   useEffect(() => {
     // Só dispara depois de loadUserData completar (loadedRef garante que diagOk já foi setado)
@@ -1653,6 +1748,12 @@ export default function App() {
     mentoria,
     videos,
     radarPerfis,
+    naoLidas,
+    marcarLidas,
+    solicitacoes,
+    setSolicitacoes,
+    solicitadas,
+    setSolicitadas,
     recarregarPerfil: () => loadUserData(authUser?.id),
   };
 
@@ -1677,7 +1778,7 @@ export default function App() {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 13,
+              fontSize: 15,
               color: `rgba(255,255,255,.82)`,
               animation: "pulse 1.5s ease-in-out infinite",
               letterSpacing: "0.2em",
@@ -1750,7 +1851,7 @@ export default function App() {
           <Grain style={{ minHeight: 760, padding: "40px 26px 48px", animation: "fadeUp .4s ease" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 32 }}>
               <Logo width={120} fundo="escuro" />
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.4em", textTransform: "uppercase" }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.4em", textTransform: "uppercase" }}>
                 Primeiro acesso
               </div>
             </div>
@@ -1825,6 +1926,7 @@ export default function App() {
           mc={matches.length}
           perfil={perfil}
           ckOk={ckOk}
+          msgCount={Object.values(naoLidas).reduce((a, b) => a + b, 0)}
         />
       )}
       <Estilos />
@@ -1853,11 +1955,11 @@ function Estilos() {
 }
 
 // ─── NAV BAR ──────────────────────────────────────────────────────────────────
-function NavBar({ tela, ir, mc, perfil, ckOk }) {
+function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
   const aba = ABA_ORIGEM[tela] || S.HOME;
   const tabs = [
     { id: S.HOME, label: "Início", icon: Ico.home },
-    { id: S.FEED, label: "Mural", icon: Ico.feed, badge: !ckOk ? 1 : 0 },
+    { id: S.FEED, label: "Mural", icon: Ico.feed, badge: !ckOk ? 1 : 0, msgCount },
     { id: S.JOR, label: "Jornada", icon: Ico.jor },
     { id: S.CT, label: "Conteúdo", icon: Ico.ct },
     { id: S.PF, label: "Perfil", icon: Ico.pf },
@@ -1883,7 +1985,31 @@ function NavBar({ tela, ir, mc, perfil, ckOk }) {
             position: "relative",
           }}
         >
-          {t.badge > 0 && (
+          {t.msgCount > 0 ? (
+            <div
+              style={{
+                position: "absolute",
+                top: -3,
+                right: "18%",
+                minWidth: 16,
+                height: 16,
+                padding: "0 4px",
+                borderRadius: 9,
+                background: C.ouro,
+                border: `1.5px solid ${C.obs}`,
+                color: C.obs,
+                fontSize: 12,
+                fontWeight: 500,
+                fontFamily: FB,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
+              }}
+            >
+              {t.msgCount}
+            </div>
+          ) : t.badge > 0 ? (
             <div
               style={{
                 position: "absolute",
@@ -1896,7 +2022,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk }) {
                 border: `1.5px solid ${C.obs}`,
               }}
             />
-          )}
+          ) : null}
           <div
             style={{
               display: "flex",
@@ -1910,7 +2036,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 10,
+                fontSize: 12,
                 color: aba === t.id ? C.ouro : C.lt,
                 transition: "color .2s",
               }}
@@ -2040,7 +2166,7 @@ function AvisoLegal({ onAceitar }) {
         style={{
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 11,
+          fontSize: 13,
           color: C.ouro,
           letterSpacing: "0.4em",
           textTransform: "uppercase",
@@ -2070,7 +2196,7 @@ function AvisoLegal({ onAceitar }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
+            fontSize: 15,
             color: `rgba(255,255,255,.82)`,
             lineHeight: 1.8,
           }}
@@ -2130,14 +2256,14 @@ function AvisoLegal({ onAceitar }) {
             flexShrink: 0,
           }}
         >
-          {aceito && <span style={{ color: C.ouro, fontSize: 14 }}>✓</span>}
+          {aceito && <span style={{ color: C.ouro, fontSize: 16 }}>✓</span>}
         </div>
         <div
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
-            color: `rgba(255,255,255,.45)`,
+            fontSize: 15,
+            color: `rgba(255,255,255,.65)`,
             lineHeight: 1.5,
           }}
         >
@@ -2155,8 +2281,8 @@ function AvisoLegal({ onAceitar }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
-            color: `rgba(255,255,255,.45)`,
+            fontSize: 13,
+            color: `rgba(255,255,255,.65)`,
             textAlign: "center",
             marginTop: 10,
           }}
@@ -2218,7 +2344,7 @@ function Onboarding({ onConcluir }) {
         style={{
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 13,
+          fontSize: 15,
           color: `rgba(255,255,255,.92)`,
           marginBottom: 40,
           textAlign: "center",
@@ -2233,8 +2359,8 @@ function Onboarding({ onConcluir }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
-            color: `rgba(255,255,255,.45)`,
+            fontSize: 13,
+            color: `rgba(255,255,255,.65)`,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -2268,8 +2394,8 @@ function Onboarding({ onConcluir }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
-            color: `rgba(255,255,255,.45)`,
+            fontSize: 13,
+            color: `rgba(255,255,255,.65)`,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -2306,8 +2432,8 @@ function Onboarding({ onConcluir }) {
         style={{
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 11,
-          color: `rgba(255,255,255,.18)`,
+          fontSize: 13,
+          color: `rgba(255,255,255,.55)`,
           marginTop: 20,
           textAlign: "center",
           lineHeight: 1.7,
@@ -2405,7 +2531,7 @@ function ModalTermos({ onAceitar, onFechar }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 13,
+              fontSize: 15,
               color: `rgba(255,255,255,.82)`,
               margin: 0,
             }}
@@ -2420,8 +2546,8 @@ function ModalTermos({ onAceitar, onFechar }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 10,
-                color: `rgba(255,255,255,.28)`,
+                fontSize: 12,
+                color: `rgba(255,255,255,.55)`,
                 letterSpacing: "0.15em",
               }}
             >
@@ -2460,13 +2586,13 @@ function ModalTermos({ onAceitar, onFechar }) {
                 marginTop: 1,
               }}
             >
-              {marcou && <span style={{ color: C.ouro, fontSize: 11 }}>✓</span>}
+              {marcou && <span style={{ color: C.ouro, fontSize: 13 }}>✓</span>}
             </div>
             <div
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 color: `rgba(255,255,255,.82)`,
                 lineHeight: 1.5,
               }}
@@ -2476,7 +2602,7 @@ function ModalTermos({ onAceitar, onFechar }) {
           </div>
           <BtnPill
             onClick={() => marcou && onAceitar()}
-            style={{ opacity: marcou ? 1 : 0.35, fontSize: 13 }}
+            style={{ opacity: marcou ? 1 : 0.35, fontSize: 15 }}
           >
             Confirmar e continuar
           </BtnPill>
@@ -2588,8 +2714,8 @@ function TelaAuth({ onAuth }) {
   const lbl = {
     fontFamily: FB,
     fontWeight: 300,
-    fontSize: 12,
-    color: `rgba(255,255,255,.45)`,
+    fontSize: 14,
+    color: `rgba(255,255,255,.65)`,
     marginBottom: 7,
   };
 
@@ -2635,7 +2761,7 @@ function TelaAuth({ onAuth }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 13,
+                fontSize: 15,
                 color: `rgba(255,255,255,.92)`,
                 lineHeight: 1.7,
               }}
@@ -2660,7 +2786,7 @@ function TelaAuth({ onAuth }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 12,
+                  fontSize: 14,
                   color: "#f87171",
                   marginTop: 8,
                 }}
@@ -2692,7 +2818,7 @@ function TelaAuth({ onAuth }) {
             color: `rgba(255,255,255,.88)`,
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
+            fontSize: 15,
             cursor: "pointer",
           }}
         >
@@ -2731,7 +2857,7 @@ function TelaAuth({ onAuth }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 12,
+            fontSize: 14,
             color: `rgba(255,255,255,.88)`,
             marginBottom: 28,
             textAlign: "center",
@@ -2768,8 +2894,8 @@ function TelaAuth({ onAuth }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
-                color: `rgba(255,255,255,.45)`,
+                fontSize: 14,
+                color: `rgba(255,255,255,.65)`,
                 lineHeight: 1.7,
               }}
             >
@@ -2791,7 +2917,7 @@ function TelaAuth({ onAuth }) {
                 color: C.ouro,
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 cursor: "pointer",
               }}
             >
@@ -2872,14 +2998,14 @@ function TelaAuth({ onAuth }) {
               cursor: "pointer",
             }}
           >
-            {lgpd && <span style={{ color: C.ouro, fontSize: 11 }}>✓</span>}
+            {lgpd && <span style={{ color: C.ouro, fontSize: 13 }}>✓</span>}
           </div>
           <div
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 12,
-              color: `rgba(255,255,255,.4)`,
+              fontSize: 14,
+              color: `rgba(255,255,255,.65)`,
               lineHeight: 1.6,
             }}
           >
@@ -2903,7 +3029,7 @@ function TelaAuth({ onAuth }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 12,
+              fontSize: 14,
               color: "#f87171",
               marginBottom: 12,
               width: "100%",
@@ -2939,7 +3065,7 @@ function TelaAuth({ onAuth }) {
             color: `rgba(255,255,255,.88)`,
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
+            fontSize: 15,
             cursor: "pointer",
           }}
         >
@@ -2979,7 +3105,7 @@ function TelaAuth({ onAuth }) {
         style={{
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 13,
+          fontSize: 15,
           color: `rgba(255,255,255,.92)`,
           marginBottom: 40,
           textAlign: "center",
@@ -3017,7 +3143,7 @@ function TelaAuth({ onAuth }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 12,
+            fontSize: 14,
             color: "#f87171",
             marginBottom: 12,
             width: "100%",
@@ -3037,7 +3163,7 @@ function TelaAuth({ onAuth }) {
           color: `rgba(255,255,255,.82)`,
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 12,
+          fontSize: 14,
           cursor: "pointer",
           marginBottom: 20,
           alignSelf: "flex-start",
@@ -3065,7 +3191,7 @@ function TelaAuth({ onAuth }) {
           color: C.ouro,
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 13,
+          fontSize: 15,
           cursor: "pointer",
           letterSpacing: "0.05em",
         }}
@@ -3104,7 +3230,7 @@ function Diagnostico({ onConcluir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.4em",
               textTransform: "uppercase",
@@ -3117,7 +3243,7 @@ function Diagnostico({ onConcluir }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
+            fontSize: 11,
             color: C.ouro,
             letterSpacing: "0.35em",
             textTransform: "uppercase",
@@ -3173,7 +3299,7 @@ function Diagnostico({ onConcluir }) {
                 cursor: "pointer",
                 textAlign: "left",
                 fontFamily: FB,
-                fontSize: 14,
+                fontSize: 16,
                 color: `rgba(255,255,255,.88)`,
                 lineHeight: 1.4,
               }}
@@ -3186,8 +3312,8 @@ function Diagnostico({ onConcluir }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
-            color: `rgba(255,255,255,.45)`,
+            fontSize: 13,
+            color: `rgba(255,255,255,.65)`,
             textAlign: "center",
             marginTop: "1.5rem",
             lineHeight: 1.6,
@@ -3234,7 +3360,7 @@ function DefinirHabitos({ onSalvar }) {
         style={{
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 13,
+          fontSize: 15,
           color: "rgba(255,255,255,.92)",
           lineHeight: 1.65,
           marginBottom: 22,
@@ -3252,7 +3378,7 @@ function DefinirHabitos({ onSalvar }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               color: C.ouro,
               letterSpacing: "0.25em",
               textTransform: "uppercase",
@@ -3292,7 +3418,7 @@ function DefinirHabitos({ onSalvar }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 13,
             color: "rgba(255,255,255,.4)",
             lineHeight: 1.65,
           }}
@@ -3335,7 +3461,7 @@ function IsaCard({ text, loading }) {
             style={{
               fontFamily: FB,
               fontWeight: 500,
-              fontSize: 13,
+              fontSize: 15,
               color: `rgba(255,255,255,.97)`,
             }}
           >
@@ -3345,7 +3471,7 @@ function IsaCard({ text, loading }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               color: C.lt,
             }}
           >
@@ -3374,7 +3500,7 @@ function IsaCard({ text, loading }) {
             style={{
               fontFamily: FS,
               fontStyle: "italic",
-              fontSize: 13,
+              fontSize: 15,
               color: `rgba(255,255,255,.92)`,
             }}
           >
@@ -3386,7 +3512,7 @@ function IsaCard({ text, loading }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
+            fontSize: 15,
             color: `rgba(255,255,255,.92)`,
             lineHeight: 1.75,
             whiteSpace: "pre-wrap",
@@ -3477,7 +3603,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
       <div style={{ fontSize: 22, flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1 }}>
         <div
-          style={{ fontFamily: FB, fontWeight: 500, fontSize: 13, color: cor }}
+          style={{ fontFamily: FB, fontWeight: 500, fontSize: 15, color: cor }}
         >
           {titulo}
         </div>
@@ -3485,8 +3611,8 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
-            color: `rgba(255,255,255,.4)`,
+            fontSize: 13,
+            color: `rgba(255,255,255,.65)`,
             marginTop: 2,
           }}
         >
@@ -3511,7 +3637,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: `rgba(255,255,255,.88)`,
               letterSpacing: "0.1em",
             }}
@@ -3699,7 +3825,7 @@ function Home({
               padding: "6px 22px",
               color: C.blush,
               fontFamily: FB,
-              fontSize: 11,
+              fontSize: 13,
               cursor: "pointer",
               letterSpacing: "0.1em",
             }}
@@ -3715,7 +3841,7 @@ function Home({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 10,
+            fontSize: 12,
             color: C.ouro,
             letterSpacing: "0.35em",
             textTransform: "uppercase",
@@ -3730,7 +3856,7 @@ function Home({
           style={{
             fontFamily: FS,
             fontStyle: "italic",
-            fontSize: 13,
+            fontSize: 15,
             color: `rgba(240,233,218,.45)`,
             lineHeight: 1.5,
             marginBottom: 16,
@@ -3753,11 +3879,11 @@ function Home({
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
               <Av ini="ISA" cor={C.ouroDk} sz={34} />
-              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 12, color: `rgba(255,255,255,.97)` }}>
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 14, color: `rgba(255,255,255,.97)` }}>
                 Dra. Isadora Zaniboni
               </div>
             </div>
-            <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15, color: C.ouro, lineHeight: 1.6 }}>
+            <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.ouro, lineHeight: 1.6 }}>
               "Olá, {usuario?.nome?.split(" ")[0] || "bem-vinda"}! Que bom te ter aqui. Vamos começar pelo checkin?"
             </div>
           </div>
@@ -3796,7 +3922,7 @@ function Home({
               style={{
                 fontFamily: FB,
                 fontWeight: 400,
-                fontSize: 13,
+                fontSize: 15,
                 color: C.ouro,
                 marginBottom: 4,
               }}
@@ -3807,8 +3933,8 @@ function Home({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
-                color: `rgba(255,255,255,.45)`,
+                fontSize: 13,
+                color: `rgba(255,255,255,.65)`,
                 lineHeight: 1.5,
                 marginBottom: 12,
               }}
@@ -3828,7 +3954,7 @@ function Home({
                 width: "100%",
                 fontFamily: FB,
                 fontWeight: 400,
-                fontSize: 13,
+                fontSize: 15,
                 color: C.obs2,
                 cursor: "pointer",
                 letterSpacing: "0.02em",
@@ -3854,7 +3980,7 @@ function Home({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 13,
+                fontSize: 15,
                 color: C.blush,
                 lineHeight: 1.5,
                 marginBottom: 10,
@@ -3873,7 +3999,7 @@ function Home({
                 width: "100%",
                 fontFamily: FB,
                 fontWeight: 400,
-                fontSize: 13,
+                fontSize: 15,
                 color: C.obs2,
                 cursor: "pointer",
               }}
@@ -3907,7 +4033,7 @@ function Home({
                   style={{
                     fontFamily: FB,
                     fontWeight: 400,
-                    fontSize: 12,
+                    fontSize: 14,
                     color: C.ouro,
                   }}
                 >
@@ -3918,7 +4044,7 @@ function Home({
                   style={{
                     background: "none",
                     border: "none",
-                    color: `rgba(255,255,255,.45)`,
+                    color: `rgba(255,255,255,.65)`,
                     fontSize: 16,
                     cursor: "pointer",
                     lineHeight: 1,
@@ -3932,8 +4058,8 @@ function Home({
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 12,
-                  color: `rgba(255,255,255,.4)`,
+                  fontSize: 14,
+                  color: `rgba(255,255,255,.65)`,
                   lineHeight: 1.6,
                   marginBottom: 10,
                 }}
@@ -3958,7 +4084,7 @@ function Home({
                   width: "100%",
                   fontFamily: FB,
                   fontWeight: 400,
-                  fontSize: 12,
+                  fontSize: 14,
                   color: C.obs2,
                   cursor: "pointer",
                   letterSpacing: "0.02em",
@@ -3976,7 +4102,7 @@ function Home({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.35em",
                 textTransform: "uppercase",
@@ -4014,7 +4140,7 @@ function Home({
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 12,
+                    fontSize: 14,
                     color: `rgba(255,255,255,.92)`,
                   }}
                 >
@@ -4029,7 +4155,7 @@ function Home({
                     textAlign: "center",
                     fontFamily: FB,
                     fontWeight: 400,
-                    fontSize: 13,
+                    fontSize: 15,
                     color: C.obs2,
                   }}
                 >
@@ -4059,7 +4185,7 @@ function Home({
                     border: "none",
                     color: `rgba(255,255,255,.88)`,
                     fontFamily: FB,
-                    fontSize: 11,
+                    fontSize: 13,
                     cursor: "pointer",
                   }}
                 >
@@ -4097,10 +4223,21 @@ function Home({
                 fontSize: 22,
                 fontWeight: 300,
                 color: `rgba(255,255,255,.97)`,
+                marginBottom: 6,
+              }}
+            >
+              O que você já fez hoje?
+            </div>
+            <div
+              style={{
+                fontFamily: FB,
+                fontWeight: 300,
+                fontSize: 15,
+                color: `rgba(255,255,255,.7)`,
                 marginBottom: 18,
               }}
             >
-              Hábitos de hoje
+              Marque os hábitos que você completou
             </div>
             {hDia.map((h) => (
               <div
@@ -4132,7 +4269,7 @@ function Home({
                     alignItems: "center",
                     justifyContent: "center",
                     color: C.obs,
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: 500,
                   }}
                 >
@@ -4163,7 +4300,7 @@ function Home({
                 style={{
                   fontFamily: FS,
                   fontStyle: "italic",
-                  fontSize: 14,
+                  fontSize: 16,
                   color: C.ouro,
                 }}
               >
@@ -4192,7 +4329,7 @@ function Home({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 color: `rgba(255,255,255,.92)`,
                 marginBottom: 20,
               }}
@@ -4224,12 +4361,12 @@ function Home({
                       gap: 5,
                     }}
                   >
-                    <span style={{ fontSize: 14 }}>{c.e}</span>
+                    <span style={{ fontSize: 16 }}>{c.e}</span>
                     <span
                       style={{
                         fontFamily: FB,
                         fontWeight: 300,
-                        fontSize: 12,
+                        fontSize: 14,
                         color: s ? C.ouro : `rgba(255,255,255,.4)`,
                       }}
                     >
@@ -4266,7 +4403,7 @@ function Home({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 color: `rgba(255,255,255,.92)`,
                 marginBottom: 18,
               }}
@@ -4283,7 +4420,7 @@ function Home({
                 border: `1px solid ${C.ouro}18`,
                 borderRadius: 10,
                 padding: "13px",
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: FS,
                 color: `rgba(255,255,255,.88)`,
                 resize: "none",
@@ -4303,7 +4440,7 @@ function Home({
                 color: `rgba(255,255,255,.82)`,
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 cursor: "pointer",
                 marginTop: 10,
               }}
@@ -4358,7 +4495,7 @@ function Home({
                     style={{
                       fontFamily: FB,
                       fontWeight: 300,
-                      fontSize: 11,
+                      fontSize: 13,
                       color: C.ouro,
                     }}
                   >
@@ -4376,7 +4513,7 @@ function Home({
                 color: `rgba(255,255,255,.88)`,
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 cursor: "pointer",
                 marginTop: 14,
                 display: "block",
@@ -4399,8 +4536,8 @@ function Home({
             padding: "13px 18px",
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 12,
-            color: `rgba(255,255,255,.45)`,
+            fontSize: 14,
+            color: `rgba(255,255,255,.65)`,
             cursor: "pointer",
             letterSpacing: "0.06em",
             display: "flex",
@@ -4424,10 +4561,12 @@ function Home({
 // ═══════════════════════════════════════════════════════════════════
 // ABA: FEED — posts públicos e privados
 // ═══════════════════════════════════════════════════════════════════
-function Feed({ feed, setFeed, ir, authUserId }) {
+function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
+  const totalNaoLidas = Object.values(naoLidas).reduce((a, b) => a + b, 0);
   const [open, setOpen] = useState(null);
   const [txt, setTxt] = useState("");
   const [filtro, setFiltro] = useState("todas"); // "todas" | "minhas"
+  const [det, setDet] = useState(null); // id do post aberto em detalhe
   const curtir = (id) => {
     setFeed((f) =>
       f.map((p) => {
@@ -4445,13 +4584,25 @@ function Feed({ feed, setFeed, ir, authUserId }) {
   };
   const comentar = (id) => {
     if (!txt.trim()) return;
+    const texto = txt.trim();
     setFeed((f) =>
       f.map((p) => {
         if (p.id !== id) return p;
-        const newCom = [...p.com, { q: "Você", t: txt }];
-        // Salva comentário no Supabase se for post real
-        if (p.dbId) {
-          supabase.from("feed").update({ comentarios: newCom }).eq("id", p.dbId).then(() => {});
+        const newCom = [
+          ...p.com,
+          { q: usuario?.nome || "Você", t: texto, userId: authUserId },
+        ];
+        // Persiste na tabela comentarios se for post real
+        if (p.dbId && authUserId) {
+          supabase
+            .from("comentarios")
+            .insert({
+              post_id: p.dbId,
+              user_id: authUserId,
+              texto,
+              autor_nome: usuario?.nome || "Aluna",
+            })
+            .then(() => {});
         }
         return { ...p, com: newCom };
       }),
@@ -4489,7 +4640,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
       {/* Filtro Todas / Minhas */}
       <div style={{ background: C.obs, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: filtro === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: filtro === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
             {label}
           </button>
         ))}
@@ -4514,7 +4665,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
             style={{
               fontFamily: FS,
               fontStyle: "italic",
-              fontSize: 15,
+              fontSize: 17,
               color: `rgba(255,255,255,.92)`,
             }}
           >
@@ -4524,7 +4675,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 11,
+              fontSize: 13,
               color: C.ouro,
               letterSpacing: "0.1em",
             }}
@@ -4579,7 +4730,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.92)`,
                 marginTop: 3,
               }}
@@ -4587,6 +4738,27 @@ function Feed({ feed, setFeed, ir, authUserId }) {
               Radar de Amigas
             </div>
           </div>
+          {totalNaoLidas > 0 && (
+            <div
+              style={{
+                minWidth: 20,
+                height: 20,
+                padding: "0 6px",
+                borderRadius: 10,
+                background: C.ouro,
+                color: C.obs,
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: FB,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
+              }}
+            >
+              {totalNaoLidas}
+            </div>
+          )}
           <div style={{ fontFamily: FB, fontSize: 18, color: C.ouro }}>›</div>
         </div>
 
@@ -4605,12 +4777,14 @@ function Feed({ feed, setFeed, ir, authUserId }) {
               }}
             >
               <div
+                onClick={() => setDet(p.id)}
                 style={{
                   height: 178,
                   background: p.fundo,
                   position: "relative",
                   display: "flex",
                   alignItems: "flex-end",
+                  cursor: "pointer",
                 }}
               >
                 {p.imgSrc && (
@@ -4648,11 +4822,11 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                       gap: 4,
                     }}
                   >
-                    <span style={{ fontSize: 10 }}>🔒</span>
+                    <span style={{ fontSize: 12 }}>🔒</span>
                     <span
                       style={{
                         fontFamily: FB,
-                        fontSize: 9,
+                        fontSize: 11,
                         color: `rgba(255,255,255,.92)`,
                       }}
                     >
@@ -4680,7 +4854,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                   <div
                     style={{
                       color: `rgba(255,255,255,.92)`,
-                      fontSize: 11,
+                      fontSize: 13,
                       fontFamily: FB,
                       fontWeight: 300,
                       marginTop: 2,
@@ -4704,7 +4878,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                     style={{
                       fontFamily: FB,
                       fontWeight: 500,
-                      fontSize: 13,
+                      fontSize: 15,
                       color: `rgba(255,255,255,.95)`,
                     }}
                   >
@@ -4712,13 +4886,15 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                   </div>
                 </div>
                 <div
+                  onClick={() => setDet(p.id)}
                   style={{
-                    fontSize: 14,
+                    fontSize: 16,
                     fontFamily: FB,
                     fontWeight: 300,
                     color: `rgba(255,255,255,.82)`,
                     lineHeight: 1.65,
                     marginBottom: 10,
+                    cursor: "pointer",
                   }}
                 >
                   {p.desc}
@@ -4737,7 +4913,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      fontSize: 12,
+                      fontSize: 14,
                       color: cu ? C.ouro : `rgba(255,255,255,.92)`,
                       fontFamily: FB,
                       fontWeight: 300,
@@ -4752,8 +4928,8 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                     {p.cur.length > 0 && (
                       <span
                         style={{
-                          fontSize: 10,
-                          color: `rgba(255,255,255,.28)`,
+                          fontSize: 12,
+                          color: `rgba(255,255,255,.55)`,
                           marginLeft: 4,
                         }}
                       >
@@ -4768,7 +4944,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      fontSize: 14,
+                      fontSize: 16,
                       color: `rgba(255,255,255,.92)`,
                       fontFamily: FB,
                       display: "flex",
@@ -4778,7 +4954,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                       padding: "5px 0",
                     }}
                   >
-                    💬<span style={{ fontSize: 12 }}>{p.com.length}</span>
+                    💬<span style={{ fontSize: 14 }}>{p.com.length}</span>
                   </button>
                   {(p.userId === authUserId || p.aut === "Você") && (
                     <button
@@ -4787,8 +4963,8 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        fontSize: 14,
-                        color: `rgba(255,255,255,.25)`,
+                        fontSize: 16,
+                        color: `rgba(255,255,255,.55)`,
                         padding: "5px 8px",
                         display: "flex",
                         alignItems: "center",
@@ -4822,7 +4998,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                             alignItems: "center",
                             justifyContent: "center",
                             color: C.branco,
-                            fontSize: 10,
+                            fontSize: 12,
                             fontFamily: FB,
                             flexShrink: 0,
                           }}
@@ -4834,12 +5010,22 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                             background: `rgba(255,255,255,.06)`,
                             borderRadius: 10,
                             padding: "6px 10px",
-                            fontSize: 13,
+                            fontSize: 15,
                             fontFamily: FB,
                             color: `rgba(255,255,255,.82)`,
                             flex: 1,
                           }}
                         >
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 500,
+                              color: C.ouro,
+                              marginBottom: 2,
+                            }}
+                          >
+                            {c.q}
+                          </div>
                           {c.t}
                         </div>
                       </div>
@@ -4855,7 +5041,7 @@ function Feed({ feed, setFeed, ir, authUserId }) {
                           border: "none",
                           borderRadius: 20,
                           padding: "8px 12px",
-                          fontSize: 13,
+                          fontSize: 15,
                           fontFamily: FB,
                           color: C.branco,
                         }}
@@ -4883,6 +5069,258 @@ function Feed({ feed, setFeed, ir, authUserId }) {
           );
         })}
       </Grain>
+      {(() => {
+        const dp = det ? feed.find((p) => p.id === det) : null;
+        if (!dp) return null;
+        const dcu = dp.cur.includes(authUserId || "RF");
+        return (
+          <div
+            onClick={() => setDet(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 100,
+              background: "rgba(0,0,0,.72)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(390px, 100%)",
+                maxHeight: "92vh",
+                overflowY: "auto",
+                background: C.obs,
+                borderRadius: 18,
+                border: `1px solid ${C.ouro}22`,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 14px",
+                  borderBottom: `1px solid ${C.ouro}15`,
+                  position: "sticky",
+                  top: 0,
+                  background: C.obs,
+                  zIndex: 1,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <Av ini={dp.ini} cor={dp.cor} sz={32} />
+                  <div>
+                    <div
+                      style={{
+                        fontFamily: FB,
+                        fontWeight: 500,
+                        fontSize: 15,
+                        color: `rgba(255,255,255,.95)`,
+                      }}
+                    >
+                      {dp.aut}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: FB,
+                        fontWeight: 300,
+                        fontSize: 13,
+                        color: `rgba(255,255,255,.72)`,
+                      }}
+                    >
+                      {dp.tempo}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDet(null)}
+                  aria-label="Fechar"
+                  style={{
+                    background: `rgba(255,255,255,.06)`,
+                    border: `1px solid ${C.ouro}33`,
+                    borderRadius: "50%",
+                    width: 32,
+                    height: 32,
+                    color: C.branco,
+                    fontSize: 16,
+                    cursor: "pointer",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              {dp.imgSrc && (
+                <div style={{ background: "rgba(0,0,0,.5)" }}>
+                  <img
+                    src={dp.imgSrc}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      maxHeight: "55vh",
+                      objectFit: "contain",
+                      display: "block",
+                    }}
+                  />
+                </div>
+              )}
+              <div style={{ padding: "14px 16px 18px" }}>
+                <div
+                  style={{
+                    fontFamily: FS,
+                    fontSize: 20,
+                    fontWeight: 300,
+                    color: `rgba(255,255,255,.97)`,
+                    marginBottom: 8,
+                  }}
+                >
+                  {dp.tit}
+                </div>
+                {dp.desc && (
+                  <div
+                    style={{
+                      fontSize: 16,
+                      fontFamily: FB,
+                      fontWeight: 300,
+                      color: `rgba(255,255,255,.82)`,
+                      lineHeight: 1.65,
+                      marginBottom: 12,
+                    }}
+                  >
+                    {dp.desc}
+                  </div>
+                )}
+                <div
+                  style={{
+                    borderTop: `1px solid ${C.ouro}12`,
+                    paddingTop: 9,
+                    marginBottom: 12,
+                  }}
+                >
+                  <button
+                    onClick={() => curtir(dp.id)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: 15,
+                      color: dcu ? C.ouro : `rgba(255,255,255,.75)`,
+                      fontFamily: FB,
+                      fontWeight: 300,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "4px 0",
+                    }}
+                  >
+                    {dcu ? "💛 Me identifico" : "💛 Te entendo"}
+                    {dp.cur.length > 0 && (
+                      <span
+                        style={{ fontSize: 13, color: `rgba(255,255,255,.68)` }}
+                      >
+                        {dp.cur.length} se identificaram
+                      </span>
+                    )}
+                  </button>
+                </div>
+                <div
+                  style={{
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 13,
+                    color: C.ouro,
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    marginBottom: 10,
+                  }}
+                >
+                  Comentários ({dp.com.length})
+                </div>
+                {dp.com.map((c, i) => (
+                  <div key={i} style={{ display: "flex", gap: 7, marginBottom: 8 }}>
+                    <div
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: "50%",
+                        background: C.ouroDk,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: C.branco,
+                        fontSize: 12,
+                        fontFamily: FB,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {c.q.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div
+                      style={{
+                        background: `rgba(255,255,255,.06)`,
+                        borderRadius: 10,
+                        padding: "6px 10px",
+                        fontSize: 15,
+                        fontFamily: FB,
+                        color: `rgba(255,255,255,.82)`,
+                        flex: 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: C.ouro,
+                          marginBottom: 2,
+                        }}
+                      >
+                        {c.q}
+                      </div>
+                      {c.t}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 7, marginTop: 6 }}>
+                  <input
+                    value={txt}
+                    onChange={(e) => setTxt(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && comentar(dp.id)}
+                    placeholder="Escreva um comentário..."
+                    style={{
+                      flex: 1,
+                      background: `rgba(255,255,255,.06)`,
+                      border: "none",
+                      borderRadius: 20,
+                      padding: "8px 12px",
+                      fontSize: 15,
+                      fontFamily: FB,
+                      color: C.branco,
+                    }}
+                  />
+                  <button
+                    onClick={() => comentar(dp.id)}
+                    style={{
+                      background: `${C.obs2}`,
+                      border: `1px solid ${C.ouro}33`,
+                      borderRadius: "50%",
+                      width: 36,
+                      height: 36,
+                      cursor: "pointer",
+                      color: C.ouro,
+                      fontSize: 16,
+                    }}
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -4905,7 +5343,7 @@ function Novo({ back, postTreino }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 13,
             color: C.lt,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
@@ -4924,7 +5362,7 @@ function Novo({ back, postTreino }) {
             border: `1px solid ${C.ouro}25`,
             borderRadius: 10,
             padding: "13px 14px",
-            fontSize: 15,
+            fontSize: 17,
             fontFamily: FS,
             fontStyle: "italic",
             color: `rgba(255,255,255,.92)`,
@@ -4939,7 +5377,7 @@ function Novo({ back, postTreino }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 13,
             color: C.lt,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
@@ -4958,7 +5396,7 @@ function Novo({ back, postTreino }) {
             border: `1px solid ${C.ouro}18`,
             borderRadius: 8,
             padding: "12px 14px",
-            fontSize: 14,
+            fontSize: 16,
             fontFamily: FB,
             color: C.branco,
             resize: "none",
@@ -4970,30 +5408,68 @@ function Novo({ back, postTreino }) {
         <div
           onClick={() => ref.current?.click()}
           style={{
-            height: 100,
+            height: foto ? "auto" : 100,
             borderRadius: 10,
             border: `1.5px dashed ${C.ouro}25`,
-            background: `rgba(255,255,255,.03)`,
+            background: foto ? `rgba(0,0,0,.45)` : `rgba(255,255,255,.03)`,
             overflow: "hidden",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
             marginBottom: 18,
+            position: "relative",
           }}
         >
           {foto ? (
-            <img
-              src={foto}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+            <>
+              <img
+                src={foto}
+                alt=""
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  maxHeight: 340,
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFoto(null);
+                  setFotoFile(null);
+                  if (ref.current) ref.current.value = "";
+                }}
+                aria-label="Remover foto"
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: `rgba(0,0,0,.6)`,
+                  border: `1px solid ${C.ouro}44`,
+                  color: C.branco,
+                  fontSize: 16,
+                  fontFamily: FB,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1,
+                }}
+              >
+                ✕
+              </button>
+            </>
           ) : (
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 22 }}>📷</div>
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: 14,
                   fontFamily: FB,
                   fontWeight: 300,
                   color: C.lt,
@@ -5025,7 +5501,7 @@ function Novo({ back, postTreino }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 11,
+              fontSize: 13,
               color: C.lt,
               letterSpacing: "0.2em",
               textTransform: "uppercase",
@@ -5052,7 +5528,7 @@ function Novo({ back, postTreino }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 11,
+                  fontSize: 13,
                   color: publica ? C.ouro : `rgba(255,255,255,.92)`,
                 }}
               >
@@ -5062,8 +5538,8 @@ function Novo({ back, postTreino }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 9,
-                  color: `rgba(255,255,255,.45)`,
+                  fontSize: 11,
+                  color: `rgba(255,255,255,.65)`,
                   marginTop: 2,
                 }}
               >
@@ -5087,7 +5563,7 @@ function Novo({ back, postTreino }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 11,
+                  fontSize: 13,
                   color: !publica ? C.ouro : `rgba(255,255,255,.92)`,
                 }}
               >
@@ -5097,8 +5573,8 @@ function Novo({ back, postTreino }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 9,
-                  color: `rgba(255,255,255,.45)`,
+                  fontSize: 11,
+                  color: `rgba(255,255,255,.65)`,
                   marginTop: 2,
                 }}
               >
@@ -5196,8 +5672,8 @@ function Voz({ back, postTreino, tk }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 13,
-                  color: `rgba(255,255,255,.4)`,
+                  fontSize: 15,
+                  color: `rgba(255,255,255,.65)`,
                   marginBottom: 12,
                   lineHeight: 1.6,
                 }}
@@ -5216,7 +5692,7 @@ function Voz({ back, postTreino, tk }) {
                     borderRadius: 8,
                     padding: "8px 12px",
                     marginBottom: 7,
-                    fontSize: 12,
+                    fontSize: 14,
                     fontFamily: FS,
                     fontStyle: "italic",
                     color: `rgba(255,255,255,.92)`,
@@ -5249,7 +5725,7 @@ function Voz({ back, postTreino, tk }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 13,
+                fontSize: 15,
                 color: `rgba(255,255,255,.92)`,
               }}
             >
@@ -5259,7 +5735,7 @@ function Voz({ back, postTreino, tk }) {
               <div style={{ marginTop: 22 }}>
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 14,
                     fontFamily: FB,
                     color: C.lt,
                     marginBottom: 10,
@@ -5275,7 +5751,7 @@ function Voz({ back, postTreino, tk }) {
                     borderRadius: 50,
                     padding: "10px 22px",
                     color: C.branco,
-                    fontSize: 13,
+                    fontSize: 15,
                     fontFamily: FB,
                     cursor: "pointer",
                   }}
@@ -5302,7 +5778,7 @@ function Voz({ back, postTreino, tk }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 10,
+                  fontSize: 12,
                   color: C.ouro,
                   letterSpacing: "0.3em",
                   textTransform: "uppercase",
@@ -5353,7 +5829,7 @@ function Voz({ back, postTreino, tk }) {
                 borderRadius: 50,
                 padding: "13px 36px",
                 color: C.branco,
-                fontSize: 15,
+                fontSize: 17,
                 fontFamily: FB,
                 cursor: "pointer",
               }}
@@ -5400,7 +5876,7 @@ function Voz({ back, postTreino, tk }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 9,
+                  fontSize: 11,
                   color: C.ouro,
                   letterSpacing: "0.3em",
                   textTransform: "uppercase",
@@ -5413,7 +5889,7 @@ function Voz({ back, postTreino, tk }) {
                 style={{
                   fontFamily: FS,
                   fontStyle: "italic",
-                  fontSize: 14,
+                  fontSize: 16,
                   color: `rgba(255,255,255,.92)`,
                 }}
               >
@@ -5443,7 +5919,7 @@ function Voz({ back, postTreino, tk }) {
                     style={{
                       fontFamily: FB,
                       fontWeight: 500,
-                      fontSize: 13,
+                      fontSize: 15,
                       color: `rgba(255,255,255,.97)`,
                     }}
                   >
@@ -5453,7 +5929,7 @@ function Voz({ back, postTreino, tk }) {
                     style={{
                       fontFamily: FB,
                       fontWeight: 300,
-                      fontSize: 11,
+                      fontSize: 13,
                       color: C.lt,
                     }}
                   >
@@ -5465,7 +5941,7 @@ function Voz({ back, postTreino, tk }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 14,
+                  fontSize: 16,
                   color: `rgba(255,255,255,.92)`,
                   lineHeight: 1.75,
                 }}
@@ -5491,7 +5967,7 @@ function Voz({ back, postTreino, tk }) {
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 11,
+                    fontSize: 13,
                     color: publica ? C.ouro : `rgba(255,255,255,.88)`,
                   }}
                 >
@@ -5516,7 +5992,7 @@ function Voz({ back, postTreino, tk }) {
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 11,
+                    fontSize: 13,
                     color: !publica ? C.ouro : `rgba(255,255,255,.88)`,
                   }}
                 >
@@ -5551,7 +6027,7 @@ function Voz({ back, postTreino, tk }) {
                 padding: "12px",
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 color: C.lt,
                 cursor: "pointer",
                 marginTop: 10,
@@ -5579,8 +6055,34 @@ function Cx({
   back,
   tk,
   radarPerfis,
+  naoLidas = {},
+  solicitacoes = [],
+  setSolicitacoes,
+  solicitadas = [],
+  authUserId,
 }) {
   const p = radarPerfis[ci];
+  const jaSolicitei = p ? solicitadas.includes(p.id) : false;
+  const aceitar = (s) => {
+    supabase
+      .from("conexoes")
+      .update({ status: "aceita", updated_at: new Date().toISOString() })
+      .eq("solicitante_id", s.id)
+      .eq("destinataria_id", authUserId)
+      .then(() => {});
+    if (setSolicitacoes) setSolicitacoes((l) => l.filter((x) => x.id !== s.id));
+    setMatches((m) => (m.find((x) => x.id === s.id) ? m : [...m, { ...s, msgs: [] }]));
+    tk(`Vocês estão conectadas! 💛`);
+  };
+  const recusar = (s) => {
+    supabase
+      .from("conexoes")
+      .update({ status: "recusada", updated_at: new Date().toISOString() })
+      .eq("solicitante_id", s.id)
+      .eq("destinataria_id", authUserId)
+      .then(() => {});
+    if (setSolicitacoes) setSolicitacoes((l) => l.filter((x) => x.id !== s.id));
+  };
   return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <Cab titulo="Conexões" voltar={back} />
@@ -5589,7 +6091,7 @@ function Cx({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 12,
+            fontSize: 14,
             color: `rgba(255,255,255,.92)`,
             marginBottom: 18,
             textAlign: "center",
@@ -5597,6 +6099,98 @@ function Cx({
         >
           Encontre mulheres como você
         </div>
+        {solicitacoes.length > 0 && (
+          <div style={{ marginBottom: 22 }}>
+            <div
+              style={{
+                fontFamily: FB,
+                fontWeight: 300,
+                fontSize: 11,
+                color: C.ouro,
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
+            >
+              Solicitações ({solicitacoes.length})
+            </div>
+            {solicitacoes.map((s) => (
+              <div
+                key={s.id}
+                style={{
+                  background: `${C.ouro}08`,
+                  border: `1px solid ${C.ouro}22`,
+                  borderRadius: 12,
+                  padding: "13px 15px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 8,
+                }}
+              >
+                <Av ini={s.ini} cor={s.cor} sz={42} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontFamily: FB,
+                      fontWeight: 500,
+                      fontSize: 16,
+                      color: `rgba(255,255,255,.95)`,
+                    }}
+                  >
+                    {s.nome}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: FB,
+                      fontWeight: 300,
+                      fontSize: 13,
+                      color: `rgba(255,255,255,.88)`,
+                      marginTop: 2,
+                    }}
+                  >
+                    Quer se conectar com você 💛
+                  </div>
+                </div>
+                <button
+                  onClick={() => aceitar(s)}
+                  style={{
+                    background: `${C.ouro}22`,
+                    border: `1px solid ${C.ouro}55`,
+                    borderRadius: 50,
+                    padding: "8px 14px",
+                    fontFamily: FB,
+                    fontWeight: 300,
+                    fontSize: 14,
+                    color: C.ouro,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  Aceitar
+                </button>
+                <button
+                  onClick={() => recusar(s)}
+                  aria-label="Recusar"
+                  style={{
+                    background: `rgba(255,255,255,.04)`,
+                    border: `1px solid ${C.ouro}18`,
+                    borderRadius: "50%",
+                    width: 34,
+                    height: 34,
+                    fontFamily: FB,
+                    fontSize: 15,
+                    color: `rgba(255,255,255,.72)`,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {p ? (
           <>
             <div
@@ -5646,7 +6240,7 @@ function Cx({
                     }}
                   >
                     <span
-                      style={{ color: C.branco, fontSize: 11, fontWeight: 500 }}
+                      style={{ color: C.branco, fontSize: 13, fontWeight: 500 }}
                     >
                       ✓ Verificada
                     </span>
@@ -5663,7 +6257,7 @@ function Cx({
                   }}
                 >
                   <span
-                    style={{ color: C.branco, fontSize: 11, fontWeight: 500 }}
+                    style={{ color: C.branco, fontSize: 13, fontWeight: 500 }}
                   >
                     💛 {p.compat}%
                   </span>
@@ -5692,7 +6286,7 @@ function Cx({
                   <div
                     style={{
                       color: `rgba(255,255,255,.92)`,
-                      fontSize: 12,
+                      fontSize: 14,
                       fontFamily: FB,
                       fontWeight: 300,
                     }}
@@ -5706,7 +6300,7 @@ function Cx({
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 13,
+                    fontSize: 15,
                     color: `rgba(255,255,255,.82)`,
                     lineHeight: 1.7,
                     marginBottom: 10,
@@ -5722,7 +6316,7 @@ function Cx({
                         background: `${C.ouro}15`,
                         borderRadius: 20,
                         padding: "4px 11px",
-                        fontSize: 11,
+                        fontSize: 13,
                         fontFamily: FB,
                         fontWeight: 300,
                         color: C.ouro,
@@ -5744,8 +6338,8 @@ function Cx({
                   borderRadius: 50,
                   background: `rgba(255,255,255,.04)`,
                   border: `1px solid ${C.ouro}18`,
-                  color: `rgba(255,255,255,.4)`,
-                  fontSize: 14,
+                  color: `rgba(255,255,255,.65)`,
+                  fontSize: 16,
                   fontFamily: FB,
                   fontWeight: 300,
                   cursor: "pointer",
@@ -5754,21 +6348,24 @@ function Cx({
                 Passar →
               </button>
               <button
-                onClick={() => doSwipe("right")}
+                onClick={() => !jaSolicitei && doSwipe("right")}
                 style={{
                   flex: 1,
                   padding: "15px",
                   borderRadius: 50,
-                  background: `linear-gradient(135deg,${C.ouro}28,${C.ouro}12)`,
+                  background: jaSolicitei
+                    ? `rgba(255,255,255,.04)`
+                    : `linear-gradient(135deg,${C.ouro}28,${C.ouro}12)`,
                   border: `1px solid ${C.ouro}55`,
                   color: C.ouro,
-                  fontSize: 14,
+                  fontSize: 16,
                   fontFamily: FB,
                   fontWeight: 300,
-                  cursor: "pointer",
+                  cursor: jaSolicitei ? "default" : "pointer",
+                  opacity: jaSolicitei ? 0.7 : 1,
                 }}
               >
-                💛 Quero me conectar
+                {jaSolicitei ? "Solicitação enviada 💛" : "Quero conectar 💛"}
               </button>
             </div>
           </>
@@ -5796,7 +6393,7 @@ function Cx({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 13,
+                fontSize: 15,
                 color: `rgba(255,255,255,.88)`,
                 lineHeight: 1.6,
               }}
@@ -5811,7 +6408,7 @@ function Cx({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
@@ -5845,7 +6442,7 @@ function Cx({
                     style={{
                       fontFamily: FB,
                       fontWeight: 500,
-                      fontSize: 14,
+                      fontSize: 16,
                       color: `rgba(255,255,255,.95)`,
                     }}
                   >
@@ -5855,7 +6452,7 @@ function Cx({
                     style={{
                       fontFamily: FB,
                       fontWeight: 300,
-                      fontSize: 11,
+                      fontSize: 13,
                       color: `rgba(255,255,255,.88)`,
                       marginTop: 2,
                     }}
@@ -5863,7 +6460,29 @@ function Cx({
                     Toque para enviar mensagem
                   </div>
                 </div>
-                <span style={{ color: `rgba(255,255,255,.45)`, fontSize: 17 }}>
+                {naoLidas[m.id] > 0 && (
+                  <div
+                    style={{
+                      minWidth: 20,
+                      height: 20,
+                      padding: "0 6px",
+                      borderRadius: 10,
+                      background: C.ouro,
+                      color: C.obs,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      fontFamily: FB,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {naoLidas[m.id]}
+                  </div>
+                )}
+                <span style={{ color: `rgba(255,255,255,.65)`, fontSize: 17 }}>
                   ›
                 </span>
               </div>
@@ -5875,9 +6494,11 @@ function Cx({
   );
 }
 
-function MatchDet({ selM, setSelM, ir, back }) {
+function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
   const m = selM;
   const [matched, setMatched] = useState(false);
+  // Mensagem só é liberada com conexão aceita entre as duas
+  const conectada = matches.some((x) => x.id === m.id);
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
       <div
@@ -5899,7 +6520,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
             borderRadius: 20,
             padding: "7px 13px",
             color: C.branco,
-            fontSize: 12,
+            fontSize: 14,
             cursor: "pointer",
             fontFamily: FB,
           }}
@@ -5936,7 +6557,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
         <div
           style={{
             color: `rgba(255,255,255,.88)`,
-            fontSize: 13,
+            fontSize: 15,
             fontFamily: FB,
             fontWeight: 300,
             marginTop: 3,
@@ -5953,7 +6574,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
               padding: "4px 13px",
               marginTop: 10,
               color: C.branco,
-              fontSize: 11,
+              fontSize: 13,
               fontFamily: FB,
             }}
           >
@@ -5966,7 +6587,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
+            fontSize: 15,
             color: `rgba(255,255,255,.82)`,
             lineHeight: 1.7,
             marginBottom: 14,
@@ -5989,7 +6610,7 @@ function MatchDet({ selM, setSelM, ir, back }) {
                 background: `${C.ouro}15`,
                 borderRadius: 20,
                 padding: "5px 12px",
-                fontSize: 12,
+                fontSize: 14,
                 fontFamily: FB,
                 color: C.ouro,
                 border: `1px solid ${C.ouro}30`,
@@ -5999,15 +6620,17 @@ function MatchDet({ selM, setSelM, ir, back }) {
             </span>
           ))}
         </div>
-        <BtnPill onClick={() => ir(S.CHAT)} style={{ marginBottom: 10 }}>
-          💬 Enviar mensagem
-        </BtnPill>
+        {conectada && (
+          <BtnPill onClick={() => ir(S.CHAT)} style={{ marginBottom: 10 }}>
+            💬 Enviar mensagem
+          </BtnPill>
+        )}
       </Grain>
     </div>
   );
 }
 
-function Chat({ selM, setMatches, back, authUserId }) {
+function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
   const m = selM;
   const [msgs, setMsgs] = useState([]);
   const [txt, setTxt] = useState("");
@@ -6047,6 +6670,16 @@ function Chat({ selM, setMatches, back, authUserId }) {
         setCarregando(false);
       });
 
+    // Marca como lidas as mensagens recebidas desta conversa
+    supabase
+      .from("mensagens")
+      .update({ lida: true })
+      .eq("de_user_id", m.id)
+      .eq("para_user_id", authUserId)
+      .eq("lida", false)
+      .then(() => {});
+    if (marcarLidas) marcarLidas(m.id);
+
     const channel = supabase
       .channel(`chat_${[authUserId, m.id].sort().join("_")}`)
       .on(
@@ -6061,6 +6694,9 @@ function Chat({ selM, setMatches, back, authUserId }) {
           const row = payload.new;
           if (row.de_user_id !== m.id) return;
           setMsgs((prev) => [...prev, msgDoBanco(row)]);
+          // Conversa aberta → já marca como lida
+          supabase.from("mensagens").update({ lida: true }).eq("id", row.id).then(() => {});
+          if (marcarLidas) marcarLidas(m.id);
         }
       )
       .subscribe();
@@ -6115,7 +6751,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
             color: `rgba(255,255,255,.92)`,
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 13,
+            fontSize: 15,
             cursor: "pointer",
           }}
         >
@@ -6127,7 +6763,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
             style={{
               fontFamily: FB,
               fontWeight: 500,
-              fontSize: 13,
+              fontSize: 15,
               color: `rgba(255,255,255,.97)`,
             }}
           >
@@ -6137,7 +6773,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               color: `rgba(255,255,255,.88)`,
             }}
           >
@@ -6162,7 +6798,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
               style={{
                 fontFamily: FS,
                 fontStyle: "italic",
-                fontSize: 14,
+                fontSize: 16,
                 color: `rgba(255,255,255,.88)`,
                 lineHeight: 1.6,
               }}
@@ -6201,7 +6837,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 13,
+                    fontSize: 15,
                     color: eu ? C.ouroLt : `rgba(255,255,255,.82)`,
                     lineHeight: 1.6,
                   }}
@@ -6212,8 +6848,8 @@ function Chat({ selM, setMatches, back, authUserId }) {
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 9,
-                    color: `rgba(255,255,255,.45)`,
+                    fontSize: 11,
+                    color: `rgba(255,255,255,.65)`,
                     marginTop: 3,
                   }}
                 >
@@ -6244,7 +6880,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
                 border: `1px solid ${C.ouro}18`,
                 borderRadius: 20,
                 padding: "6px 11px",
-                fontSize: 11,
+                fontSize: 13,
                 fontFamily: FS,
                 fontStyle: "italic",
                 color: C.ouro,
@@ -6268,6 +6904,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
         }}
       >
         <input
+          autoFocus
           value={txt}
           onChange={(e) => setTxt(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && enviar()}
@@ -6278,7 +6915,7 @@ function Chat({ selM, setMatches, back, authUserId }) {
             border: `1px solid ${C.ouro}15`,
             borderRadius: 20,
             padding: "10px 15px",
-            fontSize: 13,
+            fontSize: 15,
             fontFamily: FB,
             fontWeight: 300,
             color: C.branco,
@@ -6332,7 +6969,7 @@ function CartaEditor({ setCarta, tk }) {
           border: `1px solid ${C.ouro}18`,
           borderRadius: 10,
           padding: "14px",
-          fontSize: 14,
+          fontSize: 16,
           fontFamily: FS,
           fontStyle: "italic",
           color: `rgba(255,255,255,.88)`,
@@ -6360,7 +6997,7 @@ function TelaConvite({ back }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
+            fontSize: 11,
             color: C.ouro,
             letterSpacing: "0.4em",
             textTransform: "uppercase",
@@ -6419,7 +7056,7 @@ function TelaConvite({ back }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 13,
+                fontSize: 15,
                 color: `rgba(255,255,255,.82)`,
                 lineHeight: 1.5,
               }}
@@ -6439,7 +7076,7 @@ function TelaConvite({ back }) {
             style={{
               fontFamily: FS,
               fontStyle: "italic",
-              fontSize: 14,
+              fontSize: 16,
               color: `rgba(255,255,255,.88)`,
               lineHeight: 1.6,
               marginBottom: 6,
@@ -6452,7 +7089,7 @@ function TelaConvite({ back }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               color: C.ouro,
               letterSpacing: "0.2em",
             }}
@@ -6502,7 +7139,7 @@ function JornadaClube({ ir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               color: C.ouro,
               textAlign: "center",
               lineHeight: 1.4,
@@ -6544,7 +7181,7 @@ function JornadaClube({ ir }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 13,
             color: C.ouro,
             letterSpacing: "0.2em",
           }}
@@ -6559,7 +7196,7 @@ function JornadaClube({ ir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.3em",
               textTransform: "uppercase",
@@ -6581,7 +7218,7 @@ function JornadaClube({ ir }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 12,
+                  fontSize: 14,
                   color: `rgba(255,255,255,.92)`,
                   marginBottom: 10,
                 }}
@@ -6615,8 +7252,8 @@ function JornadaClube({ ir }) {
                     style={{
                       fontFamily: FB,
                       fontWeight: 300,
-                      fontSize: 13,
-                      color: `rgba(255,255,255,.4)`,
+                      fontSize: 15,
+                      color: `rgba(255,255,255,.65)`,
                     }}
                   >
                     {h}
@@ -6633,7 +7270,7 @@ function JornadaClube({ ir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.3em",
               textTransform: "uppercase",
@@ -6660,13 +7297,13 @@ function JornadaClube({ ir }) {
                 cursor: "pointer",
                 color: C.ouro,
                 fontFamily: FB,
-                fontSize: 12,
+                fontSize: 14,
                 letterSpacing: "0.2em",
               }}
             >
               S1
               <br />
-              <span style={{ fontSize: 9, opacity: 0.7 }}>Início ✓</span>
+              <span style={{ fontSize: 11, opacity: 0.7 }}>Início ✓</span>
             </button>
             {[
               ["S6", "Meio"],
@@ -6681,9 +7318,9 @@ function JornadaClube({ ir }) {
                   borderRadius: 10,
                   padding: "14px 0",
                   cursor: "pointer",
-                  color: `rgba(255,255,255,.22)`,
+                  color: `rgba(255,255,255,.55)`,
                   fontFamily: FB,
-                  fontSize: 12,
+                  fontSize: 14,
                   letterSpacing: "0.2em",
                   position: "relative",
                 }}
@@ -6693,14 +7330,14 @@ function JornadaClube({ ir }) {
                     position: "absolute",
                     top: 6,
                     right: 8,
-                    fontSize: 10,
+                    fontSize: 12,
                   }}
                 >
                   🔒
                 </div>
                 {m}
                 <br />
-                <span style={{ fontSize: 9, opacity: 0.5 }}>{sub}</span>
+                <span style={{ fontSize: 11, opacity: 0.5 }}>{sub}</span>
               </button>
             ))}
           </div>
@@ -6708,8 +7345,8 @@ function JornadaClube({ ir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
-              color: `rgba(255,255,255,.45)`,
+              fontSize: 12,
+              color: `rgba(255,255,255,.65)`,
               lineHeight: 1.5,
             }}
           >
@@ -6723,7 +7360,7 @@ function JornadaClube({ ir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.3em",
               textTransform: "uppercase",
@@ -6745,7 +7382,7 @@ function JornadaClube({ ir }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.35em",
                 textTransform: "uppercase",
@@ -6764,15 +7401,15 @@ function JornadaClube({ ir }) {
                 key={i}
                 style={{ display: "flex", gap: 10, marginBottom: 7 }}
               >
-                <div style={{ color: C.ouro, fontSize: 14, flexShrink: 0 }}>
+                <div style={{ color: C.ouro, fontSize: 16, flexShrink: 0 }}>
                   ·
                 </div>
                 <div
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 12,
-                    color: `rgba(255,255,255,.38)`,
+                    fontSize: 14,
+                    color: `rgba(255,255,255,.62)`,
                     lineHeight: 1.5,
                   }}
                 >
@@ -6799,14 +7436,14 @@ function JornadaClube({ ir }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 13,
-                color: `rgba(255,255,255,.22)`,
+                fontSize: 15,
+                color: `rgba(255,255,255,.55)`,
                 letterSpacing: "0.04em",
               }}
             >
               Estou voltando agora
             </span>
-            <span style={{ fontSize: 15 }}>🔒</span>
+            <span style={{ fontSize: 17 }}>🔒</span>
           </button>
         </div>
 
@@ -6816,7 +7453,7 @@ function JornadaClube({ ir }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.3em",
               textTransform: "uppercase",
@@ -6848,7 +7485,7 @@ function JornadaClube({ ir }) {
                       padding: "10px 0",
                       fontFamily: FB,
                       fontWeight: 300,
-                      fontSize: 10,
+                      fontSize: 12,
                       color: i === 0 ? C.ouro : `rgba(255,255,255,.18)`,
                       textAlign: "center",
                       borderBottom: `2px solid ${i === 0 ? C.ouro : "transparent"}`,
@@ -6871,8 +7508,8 @@ function JornadaClube({ ir }) {
                   style={{
                     fontFamily: FS,
                     fontStyle: "italic",
-                    fontSize: 13,
-                    color: `rgba(255,255,255,.12)`,
+                    fontSize: 15,
+                    color: `rgba(255,255,255,.55)`,
                     textAlign: "center",
                   }}
                 >
@@ -6897,7 +7534,7 @@ function JornadaClube({ ir }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
@@ -6905,7 +7542,7 @@ function JornadaClube({ ir }) {
             >
               Calendário das 12 semanas
             </div>
-            <span style={{ fontSize: 13 }}>🔒</span>
+            <span style={{ fontSize: 15 }}>🔒</span>
           </div>
           <div
             onClick={lock}
@@ -6935,8 +7572,8 @@ function JornadaClube({ ir }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 10,
-                color: `rgba(255,255,255,.18)`,
+                fontSize: 12,
+                color: `rgba(255,255,255,.55)`,
                 textAlign: "center",
               }}
             >
@@ -6947,11 +7584,11 @@ function JornadaClube({ ir }) {
 
         <BtnPill
           onClick={() => {}}
-          style={{ marginBottom: 10, fontSize: 13 }}
+          style={{ marginBottom: 10, fontSize: 15 }}
         >
           Quero entrar na Jornada AUGE
         </BtnPill>
-        <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 13 }}>
+        <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 15 }}>
           Voltar ao início
         </BtnOut>
       </Grain>
@@ -6972,7 +7609,7 @@ function VitJornada({ ir, onLogin }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
+            fontSize: 11,
             color: C.ouro,
             letterSpacing: "0.4em",
             textTransform: "uppercase",
@@ -7059,7 +7696,7 @@ function VitJornada({ ir, onLogin }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 12,
+                  fontSize: 14,
                   color: `rgba(255,255,255,.92)`,
                   lineHeight: 1.5,
                 }}
@@ -7083,7 +7720,7 @@ function VitJornada({ ir, onLogin }) {
             style={{
               fontFamily: FS,
               fontStyle: "italic",
-              fontSize: 15,
+              fontSize: 17,
               color: `rgba(255,255,255,.92)`,
               lineHeight: 1.6,
               marginBottom: 6,
@@ -7096,7 +7733,7 @@ function VitJornada({ ir, onLogin }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               color: C.ouro,
               letterSpacing: "0.2em",
             }}
@@ -7111,7 +7748,7 @@ function VitJornada({ ir, onLogin }) {
         >
           Quero participar da próxima turma
         </BtnPill>
-        <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 13 }}>
+        <BtnOut onClick={() => ir(S.HOME)} style={{ fontSize: 15 }}>
           Voltar ao início
         </BtnOut>
       </div>
@@ -7161,7 +7798,7 @@ function Jornada({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 13,
             color: C.ouro,
             letterSpacing: "0.2em",
           }}
@@ -7175,7 +7812,7 @@ function Jornada({
           style={{
             fontFamily: FS,
             fontStyle: "italic",
-            fontSize: 13,
+            fontSize: 15,
             color: `${C.ouroLt}55`,
             lineHeight: 1.5,
             marginBottom: 16,
@@ -7206,7 +7843,7 @@ function Jornada({
             style={{
               fontFamily: FB,
               fontWeight: 500,
-              fontSize: 13,
+              fontSize: 15,
               color: C.blush,
               letterSpacing: "0.05em",
             }}
@@ -7217,7 +7854,7 @@ function Jornada({
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 15,
+              fontSize: 17,
               color: C.blush,
             }}
           >
@@ -7240,7 +7877,7 @@ function Jornada({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
@@ -7266,7 +7903,7 @@ function Jornada({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: `rgba(255,255,255,.88)`,
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
@@ -7286,7 +7923,7 @@ function Jornada({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
+            fontSize: 11,
             color: C.ouro,
             letterSpacing: "0.3em",
             textTransform: "uppercase",
@@ -7323,7 +7960,7 @@ function Jornada({
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 9,
+                    fontSize: 11,
                     color: ok
                       ? `rgba(255,255,255,.82)`
                       : `rgba(255,255,255,.15)`,
@@ -7343,7 +7980,7 @@ function Jornada({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
+            fontSize: 11,
             color: C.ouro,
             letterSpacing: "0.3em",
             textTransform: "uppercase",
@@ -7410,7 +8047,7 @@ function Jornada({
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 11,
+                  fontSize: 13,
                   color: item.destaque
                     ? `rgba(226,185,168,.45)`
                     : `rgba(255,255,255,.88)`,
@@ -7549,7 +8186,7 @@ function Roda({
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               letterSpacing: "0.35em",
               textTransform: "uppercase",
               color: `rgba(255,255,255,.88)`,
@@ -7562,7 +8199,7 @@ function Roda({
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: `rgba(255,255,255,.88)`,
               letterSpacing: "0.25em",
               textTransform: "uppercase",
@@ -7605,7 +8242,7 @@ function Roda({
                         ? C.ouro
                         : `rgba(255,255,255,.88)`,
                     fontFamily: FB,
-                    fontSize: 12,
+                    fontSize: 14,
                     letterSpacing: "0.2em",
                     position: "relative",
                   }}
@@ -7616,7 +8253,7 @@ function Roda({
                         position: "absolute",
                         top: 6,
                         right: 8,
-                        fontSize: 10,
+                        fontSize: 12,
                       }}
                     >
                       🔒
@@ -7624,7 +8261,7 @@ function Roda({
                   )}
                   {m}
                   <br />
-                  <span style={{ fontSize: 9, opacity: 0.6 }}>{sub}</span>
+                  <span style={{ fontSize: 11, opacity: 0.6 }}>{sub}</span>
                 </button>
               );
             })}
@@ -7666,7 +8303,7 @@ function Roda({
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.35em",
               textTransform: "uppercase",
@@ -7729,7 +8366,7 @@ function Roda({
                   cursor: "pointer",
                   textAlign: "left",
                   fontFamily: FB,
-                  fontSize: 14,
+                  fontSize: 16,
                   color: `rgba(255,255,255,.88)`,
                   lineHeight: 1.4,
                 }}
@@ -7745,7 +8382,7 @@ function Roda({
               border: "none",
               color: `rgba(255,255,255,.82)`,
               fontFamily: FB,
-              fontSize: 11,
+              fontSize: 13,
               letterSpacing: "0.15em",
               textTransform: "uppercase",
               padding: "0.7rem",
@@ -7783,7 +8420,7 @@ function Roda({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
+            fontSize: 11,
             letterSpacing: "0.4em",
             textTransform: "uppercase",
             color: `rgba(255,255,255,.88)`,
@@ -7810,7 +8447,7 @@ function Roda({
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               letterSpacing: "0.35em",
               textTransform: "uppercase",
               textAlign: "center",
@@ -7864,10 +8501,10 @@ function Roda({
                 <span
                   style={{
                     fontFamily: FB,
-                    fontSize: 11,
+                    fontSize: 13,
                     letterSpacing: "0.2em",
                     textTransform: "uppercase",
-                    color: `rgba(255,255,255,.4)`,
+                    color: `rgba(255,255,255,.65)`,
                   }}
                 >
                   {d}
@@ -7888,7 +8525,7 @@ function Roda({
         >
           <p
             style={{
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: 300,
               fontStyle: "italic",
               color: `rgba(255,255,255,.88)`,
@@ -8056,7 +8693,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.35em",
               textTransform: "uppercase",
@@ -8072,15 +8709,15 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
             "O dia que você volta vale igual ao dia perfeito. Às vezes vale mais.",
           ].map((r, i) => (
             <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8 }}>
-              <div style={{ color: C.ouro, fontSize: 15, flexShrink: 0 }}>
+              <div style={{ color: C.ouro, fontSize: 17, flexShrink: 0 }}>
                 ·
               </div>
               <div
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 13,
-                  color: `rgba(255,255,255,.4)`,
+                  fontSize: 15,
+                  color: `rgba(255,255,255,.65)`,
                   lineHeight: 1.5,
                 }}
               >
@@ -8095,7 +8732,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.92)`,
                 marginBottom: 8,
               }}
@@ -8112,7 +8749,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 10,
                 padding: "12px",
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: FS,
                 color: `rgba(255,255,255,.82)`,
                 resize: "none",
@@ -8128,7 +8765,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.92)`,
                 marginBottom: 8,
               }}
@@ -8155,7 +8792,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                     color: onde === op ? C.ouro : `rgba(255,255,255,.88)`,
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 13,
+                    fontSize: 15,
                     cursor: "pointer",
                   }}
                 >
@@ -8188,7 +8825,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 9,
+                  fontSize: 11,
                   color: C.ouro,
                   letterSpacing: "0.3em",
                   textTransform: "uppercase",
@@ -8201,7 +8838,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                 style={{
                   fontFamily: FS,
                   fontStyle: "italic",
-                  fontSize: 14,
+                  fontSize: 16,
                   color: `rgba(255,255,255,.88)`,
                   lineHeight: 1.6,
                 }}
@@ -8220,7 +8857,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                 style={{
                   fontFamily: FS,
                   fontStyle: 'italic',
-                  fontSize: 13,
+                  fontSize: 15,
                   color: C.ouro,
                   lineHeight: 1.6,
                   marginTop: 14,
@@ -8281,7 +8918,7 @@ function Calendario({ back, historico, dataCadastro }) {
     <div style={{ animation: "fadeUp .4s ease" }}>
       <Cab titulo="Meu progresso" voltar={back} />
       <Grain style={{ padding: "18px 18px 32px" }}>
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 12 }}>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 12 }}>
           As 12 semanas
         </div>
         <div style={{ display: "flex", gap: 4, marginBottom: 22, alignItems: "flex-end" }}>
@@ -8291,22 +8928,22 @@ function Calendario({ back, historico, dataCadastro }) {
             return (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                 <div style={{ width: "100%", background: `rgba(196,168,130,${op})`, borderRadius: 4, height: h }} />
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 8, color: `rgba(255,255,255,.82)` }}>{i + 1}</div>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.82)` }}>{i + 1}</div>
               </div>
             );
           })}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(255,255,255,.5)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(255,255,255,.68)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>
             {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
           </div>
           <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? `rgba(255,255,255,.5)` : `rgba(255,255,255,.15)`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 16 }}>
           {["D","S","T","Q","Q","S","S"].map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 9, color: `rgba(255,255,255,.82)`, padding: "2px 0" }}>{d}</div>
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.82)`, padding: "2px 0" }}>{d}</div>
           ))}
           {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
           {Array.from({ length: diasNoMes }, (_, i) => {
@@ -8319,7 +8956,7 @@ function Calendario({ back, historico, dataCadastro }) {
                 aspectRatio: "1", borderRadius: 7,
                 background: bg, border: isHoje ? `2px solid ${C.ouro}` : (bo || "none"),
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontFamily: FS, fontWeight: 300, color: tc,
+                fontSize: 12, fontFamily: FS, fontWeight: 300, color: tc,
                 boxShadow: isHoje ? `0 0 0 1px ${C.ouro}44` : "none",
               }}>
                 {dia}
@@ -8336,11 +8973,11 @@ function Calendario({ back, historico, dataCadastro }) {
           ].map(([c, l]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <div style={{ width: 12, height: 12, borderRadius: 4, background: c, border: `1px solid ${C.ouro}25`, flexShrink: 0 }} />
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.88)` }}>{l}</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.88)` }}>{l}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 11, color: `rgba(255,255,255,.35)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: `rgba(255,255,255,.62)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
           Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
       </Grain>
@@ -8418,7 +9055,7 @@ function Escritas({
                 borderBottom: `2px solid ${escT === id ? C.ouro : "transparent"}`,
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 10,
+                fontSize: 12,
                 color: escT === id ? C.ouro : `rgba(255,255,255,.88)`,
                 cursor: "pointer",
                 transition: "all .2s",
@@ -8434,7 +9071,7 @@ function Escritas({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.92)`,
                 marginBottom: 10,
               }}
@@ -8451,7 +9088,7 @@ function Escritas({
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 10,
                 padding: "13px",
-                fontSize: 15,
+                fontSize: 17,
                 fontFamily: FS,
                 color: `rgba(255,255,255,.88)`,
                 resize: "none",
@@ -8493,7 +9130,7 @@ function Escritas({
                       style={{
                         fontFamily: FS,
                         fontStyle: "italic",
-                        fontSize: 13,
+                        fontSize: 15,
                         color: `rgba(255,255,255,.92)`,
                       }}
                     >
@@ -8505,7 +9142,7 @@ function Escritas({
                     style={{
                       fontFamily: FB,
                       fontWeight: 300,
-                      fontSize: 13,
+                      fontSize: 15,
                       color: `rgba(255,255,255,.92)`,
                       lineHeight: 1.75,
                       whiteSpace: "pre-wrap",
@@ -8521,7 +9158,7 @@ function Escritas({
                 style={{
                   fontFamily: FS,
                   fontStyle: 'italic',
-                  fontSize: 13,
+                  fontSize: 15,
                   color: C.ouro,
                   lineHeight: 1.6,
                   marginTop: 14,
@@ -8543,7 +9180,7 @@ function Escritas({
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 9,
+                    fontSize: 11,
                     color: C.ouro,
                     letterSpacing: "0.2em",
                     textTransform: "uppercase",
@@ -8556,7 +9193,7 @@ function Escritas({
                   style={{
                     fontFamily: FS,
                     fontStyle: "italic",
-                    fontSize: 14,
+                    fontSize: 16,
                     color: `rgba(255,255,255,.92)`,
                     lineHeight: 1.5,
                   }}
@@ -8581,7 +9218,7 @@ function Escritas({
                     marginBottom: 16,
                   }}
                 >
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 12 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 12 }}>
                     Minha âncora
                   </div>
                   <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 20, color: C.ouro, lineHeight: 1.5 }}>
@@ -8594,7 +9231,7 @@ function Escritas({
                     width: "100%", background: "none",
                     border: `1px solid ${C.ouro}20`, borderRadius: 50,
                     padding: "12px", fontFamily: FB, fontWeight: 300,
-                    fontSize: 12, color: `rgba(255,255,255,.88)`,
+                    fontSize: 14, color: `rgba(255,255,255,.88)`,
                     cursor: "pointer", letterSpacing: "0.1em",
                   }}
                 >
@@ -8603,7 +9240,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
                   Escreva a frase que vai te trazer de volta nos dias difíceis.
                 </div>
                 <textarea
@@ -8613,7 +9250,7 @@ function Escritas({
                   style={{
                     width: "100%", background: `rgba(255,255,255,.04)`,
                     border: `1px solid ${C.ouro}15`, borderRadius: 10,
-                    padding: "13px", fontSize: 15, fontFamily: FS,
+                    padding: "13px", fontSize: 17, fontFamily: FS,
                     fontStyle: "italic", color: `rgba(255,255,255,.82)`,
                     resize: "none", height: 80, lineHeight: 1.6, marginBottom: 12,
                   }}
@@ -8638,7 +9275,7 @@ function Escritas({
           <div>
             {pq1 && pq2 && pq3 && !editPq ? (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: `rgba(255,255,255,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
                   Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -8647,8 +9284,8 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3],
                 ].map(([q, v], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 14, color: `rgba(255,255,255,.45)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
-                    <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FS, fontSize: 15, color: `rgba(255,255,255,.92)`, lineHeight: 1.6 }}>
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: `rgba(255,255,255,.65)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FS, fontSize: 17, color: `rgba(255,255,255,.92)`, lineHeight: 1.6 }}>
                       {v}
                     </div>
                   </div>
@@ -8659,7 +9296,7 @@ function Escritas({
                     width: "100%", background: "none",
                     border: `1px solid ${C.ouro}20`, borderRadius: 50,
                     padding: "12px", fontFamily: FB, fontWeight: 300,
-                    fontSize: 12, color: `rgba(255,255,255,.88)`,
+                    fontSize: 14, color: `rgba(255,255,255,.88)`,
                     cursor: "pointer", letterSpacing: "0.1em", marginTop: 4,
                   }}
                 >
@@ -8668,7 +9305,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
                   Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -8677,12 +9314,12 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3, setPq3],
                 ].map(([q, v, s], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15, color: `rgba(255,255,255,.92)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: `rgba(255,255,255,.92)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
                     <textarea
                       value={v}
                       onChange={(e) => s(e.target.value)}
                       placeholder="Escreva com honestidade..."
-                      style={{ width: "100%", background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 14, fontFamily: FS, color: `rgba(255,255,255,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
+                      style={{ width: "100%", background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 16, fontFamily: FS, color: `rgba(255,255,255,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
                     />
                   </div>
                 ))}
@@ -8727,7 +9364,7 @@ function Escritas({
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 11,
+                    fontSize: 13,
                     color: `rgba(255,255,255,.88)`,
                     marginTop: 2,
                   }}
@@ -8758,7 +9395,7 @@ function Escritas({
                         style={{
                           fontFamily: FB,
                           fontWeight: 300,
-                          fontSize: 9,
+                          fontSize: 11,
                           color: C.ouro,
                           letterSpacing: "0.3em",
                           textTransform: "uppercase",
@@ -8779,7 +9416,7 @@ function Escritas({
                         <div
                           style={{
                             fontFamily: FS,
-                            fontSize: 14,
+                            fontSize: 16,
                             color: `rgba(255,255,255,.82)`,
                             lineHeight: 1.8,
                             whiteSpace: "pre-wrap",
@@ -8807,7 +9444,7 @@ function Escritas({
                               style={{
                                 fontFamily: FS,
                                 fontStyle: "italic",
-                                fontSize: 15,
+                                fontSize: 17,
                                 color: C.ouro,
                                 lineHeight: 1.6,
                                 margin: 0,
@@ -8829,7 +9466,7 @@ function Escritas({
                               style={{
                                 fontFamily: FB,
                                 fontWeight: 300,
-                                fontSize: 14,
+                                fontSize: 16,
                                 color: `rgba(255,255,255,.92)`,
                                 lineHeight: 1.7,
                                 marginBottom: 10,
@@ -8842,7 +9479,7 @@ function Escritas({
                               style={{
                                 fontFamily: FS,
                                 fontStyle: "italic",
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: C.ouro,
                                 letterSpacing: "0.04em",
                               }}
@@ -8863,7 +9500,7 @@ function Escritas({
                           width: "100%",
                           fontFamily: FB,
                           fontWeight: 300,
-                          fontSize: 11,
+                          fontSize: 13,
                           color: `rgba(255,255,255,.82)`,
                           cursor: "pointer",
                           letterSpacing: "0.1em",
@@ -8881,7 +9518,7 @@ function Escritas({
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 12,
+                    fontSize: 14,
                     color: `rgba(255,255,255,.88)`,
                     lineHeight: 1.7,
                     marginBottom: 16,
@@ -8947,7 +9584,7 @@ function Emergencia({
             color: C.blush,
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 12,
+            fontSize: 14,
             cursor: "pointer",
             marginBottom: 12,
           }}
@@ -8969,7 +9606,7 @@ function Emergencia({
           style={{
             fontFamily: FS,
             fontStyle: "italic",
-            fontSize: 14,
+            fontSize: 16,
             color: C.blush,
             marginTop: 4,
           }}
@@ -9015,7 +9652,7 @@ function Emergencia({
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 9,
+                  fontSize: 11,
                   color: C.ouro,
                   letterSpacing: "0.3em",
                   textTransform: "uppercase",
@@ -9028,8 +9665,8 @@ function Emergencia({
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 13,
-                  color: `rgba(255,255,255,.4)`,
+                  fontSize: 15,
+                  color: `rgba(255,255,255,.65)`,
                   lineHeight: 1.7,
                 }}
               >
@@ -9048,7 +9685,7 @@ function Emergencia({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.92)`,
                 marginBottom: 6,
               }}
@@ -9059,8 +9696,8 @@ function Emergencia({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 10,
-                color: `rgba(255,255,255,.45)`,
+                fontSize: 12,
+                color: `rgba(255,255,255,.65)`,
                 marginBottom: 10,
                 lineHeight: 1.6,
               }}
@@ -9077,7 +9714,7 @@ function Emergencia({
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 10,
                 padding: "11px",
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: FS,
                 color: `rgba(255,255,255,.82)`,
                 resize: "none",
@@ -9090,7 +9727,7 @@ function Emergencia({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.92)`,
                 marginBottom: 6,
               }}
@@ -9107,7 +9744,7 @@ function Emergencia({
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 10,
                 padding: "11px",
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: FS,
                 color: `rgba(255,255,255,.82)`,
                 resize: "none",
@@ -9134,10 +9771,10 @@ function Emergencia({
                 width: "100%",
                 background: "none",
                 border: "none",
-                color: `rgba(255,255,255,.45)`,
+                color: `rgba(255,255,255,.65)`,
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 14,
                 cursor: "pointer",
               }}
             >
@@ -9150,7 +9787,7 @@ function Emergencia({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
@@ -9185,7 +9822,7 @@ function Emergencia({
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 9,
+                    fontSize: 11,
                     color: C.ouro,
                     letterSpacing: "0.3em",
                     textTransform: "uppercase",
@@ -9232,7 +9869,7 @@ function Emergencia({
                 style={{
                   fontFamily: FS,
                   fontStyle: "italic",
-                  fontSize: 15,
+                  fontSize: 17,
                   color: C.ouro,
                   lineHeight: 1.6,
                 }}
@@ -9263,7 +9900,7 @@ function Emergencia({
                 padding: "11px",
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.82)`,
                 cursor: "pointer",
                 letterSpacing: "0.1em",
@@ -9481,7 +10118,7 @@ function Conteudo({ perfil, videos: videosDB }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 9,
+            fontSize: 11,
             color: `rgba(255,255,255,.88)`,
             letterSpacing: "0.3em",
             textTransform: "uppercase",
@@ -9521,7 +10158,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                       position: "absolute",
                       top: 5,
                       right: 6,
-                      fontSize: 9,
+                      fontSize: 11,
                     }}
                   >
                     🔒
@@ -9532,7 +10169,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                   style={{
                     fontFamily: FB,
                     fontWeight: 300,
-                    fontSize: 10,
+                    fontSize: 12,
                     color: ativa
                       ? C.ouro
                       : bloq
@@ -9578,7 +10215,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 borderRadius: 20,
                 padding: "2px 10px",
                 fontFamily: FB,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.1em",
               }}
@@ -9603,7 +10240,7 @@ function Conteudo({ perfil, videos: videosDB }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 13,
+                fontSize: 15,
                 color: `rgba(255,255,255,.82)`,
                 lineHeight: 1.6,
                 marginBottom: 12,
@@ -9614,7 +10251,7 @@ function Conteudo({ perfil, videos: videosDB }) {
             </div>
             <BtnPill
               onClick={() => setShowConvite(true)}
-              style={{ fontSize: 13 }}
+              style={{ fontSize: 15 }}
             >
               Quero entrar na Jornada AUGE
             </BtnPill>
@@ -9648,7 +10285,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: bloqVideo ? 18 : 22,
-                color: `rgba(255,255,255,.55)`,
+                color: `rgba(255,255,255,.7)`,
               }}
             >
               {bloqVideo ? "🔒" : "▶"}
@@ -9657,7 +10294,7 @@ function Conteudo({ perfil, videos: videosDB }) {
               <div
                 style={{
                   fontFamily: FS,
-                  fontSize: 15,
+                  fontSize: 17,
                   color: bloqCat
                     ? `rgba(255,255,255,.92)`
                     : `rgba(255,255,255,.97)`,
@@ -9671,7 +10308,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 10,
+                  fontSize: 12,
                   color: `rgba(255,255,255,.88)`,
                   marginBottom: 2,
                 }}
@@ -9682,7 +10319,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 10,
+                  fontSize: 12,
                   color: bloqCat ? C.ouro : `rgba(255,255,255,.45)`,
                 }}
               >
@@ -9821,13 +10458,13 @@ function PainelMentora({ ir }) {
       {/* Header */}
       <div style={{ background: C.obs, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.ouro}18` }}>
         <button onClick={() => ir(S.PF)} style={{ background: "transparent", border: "none", color: C.ouro, cursor: "pointer", fontSize: 18, padding: 0 }}>←</button>
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>Painel da Mentora</div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>Painel da Mentora</div>
       </div>
 
       {/* Abas */}
       <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.obs }}>
         {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["alunas", "Alunas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 12, color: aba === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer", transition: "all .2s" }}>
+          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 14, color: aba === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer", transition: "all .2s" }}>
             {label}
           </button>
         ))}
@@ -9840,7 +10477,7 @@ function PainelMentora({ ir }) {
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)` }}>Aulas no YouTube</div>
-              <button onClick={() => setMostrarForm((v) => !v)} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 20, padding: "6px 14px", fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, cursor: "pointer" }}>
+              <button onClick={() => setMostrarForm((v) => !v)} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 20, padding: "6px 14px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.ouro, cursor: "pointer" }}>
                 {mostrarForm ? "Cancelar" : "+ Adicionar"}
               </button>
             </div>
@@ -9848,7 +10485,7 @@ function PainelMentora({ ir }) {
             {/* Formulário de novo vídeo */}
             {mostrarForm && (
               <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 14 }}>Novo vídeo</div>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 14 }}>Novo vídeo</div>
                 {[
                   ["Título", "titulo", "Ex: Yoga para mobilidade"],
                   ["Link do YouTube", "url", "https://youtube.com/watch?v=..."],
@@ -9856,27 +10493,27 @@ function PainelMentora({ ir }) {
                   ["Descrição (opcional)", "descricao", "Breve descrição da aula"],
                 ].map(([lb, field, ph]) => (
                   <div key={field} style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.5)`, marginBottom: 5 }}>{lb}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.68)`, marginBottom: 5 }}>{lb}</div>
                     <input
                       value={formV[field]}
                       onChange={(e) => setFormV((f) => ({ ...f, [field]: e.target.value }))}
                       placeholder={ph}
-                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 13, padding: "6px 0" }}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "6px 0" }}
                     />
                   </div>
                 ))}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.5)`, marginBottom: 5 }}>Categoria</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.68)`, marginBottom: 5 }}>Categoria</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {CATS_ADMIN.map((cat) => (
                       <button key={cat.id} onClick={() => setFormV((f) => ({ ...f, categoria: cat.id }))}
-                        style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 300, fontSize: 11, color: formV.categoria === cat.id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+                        style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: formV.categoria === cat.id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
                         {cat.label}
                       </button>
                     ))}
                   </div>
                 </div>
-                <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 13 }}>
+                <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 15 }}>
                   {salvandoV ? "Salvando..." : "Salvar vídeo"}
                 </BtnPill>
               </div>
@@ -9884,19 +10521,19 @@ function PainelMentora({ ir }) {
 
             {/* Lista de vídeos */}
             {loadingV ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : videos.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
             ) : videos.map((v) => (
               <div key={v.id} style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
                 {v.youtube_id && (
                   <img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" style={{ width: 60, height: 45, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.92)`, marginBottom: 3 }}>{v.titulo}</div>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.4)` }}>{v.categoria} · {v.duracao}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.92)`, marginBottom: 3 }}>{v.titulo}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.65)` }}>{v.categoria} · {v.duracao}</div>
                 </div>
-                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(255,255,255,.25)`, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
+                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(255,255,255,.55)`, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
               </div>
             ))}
           </div>
@@ -9913,16 +10550,16 @@ function PainelMentora({ ir }) {
               ["Link do Zoom", "zoom", "https://zoom.us/j/..."],
             ].map(([lb, field, ph]) => (
               <div key={field} style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.5)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.68)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
                 <input
                   value={ment[field]}
                   onChange={(e) => setMent((m) => ({ ...m, [field]: e.target.value }))}
                   placeholder={ph}
-                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 14, padding: "7px 0" }}
+                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "7px 0" }}
                 />
               </div>
             ))}
-            <BtnPill onClick={salvarMentoria} style={{ fontSize: 13 }}>
+            <BtnPill onClick={salvarMentoria} style={{ fontSize: 15 }}>
               {salvoM ? "✓ Salvo!" : salvandoM ? "Salvando..." : "Salvar mentoria"}
             </BtnPill>
           </div>
@@ -9933,9 +10570,9 @@ function PainelMentora({ ir }) {
           <div>
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)`, marginBottom: 16 }}>Alunas ativas</div>
             {loadingA ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : alunas.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.4)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.65)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
             ) : alunas.map((a) => {
               const dias = diasSemCk(a.ultimoCk);
               const statusCor = dias === null ? `rgba(255,255,255,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
@@ -9943,10 +10580,10 @@ function PainelMentora({ ir }) {
               return (
                 <div key={a.id} style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)` }}>{a.nome || "—"}</div>
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: statusCor }}>{statusTxt}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 16, color: `rgba(255,255,255,.92)` }}>{a.nome || "—"}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: statusCor }}>{statusTxt}</div>
                   </div>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.4)` }}>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.65)` }}>
                     {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
                   </div>
                 </div>
@@ -10072,12 +10709,12 @@ function Perfil({
           )}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0,
-            background: "rgba(0,0,0,.45)", fontSize: 9,
+            background: "rgba(0,0,0,.45)", fontSize: 11,
             fontFamily: FB, color: "rgba(255,255,255,.88)",
             padding: "3px 0", letterSpacing: "0.05em",
           }}>📷</div>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.45)`, marginBottom: 8 }}>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.65)`, marginBottom: 8 }}>
           Toque para alterar foto
         </div>
         <div
@@ -10094,7 +10731,7 @@ function Perfil({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 13,
             color: `rgba(255,255,255,.88)`,
             marginTop: 3,
           }}
@@ -10105,7 +10742,7 @@ function Perfil({
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 12,
+            fontSize: 14,
             color: C.ouro,
             marginTop: 4,
           }}
@@ -10128,7 +10765,7 @@ function Perfil({
               padding: "4px 14px",
               marginTop: 10,
               color: "#4ade80",
-              fontSize: 11,
+              fontSize: 13,
               fontFamily: FB,
             }}
           >
@@ -10157,7 +10794,7 @@ function Perfil({
               padding: "6px 16px",
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 11,
+              fontSize: 13,
               color: C.ouro,
               cursor: "pointer",
               letterSpacing: "0.1em",
@@ -10175,7 +10812,7 @@ function Perfil({
                 padding: "6px 16px",
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: C.ouro,
                 cursor: "pointer",
                 letterSpacing: "0.1em",
@@ -10194,7 +10831,7 @@ function Perfil({
                 padding: "6px 16px",
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
+                fontSize: 13,
                 color: `rgba(255,255,255,.88)`,
                 cursor: "pointer",
                 letterSpacing: "0.1em",
@@ -10221,7 +10858,7 @@ function Perfil({
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 9,
+              fontSize: 11,
               color: C.ouro,
               letterSpacing: "0.3em",
               textTransform: "uppercase",
@@ -10235,8 +10872,8 @@ function Perfil({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
-                color: `rgba(255,255,255,.4)`,
+                fontSize: 13,
+                color: `rgba(255,255,255,.65)`,
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
                 marginBottom: 6,
@@ -10265,8 +10902,8 @@ function Perfil({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
-                color: `rgba(255,255,255,.4)`,
+                fontSize: 13,
+                color: `rgba(255,255,255,.65)`,
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
                 marginBottom: 6,
@@ -10324,7 +10961,7 @@ function Perfil({
                 style={{
                   fontFamily: FB,
                   fontWeight: 300,
-                  fontSize: 11,
+                  fontSize: 13,
                   color: `rgba(255,255,255,.92)`,
                   marginBottom: 4,
                 }}
@@ -10345,7 +10982,7 @@ function Perfil({
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.ouro,
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
@@ -10382,7 +11019,7 @@ function Perfil({
                       style={{
                         fontFamily: FB,
                         fontWeight: 300,
-                        fontSize: 9,
+                        fontSize: 11,
                         color: ok
                           ? `rgba(255,255,255,.45)`
                           : `rgba(255,255,255,.15)`,
@@ -10421,8 +11058,8 @@ function Perfil({
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
-              color: `rgba(255,255,255,.45)`,
+              fontSize: 12,
+              color: `rgba(255,255,255,.65)`,
               lineHeight: 1.6,
             }}
           >
@@ -10470,7 +11107,7 @@ function PrefRadar({ authUserId }) {
 
   return (
     <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "16px", marginBottom: 14 }}>
-      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 14 }}>
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 14 }}>
         Minhas preferências · Radar de Amigas
       </div>
 
@@ -10478,16 +11115,16 @@ function PrefRadar({ authUserId }) {
         <div>
           {cidade && (
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.92)`, marginBottom: 4 }}>Cidade</div>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.92)` }}>{cidade}</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.92)`, marginBottom: 4 }}>Cidade</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 17, color: `rgba(255,255,255,.92)` }}>{cidade}</div>
             </div>
           )}
           {sels.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Interesses</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Interesses</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {sels.map((i) => (
-                  <span key={i} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 50, padding: "6px 13px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro }}>
+                  <span key={i} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 50, padding: "6px 13px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: C.ouro }}>
                     {i}
                   </span>
                 ))}
@@ -10496,32 +11133,32 @@ function PrefRadar({ authUserId }) {
           )}
           <button
             onClick={() => setEditando(true)}
-            style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}20`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.88)`, cursor: "pointer", letterSpacing: "0.1em" }}
+            style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}20`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.88)`, cursor: "pointer", letterSpacing: "0.1em" }}
           >
             Editar preferências
           </button>
         </div>
       ) : (
         <div>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Cidade</div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Cidade</div>
           <input
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex: Florianópolis"
-            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.45)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "7px 0", marginBottom: 18 }}
+            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.45)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
           />
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
             {INTERESSES.map((i) => {
               const s = sels.includes(i);
               return (
-                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: s ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: s ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
                   {i}
                 </button>
               );
             })}
           </div>
-          <BtnPill onClick={salvar} style={{ fontSize: 13 }}>
+          <BtnPill onClick={salvar} style={{ fontSize: 15 }}>
             Salvar preferências
           </BtnPill>
         </div>
@@ -10573,7 +11210,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
         style={{
           fontFamily: FB,
           fontWeight: 300,
-          fontSize: 9,
+          fontSize: 11,
           color: C.ouro,
           letterSpacing: "0.35em",
           textTransform: "uppercase",
@@ -10588,7 +11225,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
             style={{
               fontFamily: FB,
               fontWeight: 300,
-              fontSize: 10,
+              fontSize: 12,
               color: "rgba(255,255,255,.92)",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
@@ -10624,7 +11261,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 12,
+            fontSize: 14,
             color: C.augeZ,
             textAlign: "center",
           }}
@@ -10634,7 +11271,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
       ) : (
         <BtnPill
           onClick={salvar}
-          style={{ opacity: ok ? 1 : 0.4, fontSize: 13 }}
+          style={{ opacity: ok ? 1 : 0.4, fontSize: 15 }}
         >
           Salvar hábitos
         </BtnPill>

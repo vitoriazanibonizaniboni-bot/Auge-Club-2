@@ -12,5 +12,6 @@ html, body, #root {
 body {
   background: #0D0D14;
   font-family: 'Inter', sans-serif;
+  font-size: 17px; /* legibilidade 40+ - corpo de texto base */
   -webkit-font-smoothing: antialiased;
 }
