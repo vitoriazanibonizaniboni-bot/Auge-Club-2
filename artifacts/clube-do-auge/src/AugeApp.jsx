@@ -1150,6 +1150,7 @@ export default function App() {
             t: c.texto,
             userId: c.user_id,
             av: c.autor_avatar || null,
+            cid: c.id,
           });
         });
         postsReais.forEach((p) => {
@@ -4779,6 +4780,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
   const [filtro, setFiltro] = useState("todas"); // "todas" | "minhas"
   const [det, setDet] = useState(null); // id do post aberto em detalhe
   const [confirmaExcluir, setConfirmaExcluir] = useState(null);
+  const [confirmaComent, setConfirmaComent] = useState(null); // { postId, cid }
   const curtir = (id) => {
     setFeed((f) =>
       f.map((p) => {
@@ -4797,12 +4799,13 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
   const comentar = (id) => {
     if (!txt.trim()) return;
     const texto = txt.trim();
+    const tmp = Date.now();
     setFeed((f) =>
       f.map((p) => {
         if (p.id !== id) return p;
         const newCom = [
           ...p.com,
-          { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto },
+          { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, tmp },
         ];
         // Persiste na tabela comentarios se for post real
         if (p.dbId && authUserId) {
@@ -4815,12 +4818,46 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
               autor_nome: usuario?.nome || "Aluna",
               autor_avatar: minhaFoto,
             })
-            .then(() => {});
+            .select("id")
+            .single()
+            .then(({ data }) => {
+              if (!data) return;
+              // guarda o id para permitir apagar depois
+              setFeed((ff) =>
+                ff.map((pp) =>
+                  pp.id !== id
+                    ? pp
+                    : {
+                        ...pp,
+                        com: pp.com.map((c) =>
+                          c.tmp === tmp ? { ...c, cid: data.id } : c
+                        ),
+                      }
+                )
+              );
+            });
         }
         return { ...p, com: newCom };
       }),
     );
     setTxt("");
+  };
+  const apagarComentario = (postId, cid) => {
+    supabase
+      .from("comentarios")
+      .delete()
+      .eq("id", cid)
+      .then(({ error }) => {
+        if (!error) {
+          setFeed((f) =>
+            f.map((p) =>
+              p.id === postId
+                ? { ...p, com: p.com.filter((c) => c.cid !== cid) }
+                : p
+            )
+          );
+        }
+      });
   };
   const deletar = (id) => {
     const post = feed.find((p) => p.id === id);
@@ -5291,6 +5328,23 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                           </div>
                           {c.t}
                         </div>
+                        {c.cid && (c.userId === authUserId || p.userId === authUserId) && (
+                          <button
+                            onClick={() => setConfirmaComent({ postId: p.id, cid: c.cid })}
+                            aria-label="Apagar comentário"
+                            style={{
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              color: `rgba(255,255,255,.5)`,
+                              fontSize: 13,
+                              padding: "2px 4px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        )}
                       </div>
                     ))}
                     <div style={{ display: "flex", gap: 7, marginTop: 4 }}>
@@ -5332,6 +5386,17 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
           );
         })}
       </Grain>
+      {confirmaComent != null && (
+        <Confirma
+          titulo="Apagar este comentário?"
+          textoSim="Apagar"
+          onSim={() => {
+            apagarComentario(confirmaComent.postId, confirmaComent.cid);
+            setConfirmaComent(null);
+          }}
+          onNao={() => setConfirmaComent(null)}
+        />
+      )}
       {confirmaExcluir != null && (
         <Confirma
           titulo="Excluir esta publicação?"
@@ -5564,6 +5629,23 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       </div>
                       {c.t}
                     </div>
+                    {c.cid && (c.userId === authUserId || dp.userId === authUserId) && (
+                      <button
+                        onClick={() => setConfirmaComent({ postId: dp.id, cid: c.cid })}
+                        aria-label="Apagar comentário"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: `rgba(255,255,255,.5)`,
+                          fontSize: 13,
+                          padding: "2px 4px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 ))}
                 <div style={{ display: "flex", gap: 7, marginTop: 6 }}>
