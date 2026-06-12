@@ -716,7 +716,22 @@ function Brinde({ msg }) {
     </div>
   );
 }
-function Av({ ini, cor, sz = 40 }) {
+function Av({ ini, cor, sz = 40, src }) {
+  if (src)
+    return (
+      <img
+        src={src}
+        alt=""
+        style={{
+          width: sz,
+          height: sz,
+          borderRadius: "50%",
+          objectFit: "cover",
+          flexShrink: 0,
+          display: "block",
+        }}
+      />
+    );
   return (
     <div
       style={{
@@ -800,20 +815,22 @@ function Cab({ titulo, voltar, acao }) {
         <button
           onClick={voltar}
           style={{
-            background: "none",
-            border: "none",
-            color: C.lt,
+            background: `rgba(255,255,255,.06)`,
+            border: `1px solid ${C.ouro}33`,
+            borderRadius: 50,
+            padding: "8px 14px",
+            color: `rgba(255,255,255,.92)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
             cursor: "pointer",
-            width: 60,
+            whiteSpace: "nowrap",
           }}
         >
           ← Voltar
         </button>
       ) : (
-        <div style={{ width: 60 }} />
+        <div style={{ width: 84 }} />
       )}
       <div
         style={{
@@ -936,6 +953,8 @@ export default function App() {
   });
   const [videos, setVideos] = useState([]);
   const postando = useRef(false);
+  // Foto de perfil da própria aluna (para posts, comentários e chat)
+  const [minhaFoto, setMinhaFoto] = useState(null);
 
   // Dados de onboarding — nome e e-mail persistidos entre sessões
   const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
@@ -1056,6 +1075,7 @@ export default function App() {
     if (profileRes.data) {
       const p = profileRes.data;
       meusInteresses = p.radar_interesses || [];
+      setMinhaFoto(p.avatar_url || null);
       setPerfil(p.plano || "jornada");
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
@@ -1126,6 +1146,34 @@ export default function App() {
       if (hist[hoje] && (hist[hoje].feitos > 0 || hist[hoje].retomada)) {
         setCkOk(true);
       }
+      // Sincroniza hábitos marcados e chips de hoje entre aparelhos
+      const cHoje = checkinsRes.data.find((c) => c.data === hoje);
+      if (cHoje) {
+        const habsAtuais = (() => {
+          const ha = habsAngRes?.data;
+          let hs = ha
+            ? [ha.hab1, ha.hab2, ha.hab3].filter(Boolean).map((t, i) => ({ id: `ha${i + 1}`, t }))
+            : [];
+          if (!hs.length && profileRes.data) {
+            const pp = profileRes.data;
+            hs = [pp.habito_1, pp.habito_2, pp.habito_3]
+              .filter(Boolean)
+              .map((t, i) => ({ id: `ha${i + 1}`, t }));
+          }
+          return hs;
+        })();
+        const feitosNomes = cHoje.hab_feitos || [];
+        if (habsAtuais.length && feitosNomes.length) {
+          setHabF((prev) => {
+            const novo = { ...prev };
+            habsAtuais.forEach((h) => {
+              if (feitosNomes.includes(h.t)) novo[h.id] = true;
+            });
+            return novo;
+          });
+        }
+        if (cHoje.chips?.length) setChips((prev) => (prev?.length ? prev : cHoje.chips));
+      }
     }
 
     if (kitRes.data && !kitRes.error) {
@@ -1159,13 +1207,13 @@ export default function App() {
     const [feedPublicoRes, feedPrivadoRes, configRes] = await Promise.all([
       supabase
         .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
         .eq("publica", true)
         .order("created_at", { ascending: false })
         .limit(50),
       supabase
         .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
         .eq("user_id", userId)
         .eq("publica", false)
         .order("created_at", { ascending: false })
@@ -1178,6 +1226,7 @@ export default function App() {
       aut: p.autor_nome,
       ini: p.autor_ini,
       cor: p.autor_cor,
+      avatar: p.autor_avatar || null,
       fundo: "#1E252E",
       tit: p.titulo,
       desc: p.descricao,
@@ -1203,7 +1252,7 @@ export default function App() {
     if (postIds.length) {
       const { data: comData, error: comErr } = await supabase
         .from("comentarios")
-        .select("id, post_id, user_id, texto, autor_nome, created_at")
+        .select("id, post_id, user_id, texto, autor_nome, autor_avatar, created_at")
         .in("post_id", postIds)
         .order("created_at", { ascending: true });
       if (!comErr && comData?.length) {
@@ -1213,6 +1262,7 @@ export default function App() {
             q: c.autor_nome || "Aluna",
             t: c.texto,
             userId: c.user_id,
+            av: c.autor_avatar || null,
           });
         });
         postsReais.forEach((p) => {
@@ -1447,6 +1497,7 @@ export default function App() {
       cur: [],
       com: [],
       userId: authUser?.id || null,
+      avatar: minhaFoto,
     };
     setFeed((f) => [novoPost, ...f]);
 
@@ -1463,6 +1514,7 @@ export default function App() {
           descricao: entry.desc || "",
           publica: entry.publica !== false,
           img_url: imgUrl,
+          autor_avatar: minhaFoto,
         }).select("id").single();
         if (!insErr && inserted) {
           // Atualiza post local com dbId real — evita duplicata no próximo fetch
@@ -1773,6 +1825,7 @@ export default function App() {
     radarPerfis,
     naoLidas,
     marcarLidas,
+    minhaFoto,
     solicitacoes,
     setSolicitacoes,
     solicitadas,
@@ -3665,7 +3718,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
               letterSpacing: "0.1em",
             }}
           >
-            DIAS
+            {streakAtual === 1 ? "DIA SEGUIDO" : "DIAS SEGUIDOS"}
           </div>
         </div>
       )}
@@ -4204,15 +4257,18 @@ function Home({
                 <button
                   onClick={() => setPasso(1)}
                   style={{
-                    background: "none",
-                    border: "none",
-                    color: `rgba(255,255,255,.88)`,
+                    background: `${C.ouro}18`,
+                    border: `1px solid ${C.ouro}44`,
+                    borderRadius: 50,
+                    padding: "8px 16px",
+                    color: C.ouro,
                     fontFamily: FB,
-                    fontSize: 13,
+                    fontSize: 14,
                     cursor: "pointer",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  editar
+                  ✏️ Editar
                 </button>
               </div>
             )}
@@ -4584,7 +4640,7 @@ function Home({
 // ═══════════════════════════════════════════════════════════════════
 // ABA: FEED — posts públicos e privados
 // ═══════════════════════════════════════════════════════════════════
-function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
+function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto }) {
   const totalNaoLidas = Object.values(naoLidas).reduce((a, b) => a + b, 0);
   const [open, setOpen] = useState(null);
   const [txt, setTxt] = useState("");
@@ -4613,7 +4669,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
         if (p.id !== id) return p;
         const newCom = [
           ...p.com,
-          { q: usuario?.nome || "Você", t: texto, userId: authUserId },
+          { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto },
         ];
         // Persiste na tabela comentarios se for post real
         if (p.dbId && authUserId) {
@@ -4624,6 +4680,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
               user_id: authUserId,
               texto,
               autor_nome: usuario?.nome || "Aluna",
+              autor_avatar: minhaFoto,
             })
             .then(() => {});
         }
@@ -4697,13 +4754,19 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
           <div
             style={{
               fontFamily: FB,
-              fontWeight: 300,
-              fontSize: 13,
+              fontWeight: 400,
+              fontSize: 15,
               color: C.ouro,
-              letterSpacing: "0.1em",
+              background: `${C.ouro}22`,
+              border: `1px solid ${C.ouro}55`,
+              borderRadius: 50,
+              padding: "10px 18px",
+              letterSpacing: "0.05em",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
             }}
           >
-            + POSTAR
+            + Postar
           </div>
         </div>
 
@@ -4896,7 +4959,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                     marginBottom: 8,
                   }}
                 >
-                  <Av ini={p.ini} cor={p.cor} sz={32} />
+                  <Av ini={p.ini} cor={p.cor} sz={32} src={p.avatar} />
                   <div
                     style={{
                       fontFamily: FB,
@@ -5026,7 +5089,15 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                             flexShrink: 0,
                           }}
                         >
-                          {c.q.slice(0, 2).toUpperCase()}
+                          {c.av ? (
+                            <img
+                              src={c.av}
+                              alt=""
+                              style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                            />
+                          ) : (
+                            c.q.slice(0, 2).toUpperCase()
+                          )}
                         </div>
                         <div
                           style={{
@@ -5134,7 +5205,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <Av ini={dp.ini} cor={dp.cor} sz={32} />
+                  <Av ini={dp.ini} cor={dp.cor} sz={32} src={dp.avatar} />
                   <div>
                     <div
                       style={{
@@ -5279,7 +5350,15 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {} }) {
                         flexShrink: 0,
                       }}
                     >
-                      {c.q.slice(0, 2).toUpperCase()}
+                      {c.av ? (
+                            <img
+                              src={c.av}
+                              alt=""
+                              style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                            />
+                          ) : (
+                            c.q.slice(0, 2).toUpperCase()
+                          )}
                     </div>
                     <div
                       style={{
@@ -6151,7 +6230,7 @@ function Cx({
                   marginBottom: 8,
                 }}
               >
-                <Av ini={s.ini} cor={s.cor} sz={42} />
+                <Av ini={s.ini} cor={s.cor} sz={42} src={s.avatar_url} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
@@ -6241,16 +6320,30 @@ function Cx({
                   position: "relative",
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 58,
-                    fontFamily: FS,
-                    fontWeight: 300,
-                    color: `rgba(255,255,255,.18)`,
-                  }}
-                >
-                  {p.ini}
-                </div>
+                {p.avatar_url ? (
+                  <img
+                    src={p.avatar_url}
+                    alt=""
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      fontSize: 58,
+                      fontFamily: FS,
+                      fontWeight: 300,
+                      color: `rgba(255,255,255,.18)`,
+                    }}
+                  >
+                    {p.ini}
+                  </div>
+                )}
                 {p.compat != null && (
                   <div
                     style={{
@@ -6443,7 +6536,7 @@ function Cx({
                   cursor: "pointer",
                 }}
               >
-                <Av ini={m.ini} cor={m.cor} sz={42} />
+                <Av ini={m.ini} cor={m.cor} sz={42} src={m.avatar_url} />
                 <div style={{ flex: 1 }}>
                   <div
                     style={{
@@ -6739,18 +6832,22 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
         <button
           onClick={back}
           style={{
-            background: "none",
-            border: "none",
+            background: `rgba(255,255,255,.06)`,
+            border: `1px solid ${C.ouro}33`,
+            borderRadius: 50,
+            padding: "8px 14px",
             color: `rgba(255,255,255,.92)`,
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 15,
+            fontSize: 14,
             cursor: "pointer",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
           }}
         >
-          ←
+          ← Voltar
         </button>
-        <Av ini={m.ini} cor={m.cor} sz={36} />
+        <Av ini={m.ini} cor={m.cor} sz={36} src={m.avatar_url} />
         <div>
           <div
             style={{
@@ -6816,7 +6913,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
                 gap: 7,
               }}
             >
-              {!eu && <Av ini={m.ini} cor={m.cor} sz={26} />}
+              {!eu && <Av ini={m.ini} cor={m.cor} sz={26} src={m.avatar_url} />}
               {eu && msg.id && (
                 <button
                   onClick={() => {
@@ -10779,23 +10876,6 @@ function Perfil({
             ? "Conta em ativação"
             : "Assinante da Comunidade"}
         </div>
-        {perfil === "jornada" && (
-          <div
-            style={{
-              display: "inline-block",
-              background: "rgba(15,110,86,.18)",
-              border: "1px solid rgba(15,110,86,.3)",
-              borderRadius: 20,
-              padding: "4px 14px",
-              marginTop: 10,
-              color: "#4ade80",
-              fontSize: 13,
-              fontFamily: FB,
-            }}
-          >
-            ✓ Identidade verificada
-          </div>
-        )}
         <div
           style={{
             marginTop: 14,
