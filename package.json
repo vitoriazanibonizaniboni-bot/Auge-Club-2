@@ -15,6 +15,7 @@
     "typescript": "~5.9.3"
   },
   "dependencies": {
+    "@replit/connectors-sdk": "^0.4.1",
     "pg": "^8.20.0"
   }
 }
