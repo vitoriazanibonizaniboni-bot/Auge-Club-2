@@ -28,9 +28,17 @@ function nextDailyAt(hour, minute = 0) {
 // ─── Solicitar permissão ──────────────────────────────────────────────────────
 export async function requestPermission() {
   if (!("Notification" in window)) return "unsupported";
-  if (Notification.permission === "granted") return "granted";
-  if (Notification.permission === "denied") return "denied";
-  const result = await Notification.requestPermission();
+  let result = Notification.permission;
+  if (result !== "granted" && result !== "denied") {
+    result = await Notification.requestPermission();
+  }
+  // Push de servidor (OneSignal): inscreve o aparelho quando a permissao e concedida
+  if (result === "granted" && typeof window !== "undefined") {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try { await OneSignal.User.PushSubscription.optIn(); } catch (e) {}
+    });
+  }
   return result; // "granted" | "denied" | "default"
 }
 
