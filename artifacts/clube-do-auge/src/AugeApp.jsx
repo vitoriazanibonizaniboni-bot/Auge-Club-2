@@ -4076,6 +4076,82 @@ function Home({
           "{anc}"
         </div>
 
+        {/* Proximo encontro ao vivo (editavel no Painel da Mentora) */}
+        {mentoria?.data && (
+          <div
+            style={{
+              background: `${C.ouro}12`,
+              border: `1px solid ${C.ouro}3a`,
+              borderRadius: 12,
+              padding: "16px 18px",
+              marginBottom: 16,
+              animation: "fadeUp .4s ease",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 15 }}>📅</span>
+              <span
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 11,
+                  color: C.ouro,
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Proximo encontro
+              </span>
+            </div>
+            <div
+              style={{
+                fontFamily: FS,
+                fontSize: 20,
+                fontWeight: 300,
+                color: `rgba(255,255,255,.97)`,
+                lineHeight: 1.3,
+              }}
+            >
+              {mentoria.data}
+            </div>
+            {(mentoria.semana || mentoria.duracao) && (
+              <div
+                style={{
+                  fontFamily: FB,
+                  fontWeight: 300,
+                  fontSize: 13,
+                  color: `rgba(255,255,255,.6)`,
+                  marginTop: 4,
+                }}
+              >
+                {[mentoria.semana, mentoria.duracao].filter(Boolean).join(" · ")}
+              </div>
+            )}
+            {mentoria.zoom && (
+              <a
+                href={mentoria.zoom}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-block",
+                  marginTop: 12,
+                  background: C.ouroLt,
+                  color: C.obs2,
+                  fontFamily: FB,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  textDecoration: "none",
+                  padding: "9px 20px",
+                  borderRadius: 50,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                Entrar no Zoom
+              </a>
+            )}
+          </div>
+        )}
+
         {/* Banner boas-vindas para quem nunca fez checkin */}
         {diasSemTreino === -1 && !ckOk && (
           <div style={{
