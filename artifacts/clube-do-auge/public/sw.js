@@ -88,8 +88,10 @@ self.addEventListener("message", (e) => {
 
 // ─── NOTIFICATION CLICK (deep link) ──────────────────────────────────────────
 self.addEventListener("notificationclick", (e) => {
+  // Notificacoes do OneSignal (push de servidor) sao tratadas pelo worker do OneSignal.
+  if (!e.notification.data || !e.notification.data.url) return;
   e.notification.close();
-  const target = e.notification.data?.url || "/";
+  const target = e.notification.data.url;
   e.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
