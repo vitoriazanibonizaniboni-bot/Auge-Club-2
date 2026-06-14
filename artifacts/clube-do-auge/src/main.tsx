@@ -8,7 +8,7 @@ createRoot(document.getElementById("root")!).render(<App />);
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
+      .register("/OneSignalSDKWorker.js", { scope: "/" })
       .then((reg) => {
         reg.addEventListener("updatefound", () => {
           const newSW = reg.installing;
