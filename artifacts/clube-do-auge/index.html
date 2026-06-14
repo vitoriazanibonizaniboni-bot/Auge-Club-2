@@ -38,6 +38,12 @@
         await OneSignal.init({
           appId: "c0ce93ea-ba72-44c1-abfe-367a510aed39",
         });
+        // Se a permissao ja foi concedida, garante a inscricao no push
+        try {
+          if (OneSignal.Notifications.permission) {
+            await OneSignal.User.PushSubscription.optIn();
+          }
+        } catch (e) {}
       });
     </script>
   </head>
