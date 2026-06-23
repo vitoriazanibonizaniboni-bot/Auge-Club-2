@@ -12,7 +12,7 @@ version = "1.0.0"
 [[services]]
 name = "web"
 paths = [ "/" ]
-localPort = 18545
+localPort = 18546
 
 [services.development]
 run = "pnpm --filter @workspace/clube-do-auge run dev"
@@ -27,5 +27,5 @@ from = "/*"
 to = "/index.html"
 
 [services.env]
-PORT = "18545"
+PORT = "18546"
 BASE_PATH = "/"
