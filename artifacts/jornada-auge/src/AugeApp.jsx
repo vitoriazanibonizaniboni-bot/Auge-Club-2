@@ -66,6 +66,8 @@ const IS_JORNADA = APP_MODE === "jornada";
 //   Clube   => "comunidade" (Jornada vira vitrine trancada)
 //   Jornada => "jornada"    (tudo liberado)
 const FORCED_PLANO = IS_CLUBE ? "comunidade" : "jornada";
+// Texto acima do logo AUGE: "CLUBE DO" (Clube) ou "JORNADA" (Jornada)
+const MARCA_EYEBROW = IS_CLUBE ? "CLUBE DO" : "JORNADA";
 
 const ABA_ORIGEM = {
   [S.HOME]: S.HOME,
@@ -516,7 +518,7 @@ function Logo({ width = 200, fundo = "escuro" }) {
         letterSpacing="7"
         fill={textoClube}
       >
-        CLUBE DO
+        {MARCA_EYEBROW}
       </text>
       <text
         x="190"
@@ -3092,7 +3094,7 @@ function TelaAuth({ onAuth }) {
             textAlign: "center",
           }}
         >
-          Bem-vinda ao Clube do Auge
+          Bem-vinda {IS_CLUBE ? "ao Clube do Auge" : "à Jornada AUGE"}
         </div>
         {aguardandoConfirmacao && (
           <div
