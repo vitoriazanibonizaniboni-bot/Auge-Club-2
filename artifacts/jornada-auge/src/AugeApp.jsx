@@ -59,7 +59,7 @@ const S = {
 // "jornada" = app da Jornada AUGE (programa de 12 semanas; SEM "encontrar amigas")
 // "clube"   = app do Clube do Auge (conteúdo semanal + aba "Amigas")
 // Cada pasta (artifacts/jornada-auge e artifacts/clube-do-auge) define seu próprio modo.
-const APP_MODE = "clube";
+const APP_MODE = "jornada";
 const IS_CLUBE = APP_MODE === "clube";
 const IS_JORNADA = APP_MODE === "jornada";
 // No modelo de dois apps, o plano é definido pelo app, não pelo Supabase:

@@ -1,8 +1,8 @@
 kind = "web"
 previewPath = "/"
-title = "Clube do Auge"
+title = "Jornada AUGE"
 version = "1.0.0"
-id = "artifacts/clube-do-auge"
+id = "artifacts/jornada-auge"
 router = "path"
 
 [[integratedSkills]]
@@ -12,14 +12,14 @@ version = "1.0.0"
 [[services]]
 name = "web"
 paths = [ "/" ]
-localPort = 18546
+localPort = 18545
 
 [services.development]
-run = "pnpm --filter @workspace/clube-do-auge run dev"
+run = "pnpm --filter @workspace/jornada-auge run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/clube-do-auge", "run", "build" ]
-publicDir = "artifacts/clube-do-auge/dist/public"
+build = [ "pnpm", "--filter", "@workspace/jornada-auge", "run", "build" ]
+publicDir = "artifacts/jornada-auge/dist/public"
 serve = "static"
 
 [[services.production.rewrites]]
@@ -27,5 +27,5 @@ from = "/*"
 to = "/index.html"
 
 [services.env]
-PORT = "18546"
+PORT = "18545"
 BASE_PATH = "/"

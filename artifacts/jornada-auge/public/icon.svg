@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1A1712"/>
+  <text x="256" y="188" font-family="Georgia, serif" font-size="52" font-weight="300" fill="#C9A96E" text-anchor="middle" letter-spacing="10">CLUBE DO</text>
+  <text x="256" y="296" font-family="Georgia, serif" font-size="128" font-weight="300" fill="#C9A96E" text-anchor="middle" letter-spacing="8">AUGE</text>
+  <line x1="120" y1="318" x2="392" y2="318" stroke="#C9A96E" stroke-width="1.5" opacity="0.5"/>
+  <text x="256" y="358" font-family="Georgia, serif" font-size="28" font-weight="300" fill="#C9A96E" text-anchor="middle" letter-spacing="6" opacity="0.7">MÉTODO · 40+</text>
+</svg>
