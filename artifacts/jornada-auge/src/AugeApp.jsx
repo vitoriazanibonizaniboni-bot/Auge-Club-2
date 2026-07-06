@@ -1386,13 +1386,13 @@ export default function App() {
  const [feedPublicoRes, feedPrivadoRes] = await Promise.all([
  supabase
         .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id, source")
         .eq("publica", true)
         .order("created_at", { ascending: false })
         .limit(50),
  supabase
         .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id, source")
         .eq("user_id", userId)
         .eq("publica", false)
         .order("created_at", { ascending: false })
@@ -1401,6 +1401,7 @@ export default function App() {
 
  const mapPost = (p) => ({
  id: p.id,
+ source: p.source || "jornada",
  aut: p.autor_nome,
  ini: p.autor_ini,
  cor: p.autor_cor,
@@ -1953,6 +1954,7 @@ export default function App() {
 
  const novoPost = {
  id: Date.now(),
+      source: APP_MODE === "clube" ? "comunidade" : "jornada",
  aut: usuario?.nome || "Você",
  ini,
  cor: C.ouroDk,
@@ -2562,7 +2564,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  const tabs = [
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
-    { id: S.FEED, label: "Mural do 1%", icon: Ico.mural, badge: !ckOk ? 1 : 0, msgCount: IS_CLUBE ? 0 : msgCount },
+    { id: S.FEED, label: "Mural do 1%", icon: Ico.mural, msgCount: IS_CLUBE ? 0 : msgCount },
     ...(IS_CLUBE ? [{ id: S.CX, label: "Amigas", icon: Ico.cx, msgCount }] : []),
     { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
     { id: S.CT, label: "Conteúdo", icon: Ico.livro },
@@ -4829,36 +4831,6 @@ function Home({
       )}
 
       <Grain style={{ padding: "18px 18px 24px" }}>
-        {/* Saudação */}
-        <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 12,
- color: C.ouro,
- letterSpacing: "0.35em",
- textTransform: "uppercase",
- marginBottom: 4,
-          }}
-        >
-          {(() => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "BOM DIA" : h >= 12 && h < 18 ? "BOA TARDE" : "BOA NOITE"; })()}
-          {usuario?.nome ? `, ${usuario.nome.split(" ")[0].toUpperCase()}` : ""}
-        </div>
-        <div
- style={{
- fontFamily: FS,
- fontStyle: "italic",
- fontSize: 15,
- color: `rgba(90,75,67,.45)`,
- lineHeight: 1.5,
- marginBottom: 16,
- borderLeft: `1px solid ${C.ouro}33`,
- paddingLeft: 10,
-          }}
-        >
- "{anc}"
-        </div>
-
         {/* Proximo encontro ao vivo (editavel no Painel da Mentora) */}
         {mentoria?.data && (
           <div
@@ -5205,53 +5177,6 @@ function Home({
  Esqueceu de registrar um dia? Preencher dias anteriores
             </button>
 
-            {/* Fechar o dia — chips emocionais + microdiário + ISA */}
-            {!ckOk ? (
-              <button
- onClick={() => setPasso(2)}
- style={{
- width: "100%",
- background: `${C.ouro}20`,
- border: `1px solid ${C.ouro}55`,
- borderRadius: 12,
- padding: "16px",
- cursor: "pointer",
- textAlign: "left",
- marginBottom: 4,
-                }}
-              >
-                <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: C.ouroDk, marginBottom: 4 }}>
- Como você chegou hoje?
-                </div>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra }}>
- Fechar o dia com a ISA — emoção e microdiário
-                </div>
-              </button>
-            ) : (
-              <div
- style={{
- background: `${C.ouro}18`,
- border: `1px solid ${C.ouro}40`,
- borderRadius: 12,
- padding: "13px 16px",
- marginBottom: 4,
- display: "flex",
- justifyContent: "space-between",
- alignItems: "center",
-                }}
-              >
-                <div style={{ fontFamily: FS, fontSize: 15, color: C.ouroDk }}>
-                  ✓ Dia fechado · {feitosHoje} de {total} hábitos
-                </div>
-                <button
- onClick={() => setPasso(2)}
- style={{ background: "none", border: "none", color: C.terra, fontFamily: FB, fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
-                >
- editar
-                </button>
-              </div>
-            )}
-
             {/* Desafio da Semana (seção 4.10) — contido no card, sem zona nem alerta */}
             <DesafioCard
  texto={desafioTexto}
@@ -5477,34 +5402,6 @@ function Home({
           </div>
         )}
 
-        {/* Botão Ver meu progresso */}
-        <button
- onClick={() => ir(S.TRAJ)}
- style={{
- width: "100%",
- background: "transparent",
- border: `1px solid ${C.ouro}22`,
- borderRadius: 50,
- padding: "13px 18px",
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 14,
- color: `rgba(28,26,23,.8)`,
- cursor: "pointer",
- letterSpacing: "0.06em",
- display: "flex",
- alignItems: "center",
- justifyContent: "center",
- gap: 10,
- marginTop: passo === 0 ? 0 : 16,
- marginBottom: 8,
-          }}
-        >
-          <span></span>
-          <span>Ver meu progresso</span>
-          <span style={{ color: C.ouro, fontSize: 16 }}>›</span>
-        </button>
-
       </Grain>
     </div>
   );
@@ -5517,7 +5414,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  const totalNaoLidas = Object.values(naoLidas).reduce((a, b) => a + b, 0);
  const [open, setOpen] = useState(null);
  const [txt, setTxt] = useState("");
- const [filtro, setFiltro] = useState("todas"); // "todas" | "minhas"
+ const [filtro, setFiltro] = useState("todas"); // "todas" | "jornada" | "comunidade" | "minhas"
  const [det, setDet] = useState(null); // id do post aberto em detalhe
  const [confirmaExcluir, setConfirmaExcluir] = useState(null);
  const [confirmaComent, setConfirmaComent] = useState(null); // { postId, cid }
@@ -5614,7 +5511,11 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
   // Feed: filtra por visibilidade e filtro ativo
  const visiveis = feed
     .filter((p) => p.publica || p.userId === authUserId || p.aut === "Você")
-    .filter((p) => filtro === "minhas" ? (p.userId === authUserId || p.aut === "Você") : true);
+    .filter((p) =>
+      filtro === "minhas" ? (p.userId === authUserId || p.aut === "Você")
+      : filtro === "jornada" ? (p.source || "jornada") === "jornada"
+      : filtro === "comunidade" ? p.source === "comunidade"
+      : true);
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", borderBottom: `1px solid ${C.ouro}20` }}>
@@ -5625,7 +5526,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
       </div>
       {/* Filtro Todas / Minhas */}
       <div style={{ background: C.creme, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
-        {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
+        {[["todas", "Todas"], ["jornada", "Jornada"], ["comunidade", "Comunidade"], ["minhas", "Minhas"]].map(([id, label]) => (
           <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: filtro === id ? C.ouro : `rgba(28,26,23,.65)`, cursor: "pointer" }}>
             {label}
           </button>
@@ -5912,6 +5813,9 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   >
                     {p.aut}
                   </div>
+                  <span style={{ background: p.source === "comunidade" ? `${C.blush}45` : `${C.ouro}35`, borderRadius: 12, padding: "2px 9px", fontFamily: FB, fontWeight: 400, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: C.obs2 }}>
+                    {p.source === "comunidade" ? "Comunidade" : "Jornada"}
+                  </span>
                 </div>
                 <div
  onClick={() => setDet(p.id)}
@@ -10863,17 +10767,6 @@ function Emergencia({
  const [editFrase, setEditFrase] = useState(false);
  const [ff, setFf] = useState(fraseFoco || "");
  const [usou, setUsou] = useState(null); // ação escolhida hoje
- const [isaMsg, setIsaMsg] = useState(null);
- const [isaLoad, setIsaLoad] = useState(false);
- useEffect(() => {
- setIsaLoad(true);
- callISA(
-      `A aluna está no limite hoje e abriu o Kit de Emergência.\nÂncora de identidade dela: "${anc}"\nO mínimo viável que ela mesma definiu: "${kitMin || "não definiu"}"\nFrase de retorno ao foco dela: "${fraseFoco || "não definiu"}"\nResponda com apoio suave. Encoraje ela a fazer exatamente o mínimo que ela mesma definiu — não sugira mais, não expanda. O kit é dela. Valide a sabedoria dela em ter criado esse kit. Máximo 3 parágrafos.`,
-    ).then((r) => {
- setIsaMsg(r);
- setIsaLoad(false);
-    });
-  }, []);
 
  const usar = (acao, msg) => {
  registrarKitUso(acao);
@@ -10910,7 +10803,6 @@ function Emergencia({
         </div>
       </div>
       <Grain style={{ padding: "18px 20px 36px" }}>
-        <IsaCard text={isaMsg} loading={isaLoad} />
 
         {/* 1 · Âncora de Identidade — prompt fixo (seção 4.9) */}
         <Sec label="Sua Âncora de Identidade">
@@ -10982,38 +10874,6 @@ function Emergencia({
           )}
         </Sec>
 
-        {/* 4 · Frase de Retorno ao Foco (seção 4.9) */}
-        <Sec label="Sua Frase de Retorno ao Foco">
-          {!editFrase ? (
-            <div>
-              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.obs, lineHeight: 1.55 }}>
-                {fraseFoco ? `"${fraseFoco}"` : "Algo que você mesma disse e vale reler nas horas difíceis."}
-              </div>
-              {fraseFoco && (
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginTop: 6 }}>
- Suas palavras, do Encontro Individual 1
-                </div>
-              )}
-              <div onClick={() => { setFf(fraseFoco || ""); setEditFrase(true); }}
- style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, marginTop: 5, cursor: "pointer", textDecoration: "underline" }}>
- editar
-              </div>
-            </div>
-          ) : (
-            <div>
-              <textarea value={ff} onChange={(e) => setFf(e.target.value)}
- placeholder="A frase que te traz de volta"
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 14, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
-              <button onClick={() => { salvarKitPessoal({ frase_foco: ff.trim() }); setEditFrase(false); tk("Frase salva "); }}
- style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
-            </div>
-          )}
-          {fraseFoco && !editFrase && (usou === "frase" ? (
-            <div style={{ fontFamily: FB, fontSize: 11, color: C.ouroDk, marginTop: 10 }}>✓ Registrado.</div>
-          ) : (
-            <BtnAcao onClick={() => usar("frase", "De volta ao foco ")}>Essa frase me trouxe de volta</BtnAcao>
-          ))}
-        </Sec>
       </Grain>
     </div>
   );

@@ -1627,6 +1627,7 @@ export default function App() {
       if (session?.user) {
         const { data: inserted, error: insErr } = await supabase.from("feed").insert({
           user_id: session.user.id,
+          source: "comunidade",
           autor_nome: usuario?.nome || "Aluna",
           autor_ini: ini,
           autor_cor: C.ouroDk,
