@@ -8943,45 +8943,7 @@ function Jornada({
  "{anc}"
         </div>
 
-        {/* Protocolo de Retomada — destaque */}
-        <button
- onClick={() => ir(S.RET)}
- style={{
- width: "100%",
- background: `${C.blush}15`,
- border: `1px solid ${C.blush}55`,
- borderRadius: 10,
- padding: "14px 18px",
- marginBottom: 16,
- cursor: "pointer",
- display: "flex",
- justifyContent: "space-between",
- alignItems: "center",
-          }}
-        >
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 500,
- fontSize: 15,
- color: C.blush,
- letterSpacing: "0.05em",
-            }}
-          >
- PROTOCOLO DE RETOMADA
-          </div>
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 17,
- color: C.blush,
-            }}
-          >
-            →
-          </div>
-        </button>
-
+        
         {/* ── Meu Mapa (seção 7) ── */}
         <div
  style={{
@@ -9017,17 +8979,6 @@ function Jornada({
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
 
-        {/* Âncora de Identidade — editável a qualquer momento */}
-        <div onClick={() => { setEscT("ancora"); ir(S.ESC); }} style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, cursor: "pointer" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs }}>Sua Âncora de Identidade</div>
-              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12.5, color: C.terra, marginTop: 3 }}>"{anc}"</div>
-            </div>
-            <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
-          </div>
-        </div>
-
         {/* Bússola — somente leitura (seção 7) */}
         <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
@@ -9037,19 +8988,6 @@ function Jornada({
                 {bussola || "Sua direção concreta — definida no Encontro Individual 1"}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Porquês — somente leitura aqui (seção 7) */}
-        <div onClick={() => { setEscT("porques"); ir(S.ESC); }} style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, cursor: "pointer" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs }}>Seus Porquês</div>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>
-                {[pq1, pq2, pq3].filter(Boolean).length > 0 ? [pq1, pq2, pq3].filter(Boolean).join(" · ") : "Os seus motivos, capturados no Encontro Individual 1"}
-              </div>
-            </div>
-            <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
           </div>
         </div>
 
@@ -9923,7 +9861,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
  const ano = vizData.getFullYear();
  const mes = vizData.getMonth();
  const nomeMes = vizData.toLocaleString("pt-BR", { month: "long", year: "numeric" });
- const primeiroDia = new Date(ano, mes, 1).getDay();
+ const primeiroDia = (new Date(ano, mes, 1).getDay() + 6) % 7; // semana começa na segunda
  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
  const todayStr = localDateStr(hojeReal);
 
@@ -10028,7 +9966,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
           <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 18 }}>
-          {["D","S","T","Q","Q","S","S"].map((d, i) => (
+          {["S","T","Q","Q","S","S","D"].map((d, i) => (
             <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.lt, padding: "2px 0" }}>{d}</div>
           ))}
           {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
