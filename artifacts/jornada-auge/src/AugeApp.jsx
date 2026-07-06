@@ -10,7 +10,7 @@ const C = {
   obs: "#1C1A17",
   obs2: "#2E2825",
   mid: "#5A4B43",
-  lt: "#B7A89F",
+  lt: "#9C8880",
   ouro: "#C4A882",
   ouroDk: "#A8865A",
   ouroLt: "#EAD8B8",
@@ -44,7 +44,8 @@ const S = {
   // Subpáginas Jornada
   RODA: "roda",
   RET: "ret",
-  CAL: "cal",
+  CAL: "cal", // legado — redireciona para TRAJ
+  TRAJ: "traj", // aba Trajetória (calendário mensal + trajetória semanal)
   ESC: "esc",
   EM: "em",
   // Diagnóstico
@@ -80,12 +81,66 @@ const ABA_ORIGEM = {
   [S.JOR]: S.JOR,
   [S.RODA]: S.JOR,
   [S.RET]: S.JOR,
-  [S.CAL]: S.HOME,
+  [S.CAL]: S.TRAJ,
+  [S.TRAJ]: S.TRAJ,
   [S.ESC]: S.JOR,
-  [S.EM]: S.JOR,
+  [S.EM]: S.HOME,
   [S.CT]: S.CT,
-  [S.PF]: S.PF,
+  [S.PF]: S.HOME,
 };
+
+// ─── HÁBITOS ANGULARES FIXOS DO MÉTODO (v2) ──────────────────────────────────
+// 3 hábitos com meta SEMANAL de frequência (não lógica de "todo dia").
+// Desbloqueio por calendário, independente do desempenho (seção 4.7).
+const HABS_FIXOS = [
+  { id: "movimento", nome: "Movimento", ic: "🚶‍♀️", unlock: 1, freqDef: 3 },
+  { id: "sono", nome: "Sono", ic: "🌙", unlock: 5, freqDef: 7 },
+  { id: "tempo", nome: "Tempo para Si", ic: "🕯️", unlock: 9, freqDef: 3 },
+];
+
+// Escala de dificuldade (seção 4.4) — mede processo, não julga a pessoa
+const DIF_OPTS = [
+  { v: 1, l: "Muito fácil" },
+  { v: 2, l: "Fácil" },
+  { v: 3, l: "Neutro" },
+  { v: 4, l: "Difícil" },
+  { v: 5, l: "Muito difícil" },
+];
+const difLabel = (v) => DIF_OPTS.find((d) => d.v === v)?.l || "";
+
+// ─── SEMANA: começa na SEGUNDA-FEIRA (seção 1) ───────────────────────────────
+function addDaysStr(dateStr, n) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+function mondayOf(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const dow = dt.getDay(); // 0=dom
+  return addDaysStr(dateStr, dow === 0 ? -6 : 1 - dow);
+}
+function weekDays(mondayStr) {
+  return Array.from({ length: 7 }, (_, i) => addDaysStr(mondayStr, i));
+}
+
+// ─── ZONAS (seção 4.6) ────────────────────────────────────────────────────────
+// faltam = meta_semanal − feitas_essa_semana
+// faltam < dias_restantes → Tranquila · == → Ajuste · > → Atenção
+function zonaDe(meta, feitas, diasRestantes) {
+  const faltam = meta - feitas;
+  if (faltam < diasRestantes) return "tranquila";
+  if (faltam === diasRestantes) return "ajuste";
+  return "atencao";
+}
+const ZONAS = {
+  tranquila: { cor: "#C4A882", label: "Tranquila" },
+  ajuste: { cor: "#A8865A", label: "Ajuste" },
+  atencao: { cor: "#E2B9A8", label: "Atenção" },
+};
+
+// Cor por intensidade — heatmap mensal (seção 3.2): 0..3 hábitos no dia
+const HEAT_CORES = ["#F0E9DA", "#EAD8B8", "#C4A882", "#A8865A"];
 
 // ─── DADOS ────────────────────────────────────────────────────────────────────
 const HAB = {
@@ -643,6 +698,60 @@ const Ico = {
       <circle cx="12" cy="7" r="4" />
     </svg>
   ),
+  // Hoje — pequeno sol/alvo (seção 2.1)
+  hoje: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4.5" />
+      <line x1="12" y1="2.5" x2="12" y2="5" /><line x1="12" y1="19" x2="12" y2="21.5" />
+      <line x1="2.5" y1="12" x2="5" y2="12" /><line x1="19" y1="12" x2="21.5" y2="12" />
+      <line x1="5.3" y1="5.3" x2="7" y2="7" /><line x1="17" y1="17" x2="18.7" y2="18.7" />
+      <line x1="5.3" y1="18.7" x2="7" y2="17" /><line x1="17" y1="7" x2="18.7" y2="5.3" />
+    </svg>
+  ),
+  // Trajetória — o arco em S da logo, em miniatura (seção 2.1)
+  traj: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round">
+      <path d="M 3 19 C 8 20 16 6 21 5" />
+      <circle cx="21" cy="5" r="1.4" fill={c} stroke="none" />
+    </svg>
+  ),
+  // Mural do 1% — quadro com foto (seção 2.1)
+  mural: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M21 15l-5-5L5 21" />
+    </svg>
+  ),
+  // Meu Mapa — bússola (seção 2.1)
+  mapa: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9.5" />
+      <polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5 15.5 8.5" />
+    </svg>
+  ),
+  // Conteúdo — livro aberto (seção 2.1)
+  livro: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4.5C4.5 3.5 7.5 3.5 12 5.5c4.5-2 7.5-2 10-1v14c-2.5-1-5.5-1-10 1-4.5-2-7.5-2-10-1z" />
+      <line x1="12" y1="5.5" x2="12" y2="19.5" />
+    </svg>
+  ),
+  // Configurações — engrenagem
+  gear: (c) => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
+  // Legenda de cores — (i)
+  info: (c) => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round">
+      <circle cx="12" cy="12" r="9.5" />
+      <line x1="12" y1="11" x2="12" y2="16.5" />
+      <circle cx="12" cy="7.8" r="0.4" fill={c} />
+    </svg>
+  ),
 };
 
 // ─── COMPONENTES BASE ─────────────────────────────────────────────────────────
@@ -653,7 +762,7 @@ function Grain({ children, style = {} }) {
         style={{
           position: "absolute",
           inset: 0,
-          background: C.obs,
+          background: C.creme,
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E")`,
           backgroundSize: "200px 200px",
           pointerEvents: "none",
@@ -681,7 +790,7 @@ function Phone({ children }) {
         style={{
           width: 390,
           height: 844,
-          background: C.obs,
+          background: C.creme,
           borderRadius: 50,
           overflow: "hidden",
           position: "relative",
@@ -749,7 +858,7 @@ function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(340px, 100%)",
-          background: C.obs,
+          background: C.creme,
           border: `1px solid ${C.ouro}33`,
           borderRadius: 18,
           padding: "22px 20px",
@@ -760,7 +869,7 @@ function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
             fontFamily: FS,
             fontSize: 20,
             fontWeight: 300,
-            color: `rgba(255,255,255,.97)`,
+            color: `rgba(28,26,23,.97)`,
             marginBottom: 8,
           }}
         >
@@ -772,7 +881,7 @@ function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 15,
-              color: `rgba(255,255,255,.82)`,
+              color: `rgba(28,26,23,.82)`,
               lineHeight: 1.6,
               marginBottom: 16,
             }}
@@ -787,9 +896,9 @@ function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
               flex: 1,
               padding: "13px",
               borderRadius: 50,
-              background: "rgba(255,255,255,.06)",
+              background: "rgba(28,26,23,.06)",
               border: `1px solid ${C.ouro}22`,
-              color: `rgba(255,255,255,.92)`,
+              color: `rgba(28,26,23,.92)`,
               fontFamily: FB,
               fontSize: 15,
               cursor: "pointer",
@@ -906,7 +1015,7 @@ function Cab({ titulo, voltar, acao, destino }) {
   return (
     <div
       style={{
-        background: C.obs,
+        background: C.creme,
         padding: "12px 18px 14px",
         display: "flex",
         alignItems: "center",
@@ -918,11 +1027,11 @@ function Cab({ titulo, voltar, acao, destino }) {
         <button
           onClick={voltar}
           style={{
-            background: `rgba(255,255,255,.06)`,
+            background: `rgba(28,26,23,.06)`,
             border: `1px solid ${C.ouro}33`,
             borderRadius: 50,
             padding: "8px 14px",
-            color: `rgba(255,255,255,.92)`,
+            color: `rgba(28,26,23,.92)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
@@ -1056,6 +1165,18 @@ export default function App() {
   });
   const [videos, setVideos] = useState([]);
   const postando = useRef(false);
+
+  // ── Jornada v2 — metas semanais, registros por hábito, kit, desafio ────────
+  const [metas, setMetas] = useState({}); // {movimento:{freq,desc}, sono:{...}, tempo:{...}}
+  const [regs, setRegs] = useState({}); // { "2026-07-06": { movimento: {dif:2} } }
+  const [kitUsos, setKitUsos] = useState([]); // [{data, acao}]
+  const [kitPessoa, setKitPessoa] = useState({ nome: "", fone: "" }); // Pessoa de Referência
+  const [fraseFoco, setFraseFoco] = useState(""); // Frase de Retorno ao Foco
+  const [bussola, setBussola] = useState(""); // somente leitura (Encontro Individual 1)
+  const [perfilAuge, setPerfilAuge] = useState(""); // selo do Questionário de Perfil
+  const [desafioTexto, setDesafioTexto] = useState(""); // Desafio da Semana (admin)
+  const [desafioFeitos, setDesafioFeitos] = useState([]); // datas do mini check-in
+  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
   const [minhaFoto, setMinhaFoto] = useState(null);
   // Nova versão do app disponível (service worker atualizado)
@@ -1069,20 +1190,131 @@ export default function App() {
   // Dados de onboarding — nome e e-mail persistidos entre sessões
   const [usuario, setUsuario] = useLocalStorage("auge_usuario", null);
 
-  const sem = dataCadastro
+  // Semana da Jornada — alinhada à SEGUNDA-FEIRA (seção 1).
+  // Fonte: config.jornada_inicio (segunda da S1 da turma); fallback: data de cadastro.
+  const _iniJornada = jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : null);
+  const sem = _iniJornada
     ? Math.min(
         12,
         Math.max(
           1,
-          Math.ceil(
-            (Date.now() - dataCadastro.getTime()) / (7 * 24 * 60 * 60 * 1000),
-          ),
+          Math.floor(
+            (new Date(mondayOf(TODAY)) - new Date(mondayOf(_iniJornada))) /
+              (7 * 24 * 60 * 60 * 1000),
+          ) + 1,
         ),
       )
     : 1;
   const mes = sem <= 4 ? 1 : sem <= 8 ? 2 : 3;
   const hDia = habAngulares.length > 0 ? habAngulares : HAB[mes];
   const feitos = hDia.filter((h) => habF[h.id]).length;
+
+  // ── Estatísticas semanais por hábito angular (seções 4.2, 4.6, 4.8) ────────
+  const segundaAtual = mondayOf(TODAY);
+  const diasDaSemana = weekDays(segundaAtual);
+  const _dow = new Date(TODAY + "T12:00:00").getDay();
+  const diasRestantes = _dow === 0 ? 1 : 8 - _dow; // contando hoje
+  const statsSemana = (mondayStr) => {
+    const dias = weekDays(mondayStr);
+    const r = {};
+    for (const h of HABS_FIXOS) {
+      const feitosH = dias.filter((d) => regs[d]?.[h.id]);
+      const difs = feitosH.map((d) => regs[d][h.id]?.dif).filter(Boolean);
+      let predom = null;
+      if (difs.length) {
+        const cont = {};
+        difs.forEach((v) => (cont[v] = (cont[v] || 0) + 1));
+        predom = +Object.entries(cont).sort((a, b) => b[1] - a[1])[0][0];
+      }
+      r[h.id] = { feitas: feitosH.length, predom };
+    }
+    return r;
+  };
+  const semanaAtualStats = statsSemana(segundaAtual);
+  const habStats = {};
+  for (const h of HABS_FIXOS) {
+    const meta = metas?.[h.id]?.freq ?? h.freqDef;
+    const descMeta = metas?.[h.id]?.desc ?? "";
+    const { feitas, predom } = semanaAtualStats[h.id];
+    const zona = zonaDe(meta, feitas, diasRestantes);
+    const bloqueado = sem < h.unlock;
+    const s1 = statsSemana(addDaysStr(segundaAtual, -7))[h.id];
+    const s2 = statsSemana(addDaysStr(segundaAtual, -14))[h.id];
+    const sugerirSubir = !bloqueado && s1.feitas >= meta && s2.feitas >= meta;
+    const sugerirReduzir = !bloqueado && s1.predom === 5 && s2.predom === 5;
+    habStats[h.id] = { meta, descMeta, feitas, predom, zona, bloqueado, sugerirSubir, sugerirReduzir };
+  }
+  const habsAlerta = HABS_FIXOS.filter(
+    (h) => !habStats[h.id].bloqueado && habStats[h.id].feitas < habStats[h.id].meta &&
+      (habStats[h.id].zona === "ajuste" || habStats[h.id].zona === "atencao"),
+  );
+
+  // ── Ações Jornada v2 ────────────────────────────────────────────────────────
+  const _colMeta = { movimento: "mov", sono: "sono", tempo: "tsi" };
+  const registrarHabito = async (habId, dataStr, dif = null) => {
+    setRegs((r) => ({ ...r, [dataStr]: { ...(r[dataStr] || {}), [habId]: { dif } } }));
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    supabase.from("registros").upsert(
+      { user_id: session.user.id, habito: habId, data: dataStr, dificuldade: dif },
+      { onConflict: "user_id,habito,data" },
+    ).then(() => {});
+  };
+  const desregistrarHabito = async (habId, dataStr) => {
+    setRegs((r) => {
+      const dia = { ...(r[dataStr] || {}) };
+      delete dia[habId];
+      return { ...r, [dataStr]: dia };
+    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    supabase.from("registros").delete()
+      .eq("user_id", session.user.id).eq("habito", habId).eq("data", dataStr)
+      .then(() => {});
+  };
+  const salvarMeta = async (habId, freq, desc) => {
+    const antiga = metas?.[habId]?.freq ?? HABS_FIXOS.find((h) => h.id === habId).freqDef;
+    setMetas((m) => ({ ...m, [habId]: { freq, desc } }));
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const p = _colMeta[habId];
+    supabase.from("habitos_metas").upsert(
+      { user_id: session.user.id, [`${p}_freq`]: freq, [`${p}_desc`]: desc, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" },
+    ).then(() => {});
+    if (freq !== antiga) {
+      supabase.from("metas_historico").insert(
+        { user_id: session.user.id, habito: habId, freq_antiga: antiga, freq_nova: freq },
+      ).then(() => {});
+    }
+  };
+  const registrarKitUso = async (acao) => {
+    setKitUsos((k) => [...k, { data: TODAY, acao }]);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    supabase.from("kit_usos").insert({ user_id: session.user.id, data: TODAY, acao }).then(() => {});
+  };
+  const salvarKitPessoal = async (campos) => {
+    if ("pessoa_nome" in campos || "pessoa_fone" in campos)
+      setKitPessoa((k) => ({ nome: campos.pessoa_nome ?? k.nome, fone: campos.pessoa_fone ?? k.fone }));
+    if ("frase_foco" in campos) setFraseFoco(campos.frase_foco);
+    syncDB("kit_emergencia", campos, { onConflict: "user_id" });
+  };
+  const toggleDesafio = async () => {
+    const feito = desafioFeitos.includes(TODAY);
+    setDesafioFeitos((d) => (feito ? d.filter((x) => x !== TODAY) : [...d, TODAY]));
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    if (feito) {
+      supabase.from("desafio_registros").delete()
+        .eq("user_id", session.user.id).eq("data", TODAY).then(() => {});
+    } else {
+      supabase.from("desafio_registros").upsert(
+        { user_id: session.user.id, data: TODAY },
+        { onConflict: "user_id,data" },
+      ).then(() => {});
+    }
+  };
 
   const salvarHabitos = async (habs) => {
     setHabAngulares(habs);
@@ -1153,7 +1385,7 @@ export default function App() {
     if (postIds.length) {
       const { data: comData, error: comErr } = await supabase
         .from("comentarios")
-        .select("id, post_id, user_id, texto, autor_nome, autor_avatar, created_at")
+        .select("id, post_id, user_id, texto, autor_nome, autor_avatar, created_at, parent_id")
         .in("post_id", postIds)
         .order("created_at", { ascending: true });
       if (!comErr && comData?.length) {
@@ -1165,6 +1397,7 @@ export default function App() {
             userId: c.user_id,
             av: c.autor_avatar || null,
             cid: c.id,
+            parent: c.parent_id || null,
           });
         });
         postsReais.forEach((p) => {
@@ -1226,6 +1459,10 @@ export default function App() {
       diagRes,
       habsAngRes,
       rodaRes,
+      metasRes,
+      regsRes,
+      kitUsosRes,
+      desafioRes,
     ] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("checkins").select("*").eq("user_id", userId),
@@ -1241,7 +1478,33 @@ export default function App() {
       supabase.from("diagnostico").select("user_id").eq("user_id", userId).single(),
       supabase.from("habitos_angulares").select("*").eq("user_id", userId).single(),
       supabase.from("roda_auge").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase.from("habitos_metas").select("*").eq("user_id", userId).single(),
+      supabase.from("registros").select("*").eq("user_id", userId),
+      supabase.from("kit_usos").select("*").eq("user_id", userId),
+      supabase.from("desafio_registros").select("*").eq("user_id", userId),
     ]);
+
+    // ── Jornada v2: metas, registros, kit, desafio ──────────────────────────
+    if (metasRes?.data && !metasRes.error) {
+      const m = metasRes.data;
+      setMetas({
+        movimento: { freq: m.mov_freq ?? 3, desc: m.mov_desc || "" },
+        sono: { freq: m.sono_freq ?? 7, desc: m.sono_desc || "" },
+        tempo: { freq: m.tsi_freq ?? 3, desc: m.tsi_desc || "" },
+      });
+    } else {
+      setMetas({});
+    }
+    if (regsRes?.data) {
+      const r = {};
+      for (const reg of regsRes.data) {
+        if (!r[reg.data]) r[reg.data] = {};
+        r[reg.data][reg.habito] = { dif: reg.dificuldade };
+      }
+      setRegs(r);
+    } else setRegs({});
+    setKitUsos(kitUsosRes?.data?.map((k) => ({ data: k.data, acao: k.acao })) || []);
+    setDesafioFeitos(desafioRes?.data?.map((d) => d.data) || []);
 
     // habitos_angulares tem prioridade sobre profiles.habito_1/2/3
     if (habsAngRes?.data) {
@@ -1266,6 +1529,8 @@ export default function App() {
       setPerfil(FORCED_PLANO);
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
+      setBussola(p.bussola || "");
+      setPerfilAuge(p.perfil_auge || "");
       if (p.data_cadastro) setDataCadastro(new Date(p.data_cadastro));
       // Carregar hábitos angulares de profiles.habito_1/2/3 (fallback)
       const habsP = [p.habito_1, p.habito_2, p.habito_3]
@@ -1366,6 +1631,8 @@ export default function App() {
     if (kitRes.data && !kitRes.error) {
       setKitMin(kitRes.data.min_viavel || "");
       setKitApoio(kitRes.data.onde_apoio || "");
+      setKitPessoa({ nome: kitRes.data.pessoa_nome || "", fone: kitRes.data.pessoa_fone || "" });
+      setFraseFoco(kitRes.data.frase_foco || "");
     }
 
     if (ancRes.data && !ancRes.error && ancRes.data.texto) {
@@ -1402,6 +1669,8 @@ export default function App() {
         duracao: cfg.mentoria_duracao || "75 min",
         zoom: cfg.mentoria_zoom || "",
       });
+      setDesafioTexto(cfg.desafio_texto || "");
+      setJornadaInicio(cfg.jornada_inicio || null);
     }
 
     // Carregar vídeos do Supabase
@@ -1627,6 +1896,7 @@ export default function App() {
       if (session?.user) {
         const { data: inserted, error: insErr } = await supabase.from("feed").insert({
           user_id: session.user.id,
+          source: "jornada",
           autor_nome: usuario?.nome || "Aluna",
           autor_ini: ini,
           autor_cor: C.ouroDk,
@@ -1942,6 +2212,28 @@ export default function App() {
     logout,
     mentoria,
     videos,
+    // ── Jornada v2 ──
+    metas,
+    regs,
+    habStats,
+    habsAlerta,
+    diasDaSemana,
+    segundaAtual,
+    diasRestantes,
+    kitUsos,
+    kitPessoa,
+    fraseFoco,
+    bussola,
+    perfilAuge,
+    desafioTexto,
+    desafioFeitos,
+    jornadaInicio,
+    registrarHabito,
+    desregistrarHabito,
+    salvarMeta,
+    registrarKitUso,
+    salvarKitPessoal,
+    toggleDesafio,
     radarPerfis,
     naoLidas,
     marcarLidas,
@@ -1969,13 +2261,13 @@ export default function App() {
             gap: 24,
           }}
         >
-          <Logo width={140} fundo="escuro" />
+          <Logo width={140} fundo="claro" />
           <div
             style={{
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 15,
-              color: `rgba(255,255,255,.82)`,
+              color: `rgba(28,26,23,.82)`,
               animation: "pulse 1.5s ease-in-out infinite",
               letterSpacing: "0.2em",
             }}
@@ -2030,8 +2322,8 @@ export default function App() {
                 }, { onConflict: "user_id" }).then(() => {});
               }
               // Após diagnóstico → setup de hábitos se ainda não definidos
-              if (habAngulares.length === 0) ir(S.HABSETUP);
-              else ir(S.HOME);
+              // v2: hábitos angulares são fixos (Movimento, Sono, Tempo para Si)
+              ir(S.HOME);
             }}
           />
         </Rolar>
@@ -2046,7 +2338,7 @@ export default function App() {
         <Rolar>
           <Grain style={{ minHeight: 760, padding: "40px 26px 48px", animation: "fadeUp .4s ease" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 32 }}>
-              <Logo width={120} fundo="escuro" />
+              <Logo width={120} fundo="claro" />
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.4em", textTransform: "uppercase" }}>
                 Primeiro acesso
               </div>
@@ -2089,7 +2381,8 @@ export default function App() {
       case S.RET:
         return <Retomada {...ctx} />;
       case S.CAL:
-        return <Calendario {...ctx} />;
+      case S.TRAJ:
+        return <Trajetoria {...ctx} />;
       case S.ESC:
         return <Escritas {...ctx} />;
       case S.EM:
@@ -2176,9 +2469,11 @@ function Estilos() {
 
 // ─── NAV BAR ──────────────────────────────────────────────────────────────────
 function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
+  // 5 abas (seção 2): Hoje · Trajetória · Mural do 1% · Meu Mapa · Conteúdo
+  // Configurações fica fora da barra, acessada por ícone (seção 9)
   const mainAbas = IS_CLUBE
-    ? [S.HOME, S.FEED, S.CX, S.JOR, S.CT, S.PF]
-    : [S.HOME, S.FEED, S.JOR, S.CT, S.PF];
+    ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT]
+    : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
   let aba = ABA_ORIGEM[tela] || S.HOME;
   if (!mainAbas.includes(aba)) {
     aba = ABA_ORIGEM[aba] || S.HOME;
@@ -2188,18 +2483,18 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
     aba = S.CX;
   }
   const tabs = [
-    { id: S.HOME, label: "Início", icon: Ico.home },
-    { id: S.FEED, label: "Mural", icon: Ico.feed, badge: !ckOk ? 1 : 0, msgCount: IS_CLUBE ? 0 : msgCount },
+    { id: S.HOME, label: "Hoje", icon: Ico.hoje },
+    { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
+    { id: S.FEED, label: "Mural do 1%", icon: Ico.mural, badge: !ckOk ? 1 : 0, msgCount: IS_CLUBE ? 0 : msgCount },
     ...(IS_CLUBE ? [{ id: S.CX, label: "Amigas", icon: Ico.cx, msgCount }] : []),
-    { id: S.JOR, label: "Jornada", icon: Ico.jor },
-    { id: S.CT, label: "Conteúdo", icon: Ico.ct },
-    { id: S.PF, label: "Perfil", icon: Ico.pf },
+    { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
+    { id: S.CT, label: "Conteúdo", icon: Ico.livro },
   ];
   // Nota: Jornada aparece para todos — Comunidade vê vitrine, Jornada vê conteúdo
   return (
     <div
       style={{
-        background: C.obs,
+        background: C.creme,
         borderTop: `1px solid ${C.ouro}15`,
         display: "flex",
         padding: "10px 0 16px",
@@ -2227,7 +2522,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
                 padding: "0 4px",
                 borderRadius: 9,
                 background: C.ouro,
-                border: `1.5px solid ${C.obs}`,
+                border: `1.5px solid ${C.creme}`,
                 color: C.obs,
                 fontSize: 12,
                 fontWeight: 500,
@@ -2250,7 +2545,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
                 height: 8,
                 borderRadius: "50%",
                 background: C.terra,
-                border: `1.5px solid ${C.obs}`,
+                border: `1.5px solid ${C.creme}`,
               }}
             />
           ) : null}
@@ -2267,9 +2562,12 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 12,
+                fontSize: 8,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
                 color: aba === t.id ? C.ouro : C.lt,
                 transition: "color .2s",
+                whiteSpace: "nowrap",
               }}
             >
               {t.label}
@@ -2288,6 +2586,52 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── LEGENDA DE CORES (seção 3.4) — acessível na Hoje e na Trajetória ────────
+function LegendaCores({ onFechar }) {
+  const Linha = ({ cor, borda, txt }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+      <div style={{ width: 14, height: 14, borderRadius: 4, background: cor, border: borda || `1px solid ${C.ouro}30`, flexShrink: 0 }} />
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.75)`, lineHeight: 1.45 }}>{txt}</div>
+    </div>
+  );
+  const Titulo = ({ t }) => (
+    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9, color: C.ouroDk, letterSpacing: "0.3em", textTransform: "uppercase", margin: "14px 0 8px" }}>{t}</div>
+  );
+  return (
+    <div
+      onClick={onFechar}
+      style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.35)", display: "flex", alignItems: "flex-end" }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 22px 34px", maxHeight: "75%", overflowY: "auto" }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: C.obs }}>O que cada cor significa</div>
+          <button onClick={onFechar} style={{ background: "none", border: "none", fontSize: 20, color: C.lt, cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, lineHeight: 1.5, marginBottom: 4 }}>
+          A mesma cor pode contar histórias diferentes dependendo da tela.
+        </div>
+        <Titulo t="Na Hoje — zona de cada hábito" />
+        <Linha cor={ZONAS.tranquila.cor} txt="Tranquila — ainda sobra folga pra bater a meta da semana" />
+        <Linha cor={ZONAS.ajuste.cor} txt='Ajuste — hoje é o último dia de folga. "Opa, ainda dá!"' />
+        <Linha cor={ZONAS.atencao.cor} txt="Atenção — já não dá mais pra bater a meta. Semana que vem recomeça" />
+        <Titulo t="Na Trajetória — calendário mensal" />
+        <Linha cor={HEAT_CORES[0]} txt="Nenhum hábito registrado no dia" />
+        <Linha cor={HEAT_CORES[1]} txt="1 hábito feito" />
+        <Linha cor={HEAT_CORES[2]} txt="2 hábitos feitos" />
+        <Linha cor={HEAT_CORES[3]} txt="3 hábitos feitos" />
+        <Titulo t="Na Trajetória — semana a semana" />
+        <Linha cor={C.ouro} txt="Meta da semana cumprida" />
+        <Linha cor={`${C.terra}66`} txt="Semana parcial — fez algo, não bateu a meta" />
+        <Linha cor={`${C.blush}55`} borda={`1.5px solid ${C.blush}`} txt="Kit de Emergência acionado naquela semana" />
+        <Linha cor="transparent" txt="Semana ainda não chegou" />
+      </div>
     </div>
   );
 }
@@ -2337,7 +2681,7 @@ function Splash({ ir }) {
           paddingTop: 60,
         }}
       >
-        <Logo width={240} fundo="escuro" />
+        <Logo width={240} fundo="claro" />
         <div
           style={{
             width: 1,
@@ -2391,7 +2735,7 @@ function AvisoLegal({ onAceitar }) {
           marginBottom: 24,
         }}
       >
-        <Logo width={140} fundo="escuro" />
+        <Logo width={140} fundo="claro" />
       </div>
       <div
         style={{
@@ -2416,7 +2760,7 @@ function AvisoLegal({ onAceitar }) {
         style={{
           flex: 1,
           overflowY: "auto",
-          background: "rgba(255,255,255,.04)",
+          background: "rgba(28,26,23,.04)",
           border: `1px solid ${C.ouro}18`,
           borderRadius: 12,
           padding: "18px",
@@ -2428,13 +2772,13 @@ function AvisoLegal({ onAceitar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
-            color: `rgba(255,255,255,.82)`,
+            color: `rgba(28,26,23,.82)`,
             lineHeight: 1.8,
           }}
         >
           <p style={{ marginBottom: 12 }}>
             Este aplicativo é um{" "}
-            <b style={{ color: `rgba(255,255,255,.88)` }}>
+            <b style={{ color: `rgba(28,26,23,.88)` }}>
               programa de desenvolvimento de hábitos e estilo de vida
             </b>
             . Não substitui consulta médica, acompanhamento clínico individual,
@@ -2494,7 +2838,7 @@ function AvisoLegal({ onAceitar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
-            color: `rgba(255,255,255,.8)`,
+            color: `rgba(28,26,23,.8)`,
             lineHeight: 1.5,
           }}
         >
@@ -2513,7 +2857,7 @@ function AvisoLegal({ onAceitar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.8)`,
+            color: `rgba(28,26,23,.8)`,
             textAlign: "center",
             marginTop: 10,
           }}
@@ -2556,7 +2900,7 @@ function Onboarding({ onConcluir }) {
           marginBottom: 4,
         }}
       >
-        <Logo width={300} fundo="escuro" />
+        <Logo width={300} fundo="claro" />
       </div>
       <div
         style={{
@@ -2576,7 +2920,7 @@ function Onboarding({ onConcluir }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 15,
-          color: `rgba(255,255,255,.92)`,
+          color: `rgba(28,26,23,.92)`,
           marginBottom: 40,
           textAlign: "center",
           lineHeight: 1.65,
@@ -2591,7 +2935,7 @@ function Onboarding({ onConcluir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.8)`,
+            color: `rgba(28,26,23,.8)`,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -2610,7 +2954,7 @@ function Onboarding({ onConcluir }) {
             width: "100%",
             background: "transparent",
             border: "none",
-            borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
+            borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
             color: C.branco,
             fontFamily: FS,
             fontSize: 17,
@@ -2626,7 +2970,7 @@ function Onboarding({ onConcluir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.8)`,
+            color: `rgba(28,26,23,.8)`,
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -2645,7 +2989,7 @@ function Onboarding({ onConcluir }) {
             width: "100%",
             background: "transparent",
             border: "none",
-            borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
+            borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
             color: C.branco,
             fontFamily: FS,
             fontSize: 17,
@@ -2664,7 +3008,7 @@ function Onboarding({ onConcluir }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 13,
-          color: `rgba(255,255,255,.78)`,
+          color: `rgba(28,26,23,.78)`,
           marginTop: 20,
           textAlign: "center",
           lineHeight: 1.7,
@@ -2706,7 +3050,7 @@ function ModalTermos({ onAceitar, onFechar }) {
         style={{
           width: "100%",
           maxWidth: 430,
-          background: "#18141C",
+          background: C.creme,
           borderRadius: "20px 20px 0 0",
           border: `1px solid ${C.ouro}20`,
           paddingBottom: "env(safe-area-inset-bottom)",
@@ -2738,7 +3082,7 @@ function ModalTermos({ onAceitar, onFechar }) {
             style={{
               background: "none",
               border: "none",
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
               fontSize: 20,
               cursor: "pointer",
               lineHeight: 1,
@@ -2763,7 +3107,7 @@ function ModalTermos({ onAceitar, onFechar }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 15,
-              color: `rgba(255,255,255,.82)`,
+              color: `rgba(28,26,23,.82)`,
               margin: 0,
             }}
           >
@@ -2778,7 +3122,7 @@ function ModalTermos({ onAceitar, onFechar }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.78)`,
+                color: `rgba(28,26,23,.78)`,
                 letterSpacing: "0.15em",
               }}
             >
@@ -2808,7 +3152,7 @@ function ModalTermos({ onAceitar, onFechar }) {
                 width: 18,
                 height: 18,
                 borderRadius: 4,
-                border: `1.5px solid ${marcou ? C.ouro : "rgba(255,255,255,.88)"}`,
+                border: `1.5px solid ${marcou ? C.ouro : "rgba(28,26,23,.88)"}`,
                 background: marcou ? `${C.ouro}22` : "transparent",
                 flexShrink: 0,
                 display: "flex",
@@ -2824,7 +3168,7 @@ function ModalTermos({ onAceitar, onFechar }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
-                color: `rgba(255,255,255,.82)`,
+                color: `rgba(28,26,23,.82)`,
                 lineHeight: 1.5,
               }}
             >
@@ -2908,6 +3252,7 @@ function TelaAuth({ onAuth }) {
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
         plano: "jornada",
+        access_tier: "jornada", // addendum: único valor na v1; futuro: "clube"
         lgpd_aceito: true,
         lgpd_data: new Date().toISOString(),
         data_cadastro: new Date().toISOString(),
@@ -2933,7 +3278,7 @@ function TelaAuth({ onAuth }) {
   const inp = {
     background: "transparent",
     border: "none",
-    borderBottom: `1px solid rgba(255,255,255,.82)`,
+    borderBottom: `1px solid rgba(28,26,23,.82)`,
     color: C.branco,
     fontFamily: FB,
     fontWeight: 300,
@@ -2946,7 +3291,7 @@ function TelaAuth({ onAuth }) {
     fontFamily: FB,
     fontWeight: 300,
     fontSize: 14,
-    color: `rgba(255,255,255,.8)`,
+    color: `rgba(28,26,23,.8)`,
     marginBottom: 7,
   };
 
@@ -2963,7 +3308,7 @@ function TelaAuth({ onAuth }) {
           animation: "fadeUp .4s ease",
         }}
       >
-        <Logo width={220} fundo="escuro" />
+        <Logo width={220} fundo="claro" />
         <div
           style={{
             fontFamily: FS,
@@ -2993,7 +3338,7 @@ function TelaAuth({ onAuth }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 lineHeight: 1.7,
               }}
             >
@@ -3046,7 +3391,7 @@ function TelaAuth({ onAuth }) {
             marginTop: 24,
             background: "none",
             border: "none",
-            color: `rgba(255,255,255,.88)`,
+            color: `rgba(28,26,23,.88)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
@@ -3070,7 +3415,7 @@ function TelaAuth({ onAuth }) {
           animation: "fadeUp .4s ease",
         }}
       >
-        <Logo width={220} fundo="escuro" />
+        <Logo width={220} fundo="claro" />
         <div
           style={{
             fontFamily: FS,
@@ -3089,7 +3434,7 @@ function TelaAuth({ onAuth }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 14,
-            color: `rgba(255,255,255,.88)`,
+            color: `rgba(28,26,23,.88)`,
             marginBottom: 28,
             textAlign: "center",
           }}
@@ -3114,7 +3459,7 @@ function TelaAuth({ onAuth }) {
                 fontFamily: FS,
                 fontStyle: "italic",
                 fontSize: 16,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 lineHeight: 1.6,
                 marginBottom: 8,
               }}
@@ -3126,12 +3471,12 @@ function TelaAuth({ onAuth }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
-                color: `rgba(255,255,255,.8)`,
+                color: `rgba(28,26,23,.8)`,
                 lineHeight: 1.7,
               }}
             >
               Enviamos um link de confirmação para{" "}
-              <strong style={{ color: `rgba(255,255,255,.88)` }}>{email}</strong>
+              <strong style={{ color: `rgba(28,26,23,.88)` }}>{email}</strong>
               . Clique no link e depois faça login.
             </div>
             <button
@@ -3219,7 +3564,7 @@ function TelaAuth({ onAuth }) {
               width: 18,
               height: 18,
               borderRadius: 4,
-              border: `1.5px solid ${lgpd ? C.ouro : "rgba(255,255,255,.92)"}`,
+              border: `1.5px solid ${lgpd ? C.ouro : "rgba(28,26,23,.92)"}`,
               background: lgpd ? `${C.ouro}22` : "transparent",
               flexShrink: 0,
               display: "flex",
@@ -3236,7 +3581,7 @@ function TelaAuth({ onAuth }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 14,
-              color: `rgba(255,255,255,.8)`,
+              color: `rgba(28,26,23,.8)`,
               lineHeight: 1.6,
             }}
           >
@@ -3293,7 +3638,7 @@ function TelaAuth({ onAuth }) {
             marginTop: 20,
             background: "none",
             border: "none",
-            color: `rgba(255,255,255,.88)`,
+            color: `rgba(28,26,23,.88)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
@@ -3317,7 +3662,7 @@ function TelaAuth({ onAuth }) {
         animation: "fadeUp .4s ease",
       }}
     >
-      <Logo width={260} fundo="escuro" />
+      <Logo width={260} fundo="claro" />
       <div
         style={{
           fontFamily: FS,
@@ -3337,7 +3682,7 @@ function TelaAuth({ onAuth }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 15,
-          color: `rgba(255,255,255,.92)`,
+          color: `rgba(28,26,23,.92)`,
           marginBottom: 40,
           textAlign: "center",
         }}
@@ -3391,7 +3736,7 @@ function TelaAuth({ onAuth }) {
         style={{
           background: "none",
           border: "none",
-          color: `rgba(255,255,255,.82)`,
+          color: `rgba(28,26,23,.82)`,
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 14,
@@ -3456,7 +3801,7 @@ function Diagnostico({ onConcluir }) {
             marginBottom: "1.5rem",
           }}
         >
-          <Logo width={120} fundo="escuro" />
+          <Logo width={120} fundo="claro" />
           <div
             style={{
               fontFamily: FB,
@@ -3486,7 +3831,7 @@ function Diagnostico({ onConcluir }) {
         <div
           style={{
             height: 2,
-            background: `rgba(255,255,255,.08)`,
+            background: `rgba(28,26,23,.08)`,
             borderRadius: 100,
             marginBottom: "1.5rem",
             position: "relative",
@@ -3510,7 +3855,7 @@ function Diagnostico({ onConcluir }) {
             fontFamily: FS,
             fontSize: 19,
             fontWeight: 300,
-            color: `rgba(255,255,255,.97)`,
+            color: `rgba(28,26,23,.97)`,
             lineHeight: 1.55,
             marginBottom: "2rem",
           }}
@@ -3523,7 +3868,7 @@ function Diagnostico({ onConcluir }) {
               key={i}
               onClick={() => escolher(op)}
               style={{
-                background: `rgba(255,255,255,.05)`,
+                background: `rgba(28,26,23,.05)`,
                 border: `1px solid ${C.ouro}18`,
                 borderRadius: 10,
                 padding: "14px 16px",
@@ -3531,7 +3876,7 @@ function Diagnostico({ onConcluir }) {
                 textAlign: "left",
                 fontFamily: FB,
                 fontSize: 16,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 lineHeight: 1.4,
               }}
             >
@@ -3544,7 +3889,7 @@ function Diagnostico({ onConcluir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.8)`,
+            color: `rgba(28,26,23,.8)`,
             textAlign: "center",
             marginTop: "1.5rem",
             lineHeight: 1.6,
@@ -3581,7 +3926,7 @@ function DefinirHabitos({ onSalvar }) {
           fontFamily: FS,
           fontSize: 20,
           fontWeight: 300,
-          color: "rgba(255,255,255,.97)",
+          color: "rgba(28,26,23,.97)",
           marginBottom: 6,
         }}
       >
@@ -3592,7 +3937,7 @@ function DefinirHabitos({ onSalvar }) {
           fontFamily: FB,
           fontWeight: 300,
           fontSize: 15,
-          color: "rgba(255,255,255,.92)",
+          color: "rgba(28,26,23,.92)",
           lineHeight: 1.65,
           marginBottom: 22,
         }}
@@ -3626,7 +3971,7 @@ function DefinirHabitos({ onSalvar }) {
               width: "100%",
               background: "transparent",
               border: "none",
-              borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
+              borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
               color: C.branco,
               fontFamily: FS,
               fontSize: 17,
@@ -3650,7 +3995,7 @@ function DefinirHabitos({ onSalvar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: "rgba(255,255,255,.4)",
+            color: "rgba(28,26,23,.4)",
             lineHeight: 1.65,
           }}
         >
@@ -3670,7 +4015,7 @@ function IsaCard({ text, loading }) {
   return (
     <div
       style={{
-        background: `rgba(255,255,255,.05)`,
+        background: `rgba(28,26,23,.05)`,
         border: `1px solid ${C.ouro}28`,
         borderRadius: 12,
         padding: "16px 18px",
@@ -3693,7 +4038,7 @@ function IsaCard({ text, loading }) {
               fontFamily: FB,
               fontWeight: 500,
               fontSize: 15,
-              color: `rgba(255,255,255,.97)`,
+              color: `rgba(28,26,23,.97)`,
             }}
           >
             ISA — Inteligência do Clube do Auge
@@ -3732,7 +4077,7 @@ function IsaCard({ text, loading }) {
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 15,
-              color: `rgba(255,255,255,.92)`,
+              color: `rgba(28,26,23,.92)`,
             }}
           >
             ISA está respondendo...
@@ -3744,7 +4089,7 @@ function IsaCard({ text, loading }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
-            color: `rgba(255,255,255,.92)`,
+            color: `rgba(28,26,23,.92)`,
             lineHeight: 1.75,
             whiteSpace: "pre-wrap",
           }}
@@ -3843,7 +4188,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.8)`,
+            color: `rgba(28,26,23,.8)`,
             marginTop: 2,
           }}
         >
@@ -3869,12 +4214,280 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 11,
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
               letterSpacing: "0.1em",
             }}
           >
             {streakAtual === 1 ? "DIA SEGUIDO" : "DIAS SEGUIDOS"}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ABA HOJE v2 — componentes dos hábitos angulares (seções 4.2–4.11)
+// ═══════════════════════════════════════════════════════════════════
+
+// Card de um hábito angular
+function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk }) {
+  const [editando, setEditando] = useState(false);
+  const [freqEdit, setFreqEdit] = useState(st.meta);
+  const [descEdit, setDescEdit] = useState(st.descMeta);
+  const [pedindoDif, setPedindoDif] = useState(false);
+  const progKey = `auge_prog_${h.id}_${segundaAtual}`;
+  const [progOculto, setProgOculto] = useState(() => {
+    try { return localStorage.getItem(progKey) === "1"; } catch { return false; }
+  });
+  const marcado = !!regAlvo;
+  const metaBatida = st.feitas >= st.meta;
+  const zona = ZONAS[st.zona];
+
+  // Bloqueado por calendário (seção 4.7) — cadeado dourado
+  if (st.bloqueado) {
+    return (
+      <div style={{ background: `rgba(28,26,23,.03)`, border: `1px dashed ${C.ouro}44`, borderRadius: 12, padding: "16px 15px", marginBottom: 12, display: "flex", alignItems: "center", gap: 13, opacity: 0.75 }}>
+        <div style={{ fontSize: 22 }}>{h.ic}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: FS, fontSize: 17, fontWeight: 300, color: `rgba(28,26,23,.55)` }}>{h.nome}</div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginTop: 2 }}>
+            Desbloqueia na Semana {h.unlock}
+          </div>
+        </div>
+        <div style={{ fontSize: 18, color: C.ouro }}>🔒</div>
+      </div>
+    );
+  }
+
+  const salvarEdicao = () => {
+    const f = Math.max(1, Math.min(7, +freqEdit || st.meta));
+    salvarMeta(h.id, f, descEdit.trim());
+    setEditando(false);
+    tk("Objetivo atualizado 💛");
+  };
+
+  return (
+    <div style={{ background: C.linho, border: `1px solid ${C.ouro}30`, borderRadius: 12, padding: "15px 15px 13px", marginBottom: 12 }}>
+      {/* nome + selo de zona */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        <div style={{ fontSize: 20 }}>{h.ic}</div>
+        <div style={{ flex: 1, fontFamily: FS, fontSize: 19, fontWeight: 300, color: C.obs }}>{h.nome}</div>
+        <div style={{ background: metaBatida ? `${C.ouro}30` : `${zona.cor}30`, border: `1px solid ${metaBatida ? C.ouro : zona.cor}`, borderRadius: 20, padding: "3px 10px", fontFamily: FB, fontWeight: 400, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: C.obs2 }}>
+          {metaBatida ? "Meta ✓" : zona.label}
+        </div>
+      </div>
+
+      {/* objetivo personalizado — editável pela aluna (toque no texto) */}
+      {!editando ? (
+        <div onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
+          style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13.5, color: C.terra, marginBottom: 10, cursor: "pointer", lineHeight: 1.45 }}>
+          {st.meta}x por semana{st.descMeta ? ` · ${st.descMeta}` : ""} <span style={{ fontSize: 10, color: C.lt }}>✎</span>
+        </div>
+      ) : (
+        <div style={{ background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <span style={{ fontFamily: FB, fontSize: 11, color: C.terra }}>Vezes por semana:</span>
+            <button onClick={() => setFreqEdit((f) => Math.max(1, f - 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroDk, cursor: "pointer", fontSize: 14 }}>−</button>
+            <span style={{ fontFamily: FS, fontSize: 18, color: C.obs, minWidth: 18, textAlign: "center" }}>{freqEdit}</span>
+            <button onClick={() => setFreqEdit((f) => Math.min(7, f + 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroDk, cursor: "pointer", fontSize: 14 }}>+</button>
+          </div>
+          <input value={descEdit} onChange={(e) => setDescEdit(e.target.value)}
+            placeholder={h.id === "sono" ? "ex: sem tela 2h antes de dormir" : "ex: 20 minutos"}
+            style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FS, fontSize: 13, color: C.obs, marginBottom: 8 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={salvarEdicao} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            <button onClick={() => setEditando(false)} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 11, color: C.terra, cursor: "pointer" }}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {/* progresso semanal — um ponto por repetição da meta */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+        {Array.from({ length: st.meta }, (_, i) => (
+          <div key={i} style={{ width: 11, height: 11, borderRadius: "50%", background: i < st.feitas ? C.ouro : "transparent", border: `1.5px solid ${i < st.feitas ? C.ouro : C.ouro + "55"}` }} />
+        ))}
+        <span style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, marginLeft: 4 }}>
+          {st.feitas} de {st.meta} essa semana{st.predom ? ` · Essa semana: ${difLabel(st.predom)}` : ""}
+        </span>
+      </div>
+
+      {/* sugestão de progressão / redução de meta (seção 4.8) — decisão sempre dela */}
+      {!progOculto && st.sugerirSubir && !st.sugerirReduzir && (
+        <div style={{ background: `${C.ouro}18`, border: `1px solid ${C.ouro}40`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
+            Você fechou as últimas 2 semanas em cheio no {h.nome}. Quer subir pra {st.meta + 1}x, ou prefere manter esse ritmo?
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { salvarMeta(h.id, st.meta + 1, st.descMeta); tk(`Meta do ${h.nome}: ${st.meta + 1}x 💛`); }} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Subir pra {st.meta + 1}x</button>
+            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 11, color: C.terra, cursor: "pointer" }}>Manter</button>
+          </div>
+        </div>
+      )}
+      {!progOculto && st.sugerirReduzir && (
+        <div style={{ background: `${C.blush}20`, border: `1px solid ${C.blush}66`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
+            Esse hábito está pesado pra você nas últimas 2 semanas. Quer ajustar pra um nível mais leve, ou prefere manter?
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { salvarMeta(h.id, Math.max(1, st.meta - 1), st.descMeta); tk("Meta ajustada. Leveza também é método 💛"); }} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Ajustar pra {Math.max(1, st.meta - 1)}x</button>
+            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.blush}66`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 11, color: C.terra, cursor: "pointer" }}>Manter</button>
+          </div>
+        </div>
+      )}
+
+      {/* registro — Sono é referente à noite anterior (seções 4.2 e 4.3) */}
+      {!marcado ? (
+        <button onClick={() => { registrarHabito(h.id, dataAlvo, null); setPedindoDif(true); }}
+          style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.obs2, cursor: "pointer" }}>
+          {h.id === "sono" ? "Cumpri ontem à noite" : "Marquei hoje"}
+        </button>
+      ) : !regAlvo.dif && pedindoDif ? (
+        <div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, marginBottom: 8 }}>
+            Como foi manter esse hábito hoje?
+          </div>
+          <div style={{ display: "flex", gap: 5 }}>
+            {DIF_OPTS.map((d) => (
+              <button key={d.v} onClick={() => { registrarHabito(h.id, dataAlvo, d.v); setPedindoDif(false); }}
+                style={{ flex: 1, background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}40`, borderRadius: 8, padding: "7px 2px", fontFamily: FB, fontWeight: 300, fontSize: 8.5, color: C.obs2, cursor: "pointer", lineHeight: 1.3 }}>
+                {d.l}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.ouroDk }}>
+            ✓ {h.id === "sono" ? "Noite registrada" : "Feito hoje"}{regAlvo.dif ? ` · ${difLabel(regAlvo.dif)}` : ""}
+          </div>
+          <button onClick={() => { desregistrarHabito(h.id, dataAlvo); setPedindoDif(false); }}
+            style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>
+            desfazer
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Registro retroativo — até 7 dias corridos (seção 4.5)
+function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, habStats }) {
+  const dias = Array.from({ length: 7 }, (_, i) => addDaysStr(TODAY, -(i + 1)));
+  const fmt = (ds) => {
+    const d = new Date(ds + "T12:00:00");
+    return d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "short" });
+  };
+  return (
+    <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.35)", display: "flex", alignItems: "flex-end" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 20px 34px", maxHeight: "80%", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: C.obs }}>Registrar dias anteriores</div>
+          <button onClick={onFechar} style={{ background: "none", border: "none", fontSize: 20, color: C.lt, cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, lineHeight: 1.5, marginBottom: 14 }}>
+          Esqueceu de marcar? Sem culpa — dá pra preencher até 7 dias pra trás. Tudo recalcula sozinho.
+        </div>
+        {dias.map((ds) => (
+          <div key={ds} style={{ background: C.linho, borderRadius: 10, padding: "11px 13px", marginBottom: 9 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, textTransform: "capitalize", marginBottom: 8 }}>{fmt(ds)}</div>
+            <div style={{ display: "flex", gap: 7 }}>
+              {HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado).map((h) => {
+                const feito = !!regs[ds]?.[h.id];
+                return (
+                  <button key={h.id}
+                    onClick={() => (feito ? desregistrarHabito(h.id, ds) : registrarHabito(h.id, ds, null))}
+                    style={{ flex: 1, background: feito ? `${C.ouro}30` : "transparent", border: `1px solid ${feito ? C.ouro : C.ouro + "40"}`, borderRadius: 8, padding: "8px 4px", fontFamily: FB, fontWeight: 300, fontSize: 10, color: feito ? C.ouroDk : C.lt, cursor: "pointer" }}>
+                    {feito ? "✓ " : ""}{h.nome}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Desafio da Semana — micro-meta da turma, contida no card (seção 4.10)
+function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
+  if (!texto) return null;
+  const feitoHoje = desafioFeitos.includes(TODAY);
+  return (
+    <div style={{ border: `1.5px dashed ${C.ouro}66`, borderRadius: 12, padding: "14px 15px", marginTop: 16, marginBottom: 8 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9, color: C.ouroDk, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 6 }}>
+        Desafio da Semana · turma
+      </div>
+      <div style={{ fontFamily: FS, fontSize: 15.5, fontWeight: 300, color: C.obs, lineHeight: 1.45, marginBottom: 10 }}>{texto}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 10 }}>
+        {diasDaSemana.map((d) => (
+          <div key={d} style={{ width: 8, height: 8, borderRadius: "50%", background: desafioFeitos.includes(d) ? C.ouro : "transparent", border: `1px dashed ${C.ouro}88` }} />
+        ))}
+      </div>
+      <button onClick={toggleDesafio}
+        style={{ width: "100%", background: feitoHoje ? "transparent" : `${C.ouro}20`, border: `1px ${feitoHoje ? "solid" : "solid"} ${C.ouro}55`, borderRadius: 50, padding: "9px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: feitoHoje ? C.lt : C.ouroDk, cursor: "pointer" }}>
+        {feitoHoje ? "✓ Feito hoje · desfazer" : "Feito hoje"}
+      </button>
+    </div>
+  );
+}
+
+// Vitória da Semana — sexta-feira, fluxo em 2 partes (seção 4.11)
+function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }) {
+  const [passo, setPasso] = useState(1);
+  const [resp, setResp] = useState("");
+  const ativos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
+  const resumo = ativos
+    .map((h) => {
+      const st = habStats[h.id];
+      if (st.feitas === 0) return null;
+      let s = `Você fez ${h.nome === "Movimento" ? "seu movimento" : h.nome.toLowerCase()} ${st.feitas}x essa semana`;
+      if (st.predom) s += ` e sentiu ${difLabel(st.predom).toLowerCase()} na maioria delas`;
+      return s + ".";
+    })
+    .filter(Boolean)
+    .join(" ") || "Essa semana ainda está sendo escrita — e você está aqui.";
+  const salvar = (compartilhar) => {
+    const vitData = new Date().toLocaleDateString("pt-BR");
+    syncInsert("vitorias", { sem, texto: resp.trim() || resumo, data: vitData, resumo });
+    try { localStorage.setItem(`auge_vitsem_${segundaAtual}`, "1"); } catch {}
+    if (compartilhar) {
+      postTreino({ tit: "Vitória da Semana 🏆", desc: `${resumo}${resp.trim() ? `\n\n"${resp.trim()}"` : ""}`, publica: true });
+      tk("Vitória compartilhada no Mural 💛");
+    } else {
+      tk("Vitória registrada 💛");
+    }
+    onFechar();
+  };
+  return (
+    <div style={{ background: `${C.ouro}15`, border: `1px solid ${C.ouro}55`, borderRadius: 12, padding: "16px 16px 14px", marginBottom: 16 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9, color: C.ouroDk, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 6 }}>
+        Sexta-feira · Vitória da Semana
+      </div>
+      {passo === 1 ? (
+        <div>
+          <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: C.obs, marginBottom: 10 }}>
+            Como foi essa semana pra você?
+          </div>
+          <textarea value={resp} onChange={(e) => setResp(e.target.value)}
+            placeholder="No geral, além de cada hábito..."
+            style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 10, padding: "11px", fontSize: 14, fontFamily: FS, color: C.obs, resize: "none", height: 84, lineHeight: 1.6, marginBottom: 10 }} />
+          <button onClick={() => setPasso(2)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 12.5, color: C.obs2, cursor: "pointer" }}>
+            Continuar
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15, color: C.terra, lineHeight: 1.6, marginBottom: 12 }}>
+            {resumo}
+          </div>
+          <button onClick={() => salvar(true)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 12.5, color: C.obs2, cursor: "pointer", marginBottom: 8 }}>
+            Compartilhar no Mural do 1%
+          </button>
+          <button onClick={() => salvar(false)} style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 12, color: C.terra, cursor: "pointer" }}>
+            Só registrar pra mim
+          </button>
         </div>
       )}
     </div>
@@ -3918,8 +4531,32 @@ function Home({
   pq1,
   pq2,
   pq3,
+  // ── Jornada v2 ──
+  regs,
+  habStats,
+  habsAlerta,
+  diasDaSemana,
+  segundaAtual,
+  registrarHabito,
+  desregistrarHabito,
+  salvarMeta,
+  desafioTexto,
+  desafioFeitos,
+  toggleDesafio,
+  postTreino,
 }) {
-  const [passo, setPasso] = useState(0); // 0=aguardando 1=chips 2=habitos 3=nota 4=feito
+  const [passo, setPasso] = useState(0); // 0=cards 2=chips 3=nota 4=fechamento
+  const [legenda, setLegenda] = useState(false);
+  const [retroAberto, setRetroAberto] = useState(false);
+  const ONTEM = addDaysStr(TODAY, -1);
+  const habsAtivos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
+  // Sono registrado de manhã é referente à noite anterior (seção 4.3)
+  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
+  const feitosHoje = habsAtivos.filter((h) => regDoDia(h)).length;
+  const ehSexta = new Date(TODAY + "T12:00:00").getDay() === 5;
+  const [vitSemOk, setVitSemOk] = useState(() => {
+    try { return localStorage.getItem(`auge_vitsem_${segundaAtual}`) === "1"; } catch { return false; }
+  });
   const CHIPS = [
     { id: "cansada", e: "😮‍💨", l: "Cansada" },
     { id: "ansiosa", e: "🌀", l: "Ansiosa" },
@@ -3927,8 +4564,8 @@ function Home({
     { id: "forte", e: "⚡", l: "Forte" },
     { id: "progredindo", e: "📈", l: "Progredindo" },
   ];
-  const total = hDia.length;
-  const pct = total ? Math.round((feitos / total) * 100) : 0;
+  const total = habsAtivos.length;
+  const pct = total ? Math.round((feitosHoje / total) * 100) : 0;
   const toggle = (id) =>
     setChips((c) =>
       c.includes(id) ? c.filter((x) => x !== id) : [...c.slice(-1), id],
@@ -3938,23 +4575,23 @@ function Home({
   const [isaLoad, setIsaLoad] = useState(false);
 
   const salvar = async () => {
-    const hoje = new Date().toISOString().split("T")[0];
-    setHist((h) => ({ ...h, [hoje]: { feitos, total, retomada: false } }));
+    const hoje = TODAY;
+    setHist((h) => ({ ...h, [hoje]: { feitos: feitosHoje, total, retomada: false } }));
     setCkOk(true);
     tk(
       pct === 100
-        ? "Dia completo! +" + (feitos * 5 + 5) + " pontos 🏆"
+        ? "Dia completo! +" + (feitosHoje * 5 + 5) + " pontos 🏆"
         : "Checkin salvo. Você apareceu hoje 💖",
     );
     syncDB(
       "checkins",
       {
         data: hoje,
-        hab_feitos: hDia.filter((h) => habF[h.id]).map((h) => h.t),
-        hab_nao_feitos: hDia.filter((h) => !habF[h.id]).map((h) => h.t),
-        total_feitos: feitos,
+        hab_feitos: habsAtivos.filter((h) => regDoDia(h)).map((h) => h.nome),
+        hab_nao_feitos: habsAtivos.filter((h) => !regDoDia(h)).map((h) => h.nome),
+        total_feitos: feitosHoje,
         total,
-        percentual: total ? Math.round((feitos / total) * 100) : 0,
+        percentual: pct,
         chips,
         nota: notas.trim() || null,
         retomada: false,
@@ -3963,8 +4600,8 @@ function Home({
     );
     setPasso(4);
     setIsaLoad(true);
-    const habNomes = hDia.filter((h) => habF[h.id]).map((h) => h.t);
-    const naoFezNomes = hDia.filter((h) => !habF[h.id]).map((h) => h.t);
+    const habNomes = habsAtivos.filter((h) => regDoDia(h)).map((h) => h.nome);
+    const naoFezNomes = habsAtivos.filter((h) => !regDoDia(h)).map((h) => h.nome);
     const chipsTxt =
       chips.length > 0 ? chips.join(", ") : "não registrou estado emocional";
     const notaTxt = notas.trim()
@@ -3979,7 +4616,7 @@ function Home({
       nomeAluna ? `Nome dela: ${nomeAluna}.` : null,
       `Hábitos feitos: ${habNomes.length > 0 ? habNomes.join(", ") : "nenhum"}.`,
       `Hábitos não feitos: ${naoFezNomes.length > 0 ? naoFezNomes.join(", ") : "nenhum"}.`,
-      `Total: ${feitos} de ${total} hábitos (${pct}%).`,
+      `Total: ${feitosHoje} de ${total} hábitos (${pct}%).`,
       `Como ela se sentiu: ${chipsTxt}.`,
       `Nota/microdiário: ${notaTxt}.`,
       streakAtual > 1 ? `Sequência atual: ${streakAtual} dias seguidos.` : null,
@@ -4004,7 +4641,7 @@ function Home({
       return { bg: C.ouroDk, tc: C.branco, bo: `2px solid ${C.ouro}` };
     return {
       bg: "transparent",
-      tc: `rgba(255,255,255,.45)`,
+      tc: `rgba(28,26,23,.45)`,
       bo: `1px solid ${C.ouro}12`,
     };
   };
@@ -4014,7 +4651,7 @@ function Home({
       {/* Header com logo */}
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "12px 18px 20px",
           display: "flex",
           flexDirection: "column",
@@ -4044,27 +4681,57 @@ function Home({
             }}
           />
         ))}
-        <Logo width={160} fundo="escuro" />
-        {perfil === "jornada" && (
-          <button
-            onClick={() => ir(S.EM)}
-            style={{
-              marginTop: 10,
-              background: `${C.blush}22`,
-              border: `1px solid ${C.blush}44`,
-              borderRadius: 20,
-              padding: "6px 22px",
-              color: C.blush,
-              fontFamily: FB,
-              fontSize: 13,
-              cursor: "pointer",
-              letterSpacing: "0.1em",
-            }}
-          >
-            SOS · Kit de Emergência
-          </button>
-        )}
+        {/* Semana da Jornada + Configurações + legenda (seções 4.1, 3.4 e 9) */}
+        <div style={{ position: "absolute", top: 12, left: 14, cursor: "pointer" }} onClick={() => setLegenda(true)}>
+          {Ico.info(C.lt)}
+        </div>
+        <div style={{ position: "absolute", top: 12, right: 14, cursor: "pointer" }} onClick={() => ir(S.PF)}>
+          {Ico.gear(C.lt)}
+        </div>
+        <Logo width={160} fundo="claro" />
+        <div
+          style={{
+            marginTop: 4,
+            fontFamily: FB,
+            fontWeight: 400,
+            fontSize: 10,
+            color: C.ouroDk,
+            letterSpacing: "0.35em",
+            textTransform: "uppercase",
+          }}
+        >
+          Semana {sem} de 12
+        </div>
+        {/* Kit de Emergência — sempre visível e acessível (seção 4.9) */}
+        <button
+          onClick={() => ir(S.EM)}
+          style={{
+            marginTop: 10,
+            background: `${C.blush}30`,
+            border: `1px solid ${C.blush}`,
+            borderRadius: 20,
+            padding: "6px 22px",
+            color: C.terra,
+            fontFamily: FB,
+            fontSize: 11,
+            cursor: "pointer",
+            letterSpacing: "0.1em",
+          }}
+        >
+          SOS · Kit de Emergência
+        </button>
       </div>
+      {legenda && <LegendaCores onFechar={() => setLegenda(false)} />}
+      {retroAberto && (
+        <RetroModal
+          onFechar={() => setRetroAberto(false)}
+          regs={regs}
+          sem={sem}
+          registrarHabito={registrarHabito}
+          desregistrarHabito={desregistrarHabito}
+          habStats={habStats}
+        />
+      )}
 
       <Grain style={{ padding: "18px 18px 24px" }}>
         {/* Saudação */}
@@ -4088,7 +4755,7 @@ function Home({
             fontFamily: FS,
             fontStyle: "italic",
             fontSize: 15,
-            color: `rgba(240,233,218,.45)`,
+            color: `rgba(90,75,67,.45)`,
             lineHeight: 1.5,
             marginBottom: 16,
             borderLeft: `1px solid ${C.ouro}33`,
@@ -4130,7 +4797,7 @@ function Home({
                 fontFamily: FS,
                 fontSize: 20,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.97)`,
+                color: `rgba(28,26,23,.97)`,
                 lineHeight: 1.3,
               }}
             >
@@ -4142,7 +4809,7 @@ function Home({
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 13,
-                  color: `rgba(255,255,255,.6)`,
+                  color: `rgba(28,26,23,.6)`,
                   marginTop: 4,
                 }}
               >
@@ -4186,7 +4853,7 @@ function Home({
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
               <Av ini="ISA" cor={C.ouroDk} sz={34} />
-              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 14, color: `rgba(255,255,255,.97)` }}>
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 14, color: `rgba(28,26,23,.97)` }}>
                 Dra. Isadora Zaniboni
               </div>
             </div>
@@ -4241,7 +4908,7 @@ function Home({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.8)`,
+                color: `rgba(28,26,23,.8)`,
                 lineHeight: 1.5,
                 marginBottom: 12,
               }}
@@ -4351,7 +5018,7 @@ function Home({
                   style={{
                     background: "none",
                     border: "none",
-                    color: `rgba(255,255,255,.8)`,
+                    color: `rgba(28,26,23,.8)`,
                     fontSize: 16,
                     cursor: "pointer",
                     lineHeight: 1,
@@ -4366,7 +5033,7 @@ function Home({
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 14,
-                  color: `rgba(255,255,255,.8)`,
+                  color: `rgba(28,26,23,.8)`,
                   lineHeight: 1.6,
                   marginBottom: 10,
                 }}
@@ -4402,222 +5069,120 @@ function Home({
             </div>
           )}
 
-        {/* Checkin */}
+        {/* Aviso agrupado de zonas (seção 4.6) — um único aviso, nunca separado */}
+        {passo === 0 && habsAlerta.length > 0 && (
+          <div style={{ background: `${C.blush}22`, border: `1px solid ${C.blush}88`, borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.terra, lineHeight: 1.55 }}>
+              {habsAlerta.length === 1
+                ? `${habsAlerta[0].nome} precisa de atenção hoje. ${habStats[habsAlerta[0].id].zona === "ajuste" ? "Opa, ainda dá! Vamos lá." : "Sem cobrança — o Kit está aqui se precisar."}`
+                : `${habsAlerta.length} dos seus hábitos precisam de atenção hoje.`}
+            </div>
+          </div>
+        )}
+
+        {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
+        {passo === 0 && ehSexta && !vitSemOk && (
+          <VitoriaSemana
+            habStats={habStats}
+            sem={sem}
+            segundaAtual={segundaAtual}
+            postTreino={postTreino}
+            tk={tk}
+            onFechar={() => setVitSemOk(true)}
+          />
+        )}
+
+        {/* Cards dos 3 hábitos angulares (seção 4.2) */}
         {passo === 0 && (
           <div>
             <div
               style={{
                 fontFamily: FB,
                 fontWeight: 300,
-                fontSize: 11,
-                color: C.ouro,
+                fontSize: 9,
+                color: C.ouroDk,
                 letterSpacing: "0.35em",
                 textTransform: "uppercase",
                 marginBottom: 12,
               }}
             >
-              {ckOk ? "✓ Checkin feito hoje" : "Checkin do dia"}
+              Hábitos angulares
             </div>
+            {HABS_FIXOS.map((h) => (
+              <HabCard
+                key={h.id}
+                h={h}
+                st={habStats[h.id]}
+                regAlvo={regDoDia(h)}
+                dataAlvo={h.id === "sono" ? ONTEM : TODAY}
+                registrarHabito={registrarHabito}
+                desregistrarHabito={desregistrarHabito}
+                salvarMeta={salvarMeta}
+                segundaAtual={segundaAtual}
+                tk={tk}
+              />
+            ))}
+            <button
+              onClick={() => setRetroAberto(true)}
+              style={{ width: "100%", background: "none", border: "none", fontFamily: FB, fontWeight: 300, fontSize: 11.5, color: C.lt, cursor: "pointer", textDecoration: "underline", marginBottom: 16 }}
+            >
+              Esqueceu de registrar um dia? Preencher dias anteriores
+            </button>
+
+            {/* Fechar o dia — chips emocionais + microdiário + ISA */}
             {!ckOk ? (
               <button
-                onClick={() => setPasso(1)}
+                onClick={() => setPasso(2)}
                 style={{
                   width: "100%",
-                  background: `${C.ouro}15`,
-                  border: `1px solid ${C.ouro}33`,
+                  background: `${C.ouro}20`,
+                  border: `1px solid ${C.ouro}55`,
                   borderRadius: 12,
-                  padding: "18px",
+                  padding: "16px",
                   cursor: "pointer",
                   textAlign: "left",
-                  marginBottom: 18,
+                  marginBottom: 4,
                 }}
               >
-                <div
-                  style={{
-                    fontFamily: FS,
-                    fontSize: 18,
-                    fontWeight: 300,
-                    color: C.ouro,
-                    marginBottom: 4,
-                  }}
-                >
+                <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: C.ouroDk, marginBottom: 4 }}>
                   Como você chegou hoje?
                 </div>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 14,
-                    color: `rgba(255,255,255,.92)`,
-                  }}
-                >
-                  Toque para registrar seus hábitos
-                </div>
-                <div
-                  style={{
-                    marginTop: 14,
-                    background: C.ouroLt,
-                    borderRadius: 50,
-                    padding: "11px",
-                    textAlign: "center",
-                    fontFamily: FB,
-                    fontWeight: 400,
-                    fontSize: 15,
-                    color: C.obs2,
-                  }}
-                >
-                  Fazer checkin
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra }}>
+                  Fechar o dia com a ISA — emoção e microdiário
                 </div>
               </button>
             ) : (
               <div
                 style={{
-                  background: `${C.ouro}12`,
-                  border: `1px solid ${C.ouro}22`,
+                  background: `${C.ouro}18`,
+                  border: `1px solid ${C.ouro}40`,
                   borderRadius: 12,
-                  padding: "14px 16px",
-                  marginBottom: 18,
+                  padding: "13px 16px",
+                  marginBottom: 4,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                 }}
               >
-                <div style={{ fontFamily: FS, fontSize: 16, color: C.ouro }}>
-                  {feitos} de {total} hábitos · {pct}%
+                <div style={{ fontFamily: FS, fontSize: 15, color: C.ouroDk }}>
+                  ✓ Dia fechado · {feitosHoje} de {total} hábitos
                 </div>
                 <button
-                  onClick={() => setPasso(1)}
-                  style={{
-                    background: `${C.ouro}18`,
-                    border: `1px solid ${C.ouro}44`,
-                    borderRadius: 50,
-                    padding: "8px 16px",
-                    color: C.ouro,
-                    fontFamily: FB,
-                    fontSize: 14,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
+                  onClick={() => setPasso(2)}
+                  style={{ background: "none", border: "none", color: C.terra, fontFamily: FB, fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
                 >
-                  Editar
+                  editar
                 </button>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Passo 1 — definir hábitos (primeiro uso) ou chips */}
-        {passo === 1 && habAngulares.length === 0 && (
-          <DefinirHabitos
-            onSalvar={(habs) => {
-              setHabAngulares(habs);
-              // Persiste imediatamente em profiles para não perder no reload
-              supabase.auth.getSession().then(({ data: { session } }) => {
-                if (!session?.user) return;
-                supabase.from("profiles").update({
-                  habito_1: habs[0]?.t || null,
-                  habito_2: habs[1]?.t || null,
-                  habito_3: habs[2]?.t || null,
-                }).eq("id", session.user.id).then(() => {});
-              });
-              setPasso(1);
-            }}
-          />
-        )}
-
-        {passo === 1 && habAngulares.length > 0 && (
-          <div>
-            <div
-              style={{
-                fontFamily: FS,
-                fontSize: 22,
-                fontWeight: 300,
-                color: `rgba(255,255,255,.97)`,
-                marginBottom: 6,
-              }}
-            >
-              O que você já fez hoje?
-            </div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 15,
-                color: `rgba(255,255,255,.82)`,
-                marginBottom: 18,
-              }}
-            >
-              Marque os hábitos que você completou
-            </div>
-            {hDia.map((h) => (
-              <div
-                key={h.id}
-                onClick={() => setHabF((hb) => ({ ...hb, [h.id]: !hb[h.id] }))}
-                style={{
-                  background: habF[h.id]
-                    ? `${C.ouro}18`
-                    : `rgba(255,255,255,.04)`,
-                  border: `1px solid ${habF[h.id] ? C.ouro + "44" : C.ouro + "12"}`,
-                  borderRadius: 10,
-                  padding: "15px 14px",
-                  marginBottom: 10,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                    border: `1.5px solid ${habF[h.id] ? C.ouro : `rgba(255,255,255,.45)`}`,
-                    background: habF[h.id] ? C.ouro : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: C.obs,
-                    fontSize: 15,
-                    fontWeight: 500,
-                  }}
-                >
-                  {habF[h.id] && "✓"}
-                </div>
-                <div
-                  style={{
-                    fontFamily: FS,
-                    fontSize: 17,
-                    fontWeight: 300,
-                    color: habF[h.id] ? C.ouro : `rgba(255,255,255,.92)`,
-                  }}
-                >
-                  {h.t}
-                </div>
-              </div>
-            ))}
-            <div
-              style={{
-                background: `${C.ouro}10`,
-                borderRadius: 8,
-                padding: "10px 12px",
-                marginTop: 6,
-                marginBottom: 18,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: FS,
-                  fontStyle: "italic",
-                  fontSize: 16,
-                  color: C.ouro,
-                }}
-              >
-                {feitos} de {total} · {pct}%
-              </div>
-            </div>
-            <BtnPill onClick={() => setPasso(2)}>Continuar</BtnPill>
+            {/* Desafio da Semana (seção 4.10) — contido no card, sem zona nem alerta */}
+            <DesafioCard
+              texto={desafioTexto}
+              desafioFeitos={desafioFeitos}
+              toggleDesafio={toggleDesafio}
+              diasDaSemana={diasDaSemana}
+            />
           </div>
         )}
 
@@ -4629,7 +5194,7 @@ function Home({
                 fontFamily: FS,
                 fontSize: 22,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.97)`,
+                color: `rgba(28,26,23,.97)`,
                 marginBottom: 6,
               }}
             >
@@ -4640,7 +5205,7 @@ function Home({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 marginBottom: 20,
               }}
             >
@@ -4661,7 +5226,7 @@ function Home({
                     key={c.id}
                     onClick={() => toggle(c.id)}
                     style={{
-                      background: s ? `${C.ouro}22` : `rgba(255,255,255,.05)`,
+                      background: s ? `${C.ouro}22` : `rgba(28,26,23,.05)`,
                       border: `1px solid ${s ? C.ouro + "55" : C.ouro + "15"}`,
                       borderRadius: 50,
                       padding: "8px 12px",
@@ -4677,7 +5242,7 @@ function Home({
                         fontFamily: FB,
                         fontWeight: 300,
                         fontSize: 14,
-                        color: s ? C.ouro : `rgba(255,255,255,.4)`,
+                        color: s ? C.ouro : `rgba(28,26,23,.4)`,
                       }}
                     >
                       {c.l}
@@ -4703,7 +5268,7 @@ function Home({
                 fontFamily: FS,
                 fontSize: 22,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.97)`,
+                color: `rgba(28,26,23,.97)`,
                 marginBottom: 6,
               }}
             >
@@ -4714,7 +5279,7 @@ function Home({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 marginBottom: 18,
               }}
             >
@@ -4726,13 +5291,13 @@ function Home({
               placeholder="O que você quer lembrar desse dia?"
               style={{
                 width: "100%",
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}18`,
                 borderRadius: 10,
                 padding: "13px",
                 fontSize: 16,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 resize: "none",
                 height: 120,
                 lineHeight: 1.7,
@@ -4747,7 +5312,7 @@ function Home({
                 width: "100%",
                 background: "none",
                 border: "none",
-                color: `rgba(255,255,255,.82)`,
+                color: `rgba(28,26,23,.82)`,
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
@@ -4780,7 +5345,7 @@ function Home({
                   fontFamily: FS,
                   fontSize: 18,
                   fontWeight: 300,
-                  color: `rgba(255,255,255,.92)`,
+                  color: `rgba(28,26,23,.92)`,
                   lineHeight: 1.4,
                   marginBottom: 8,
                 }}
@@ -4820,7 +5385,7 @@ function Home({
               style={{
                 background: "none",
                 border: "none",
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 14,
@@ -4837,7 +5402,7 @@ function Home({
 
         {/* Botão Ver meu progresso */}
         <button
-          onClick={() => ir(S.CAL)}
+          onClick={() => ir(S.TRAJ)}
           style={{
             width: "100%",
             background: "transparent",
@@ -4847,7 +5412,7 @@ function Home({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 14,
-            color: `rgba(255,255,255,.8)`,
+            color: `rgba(28,26,23,.8)`,
             cursor: "pointer",
             letterSpacing: "0.06em",
             display: "flex",
@@ -4879,6 +5444,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
   const [det, setDet] = useState(null); // id do post aberto em detalhe
   const [confirmaExcluir, setConfirmaExcluir] = useState(null);
   const [confirmaComent, setConfirmaComent] = useState(null); // { postId, cid }
+  const [resp, setResp] = useState(null); // respondendo: { cid, autor } — thread de 1 nível (seção 6.2)
   const curtir = (id) => {
     setFeed((f) =>
       f.map((p) => {
@@ -4898,12 +5464,13 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
     if (!txt.trim()) return;
     const texto = txt.trim();
     const tmp = Date.now();
+    const parentCid = resp?.cid || null;
     setFeed((f) =>
       f.map((p) => {
         if (p.id !== id) return p;
         const newCom = [
           ...p.com,
-          { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, tmp },
+          { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, tmp, parent: parentCid },
         ];
         // Persiste na tabela comentarios se for post real
         if (p.dbId && authUserId) {
@@ -4915,6 +5482,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
               texto,
               autor_nome: usuario?.nome || "Aluna",
               autor_avatar: minhaFoto,
+              parent_id: parentCid,
             })
             .select("id")
             .single()
@@ -4939,6 +5507,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
       }),
     );
     setTxt("");
+    setResp(null);
   };
   const apagarComentario = (postId, cid) => {
     supabase
@@ -4973,7 +5542,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "12px 18px 14px",
           display: "flex",
           alignItems: "center",
@@ -4982,13 +5551,13 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
         }}
       >
         <div style={{ width: 40 }} />
-        <Logo width={100} fundo="escuro" />
+        <Logo width={100} fundo="claro" />
         <div style={{ width: 40 }} />
       </div>
       {/* Filtro Todas / Minhas */}
-      <div style={{ background: C.obs, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
+      <div style={{ background: C.creme, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: filtro === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: filtro === id ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer" }}>
             {label}
           </button>
         ))}
@@ -4998,7 +5567,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
         <div
           onClick={() => ir(S.NOVO)}
           style={{
-            background: `rgba(255,255,255,.04)`,
+            background: `rgba(28,26,23,.04)`,
             border: `1px solid ${C.ouro}15`,
             borderRadius: 12,
             padding: "14px 16px",
@@ -5014,7 +5583,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 17,
-              color: `rgba(255,255,255,.92)`,
+              color: `rgba(28,26,23,.92)`,
             }}
           >
             O que você fez por você hoje?
@@ -5075,7 +5644,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 fontFamily: FS,
                 fontSize: 16,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.97)`,
+                color: `rgba(28,26,23,.97)`,
               }}
             >
               Encontre mulheres como você
@@ -5085,7 +5654,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 marginTop: 3,
               }}
             >
@@ -5119,7 +5688,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
         {visiveis.length === 0 && (
           <div
             style={{
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}15`,
               borderRadius: 12,
               padding: "40px 24px",
@@ -5131,7 +5700,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 fontFamily: FS,
                 fontSize: 20,
                 fontWeight: 300,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 marginBottom: 8,
               }}
             >
@@ -5144,7 +5713,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.8)`,
+                color: `rgba(28,26,23,.8)`,
                 lineHeight: 1.6,
               }}
             >
@@ -5159,7 +5728,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
             <div
               key={p.id}
               style={{
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 12,
                 marginBottom: 14,
@@ -5269,7 +5838,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       fontFamily: FB,
                       fontWeight: 500,
                       fontSize: 15,
-                      color: `rgba(255,255,255,.95)`,
+                      color: `rgba(28,26,23,.95)`,
                     }}
                   >
                     {p.aut}
@@ -5281,7 +5850,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     fontSize: 16,
                     fontFamily: FB,
                     fontWeight: 300,
-                    color: `rgba(255,255,255,.82)`,
+                    color: `rgba(28,26,23,.82)`,
                     lineHeight: 1.65,
                     marginBottom: 10,
                     cursor: "pointer",
@@ -5304,7 +5873,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       border: "none",
                       cursor: "pointer",
                       fontSize: 14,
-                      color: cu ? C.ouro : `rgba(255,255,255,.92)`,
+                      color: cu ? C.ouro : `rgba(28,26,23,.92)`,
                       fontFamily: FB,
                       fontWeight: 300,
                       display: "flex",
@@ -5319,7 +5888,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       <span
                         style={{
                           fontSize: 12,
-                          color: `rgba(255,255,255,.78)`,
+                          color: `rgba(28,26,23,.78)`,
                           marginLeft: 4,
                         }}
                       >
@@ -5335,7 +5904,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       border: "none",
                       cursor: "pointer",
                       fontSize: 16,
-                      color: `rgba(255,255,255,.92)`,
+                      color: `rgba(28,26,23,.92)`,
                       fontFamily: FB,
                       display: "flex",
                       alignItems: "center",
@@ -5354,7 +5923,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         border: "none",
                         cursor: "pointer",
                         fontSize: 16,
-                        color: `rgba(255,255,255,.78)`,
+                        color: `rgba(28,26,23,.78)`,
                         padding: "5px 8px",
                         display: "flex",
                         alignItems: "center",
@@ -5373,10 +5942,10 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       paddingTop: 10,
                     }}
                   >
-                    {p.com.map((c, i) => (
+                    {p.com.filter((c) => !c.parent).map((c, i) => (
+                      <div key={i} style={{ marginBottom: 8 }}>
                       <div
-                        key={i}
-                        style={{ display: "flex", gap: 7, marginBottom: 8 }}
+                        style={{ display: "flex", gap: 7 }}
                       >
                         <div
                           style={{
@@ -5405,12 +5974,12 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         </div>
                         <div
                           style={{
-                            background: `rgba(255,255,255,.06)`,
+                            background: `rgba(28,26,23,.06)`,
                             borderRadius: 10,
                             padding: "6px 10px",
                             fontSize: 15,
                             fontFamily: FB,
-                            color: `rgba(255,255,255,.82)`,
+                            color: `rgba(28,26,23,.82)`,
                             flex: 1,
                           }}
                         >
@@ -5426,7 +5995,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                           </div>
                           {c.t}
                         </div>
-                        {c.cid && (c.userId === authUserId || p.userId === authUserId) && (
+                        {c.cid && c.userId === authUserId && (
                           <button
                             onClick={() => setConfirmaComent({ postId: p.id, cid: c.cid })}
                             aria-label="Apagar comentário"
@@ -5434,7 +6003,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                               background: "none",
                               border: "none",
                               cursor: "pointer",
-                              color: `rgba(255,255,255,.5)`,
+                              color: `rgba(28,26,23,.5)`,
                               fontSize: 13,
                               padding: "2px 4px",
                               flexShrink: 0,
@@ -5444,21 +6013,55 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                           </button>
                         )}
                       </div>
+                      {/* Thread simples — uma camada de resposta (seção 6.2) */}
+                      <div style={{ paddingLeft: 33 }}>
+                        {c.cid && (
+                          <button
+                            onClick={() => setResp(resp?.cid === c.cid ? null : { cid: c.cid, autor: c.q })}
+                            style={{ background: "none", border: "none", fontFamily: FB, fontSize: 11, color: C.lt, cursor: "pointer", padding: "3px 0" }}
+                          >
+                            {resp?.cid === c.cid ? "× cancelar resposta" : "Responder"}
+                          </button>
+                        )}
+                        {p.com.filter((r) => r.parent && r.parent === c.cid).map((r, ri) => (
+                          <div key={"r" + ri} style={{ display: "flex", gap: 6, marginTop: 5 }}>
+                            <div style={{ width: 20, height: 20, borderRadius: "50%", background: `${C.ouro}55`, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs2, fontSize: 9, fontFamily: FB, flexShrink: 0 }}>
+                              {r.av ? (
+                                <img src={r.av} alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                              ) : (
+                                r.q.slice(0, 2).toUpperCase()
+                              )}
+                            </div>
+                            <div style={{ flex: 1, background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "5px 9px", fontSize: 13, fontFamily: FB, color: `rgba(28,26,23,.78)` }}>
+                              <span style={{ fontWeight: 500, fontSize: 11, color: C.terra }}>{r.q} · </span>{r.t}
+                            </div>
+                            {r.cid && r.userId === authUserId && (
+                              <button onClick={() => setConfirmaComent({ postId: p.id, cid: r.cid })} style={{ background: "none", border: "none", cursor: "pointer", color: `rgba(28,26,23,.4)`, fontSize: 11, flexShrink: 0 }}>🗑️</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      </div>
                     ))}
+                    {resp && (
+                      <div style={{ fontFamily: FB, fontSize: 11, color: C.terra, marginBottom: 5 }}>
+                        Respondendo a {resp.autor}
+                      </div>
+                    )}
                     <div style={{ display: "flex", gap: 7, marginTop: 4 }}>
                       <input
                         value={txt}
                         onChange={(e) => setTxt(e.target.value)}
-                        placeholder="Escreva um comentário..."
+                        placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."}
                         style={{
                           flex: 1,
-                          background: `rgba(255,255,255,.06)`,
+                          background: `rgba(28,26,23,.06)`,
                           border: "none",
                           borderRadius: 20,
                           padding: "8px 12px",
                           fontSize: 15,
                           fontFamily: FB,
-                          color: C.branco,
+                          color: C.obs,
                         }}
                       />
                       <button
@@ -5530,7 +6133,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 width: "min(390px, 100%)",
                 maxHeight: "92vh",
                 overflowY: "auto",
-                background: C.obs,
+                background: C.creme,
                 borderRadius: 18,
                 border: `1px solid ${C.ouro}22`,
               }}
@@ -5544,7 +6147,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   borderBottom: `1px solid ${C.ouro}15`,
                   position: "sticky",
                   top: 0,
-                  background: C.obs,
+                  background: C.creme,
                   zIndex: 1,
                 }}
               >
@@ -5556,7 +6159,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         fontFamily: FB,
                         fontWeight: 500,
                         fontSize: 15,
-                        color: `rgba(255,255,255,.95)`,
+                        color: `rgba(28,26,23,.95)`,
                       }}
                     >
                       {dp.aut}
@@ -5566,7 +6169,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         fontFamily: FB,
                         fontWeight: 300,
                         fontSize: 13,
-                        color: `rgba(255,255,255,.82)`,
+                        color: `rgba(28,26,23,.82)`,
                       }}
                     >
                       {dp.tempo}
@@ -5577,7 +6180,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   onClick={() => setDet(null)}
                   aria-label="Fechar"
                   style={{
-                    background: `rgba(255,255,255,.06)`,
+                    background: `rgba(28,26,23,.06)`,
                     border: `1px solid ${C.ouro}33`,
                     borderRadius: "50%",
                     width: 32,
@@ -5611,7 +6214,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     fontFamily: FS,
                     fontSize: 20,
                     fontWeight: 300,
-                    color: `rgba(255,255,255,.97)`,
+                    color: `rgba(28,26,23,.97)`,
                     marginBottom: 8,
                   }}
                 >
@@ -5623,7 +6226,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       fontSize: 16,
                       fontFamily: FB,
                       fontWeight: 300,
-                      color: `rgba(255,255,255,.82)`,
+                      color: `rgba(28,26,23,.82)`,
                       lineHeight: 1.65,
                       marginBottom: 12,
                     }}
@@ -5645,7 +6248,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       border: "none",
                       cursor: "pointer",
                       fontSize: 15,
-                      color: dcu ? C.ouro : `rgba(255,255,255,.75)`,
+                      color: dcu ? C.ouro : `rgba(28,26,23,.75)`,
                       fontFamily: FB,
                       fontWeight: 300,
                       display: "flex",
@@ -5657,7 +6260,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     {dcu ? "💛 Me identifico" : "💛 Te entendo"}
                     {dp.cur.length > 0 && (
                       <span
-                        style={{ fontSize: 13, color: `rgba(255,255,255,.82)` }}
+                        style={{ fontSize: 13, color: `rgba(28,26,23,.82)` }}
                       >
                         {dp.cur.length} se identificaram
                       </span>
@@ -5706,12 +6309,12 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     </div>
                     <div
                       style={{
-                        background: `rgba(255,255,255,.06)`,
+                        background: `rgba(28,26,23,.06)`,
                         borderRadius: 10,
                         padding: "6px 10px",
                         fontSize: 15,
                         fontFamily: FB,
-                        color: `rgba(255,255,255,.82)`,
+                        color: `rgba(28,26,23,.82)`,
                         flex: 1,
                       }}
                     >
@@ -5735,7 +6338,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: `rgba(255,255,255,.5)`,
+                          color: `rgba(28,26,23,.5)`,
                           fontSize: 13,
                           padding: "2px 4px",
                           flexShrink: 0,
@@ -5754,7 +6357,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     placeholder="Escreva um comentário..."
                     style={{
                       flex: 1,
-                      background: `rgba(255,255,255,.06)`,
+                      background: `rgba(28,26,23,.06)`,
                       border: "none",
                       borderRadius: 20,
                       padding: "8px 12px",
@@ -5797,7 +6400,8 @@ function Novo({ back, postTreino }) {
   const [publica, setPublica] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const ref = useRef();
-  const ok = tit.trim().length > 0;
+  // Foto e título obrigatórios (seção 6.1); posts privados seguem livres
+  const ok = tit.trim().length > 0 && (!publica || !!foto);
   const SUGESTOES = [];
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
@@ -5822,14 +6426,14 @@ function Novo({ back, postTreino }) {
           placeholder="Uma linha é o suficiente."
           style={{
             width: "100%",
-            background: `rgba(255,255,255,.04)`,
+            background: `rgba(28,26,23,.04)`,
             border: `1px solid ${C.ouro}25`,
             borderRadius: 10,
             padding: "13px 14px",
             fontSize: 17,
             fontFamily: FS,
             fontStyle: "italic",
-            color: `rgba(255,255,255,.92)`,
+            color: `rgba(28,26,23,.92)`,
             resize: "none",
             height: 72,
             lineHeight: 1.6,
@@ -5856,7 +6460,7 @@ function Novo({ back, postTreino }) {
           placeholder="Conta mais para as amigas..."
           style={{
             width: "100%",
-            background: `rgba(255,255,255,.04)`,
+            background: `rgba(28,26,23,.04)`,
             border: `1px solid ${C.ouro}18`,
             borderRadius: 8,
             padding: "12px 14px",
@@ -5875,7 +6479,7 @@ function Novo({ back, postTreino }) {
             height: foto ? "auto" : 100,
             borderRadius: 10,
             border: `1.5px dashed ${C.ouro}25`,
-            background: foto ? `rgba(0,0,0,.45)` : `rgba(255,255,255,.03)`,
+            background: foto ? `rgba(0,0,0,.45)` : `rgba(28,26,23,.03)`,
             overflow: "hidden",
             display: "flex",
             alignItems: "center",
@@ -5940,7 +6544,7 @@ function Novo({ back, postTreino }) {
                   marginTop: 5,
                 }}
               >
-                Foto opcional
+                Foto — obrigatória para postar no Mural
               </div>
             </div>
           )}
@@ -5979,7 +6583,7 @@ function Novo({ back, postTreino }) {
               onClick={() => setPublica(true)}
               style={{
                 flex: 1,
-                background: publica ? `${C.ouro}22` : `rgba(255,255,255,.04)`,
+                background: publica ? `${C.ouro}22` : `rgba(28,26,23,.04)`,
                 border: `1px solid ${publica ? C.ouro + "55" : C.ouro + "15"}`,
                 borderRadius: 8,
                 padding: "11px",
@@ -5993,7 +6597,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 13,
-                  color: publica ? C.ouro : `rgba(255,255,255,.92)`,
+                  color: publica ? C.ouro : `rgba(28,26,23,.92)`,
                 }}
               >
                 Público
@@ -6003,7 +6607,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: `rgba(255,255,255,.8)`,
+                  color: `rgba(28,26,23,.8)`,
                   marginTop: 2,
                 }}
               >
@@ -6014,7 +6618,7 @@ function Novo({ back, postTreino }) {
               onClick={() => setPublica(false)}
               style={{
                 flex: 1,
-                background: !publica ? `${C.ouro}22` : `rgba(255,255,255,.04)`,
+                background: !publica ? `${C.ouro}22` : `rgba(28,26,23,.04)`,
                 border: `1px solid ${!publica ? C.ouro + "55" : C.ouro + "15"}`,
                 borderRadius: 8,
                 padding: "11px",
@@ -6028,7 +6632,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 13,
-                  color: !publica ? C.ouro : `rgba(255,255,255,.92)`,
+                  color: !publica ? C.ouro : `rgba(28,26,23,.92)`,
                 }}
               >
                 Só para mim
@@ -6038,7 +6642,7 @@ function Novo({ back, postTreino }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 11,
-                  color: `rgba(255,255,255,.8)`,
+                  color: `rgba(28,26,23,.8)`,
                   marginTop: 2,
                 }}
               >
@@ -6134,7 +6738,7 @@ function Voz({ back, postTreino, tk }) {
           <div style={{ textAlign: "center" }}>
             <div
               style={{
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}18`,
                 borderRadius: 12,
                 padding: "20px 18px",
@@ -6146,7 +6750,7 @@ function Voz({ back, postTreino, tk }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 15,
-                  color: `rgba(255,255,255,.8)`,
+                  color: `rgba(28,26,23,.8)`,
                   marginBottom: 12,
                   lineHeight: 1.6,
                 }}
@@ -6161,14 +6765,14 @@ function Voz({ back, postTreino, tk }) {
                 <div
                   key={i}
                   style={{
-                    background: `rgba(255,255,255,.04)`,
+                    background: `rgba(28,26,23,.04)`,
                     borderRadius: 8,
                     padding: "8px 12px",
                     marginBottom: 7,
                     fontSize: 14,
                     fontFamily: FS,
                     fontStyle: "italic",
-                    color: `rgba(255,255,255,.92)`,
+                    color: `rgba(28,26,23,.92)`,
                     textAlign: "left",
                   }}
                 >
@@ -6199,7 +6803,7 @@ function Voz({ back, postTreino, tk }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
               }}
             >
               Toque para falar
@@ -6239,7 +6843,7 @@ function Voz({ back, postTreino, tk }) {
           <div style={{ textAlign: "center" }}>
             <div
               style={{
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}33`,
                 borderRadius: 12,
                 padding: "22px",
@@ -6264,7 +6868,7 @@ function Voz({ back, postTreino, tk }) {
                 style={{
                   fontFamily: FS,
                   fontSize: 16,
-                  color: tr ? `rgba(255,255,255,.95)` : `rgba(255,255,255,.88)`,
+                  color: tr ? `rgba(28,26,23,.95)` : `rgba(28,26,23,.88)`,
                   fontStyle: tr ? "normal" : "italic",
                   lineHeight: 1.6,
                 }}
@@ -6326,7 +6930,7 @@ function Voz({ back, postTreino, tk }) {
               style={{
                 fontFamily: FS,
                 fontSize: 18,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 marginBottom: 6,
               }}
             >
@@ -6338,7 +6942,7 @@ function Voz({ back, postTreino, tk }) {
           <div style={{ animation: "fadeUp .4s ease" }}>
             <div
               style={{
-                background: `rgba(255,255,255,.05)`,
+                background: `rgba(28,26,23,.05)`,
                 border: `1px solid ${C.ouro}25`,
                 borderRadius: 12,
                 padding: "13px 15px",
@@ -6363,7 +6967,7 @@ function Voz({ back, postTreino, tk }) {
                   fontFamily: FS,
                   fontStyle: "italic",
                   fontSize: 16,
-                  color: `rgba(255,255,255,.92)`,
+                  color: `rgba(28,26,23,.92)`,
                 }}
               >
                 "{res.texto}"
@@ -6371,7 +6975,7 @@ function Voz({ back, postTreino, tk }) {
             </div>
             <div
               style={{
-                background: `rgba(255,255,255,.05)`,
+                background: `rgba(28,26,23,.05)`,
                 border: `1px solid ${C.ouro}25`,
                 borderRadius: 12,
                 padding: "18px",
@@ -6393,7 +6997,7 @@ function Voz({ back, postTreino, tk }) {
                       fontFamily: FB,
                       fontWeight: 500,
                       fontSize: 15,
-                      color: `rgba(255,255,255,.97)`,
+                      color: `rgba(28,26,23,.97)`,
                     }}
                   >
                     ISA — Inteligência do Clube do Auge
@@ -6415,7 +7019,7 @@ function Voz({ back, postTreino, tk }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 16,
-                  color: `rgba(255,255,255,.92)`,
+                  color: `rgba(28,26,23,.92)`,
                   lineHeight: 1.75,
                 }}
               >
@@ -6428,7 +7032,7 @@ function Voz({ back, postTreino, tk }) {
                 onClick={() => setPublica(true)}
                 style={{
                   flex: 1,
-                  background: publica ? `${C.ouro}22` : `rgba(255,255,255,.04)`,
+                  background: publica ? `${C.ouro}22` : `rgba(28,26,23,.04)`,
                   border: `1px solid ${publica ? C.ouro + "44" : C.ouro + "12"}`,
                   borderRadius: 8,
                   padding: "10px 8px",
@@ -6441,7 +7045,7 @@ function Voz({ back, postTreino, tk }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 13,
-                    color: publica ? C.ouro : `rgba(255,255,255,.88)`,
+                    color: publica ? C.ouro : `rgba(28,26,23,.88)`,
                   }}
                 >
                   🌍 Público
@@ -6453,7 +7057,7 @@ function Voz({ back, postTreino, tk }) {
                   flex: 1,
                   background: !publica
                     ? `${C.ouro}22`
-                    : `rgba(255,255,255,.04)`,
+                    : `rgba(28,26,23,.04)`,
                   border: `1px solid ${!publica ? C.ouro + "44" : C.ouro + "12"}`,
                   borderRadius: 8,
                   padding: "10px 8px",
@@ -6466,7 +7070,7 @@ function Voz({ back, postTreino, tk }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 13,
-                    color: !publica ? C.ouro : `rgba(255,255,255,.88)`,
+                    color: !publica ? C.ouro : `rgba(28,26,23,.88)`,
                   }}
                 >
                   🔒 Só para mim
@@ -6565,7 +7169,7 @@ function Cx({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 14,
-            color: `rgba(255,255,255,.92)`,
+            color: `rgba(28,26,23,.92)`,
             marginBottom: 18,
             textAlign: "center",
           }}
@@ -6608,7 +7212,7 @@ function Cx({
                       fontFamily: FB,
                       fontWeight: 500,
                       fontSize: 16,
-                      color: `rgba(255,255,255,.95)`,
+                      color: `rgba(28,26,23,.95)`,
                     }}
                   >
                     {s.nome}
@@ -6618,7 +7222,7 @@ function Cx({
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 13,
-                      color: `rgba(255,255,255,.88)`,
+                      color: `rgba(28,26,23,.88)`,
                       marginTop: 2,
                     }}
                   >
@@ -6646,14 +7250,14 @@ function Cx({
                   onClick={() => recusar(s)}
                   aria-label="Recusar"
                   style={{
-                    background: `rgba(255,255,255,.04)`,
+                    background: `rgba(28,26,23,.04)`,
                     border: `1px solid ${C.ouro}18`,
                     borderRadius: "50%",
                     width: 34,
                     height: 34,
                     fontFamily: FB,
                     fontSize: 15,
-                    color: `rgba(255,255,255,.82)`,
+                    color: `rgba(28,26,23,.82)`,
                     cursor: "pointer",
                     flexShrink: 0,
                   }}
@@ -6668,7 +7272,7 @@ function Cx({
           <>
             <div
               style={{
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}18`,
                 borderRadius: 14,
                 overflow: "hidden",
@@ -6709,7 +7313,7 @@ function Cx({
                       fontSize: 58,
                       fontFamily: FS,
                       fontWeight: 300,
-                      color: `rgba(255,255,255,.18)`,
+                      color: `rgba(28,26,23,.18)`,
                     }}
                   >
                     {p.ini}
@@ -6772,7 +7376,7 @@ function Cx({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 15,
-                    color: `rgba(255,255,255,.82)`,
+                    color: `rgba(28,26,23,.82)`,
                     lineHeight: 1.7,
                     marginBottom: 10,
                   }}
@@ -6807,9 +7411,9 @@ function Cx({
                   flex: 1,
                   padding: "15px",
                   borderRadius: 50,
-                  background: `rgba(255,255,255,.04)`,
+                  background: `rgba(28,26,23,.04)`,
                   border: `1px solid ${C.ouro}18`,
-                  color: `rgba(255,255,255,.8)`,
+                  color: `rgba(28,26,23,.8)`,
                   fontSize: 16,
                   fontFamily: FB,
                   fontWeight: 300,
@@ -6825,7 +7429,7 @@ function Cx({
                   padding: "15px",
                   borderRadius: 50,
                   background: jaSolicitei
-                    ? `rgba(255,255,255,.04)`
+                    ? `rgba(28,26,23,.04)`
                     : `linear-gradient(135deg,${C.ouro}28,${C.ouro}12)`,
                   border: `1px solid ${C.ouro}55`,
                   color: C.ouro,
@@ -6843,7 +7447,7 @@ function Cx({
         ) : (
           <div
             style={{
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}15`,
               borderRadius: 12,
               padding: "44px 22px",
@@ -6854,7 +7458,7 @@ function Cx({
               style={{
                 fontFamily: FS,
                 fontSize: 20,
-                color: `rgba(255,255,255,.82)`,
+                color: `rgba(28,26,23,.82)`,
                 marginBottom: 8,
               }}
             >
@@ -6865,7 +7469,7 @@ function Cx({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 lineHeight: 1.6,
               }}
             >
@@ -6896,7 +7500,7 @@ function Cx({
                   ir(S.CHAT);
                 }}
                 style={{
-                  background: `rgba(255,255,255,.04)`,
+                  background: `rgba(28,26,23,.04)`,
                   border: `1px solid ${C.ouro}15`,
                   borderRadius: 12,
                   padding: "13px 15px",
@@ -6914,7 +7518,7 @@ function Cx({
                       fontFamily: FB,
                       fontWeight: 500,
                       fontSize: 16,
-                      color: `rgba(255,255,255,.95)`,
+                      color: `rgba(28,26,23,.95)`,
                     }}
                   >
                     {m.nome}
@@ -6924,7 +7528,7 @@ function Cx({
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 13,
-                      color: `rgba(255,255,255,.88)`,
+                      color: `rgba(28,26,23,.88)`,
                       marginTop: 2,
                     }}
                   >
@@ -6953,7 +7557,7 @@ function Cx({
                     {naoLidas[m.id]}
                   </div>
                 )}
-                <span style={{ color: `rgba(255,255,255,.8)`, fontSize: 17 }}>
+                <span style={{ color: `rgba(28,26,23,.8)`, fontSize: 17 }}>
                   ›
                 </span>
               </div>
@@ -6986,7 +7590,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
             position: "absolute",
             top: 14,
             left: 14,
-            background: `rgba(255,255,255,.15)`,
+            background: `rgba(28,26,23,.15)`,
             border: "none",
             borderRadius: 20,
             padding: "7px 13px",
@@ -7003,7 +7607,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
             width: 76,
             height: 76,
             borderRadius: "50%",
-            background: `rgba(255,255,255,.45)`,
+            background: `rgba(28,26,23,.45)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -7028,7 +7632,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
         {m.cidade && (
           <div
             style={{
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
               fontSize: 15,
               fontFamily: FB,
               fontWeight: 300,
@@ -7045,7 +7649,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 15,
-            color: `rgba(255,255,255,.82)`,
+            color: `rgba(28,26,23,.82)`,
             lineHeight: 1.7,
             marginBottom: 14,
           }}
@@ -7193,7 +7797,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
     >
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "12px 15px 14px",
           display: "flex",
           alignItems: "center",
@@ -7204,11 +7808,11 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
         <button
           onClick={back}
           style={{
-            background: `rgba(255,255,255,.06)`,
+            background: `rgba(28,26,23,.06)`,
             border: `1px solid ${C.ouro}33`,
             borderRadius: 50,
             padding: "8px 14px",
-            color: `rgba(255,255,255,.92)`,
+            color: `rgba(28,26,23,.92)`,
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 14,
@@ -7226,7 +7830,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
               fontFamily: FB,
               fontWeight: 500,
               fontSize: 15,
-              color: `rgba(255,255,255,.97)`,
+              color: `rgba(28,26,23,.97)`,
             }}
           >
             {m.nome.split(" ")[0]}
@@ -7236,7 +7840,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
             }}
           >
             {[m.compat != null ? `${m.compat}% em comum` : null, m.cidade]
@@ -7249,7 +7853,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
         style={{
           flex: 1,
           overflowY: "auto",
-          background: C.obs,
+          background: C.creme,
           padding: "14px 13px 8px",
           display: "flex",
           flexDirection: "column",
@@ -7263,7 +7867,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
                 fontFamily: FS,
                 fontStyle: "italic",
                 fontSize: 16,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 lineHeight: 1.6,
               }}
             >
@@ -7295,7 +7899,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: `rgba(255,255,255,.7)`,
+                    color: `rgba(28,26,23,.7)`,
                     fontSize: 15,
                     padding: "4px 6px",
                     flexShrink: 0,
@@ -7307,7 +7911,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
               <div
                 style={{
                   maxWidth: "73%",
-                  background: eu ? `${C.ouro}20` : `rgba(255,255,255,.06)`,
+                  background: eu ? `${C.ouro}20` : `rgba(28,26,23,.06)`,
                   borderRadius: eu
                     ? "16px 16px 4px 16px"
                     : "16px 16px 16px 4px",
@@ -7320,7 +7924,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 15,
-                    color: eu ? C.ouroLt : `rgba(255,255,255,.82)`,
+                    color: eu ? C.ouroLt : `rgba(28,26,23,.82)`,
                     lineHeight: 1.6,
                   }}
                 >
@@ -7331,7 +7935,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 11,
-                    color: `rgba(255,255,255,.8)`,
+                    color: `rgba(28,26,23,.8)`,
                     marginTop: 3,
                   }}
                 >
@@ -7346,7 +7950,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
       {msgs.length === 0 && (
         <div
           style={{
-            background: C.obs,
+            background: C.creme,
             padding: "0 13px 8px",
             display: "flex",
             gap: 7,
@@ -7379,7 +7983,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
       <div
         style={{
           padding: "9px 13px 14px",
-          background: C.obs,
+          background: C.creme,
           borderTop: `1px solid ${C.ouro}15`,
           display: "flex",
           gap: 8,
@@ -7393,7 +7997,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
           placeholder="Escreva uma mensagem..."
           style={{
             flex: 1,
-            background: `rgba(255,255,255,.06)`,
+            background: `rgba(28,26,23,.06)`,
             border: `1px solid ${C.ouro}15`,
             borderRadius: 20,
             padding: "10px 15px",
@@ -7468,14 +8072,14 @@ function CartaEditor({ setCarta, tk }) {
         placeholder="Querida futura eu..."
         style={{
           width: "100%",
-          background: `rgba(255,255,255,.04)`,
+          background: `rgba(28,26,23,.04)`,
           border: `1px solid ${C.ouro}18`,
           borderRadius: 10,
           padding: "14px",
           fontSize: 16,
           fontFamily: FS,
           fontStyle: "italic",
-          color: `rgba(255,255,255,.88)`,
+          color: `rgba(28,26,23,.88)`,
           resize: "none",
           height: 180,
           lineHeight: 1.8,
@@ -7515,7 +8119,7 @@ function TelaConvite({ back }) {
             fontFamily: FS,
             fontStyle: "italic",
             fontSize: 18,
-            color: `rgba(255,255,255,.88)`,
+            color: `rgba(28,26,23,.88)`,
             textAlign: "center",
             lineHeight: 1.4,
             marginBottom: 24,
@@ -7560,7 +8164,7 @@ function TelaConvite({ back }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.82)`,
+                color: `rgba(28,26,23,.82)`,
                 lineHeight: 1.5,
               }}
             >
@@ -7580,7 +8184,7 @@ function TelaConvite({ back }) {
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 16,
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
               lineHeight: 1.6,
               marginBottom: 6,
             }}
@@ -7661,7 +8265,7 @@ function JornadaClube({ ir }) {
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "12px 18px 14px",
           display: "flex",
           alignItems: "center",
@@ -7675,10 +8279,10 @@ function JornadaClube({ ir }) {
             fontSize: 18,
             fontWeight: 300,
             letterSpacing: "0.1em",
-            color: C.linho,
+            color: C.obs,
           }}
         >
-          Jornada AUGE
+          Meu Mapa
         </div>
         <div
           style={{
@@ -7711,7 +8315,7 @@ function JornadaClube({ ir }) {
           <LockCard msg="Personalize seus 3 hábitos na Jornada AUGE">
             <div
               style={{
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 10,
                 padding: "14px",
@@ -7722,7 +8326,7 @@ function JornadaClube({ ir }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 14,
-                  color: `rgba(255,255,255,.92)`,
+                  color: `rgba(28,26,23,.92)`,
                   marginBottom: 10,
                 }}
               >
@@ -7756,7 +8360,7 @@ function JornadaClube({ ir }) {
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 15,
-                      color: `rgba(255,255,255,.8)`,
+                      color: `rgba(28,26,23,.8)`,
                     }}
                   >
                     {h}
@@ -7816,12 +8420,12 @@ function JornadaClube({ ir }) {
                 key={m}
                 onClick={lock}
                 style={{
-                  background: `rgba(255,255,255,.04)`,
+                  background: `rgba(28,26,23,.04)`,
                   border: `1px solid ${C.ouro}15`,
                   borderRadius: 10,
                   padding: "14px 0",
                   cursor: "pointer",
-                  color: `rgba(255,255,255,.78)`,
+                  color: `rgba(28,26,23,.78)`,
                   fontFamily: FB,
                   fontSize: 14,
                   letterSpacing: "0.2em",
@@ -7849,7 +8453,7 @@ function JornadaClube({ ir }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.8)`,
+              color: `rgba(28,26,23,.8)`,
               lineHeight: 1.5,
             }}
           >
@@ -7874,7 +8478,7 @@ function JornadaClube({ ir }) {
           </div>
           <div
             style={{
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}12`,
               borderRadius: 10,
               padding: "14px",
@@ -7912,7 +8516,7 @@ function JornadaClube({ ir }) {
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 14,
-                    color: `rgba(255,255,255,.8)`,
+                    color: `rgba(28,26,23,.8)`,
                     lineHeight: 1.5,
                   }}
                 >
@@ -7925,7 +8529,7 @@ function JornadaClube({ ir }) {
             onClick={lock}
             style={{
               width: "100%",
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}15`,
               borderRadius: 50,
               padding: "13px",
@@ -7940,7 +8544,7 @@ function JornadaClube({ ir }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.78)`,
+                color: `rgba(28,26,23,.78)`,
                 letterSpacing: "0.04em",
               }}
             >
@@ -7968,7 +8572,7 @@ function JornadaClube({ ir }) {
           <LockCard msg="Ferramentas exclusivas da Jornada AUGE">
             <div
               style={{
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}12`,
                 borderRadius: 10,
                 overflow: "hidden",
@@ -7989,7 +8593,7 @@ function JornadaClube({ ir }) {
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 12,
-                      color: i === 0 ? C.ouro : `rgba(255,255,255,.18)`,
+                      color: i === 0 ? C.ouro : `rgba(28,26,23,.18)`,
                       textAlign: "center",
                       borderBottom: `2px solid ${i === 0 ? C.ouro : "transparent"}`,
                     }}
@@ -8012,7 +8616,7 @@ function JornadaClube({ ir }) {
                     fontFamily: FS,
                     fontStyle: "italic",
                     fontSize: 15,
-                    color: `rgba(255,255,255,.78)`,
+                    color: `rgba(28,26,23,.78)`,
                     textAlign: "center",
                   }}
                 >
@@ -8050,7 +8654,7 @@ function JornadaClube({ ir }) {
           <div
             onClick={lock}
             style={{
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}12`,
               borderRadius: 10,
               padding: "12px",
@@ -8076,7 +8680,7 @@ function JornadaClube({ ir }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: `rgba(255,255,255,.78)`,
+                color: `rgba(28,26,23,.78)`,
                 textAlign: "center",
               }}
             >
@@ -8126,7 +8730,7 @@ function VitJornada({ ir, onLogin }) {
             fontFamily: FS,
             fontSize: 28,
             fontWeight: 300,
-            color: `rgba(255,255,255,.97)`,
+            color: `rgba(28,26,23,.97)`,
             lineHeight: 1.3,
             marginBottom: 8,
           }}
@@ -8171,7 +8775,7 @@ function VitJornada({ ir, onLogin }) {
           <div
             key={i}
             style={{
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}18`,
               borderRadius: 10,
               padding: "14px 16px",
@@ -8189,7 +8793,7 @@ function VitJornada({ ir, onLogin }) {
                   fontFamily: FS,
                   fontSize: 16,
                   fontWeight: 300,
-                  color: `rgba(255,255,255,.95)`,
+                  color: `rgba(28,26,23,.95)`,
                   marginBottom: 3,
                 }}
               >
@@ -8200,7 +8804,7 @@ function VitJornada({ ir, onLogin }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 14,
-                  color: `rgba(255,255,255,.92)`,
+                  color: `rgba(28,26,23,.92)`,
                   lineHeight: 1.5,
                 }}
               >
@@ -8224,7 +8828,7 @@ function VitJornada({ ir, onLogin }) {
               fontFamily: FS,
               fontStyle: "italic",
               fontSize: 17,
-              color: `rgba(255,255,255,.92)`,
+              color: `rgba(28,26,23,.92)`,
               lineHeight: 1.6,
               marginBottom: 6,
             }}
@@ -8260,6 +8864,63 @@ function VitJornada({ ir, onLogin }) {
 }
 
 // Menu principal da Jornada (alunas)
+// ─── ABA MEU MAPA (seção 7) — o que é pessoal e intransferível ───────────────
+function MinimosViaveis({ metas, habStats, salvarMeta, tk }) {
+  const [editando, setEditando] = useState(null); // habId
+  const [freqE, setFreqE] = useState(3);
+  const [descE, setDescE] = useState("");
+  return (
+    <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9 }}>
+      <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 2 }}>
+        📏 Mínimos Viáveis
+      </div>
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginBottom: 10 }}>
+        A meta específica de cada hábito — editável por você, a qualquer momento
+      </div>
+      {HABS_FIXOS.map((h) => {
+        const st = habStats[h.id];
+        const emEdicao = editando === h.id;
+        return (
+          <div key={h.id} style={{ borderTop: `1px solid ${C.ouro}18`, padding: "9px 0" }}>
+            {!emEdicao ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14 }}>{h.ic}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12, color: C.obs2 }}>{h.nome}</div>
+                  <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: C.terra }}>
+                    {st.meta}x por semana{st.descMeta ? ` · ${st.descMeta}` : ""}
+                  </div>
+                </div>
+                <button onClick={() => { setEditando(h.id); setFreqE(st.meta); setDescE(st.descMeta); }}
+                  style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>
+                  editar
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+                  <span style={{ fontFamily: FB, fontSize: 11, color: C.terra }}>{h.nome} — vezes por semana:</span>
+                  <button onClick={() => setFreqE((f) => Math.max(1, f - 1))} style={{ width: 24, height: 24, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroDk, cursor: "pointer" }}>−</button>
+                  <span style={{ fontFamily: FS, fontSize: 16, color: C.obs }}>{freqE}</span>
+                  <button onClick={() => setFreqE((f) => Math.min(7, f + 1))} style={{ width: 24, height: 24, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroDk, cursor: "pointer" }}>+</button>
+                </div>
+                <input value={descE} onChange={(e) => setDescE(e.target.value)} placeholder="descrição livre (ex: 20 minutos)"
+                  style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FS, fontSize: 13, color: C.obs, marginBottom: 7 }} />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { salvarMeta(h.id, freqE, descE.trim()); setEditando(null); tk("Mínimo viável atualizado 💛"); }}
+                    style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+                  <button onClick={() => setEditando(null)}
+                    style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 11, color: C.terra, cursor: "pointer" }}>Cancelar</button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function Jornada({
   sem,
   hDia,
@@ -8271,6 +8932,16 @@ function Jornada({
   historico,
   retomadas,
   ir,
+  setEscT,
+  perfilAuge,
+  bussola,
+  pq1,
+  pq2,
+  pq3,
+  metas,
+  habStats,
+  salvarMeta,
+  tk,
 }) {
   const hist = historico || {};
   const SEMANA = ["S", "T", "Q", "Q", "S", "S", "D"];
@@ -8278,7 +8949,7 @@ function Jornada({
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "12px 18px 14px",
           display: "flex",
           alignItems: "center",
@@ -8370,7 +9041,7 @@ function Jornada({
           <div
             style={{
               flex: 1,
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}15`,
               borderRadius: 10,
               padding: "12px 14px",
@@ -8396,7 +9067,7 @@ function Jornada({
           <div
             style={{
               flex: 1,
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}15`,
               borderRadius: 10,
               padding: "12px 14px",
@@ -8407,7 +9078,7 @@ function Jornada({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 11,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
                 marginBottom: 4,
@@ -8443,7 +9114,7 @@ function Jornada({
                 key={med.id}
                 style={{
                   flex: 1,
-                  background: ok ? `${med.cor}12` : `rgba(255,255,255,.02)`,
+                  background: ok ? `${med.cor}12` : `rgba(28,26,23,.02)`,
                   border: `1px solid ${ok ? med.cor + "30" : C.ouro + "10"}`,
                   borderRadius: 10,
                   padding: "10px 6px",
@@ -8465,8 +9136,8 @@ function Jornada({
                     fontWeight: 300,
                     fontSize: 11,
                     color: ok
-                      ? `rgba(255,255,255,.82)`
-                      : `rgba(255,255,255,.15)`,
+                      ? `rgba(28,26,23,.82)`
+                      : `rgba(28,26,23,.15)`,
                     marginTop: 4,
                     lineHeight: 1.4,
                   }}
@@ -8478,98 +9149,120 @@ function Jornada({
           })}
         </div>
 
-        {/* Ferramentas — SÓ conteúdo exclusivo da Jornada */}
+        {/* ── Meu Mapa (seção 7) ── */}
         <div
           style={{
             fontFamily: FB,
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 9,
             color: C.ouro,
-            letterSpacing: "0.18em",
+            letterSpacing: "0.3em",
             textTransform: "uppercase",
             marginBottom: 12,
           }}
         >
-          Ferramentas exclusivas
+          Meu Mapa
         </div>
-        {[
-          {
-            icon: "🔁",
-            tit: "Protocolo de Retomada",
-            sub: "O coração do método. Onde o método AUGE se diferencia.",
-            sc: S.RET,
-            destaque: true,
-          },
-          {
-            icon: "⭕",
-            tit: "Roda AUGE",
-            sub: "Autodiagnóstico das 5 dimensões · 25 perguntas",
-            sc: S.RODA,
-          },
 
-          {
-            icon: "✍️",
-            tit: "Espaços de escrita",
-            sub: "Vitórias, Âncora, Porquês e Carta para o Futuro",
-            sc: S.ESC,
-          },
-        ].map((item) => (
-          <div
-            key={item.sc}
-            onClick={() => ir(item.sc)}
-            style={{
-              background: item.destaque
-                ? `${C.blush}08`
-                : `rgba(255,255,255,.04)`,
-              border: `1px solid ${item.destaque ? C.blush + "33" : C.ouro + "12"}`,
-              borderRadius: 10,
-              padding: item.destaque ? "16px 15px" : "13px 15px",
-              marginBottom: 9,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 13,
-            }}
-          >
-            <div style={{ fontSize: item.destaque ? 24 : 20, flexShrink: 0 }}>
-              {item.icon}
-            </div>
+        {/* Questionário de Perfil AUGE — resultado como selo (seção 7) */}
+        <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, display: "flex", alignItems: "center", gap: 13 }}>
+          <div style={{ fontSize: 20 }}>🎯</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Questionário de Perfil AUGE</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Preenchido uma vez, antes da S1</div>
+          </div>
+          <div style={{ background: `${C.ouro}20`, border: `1px solid ${C.ouro}66`, borderRadius: 20, padding: "4px 12px", fontFamily: FB, fontWeight: 400, fontSize: 10, color: C.ouroDk }}>
+            {perfilAuge ? `Perfil: ${perfilAuge}` : "✓ feito"}
+          </div>
+        </div>
+
+        {/* Roda AUGE */}
+        <div onClick={() => ir(S.RODA)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+          <div style={{ fontSize: 20 }}>⭕</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Roda AUGE</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>5 dimensões · 25 perguntas · aplicada na S1, S6 e S12</div>
+          </div>
+          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+        </div>
+
+        {/* Âncora de Identidade — editável a qualquer momento */}
+        <div onClick={() => { setEscT("ancora"); ir(S.ESC); }} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+            <div style={{ fontSize: 20 }}>⚓</div>
             <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontFamily: FS,
-                  fontSize: item.destaque ? 17 : 16,
-                  fontWeight: 300,
-                  color: item.destaque ? C.blush : `rgba(255,255,255,.95)`,
-                  marginBottom: 3,
-                }}
-              >
-                {item.tit}
-              </div>
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 13,
-                  color: item.destaque
-                    ? `rgba(226,185,168,.45)`
-                    : `rgba(255,255,255,.88)`,
-                  lineHeight: 1.4,
-                }}
-              >
-                {item.sub}
-              </div>
+              <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Âncora de Identidade</div>
+              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12.5, color: C.terra, marginTop: 3 }}>"{anc}"</div>
             </div>
-            <div
-              style={{
-                color: item.destaque ? C.blush : `rgba(255,255,255,.45)`,
-                fontSize: 16,
-              }}
-            >
-              ›
+            <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+          </div>
+        </div>
+
+        {/* Bússola — somente leitura (seção 7) */}
+        <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+            <div style={{ fontSize: 20 }}>🧭</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Bússola</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: bussola ? C.terra : `rgba(28,26,23,.45)`, marginTop: 3, lineHeight: 1.5 }}>
+                {bussola || "Sua direção concreta — definida no Encontro Individual 1"}
+              </div>
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* Porquês — somente leitura aqui (seção 7) */}
+        <div onClick={() => { setEscT("porques"); ir(S.ESC); }} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+            <div style={{ fontSize: 20 }}>💭</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Porquês</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>
+                {[pq1, pq2, pq3].filter(Boolean).length > 0 ? [pq1, pq2, pq3].filter(Boolean).join(" · ") : "Os seus motivos, capturados no Encontro Individual 1"}
+              </div>
+            </div>
+            <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+          </div>
+        </div>
+
+        {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
+        <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
+
+        {/* Guia dos Hábitos Angulares — mesmo desbloqueio por calendário (seção 7) */}
+        <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9 }}>
+          <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 2 }}>
+            📖 Guia dos Hábitos Angulares
+          </div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginBottom: 8 }}>
+            Material de apoio de cada hábito
+          </div>
+          {HABS_FIXOS.map((h) => {
+            const bloq = sem < h.unlock;
+            return (
+              <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "9px 0", opacity: bloq ? 0.6 : 1 }}>
+                <span style={{ fontSize: 14 }}>{h.ic}</span>
+                <div style={{ flex: 1, fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.obs2 }}>
+                  Guia de {h.nome}
+                </div>
+                {bloq ? (
+                  <span style={{ fontFamily: FB, fontSize: 10.5, color: C.ouroDk }}>🔒 Semana {h.unlock}</span>
+                ) : (
+                  <span onClick={() => ir(S.CT)} style={{ fontFamily: FB, fontSize: 10.5, color: C.ouroDk, cursor: "pointer", textDecoration: "underline" }}>abrir</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
+        <div onClick={() => ir(S.ESC)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+          <div style={{ fontSize: 20 }}>✍️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Espaços de escrita</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Vitórias, Âncora, Porquês e Carta para o Futuro</div>
+          </div>
+          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+        </div>
       </Grain>
     </div>
   );
@@ -8640,7 +9333,7 @@ function Roda({
               grid: { color: "rgba(90,75,67,0.3)" },
               angleLines: { color: "rgba(90,75,67,0.3)" },
               pointLabels: {
-                color: "rgba(240,233,218,0.6)",
+                color: "rgba(90,75,67,0.6)",
                 font: { size: 10, family: "sans-serif" },
               },
             },
@@ -8671,7 +9364,7 @@ function Roda({
       <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
         <Cab titulo="Roda AUGE" voltar={back} destino="Jornada" />
         <div style={{ padding: "24px 20px 36px", textAlign: "center" }}>
-          <Logo width={130} fundo="escuro" />
+          <Logo width={130} fundo="claro" />
           <div
             style={{
               fontFamily: FS,
@@ -8692,7 +9385,7 @@ function Roda({
               fontSize: 11,
               letterSpacing: "0.35em",
               textTransform: "uppercase",
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
               marginBottom: 24,
             }}
           >
@@ -8703,7 +9396,7 @@ function Roda({
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 11,
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
               letterSpacing: "0.25em",
               textTransform: "uppercase",
               marginBottom: 10,
@@ -8731,19 +9424,19 @@ function Roda({
                   onClick={() => (bloqMom ? null : setMom(m))}
                   style={{
                     background: bloqMom
-                      ? `rgba(255,255,255,.03)`
+                      ? `rgba(28,26,23,.03)`
                       : momento === m
                         ? `${C.ouro}22`
-                        : `rgba(255,255,255,.04)`,
+                        : `rgba(28,26,23,.04)`,
                     border: `1px solid ${bloqMom ? C.ouro + "0A" : momento === m ? C.ouro + "55" : C.ouro + "15"}`,
                     borderRadius: 10,
                     padding: "14px 0",
                     cursor: bloqMom ? "default" : "pointer",
                     color: bloqMom
-                      ? `rgba(255,255,255,.18)`
+                      ? `rgba(28,26,23,.18)`
                       : momento === m
                         ? C.ouro
-                        : `rgba(255,255,255,.88)`,
+                        : `rgba(28,26,23,.88)`,
                     fontFamily: FB,
                     fontSize: 14,
                     letterSpacing: "0.2em",
@@ -8817,14 +9510,14 @@ function Roda({
             <span style={{ opacity: 0.4 }}> · </span>
             <span>{posInDim} de 5</span>
             <span style={{ opacity: 0.4, margin: "0 .4em" }}>·</span>
-            <span style={{ color: `rgba(255,255,255,.88)` }}>
+            <span style={{ color: `rgba(28,26,23,.88)` }}>
               {rodaI + 1} / 25
             </span>
           </div>
           <div
             style={{
               height: 2,
-              background: `rgba(255,255,255,.08)`,
+              background: `rgba(28,26,23,.08)`,
               borderRadius: 100,
               marginBottom: "1.5rem",
               position: "relative",
@@ -8848,7 +9541,7 @@ function Roda({
               fontFamily: FS,
               fontSize: 20,
               fontWeight: 300,
-              color: `rgba(255,255,255,.97)`,
+              color: `rgba(28,26,23,.97)`,
               lineHeight: 1.6,
               marginBottom: "2rem",
               minHeight: 80,
@@ -8862,7 +9555,7 @@ function Roda({
                 key={i}
                 onClick={() => resp(op.v)}
                 style={{
-                  background: `rgba(255,255,255,.05)`,
+                  background: `rgba(28,26,23,.05)`,
                   border: `1px solid ${C.ouro}15`,
                   borderRadius: 10,
                   padding: "14px 16px",
@@ -8870,7 +9563,7 @@ function Roda({
                   textAlign: "left",
                   fontFamily: FB,
                   fontSize: 16,
-                  color: `rgba(255,255,255,.88)`,
+                  color: `rgba(28,26,23,.88)`,
                   lineHeight: 1.4,
                 }}
               >
@@ -8883,7 +9576,7 @@ function Roda({
             style={{
               background: "transparent",
               border: "none",
-              color: `rgba(255,255,255,.82)`,
+              color: `rgba(28,26,23,.82)`,
               fontFamily: FB,
               fontSize: 13,
               letterSpacing: "0.15em",
@@ -8926,7 +9619,7 @@ function Roda({
             fontSize: 11,
             letterSpacing: "0.4em",
             textTransform: "uppercase",
-            color: `rgba(255,255,255,.88)`,
+            color: `rgba(28,26,23,.88)`,
             textAlign: "center",
             marginBottom: "0.5rem",
           }}
@@ -8982,7 +9675,7 @@ function Roda({
             const n = notas[d];
             const dc =
               n === null
-                ? { c: `rgba(255,255,255,.45)` }
+                ? { c: `rgba(28,26,23,.45)` }
                 : n <= 3.9
                   ? { c: C.atencao }
                   : n <= 6.9
@@ -8992,7 +9685,7 @@ function Roda({
               <div
                 key={d}
                 style={{
-                  background: `rgba(255,255,255,.04)`,
+                  background: `rgba(28,26,23,.04)`,
                   border: `1px solid ${C.ouro}12`,
                   borderRadius: 8,
                   padding: "10px 14px",
@@ -9007,7 +9700,7 @@ function Roda({
                     fontSize: 13,
                     letterSpacing: "0.2em",
                     textTransform: "uppercase",
-                    color: `rgba(255,255,255,.8)`,
+                    color: `rgba(28,26,23,.8)`,
                   }}
                 >
                   {d}
@@ -9031,7 +9724,7 @@ function Roda({
               fontSize: 16,
               fontWeight: 300,
               fontStyle: "italic",
-              color: `rgba(255,255,255,.88)`,
+              color: `rgba(28,26,23,.88)`,
               lineHeight: 1.6,
               fontFamily: FS,
             }}
@@ -9152,7 +9845,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
             fontFamily: FS,
             fontSize: 24,
             fontWeight: 300,
-            color: `rgba(255,255,255,.97)`,
+            color: `rgba(28,26,23,.97)`,
             lineHeight: 1.25,
             marginBottom: 16,
           }}
@@ -9185,7 +9878,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
         </div>
         <div
           style={{
-            background: `rgba(255,255,255,.04)`,
+            background: `rgba(28,26,23,.04)`,
             border: `1px solid ${C.ouro}12`,
             borderRadius: 10,
             padding: "15px",
@@ -9220,7 +9913,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 15,
-                  color: `rgba(255,255,255,.8)`,
+                  color: `rgba(28,26,23,.8)`,
                   lineHeight: 1.5,
                 }}
               >
@@ -9236,7 +9929,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 marginBottom: 8,
               }}
             >
@@ -9248,13 +9941,13 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
               placeholder="Sem julgamento. E sem rodeio. Escreve curto, pra você ver com clareza."
               style={{
                 width: "100%",
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 10,
                 padding: "12px",
                 fontSize: 16,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.82)`,
+                color: `rgba(28,26,23,.82)`,
                 resize: "none",
                 height: 76,
                 lineHeight: 1.6,
@@ -9269,7 +9962,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 marginBottom: 8,
               }}
             >
@@ -9291,8 +9984,8 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                     borderRadius: 50,
                     border: `1px solid ${onde === op ? C.ouro + "55" : C.ouro + "15"}`,
                     background:
-                      onde === op ? `${C.ouro}20` : `rgba(255,255,255,.03)`,
-                    color: onde === op ? C.ouro : `rgba(255,255,255,.88)`,
+                      onde === op ? `${C.ouro}20` : `rgba(28,26,23,.03)`,
+                    color: onde === op ? C.ouro : `rgba(28,26,23,.88)`,
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 15,
@@ -9342,7 +10035,7 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
                   fontFamily: FS,
                   fontStyle: "italic",
                   fontSize: 16,
-                  color: `rgba(255,255,255,.88)`,
+                  color: `rgba(28,26,23,.88)`,
                   lineHeight: 1.6,
                 }}
               >
@@ -9382,6 +10075,174 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
 }
 
 // ─── CALENDÁRIO ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// ABA TRAJETÓRIA (seção 5) — calendário mensal + trajetória semanal
+// ═══════════════════════════════════════════════════════════════════
+function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir }) {
+  const hojeReal = new Date();
+  const [offset, setOffset] = useState(0);
+  const [legenda, setLegenda] = useState(false);
+  const [diaSel, setDiaSel] = useState(null); // detalhe sob demanda (seção 5.1)
+  const vizData = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + offset, 1);
+  const ano = vizData.getFullYear();
+  const mes = vizData.getMonth();
+  const nomeMes = vizData.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+  const todayStr = localDateStr(hojeReal);
+
+  const iniJ = jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : todayStr);
+  const segundaS1 = mondayOf(iniJ);
+
+  // quantos hábitos feitos num dia (0–3) — cor por intensidade (seção 3.2)
+  const contaDia = (ds) => Object.keys(regs[ds] || {}).length;
+
+  // status de um hábito numa semana (seção 3.3)
+  const kitPorSemana = new Set(kitUsos.map((k) => mondayOf(k.data)));
+  const statusSemana = (habId, w) => {
+    const seg = addDaysStr(segundaS1, 7 * (w - 1));
+    if (w > sem) return "futura";
+    const dias = weekDays(seg);
+    const feitas = dias.filter((d) => regs[d]?.[habId]).length;
+    const meta = metas?.[habId]?.freq ?? HABS_FIXOS.find((h) => h.id === habId).freqDef;
+    // Blush tem prioridade visual sobre o Ouro (seção 3.3)
+    if (kitPorSemana.has(seg)) return "kit";
+    if (feitas >= meta) return "meta";
+    if (feitas > 0) return "parcial";
+    return "vazia";
+  };
+  const DOT = {
+    meta: { bg: C.ouro, bo: "none" },
+    parcial: { bg: `${C.terra}66`, bo: "none" },
+    kit: { bg: `${C.blush}55`, bo: `1.5px solid ${C.blush}` },
+    futura: { bg: "transparent", bo: `1px solid ${C.ouro}40` },
+    vazia: { bg: C.linho, bo: `1px solid ${C.ouro}25` },
+  };
+
+  // arco em S — progresso geral nas 12 semanas (seção 5.2)
+  const tArc = Math.min(1, Math.max(0, sem / 12));
+  // ponto ao longo da curva C 110 142 272 46 350 38, começo 35 126 (bezier cúbica)
+  const bez = (t) => {
+    const p0 = [35, 126], p1 = [110, 142], p2 = [272, 46], p3 = [350, 38];
+    const u = 1 - t;
+    return [
+      u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0],
+      u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1],
+    ];
+  };
+  const [mx, my] = bez(tArc);
+
+  return (
+    <div style={{ animation: "fadeUp .35s ease" }}>
+      <div style={{ background: C.creme, padding: "12px 18px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${C.ouro}25` }}>
+        <div onClick={() => setLegenda(true)} style={{ cursor: "pointer", width: 30 }}>{Ico.info(C.lt)}</div>
+        <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, letterSpacing: "0.1em", color: C.obs }}>
+          Trajetória
+        </div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouroDk, letterSpacing: "0.2em", width: 30, textAlign: "right" }}>
+          S{sem}
+        </div>
+      </div>
+      {legenda && <LegendaCores onFechar={() => setLegenda(false)} />}
+      <Grain style={{ padding: "18px 18px 32px" }}>
+
+        {/* ── Calendário mensal — heatmap 0–3 (seção 5.1) ── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouroDk, letterSpacing: "0.35em", textTransform: "uppercase" }}>
+            {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
+          </div>
+          <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 18 }}>
+          {["D","S","T","Q","Q","S","S"].map((d, i) => (
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.lt, padding: "2px 0" }}>{d}</div>
+          ))}
+          {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
+          {Array.from({ length: diasNoMes }, (_, i) => {
+            const dia = i + 1;
+            const ds = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+            const n = contaDia(ds);
+            const isHoje = ds === todayStr;
+            return (
+              <div key={dia} onClick={() => n > 0 && setDiaSel(ds)} style={{
+                aspectRatio: "1", borderRadius: 7,
+                background: HEAT_CORES[Math.min(3, n)],
+                border: isHoje ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontFamily: FS, fontWeight: 300,
+                color: n >= 3 ? C.creme : C.obs2,
+                cursor: n > 0 ? "pointer" : "default",
+              }}>
+                {dia}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Trajetória semanal (seção 5.2) ── */}
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouroDk, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 10 }}>
+          As 12 semanas
+        </div>
+        <div style={{ background: C.linho, border: `1px solid ${C.ouro}30`, borderRadius: 12, padding: "16px 14px", marginBottom: 8 }}>
+          <svg width="100%" viewBox="0 0 380 158" fill="none" style={{ display: "block", marginBottom: 6 }}>
+            <path d="M 35 126 C 110 142 272 46 350 38" stroke={`${C.ouro}55`} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+            <circle cx="350" cy="38" r="2.2" fill={`${C.ouro}88`} />
+            <circle cx={mx} cy={my} r="5" fill={C.ouro} />
+            <text x={mx} y={my - 12} textAnchor="middle" fontFamily="'Inter',sans-serif" fontWeight="400" fontSize="11" letterSpacing="2" fill={C.ouroDk}>
+              S{sem}
+            </text>
+          </svg>
+          {HABS_FIXOS.map((h) => (
+            <div key={h.id} style={{ marginBottom: 10 }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: C.terra, marginBottom: 5 }}>
+                {h.ic} {h.nome}{sem < h.unlock ? ` · desbloqueia na S${h.unlock}` : ""}
+              </div>
+              <div style={{ display: "flex", gap: 5 }}>
+                {Array.from({ length: 12 }, (_, i) => {
+                  const w = i + 1;
+                  const stt = w < h.unlock ? "futura" : statusSemana(h.id, w);
+                  const d = DOT[stt];
+                  return <div key={w} style={{ flex: 1, aspectRatio: "1", maxWidth: 18, borderRadius: "50%", background: d.bg, border: d.bo }} title={`S${w}`} />;
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 11, color: C.lt, marginTop: 14, letterSpacing: "0.05em", textAlign: "center" }}>
+          Pequeno, repetido e infinito. Qualquer cor é uma vitória.
+        </div>
+
+        {/* detalhe do dia — sob demanda (seção 5.1) */}
+        {diaSel && (
+          <div onClick={() => setDiaSel(null)} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.35)", display: "flex", alignItems: "flex-end" }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 22px 34px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontFamily: FS, fontSize: 19, fontWeight: 300, color: C.obs, textTransform: "capitalize" }}>
+                  {new Date(diaSel + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+                </div>
+                <button onClick={() => setDiaSel(null)} style={{ background: "none", border: "none", fontSize: 20, color: C.lt, cursor: "pointer" }}>×</button>
+              </div>
+              {HABS_FIXOS.map((h) => {
+                const r = regs[diaSel]?.[h.id];
+                return (
+                  <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${C.ouro}18` }}>
+                    <span style={{ fontSize: 16 }}>{h.ic}</span>
+                    <span style={{ flex: 1, fontFamily: FS, fontSize: 15, color: r ? C.obs : C.lt }}>{h.nome}</span>
+                    <span style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: r ? C.ouroDk : C.lt }}>
+                      {r ? `✓ feito${r.dif ? ` · ${difLabel(r.dif)}` : ""}` : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </Grain>
+    </div>
+  );
+}
+
 function Calendario({ back, historico, dataCadastro }) {
   const hojeReal = new Date();
   const [offset, setOffset] = useState(0); // 0 = mês atual, -1 = mês anterior, etc.
@@ -9394,11 +10255,11 @@ function Calendario({ back, historico, dataCadastro }) {
 
   const rdCor = (dataStr) => {
     const d = historico[dataStr];
-    if (!d) return { bg: "transparent", tc: `rgba(255,255,255,.45)`, bo: `1px solid ${C.ouro}10` };
+    if (!d) return { bg: "transparent", tc: `rgba(28,26,23,.45)`, bo: `1px solid ${C.ouro}10` };
     if (d.retomada) return { bg: `${C.blush}40`, tc: C.blush, bo: "none" };
     if (d.total > 0 && d.feitos === d.total) return { bg: C.ouro, tc: C.obs, bo: "none" };
     if (d.feitos > 0) return { bg: `${C.ouroLt}30`, tc: C.ouroDk, bo: `1.5px solid ${C.ouro}` };
-    return { bg: "transparent", tc: `rgba(255,255,255,.45)`, bo: `1px solid ${C.ouro}10` };
+    return { bg: "transparent", tc: `rgba(28,26,23,.45)`, bo: `1px solid ${C.ouro}10` };
   };
 
   // Barras de semanas baseadas em checkins reais
@@ -9431,22 +10292,22 @@ function Calendario({ back, historico, dataCadastro }) {
             return (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                 <div style={{ width: "100%", background: `rgba(196,168,130,${op})`, borderRadius: 4, height: h }} />
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(255,255,255,.82)` }}>{i + 1}</div>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: `rgba(28,26,23,.82)` }}>{i + 1}</div>
               </div>
             );
           })}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(255,255,255,.82)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(28,26,23,.82)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>
             {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
           </div>
-          <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? `rgba(255,255,255,.5)` : `rgba(255,255,255,.15)`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
+          <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? `rgba(28,26,23,.5)` : `rgba(28,26,23,.15)`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 16 }}>
           {["D","S","T","Q","Q","S","S"].map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.82)`, padding: "2px 0" }}>{d}</div>
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.82)`, padding: "2px 0" }}>{d}</div>
           ))}
           {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
           {Array.from({ length: diasNoMes }, (_, i) => {
@@ -9476,11 +10337,11 @@ function Calendario({ back, historico, dataCadastro }) {
           ].map(([c, l]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <div style={{ width: 12, height: 12, borderRadius: 4, background: c, border: `1px solid ${C.ouro}25`, flexShrink: 0 }} />
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.88)` }}>{l}</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.88)` }}>{l}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: `rgba(255,255,255,.8)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: `rgba(28,26,23,.8)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
           Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
       </Grain>
@@ -9559,7 +10420,7 @@ function Escritas({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 12,
-                color: escT === id ? C.ouro : `rgba(255,255,255,.88)`,
+                color: escT === id ? C.ouro : `rgba(28,26,23,.88)`,
                 cursor: "pointer",
                 transition: "all .2s",
               }}
@@ -9575,7 +10436,7 @@ function Escritas({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.92)`,
+                color: `rgba(28,26,23,.92)`,
                 marginBottom: 10,
               }}
             >
@@ -9587,13 +10448,13 @@ function Escritas({
               placeholder="Não existe vitória pequena demais."
               style={{
                 width: "100%",
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}15`,
                 borderRadius: 10,
                 padding: "13px",
                 fontSize: 17,
                 fontFamily: FS,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 resize: "none",
                 height: 110,
                 lineHeight: 1.7,
@@ -9609,7 +10470,7 @@ function Escritas({
             {(isaVitLoad || isaVit) && (
               <div
                 style={{
-                  background: `rgba(255,255,255,.04)`,
+                  background: `rgba(28,26,23,.04)`,
                   border: `1px solid ${C.ouro}20`,
                   borderRadius: 12,
                   padding: "14px 15px",
@@ -9634,7 +10495,7 @@ function Escritas({
                         fontFamily: FS,
                         fontStyle: "italic",
                         fontSize: 15,
-                        color: `rgba(255,255,255,.92)`,
+                        color: `rgba(28,26,23,.92)`,
                       }}
                     >
                       ISA está respondendo...
@@ -9646,7 +10507,7 @@ function Escritas({
                       fontFamily: FB,
                       fontWeight: 300,
                       fontSize: 15,
-                      color: `rgba(255,255,255,.92)`,
+                      color: `rgba(28,26,23,.92)`,
                       lineHeight: 1.75,
                       whiteSpace: "pre-wrap",
                     }}
@@ -9697,7 +10558,7 @@ function Escritas({
                     fontFamily: FS,
                     fontStyle: "italic",
                     fontSize: 16,
-                    color: `rgba(255,255,255,.92)`,
+                    color: `rgba(28,26,23,.92)`,
                     lineHeight: 1.5,
                   }}
                 >
@@ -9734,7 +10595,7 @@ function Escritas({
                     width: "100%", background: "none",
                     border: `1px solid ${C.ouro}20`, borderRadius: 50,
                     padding: "12px", fontFamily: FB, fontWeight: 300,
-                    fontSize: 14, color: `rgba(255,255,255,.88)`,
+                    fontSize: 14, color: `rgba(28,26,23,.88)`,
                     cursor: "pointer", letterSpacing: "0.1em",
                   }}
                 >
@@ -9743,7 +10604,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
                   Escreva a frase que vai te trazer de volta nos dias difíceis.
                 </div>
                 <textarea
@@ -9751,10 +10612,10 @@ function Escritas({
                   onChange={(e) => setNa(e.target.value)}
                   placeholder="A frase que vai te trazer de volta..."
                   style={{
-                    width: "100%", background: `rgba(255,255,255,.04)`,
+                    width: "100%", background: `rgba(28,26,23,.04)`,
                     border: `1px solid ${C.ouro}15`, borderRadius: 10,
                     padding: "13px", fontSize: 17, fontFamily: FS,
-                    fontStyle: "italic", color: `rgba(255,255,255,.82)`,
+                    fontStyle: "italic", color: `rgba(28,26,23,.82)`,
                     resize: "none", height: 80, lineHeight: 1.6, marginBottom: 12,
                   }}
                 />
@@ -9778,7 +10639,7 @@ function Escritas({
           <div>
             {pq1 && pq2 && pq3 && !editPq ? (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(255,255,255,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
                   Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -9787,8 +10648,8 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3],
                 ].map(([q, v], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: `rgba(255,255,255,.8)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
-                    <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FS, fontSize: 17, color: `rgba(255,255,255,.92)`, lineHeight: 1.6 }}>
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FS, fontSize: 17, color: `rgba(28,26,23,.92)`, lineHeight: 1.6 }}>
                       {v}
                     </div>
                   </div>
@@ -9799,7 +10660,7 @@ function Escritas({
                     width: "100%", background: "none",
                     border: `1px solid ${C.ouro}20`, borderRadius: 50,
                     padding: "12px", fontFamily: FB, fontWeight: 300,
-                    fontSize: 14, color: `rgba(255,255,255,.88)`,
+                    fontSize: 14, color: `rgba(28,26,23,.88)`,
                     cursor: "pointer", letterSpacing: "0.1em", marginTop: 4,
                   }}
                 >
@@ -9808,7 +10669,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
                   Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -9817,12 +10678,12 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3, setPq3],
                 ].map(([q, v, s], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: `rgba(255,255,255,.92)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: `rgba(28,26,23,.92)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
                     <textarea
                       value={v}
                       onChange={(e) => s(e.target.value)}
                       placeholder="Escreva com honestidade..."
-                      style={{ width: "100%", background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 16, fontFamily: FS, color: `rgba(255,255,255,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
+                      style={{ width: "100%", background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 16, fontFamily: FS, color: `rgba(28,26,23,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
                     />
                   </div>
                 ))}
@@ -9858,7 +10719,7 @@ function Escritas({
                     fontFamily: FS,
                     fontSize: 18,
                     fontWeight: 300,
-                    color: `rgba(255,255,255,.95)`,
+                    color: `rgba(28,26,23,.95)`,
                   }}
                 >
                   Carta para o Futuro
@@ -9868,7 +10729,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 13,
-                    color: `rgba(255,255,255,.88)`,
+                    color: `rgba(28,26,23,.88)`,
                     marginTop: 2,
                   }}
                 >
@@ -9909,7 +10770,7 @@ function Escritas({
                       </div>
                       <div
                         style={{
-                          background: `rgba(255,255,255,.04)`,
+                          background: `rgba(28,26,23,.04)`,
                           border: `1px solid ${C.ouro}18`,
                           borderRadius: 10,
                           padding: "16px",
@@ -9920,7 +10781,7 @@ function Escritas({
                           style={{
                             fontFamily: FS,
                             fontSize: 16,
-                            color: `rgba(255,255,255,.82)`,
+                            color: `rgba(28,26,23,.82)`,
                             lineHeight: 1.8,
                             whiteSpace: "pre-wrap",
                           }}
@@ -9970,7 +10831,7 @@ function Escritas({
                                 fontFamily: FB,
                                 fontWeight: 300,
                                 fontSize: 16,
-                                color: `rgba(255,255,255,.92)`,
+                                color: `rgba(28,26,23,.92)`,
                                 lineHeight: 1.7,
                                 marginBottom: 10,
                               }}
@@ -10004,7 +10865,7 @@ function Escritas({
                           fontFamily: FB,
                           fontWeight: 300,
                           fontSize: 13,
-                          color: `rgba(255,255,255,.82)`,
+                          color: `rgba(28,26,23,.82)`,
                           cursor: "pointer",
                           letterSpacing: "0.1em",
                         }}
@@ -10022,7 +10883,7 @@ function Escritas({
                     fontFamily: FB,
                     fontWeight: 300,
                     fontSize: 14,
-                    color: `rgba(255,255,255,.88)`,
+                    color: `rgba(28,26,23,.88)`,
                     lineHeight: 1.7,
                     marginBottom: 16,
                   }}
@@ -10050,408 +10911,186 @@ function Emergencia({
   setKitApoio,
   back,
   tk,
+  kitPessoa,
+  fraseFoco,
+  salvarKitPessoal,
+  registrarKitUso,
+  metas,
 }) {
-  const [edit, setEdit] = useState(false);
+  // Kit de Emergência v2 (seção 4.9) — acionamento sempre manual:
+  // só conta como usado quando a aluna ESCOLHE uma ação aqui dentro.
+  const [editMin, setEditMin] = useState(false);
   const [tm, setTm] = useState(kitMin);
-  const [ta, setTa] = useState(kitApoio);
-  const naoTem = !kitMin;
+  const [editPessoa, setEditPessoa] = useState(false);
+  const [pn, setPn] = useState(kitPessoa?.nome || "");
+  const [pf, setPf] = useState(kitPessoa?.fone || "");
+  const [editFrase, setEditFrase] = useState(false);
+  const [ff, setFf] = useState(fraseFoco || "");
+  const [usou, setUsou] = useState(null); // ação escolhida hoje
   const [isaMsg, setIsaMsg] = useState(null);
   const [isaLoad, setIsaLoad] = useState(false);
   useEffect(() => {
-    if (!naoTem && !edit) {
-      setIsaLoad(true);
-      const minTxt = kitMin || "não definiu";
-      const apoioTxt = kitApoio || "não definiu";
-      callISA(
-        `A aluna está no limite hoje e abriu o kit de emergência.\nÂncora de identidade dela: "${anc}"\nO mínimo viável que ela mesma definiu: "${minTxt}"\nOnde ela busca apoio: "${apoioTxt}"\nResponda com apoio suave. Encoraje ela a fazer exatamente o mínimo que ela mesma definiu — não sugira mais, não expanda. O kit é dela. Valide a sabedoria dela em ter criado esse kit. Máximo 3 parágrafos.`,
-      ).then((r) => {
-        setIsaMsg(r);
-        setIsaLoad(false);
-      });
-    }
+    setIsaLoad(true);
+    callISA(
+      `A aluna está no limite hoje e abriu o Kit de Emergência.\nÂncora de identidade dela: "${anc}"\nO mínimo viável que ela mesma definiu: "${kitMin || "não definiu"}"\nFrase de retorno ao foco dela: "${fraseFoco || "não definiu"}"\nResponda com apoio suave. Encoraje ela a fazer exatamente o mínimo que ela mesma definiu — não sugira mais, não expanda. O kit é dela. Valide a sabedoria dela em ter criado esse kit. Máximo 3 parágrafos.`,
+    ).then((r) => {
+      setIsaMsg(r);
+      setIsaLoad(false);
+    });
   }, []);
+
+  const usar = (acao, msg) => {
+    registrarKitUso(acao);
+    setUsou(acao);
+    tk(msg);
+  };
+
+  const Sec = ({ label, children }) => (
+    <div style={{ background: C.linho, border: `1px solid ${C.ouro}30`, borderRadius: 12, padding: "15px 15px 13px", marginBottom: 13 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9, color: C.ouroDk, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+      {children}
+    </div>
+  );
+  const BtnAcao = ({ onClick, children }) => (
+    <button onClick={onClick} style={{ width: "100%", background: `${C.blush}30`, border: `1px solid ${C.blush}`, borderRadius: 50, padding: "9px", fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, cursor: "pointer", marginTop: 10 }}>
+      {children}
+    </button>
+  );
+
+  const foneLimpo = (kitPessoa?.fone || "").replace(/\D/g, "");
+  const waLink = foneLimpo ? `https://wa.me/${foneLimpo.length <= 11 ? "55" + foneLimpo : foneLimpo}` : null;
+
   return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <div
-        style={{
-          background: `${C.blush}18`,
-          padding: "20px 20px 22px",
-          borderBottom: `1px solid ${C.blush}25`,
-        }}
-      >
-        <button
-          onClick={back}
-          style={{
-            background: "none",
-            border: "none",
-            color: C.blush,
-            fontFamily: FB,
-            fontWeight: 300,
-            fontSize: 14,
-            cursor: "pointer",
-            marginBottom: 12,
-          }}
-        >
-          ← Jornada
+      <div style={{ background: `${C.blush}30`, padding: "20px 20px 22px", borderBottom: `1px solid ${C.blush}55` }}>
+        <button onClick={back} style={{ background: "none", border: "none", color: C.terra, fontFamily: FB, fontWeight: 300, fontSize: 12, cursor: "pointer", marginBottom: 12 }}>
+          ← Hoje
         </button>
-        <div
-          style={{
-            fontFamily: FS,
-            fontSize: 24,
-            fontWeight: 300,
-            color: `rgba(255,255,255,.97)`,
-            lineHeight: 1.2,
-          }}
-        >
+        <div style={{ fontFamily: FS, fontSize: 24, fontWeight: 300, color: C.obs, lineHeight: 1.2 }}>
           Kit de Emergência
         </div>
-        <div
-          style={{
-            fontFamily: FS,
-            fontStyle: "italic",
-            fontSize: 16,
-            color: C.blush,
-            marginTop: 4,
-          }}
-        >
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 14, color: C.terra, marginTop: 4 }}>
           O mínimo possível para voltar a se mover. Hoje.
         </div>
       </div>
       <Grain style={{ padding: "18px 20px 36px" }}>
-        <div
-          style={{
-            background: `${C.ouro}10`,
-            border: `1px solid ${C.ouro}18`,
-            borderRadius: 10,
-            padding: "16px",
-            marginBottom: 18,
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: FS,
-              fontStyle: "italic",
-              fontSize: 17,
-              color: C.ouro,
-              lineHeight: 1.5,
-            }}
-          >
+        <IsaCard text={isaMsg} loading={isaLoad} />
+
+        {/* 1 · Âncora de Identidade — prompt fixo (seção 4.9) */}
+        <Sec label="Âncora de Identidade">
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginBottom: 6 }}>
+            O que essa mulher faria?
+          </div>
+          <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.obs, lineHeight: 1.5 }}>
             "{anc}"
           </div>
-        </div>
-        {naoTem && !edit ? (
-          <div>
-            <div
-              style={{
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}12`,
-                borderRadius: 10,
-                padding: "16px",
-                marginBottom: 14,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 11,
-                  color: C.ouro,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  marginBottom: 8,
-                }}
-              >
-                Seu kit ainda não foi criado
-              </div>
-              <div
-                style={{
-                  fontFamily: FB,
-                  fontWeight: 300,
-                  fontSize: 15,
-                  color: `rgba(255,255,255,.8)`,
-                  lineHeight: 1.7,
-                }}
-              >
-                O Kit de Emergência é construído com a Dra. Isadora na sua
-                sessão individual. Cada kit é único — feito para a sua vida
-                real.
-              </div>
-            </div>
-            <BtnPill onClick={() => setEdit(true)}>
-              Adicionar meu kit agora
-            </BtnPill>
+          {usou === "ancora" ? (
+            <div style={{ fontFamily: FB, fontSize: 11, color: C.ouroDk, marginTop: 10 }}>✓ Registrado — você agiu.</div>
+          ) : (
+            <BtnAcao onClick={() => usar("ancora", "Você usou sua Âncora 💛")}>É isso que ela faria — vou fazer</BtnAcao>
+          )}
+        </Sec>
+
+        {/* 2 · Mínimos Viáveis — versão ainda menor que a meta (seção 4.9) */}
+        <Sec label="Mínimos Viáveis">
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>
+            Se não vai dar pra fazer tudo, vamos de mínimos possíveis.
           </div>
-        ) : edit ? (
-          <div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 13,
-                color: `rgba(255,255,255,.92)`,
-                marginBottom: 6,
-              }}
-            >
-              Qual é o seu mínimo viável?
+          {!editMin ? (
+            <div onClick={() => { setTm(kitMin); setEditMin(true); }} style={{ fontFamily: FS, fontSize: 15, color: C.obs, lineHeight: 1.6, cursor: "pointer" }}>
+              {kitMin || "Toque para definir seu mínimo (ex: caminhar 10 minutos)"} <span style={{ fontSize: 10, color: C.lt }}>✎</span>
             </div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 12,
-                color: `rgba(255,255,255,.8)`,
-                marginBottom: 10,
-                lineHeight: 1.6,
-              }}
-            >
-              Tão pequeno que consegue fazer mesmo no pior dia.
+          ) : (
+            <div>
+              <textarea value={tm} onChange={(e) => setTm(e.target.value)}
+                placeholder="ex: caminhar 10 minutos, não 30"
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 14, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
+              <button onClick={() => { setKitMin(tm); syncDB("kit_emergencia", { min_viavel: tm }, { onConflict: "user_id" }); setEditMin(false); tk("Mínimo salvo 💛"); }}
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             </div>
-            <textarea
-              value={tm}
-              onChange={(e) => setTm(e.target.value)}
-              placeholder="Ex: 10 minutos de caminhada antes do café"
-              style={{
-                width: "100%",
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}15`,
-                borderRadius: 10,
-                padding: "11px",
-                fontSize: 16,
-                fontFamily: FS,
-                color: `rgba(255,255,255,.82)`,
-                resize: "none",
-                height: 76,
-                lineHeight: 1.6,
-                marginBottom: 14,
-              }}
-            />
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 13,
-                color: `rgba(255,255,255,.92)`,
-                marginBottom: 6,
-              }}
-            >
-              Onde você busca apoio?
-            </div>
-            <textarea
-              value={ta}
-              onChange={(e) => setTa(e.target.value)}
-              placeholder="Ex: Ligo para minha irmã / Leio minha âncora"
-              style={{
-                width: "100%",
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}15`,
-                borderRadius: 10,
-                padding: "11px",
-                fontSize: 16,
-                fontFamily: FS,
-                color: `rgba(255,255,255,.82)`,
-                resize: "none",
-                height: 76,
-                lineHeight: 1.6,
-                marginBottom: 14,
-              }}
-            />
-            <BtnPill
-              onClick={() => {
-                setKitMin(tm);
-                setKitApoio(ta);
-                syncDB("kit_emergencia", { min_viavel: tm, onde_apoio: ta }, { onConflict: "user_id" });
-                setEdit(false);
-                tk("Kit salvo 💖");
-              }}
-              style={{ opacity: tm.trim() ? 1 : 0.4, marginBottom: 10 }}
-            >
-              Salvar meu kit
-            </BtnPill>
-            <button
-              onClick={() => setEdit(false)}
-              style={{
-                width: "100%",
-                background: "none",
-                border: "none",
-                color: `rgba(255,255,255,.8)`,
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 14,
-                cursor: "pointer",
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        ) : (
-          <div>
-            <div
-              style={{
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 11,
-                color: C.ouro,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                marginBottom: 10,
-              }}
-            >
-              Meu mínimo viável
-            </div>
-            <div
-              style={{
-                background: `rgba(255,255,255,.04)`,
-                border: `1px solid ${C.ouro}12`,
-                borderRadius: 10,
-                padding: "14px",
-                marginBottom: 14,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: FS,
-                  fontSize: 16,
-                  color: `rgba(255,255,255,.88)`,
-                  lineHeight: 1.6,
-                }}
-              >
-                {kitMin}
+          )}
+          {usou === "minimos" ? (
+            <div style={{ fontFamily: FB, fontSize: 11, color: C.ouroDk, marginTop: 10 }}>✓ Registrado — mínimo é suficiente.</div>
+          ) : (
+            <BtnAcao onClick={() => usar("minimos", "Hoje vale o mínimo. E conta inteiro 💛")}>Vou fazer o mínimo hoje</BtnAcao>
+          )}
+        </Sec>
+
+        {/* 3 · Pessoa de Referência — rede pessoal, via WhatsApp (seção 4.9) */}
+        <Sec label="Pessoa de Referência">
+          {!editPessoa ? (
+            <div>
+              <div style={{ fontFamily: FS, fontSize: 16, color: C.obs }}>
+                {kitPessoa?.nome || "Ninguém cadastrada ainda"}
+              </div>
+              <div onClick={() => { setPn(kitPessoa?.nome || ""); setPf(kitPessoa?.fone || ""); setEditPessoa(true); }}
+                style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, marginTop: 3, cursor: "pointer", textDecoration: "underline" }}>
+                toque para trocar
               </div>
             </div>
-            {kitApoio && (
-              <>
-                <div
-                  style={{
-                    fontFamily: FB,
-                    fontWeight: 300,
-                    fontSize: 11,
-                    color: C.ouro,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    marginBottom: 10,
-                  }}
-                >
-                  Onde busco apoio
-                </div>
-                <div
-                  style={{
-                    background: `rgba(255,255,255,.04)`,
-                    border: `1px solid ${C.ouro}12`,
-                    borderRadius: 10,
-                    padding: "14px",
-                    marginBottom: 14,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: FS,
-                      fontSize: 16,
-                      color: `rgba(255,255,255,.88)`,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {kitApoio}
-                  </div>
-                </div>
-              </>
-            )}
-            {(isaLoad || isaMsg) && <IsaCard text={isaMsg} loading={isaLoad} />}
-            <div
-              style={{
-                background: `${C.ouroLt}10`,
-                border: `1px solid ${C.ouro}20`,
-                borderRadius: 10,
-                padding: "13px",
-                marginBottom: 18,
-                textAlign: "center",
-                marginTop: isaMsg || isaLoad ? 12 : 0,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: FS,
-                  fontStyle: "italic",
-                  fontSize: 17,
-                  color: C.ouro,
-                  lineHeight: 1.6,
-                }}
-              >
-                "Isso conta. Isso já é o auge de hoje."
+          ) : (
+            <div>
+              <input value={pn} onChange={(e) => setPn(e.target.value)} placeholder="Nome"
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 13, color: C.obs, marginBottom: 7 }} />
+              <input value={pf} onChange={(e) => setPf(e.target.value)} placeholder="WhatsApp com DDD (ex: 48 99999-9999)"
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 13, color: C.obs, marginBottom: 8 }} />
+              <button onClick={() => { salvarKitPessoal({ pessoa_nome: pn.trim(), pessoa_fone: pf.trim() }); setEditPessoa(false); tk("Pessoa de Referência salva 💛"); }}
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            </div>
+          )}
+          {waLink && !editPessoa && (
+            <BtnAcao onClick={() => { usar("pessoa", "Falar ajuda. Sempre 💛"); window.open(waLink, "_blank"); }}>
+              Chamar {kitPessoa?.nome ? kitPessoa.nome.split(" ")[0] : ""} no WhatsApp
+            </BtnAcao>
+          )}
+        </Sec>
+
+        {/* 4 · Frase de Retorno ao Foco (seção 4.9) */}
+        <Sec label="Frase de Retorno ao Foco">
+          {!editFrase ? (
+            <div>
+              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.obs, lineHeight: 1.55 }}>
+                {fraseFoco ? `"${fraseFoco}"` : "Algo que você mesma disse e vale reler nas horas difíceis."}
+              </div>
+              <div onClick={() => { setFf(fraseFoco || ""); setEditFrase(true); }}
+                style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, marginTop: 5, cursor: "pointer", textDecoration: "underline" }}>
+                editar
               </div>
             </div>
-            <BtnPill
-              onClick={() => {
-                tk("Registrado. Você apareceu hoje 💖");
-                back();
-              }}
-              style={{ marginBottom: 10 }}
-            >
-              Registrar meu kit de hoje
-            </BtnPill>
-            <button
-              onClick={() => {
-                setTm(kitMin);
-                setTa(kitApoio);
-                setEdit(true);
-              }}
-              style={{
-                width: "100%",
-                background: "none",
-                border: `1px solid ${C.ouro}15`,
-                borderRadius: 50,
-                padding: "11px",
-                fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 13,
-                color: `rgba(255,255,255,.82)`,
-                cursor: "pointer",
-                letterSpacing: "0.1em",
-              }}
-            >
-              Editar meu kit
-            </button>
-          </div>
-        )}
+          ) : (
+            <div>
+              <textarea value={ff} onChange={(e) => setFf(e.target.value)}
+                placeholder="A frase que te traz de volta"
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 14, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
+              <button onClick={() => { salvarKitPessoal({ frase_foco: ff.trim() }); setEditFrase(false); tk("Frase salva 💛"); }}
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            </div>
+          )}
+          {fraseFoco && !editFrase && (usou === "frase" ? (
+            <div style={{ fontFamily: FB, fontSize: 11, color: C.ouroDk, marginTop: 10 }}>✓ Registrado.</div>
+          ) : (
+            <BtnAcao onClick={() => usar("frase", "De volta ao foco 💛")}>Essa frase me trouxe de volta</BtnAcao>
+          ))}
+        </Sec>
       </Grain>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// ABA: CONTEÚDO — categorias por tipo
-// ═══════════════════════════════════════════════════════════════════
+// Categorias de Conteúdo (seção 8) — cabeçalhos fixos desde o início
 const CATS = [
-  {
-    id: "yoga",
-    icon: "🧘",
-    label: "Yoga e meditação",
-    lock: false,
-    cor: "#1E2E2A",
-  },
-  { id: "nutri", icon: "🥗", label: "Nutrição", lock: false, cor: "#1E2820" },
-  {
-    id: "podcast",
-    icon: "🎙️",
-    label: "Podcast com a Isa",
-    lock: false,
-    cor: "#252028",
-  },
-  {
-    id: "convid",
-    icon: "👥",
-    label: "Convidadas",
-    lock: false,
-    cor: "#1E252E",
-  },
-  {
-    id: "jornada",
-    icon: "📽️",
-    label: "Jornada ao vivo",
-    lock: true,
-    cor: "#2E2018",
-  },
+  { id: "aulas", icon: "🎓", label: "Aulas", lock: false, cor: "#252028" },
+  { id: "meditacoes", icon: "🧘", label: "Meditações", lock: false, cor: "#1E2E2A" },
+  { id: "yoga", icon: "🌿", label: "Aulas de yoga", lock: false, cor: "#1E2820" },
+  { id: "curadoria", icon: "📚", label: "Curadoria de livros, séries e filmes", lock: false, cor: "#1E252E" },
 ];
+// vídeos antigos do banco continuam aparecendo: mapeamento de categorias legadas
+const CAT_LEGADO = {
+  aulas: ["aulas", "nutri", "podcast", "convid", "jornada"],
+  meditacoes: ["meditacoes", "meditacao"],
+  yoga: ["yoga"],
+  curadoria: ["curadoria"],
+};
 
 const VIDS = {
   yoga: [
@@ -10569,7 +11208,7 @@ const VIDS = {
 };
 
 function Conteudo({ perfil, videos: videosDB }) {
-  const [catSel, setCatSel] = useState("yoga");
+  const [catSel, setCatSel] = useState("aulas");
   const [showConvite, setShowConvite] = useState(false);
   if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
 
@@ -10579,7 +11218,7 @@ function Conteudo({ perfil, videos: videosDB }) {
   // Usa vídeos do Supabase se disponíveis, senão usa os estáticos
   const videosCategoria = videosDB?.length
     ? videosDB
-        .filter((v) => v.categoria === catSel)
+        .filter((v) => (CAT_LEGADO[catSel] || [catSel]).includes(v.categoria))
         .map((v) => ({
           id: v.id,
           titulo: v.titulo,
@@ -10596,7 +11235,7 @@ function Conteudo({ perfil, videos: videosDB }) {
       {/* Header */}
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "12px 18px 14px",
           display: "flex",
           alignItems: "center",
@@ -10605,14 +11244,14 @@ function Conteudo({ perfil, videos: videosDB }) {
         }}
       >
         <div style={{ width: 40 }} />
-        <Logo width={100} fundo="escuro" />
+        <Logo width={100} fundo="claro" />
         <div style={{ width: 40 }} />
       </div>
 
       {/* Grid de categorias 3x2 */}
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "14px 16px 0",
           borderBottom: `1px solid ${C.ouro}10`,
         }}
@@ -10622,7 +11261,7 @@ function Conteudo({ perfil, videos: videosDB }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 11,
-            color: `rgba(255,255,255,.88)`,
+            color: `rgba(28,26,23,.88)`,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
             marginBottom: 10,
@@ -10633,7 +11272,7 @@ function Conteudo({ perfil, videos: videosDB }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
+            gridTemplateColumns: "repeat(2,1fr)",
             gap: 8,
             paddingBottom: 14,
           }}
@@ -10646,7 +11285,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 key={cat.id}
                 onClick={() => setCatSel(cat.id)}
                 style={{
-                  background: ativa ? `${C.ouro}20` : `rgba(255,255,255,.04)`,
+                  background: ativa ? `${C.ouro}20` : `rgba(28,26,23,.04)`,
                   border: `1px solid ${ativa ? C.ouro + "44" : C.ouro + "12"}`,
                   borderRadius: 10,
                   padding: "12px 6px",
@@ -10676,8 +11315,8 @@ function Conteudo({ perfil, videos: videosDB }) {
                     color: ativa
                       ? C.ouro
                       : bloq
-                        ? `rgba(255,255,255,.45)`
-                        : `rgba(255,255,255,.45)`,
+                        ? `rgba(28,26,23,.45)`
+                        : `rgba(28,26,23,.45)`,
                     lineHeight: 1.3,
                   }}
                 >
@@ -10705,7 +11344,7 @@ function Conteudo({ perfil, videos: videosDB }) {
               fontFamily: FS,
               fontSize: 18,
               fontWeight: 300,
-              color: `rgba(255,255,255,.97)`,
+              color: `rgba(28,26,23,.97)`,
             }}
           >
             {catAtual?.label}
@@ -10744,7 +11383,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 15,
-                color: `rgba(255,255,255,.82)`,
+                color: `rgba(28,26,23,.82)`,
                 lineHeight: 1.6,
                 marginBottom: 12,
               }}
@@ -10761,6 +11400,16 @@ function Conteudo({ perfil, videos: videosDB }) {
           </div>
         )}
 
+        {/* Sem conteúdo ainda: estado simples de "Em breve" (seção 8) */}
+        {videos.length === 0 && !bloqCat && (
+          <div style={{ border: `1.5px dashed ${C.ouro}40`, borderRadius: 12, padding: "26px 16px", textAlign: "center" }}>
+            <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.terra }}>Em breve</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11.5, color: C.lt, marginTop: 5, lineHeight: 1.5 }}>
+              Esta categoria vai crescendo ao longo da Jornada.
+            </div>
+          </div>
+        )}
+
         {/* Lista de vídeos */}
         {videos.map((v) => {
           const bloqVideo = false; // demo: todos os vídeos desbloqueados
@@ -10769,7 +11418,7 @@ function Conteudo({ perfil, videos: videosDB }) {
             key={v.id}
             onClick={() => !bloqVideo && v.url && window.open(v.url, "_blank")}
             style={{
-              background: `rgba(255,255,255,.04)`,
+              background: `rgba(28,26,23,.04)`,
               border: `1px solid ${C.ouro}12`,
               borderRadius: 10,
               marginBottom: 9,
@@ -10788,7 +11437,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: bloqVideo ? 18 : 22,
-                color: `rgba(255,255,255,.82)`,
+                color: `rgba(28,26,23,.82)`,
               }}
             >
               {bloqVideo ? "🔒" : "▶"}
@@ -10799,8 +11448,8 @@ function Conteudo({ perfil, videos: videosDB }) {
                   fontFamily: FS,
                   fontSize: 17,
                   color: bloqCat
-                    ? `rgba(255,255,255,.92)`
-                    : `rgba(255,255,255,.97)`,
+                    ? `rgba(28,26,23,.92)`
+                    : `rgba(28,26,23,.97)`,
                   marginBottom: 3,
                   lineHeight: 1.3,
                 }}
@@ -10812,7 +11461,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 12,
-                  color: `rgba(255,255,255,.88)`,
+                  color: `rgba(28,26,23,.88)`,
                   marginBottom: 2,
                 }}
               >
@@ -10823,7 +11472,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 12,
-                  color: bloqCat ? C.ouro : `rgba(255,255,255,.45)`,
+                  color: bloqCat ? C.ouro : `rgba(28,26,23,.45)`,
                 }}
               >
                 {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
@@ -10843,11 +11492,10 @@ function Conteudo({ perfil, videos: videosDB }) {
 
 // ─── PAINEL DA MENTORA ────────────────────────────────────────────────────────
 const CATS_ADMIN = [
-  { id: "yoga", label: "Yoga e meditação" },
-  { id: "nutri", label: "Nutrição" },
-  { id: "podcast", label: "Podcast com a Isa" },
-  { id: "convid", label: "Convidadas" },
-  { id: "jornada", label: "Jornada ao vivo" },
+  { id: "aulas", label: "Aulas" },
+  { id: "meditacoes", label: "Meditações" },
+  { id: "yoga", label: "Aulas de yoga" },
+  { id: "curadoria", label: "Curadoria (livros, séries e filmes)" },
 ];
 
 function PainelMentora({ ir }) {
@@ -10855,11 +11503,11 @@ function PainelMentora({ ir }) {
   // ── estado vídeos ──
   const [videos, setVideos] = useState([]);
   const [loadingV, setLoadingV] = useState(true);
-  const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "" });
+  const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "aulas", duracao: "30 min", descricao: "" });
   const [salvandoV, setSalvandoV] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
   // ── estado mentoria ──
-  const [ment, setMent] = useState({ data: "", semana: "", duracao: "75 min", zoom: "" });
+  const [ment, setMent] = useState({ data: "", semana: "", duracao: "75 min", zoom: "", desafio: "", inicio: "" });
   const [salvandoM, setSalvandoM] = useState(false);
   const [salvoM, setSalvoM] = useState(false);
   // ── estado alunas ──
@@ -10883,6 +11531,8 @@ function PainelMentora({ ir }) {
           semana: cfg.mentoria_semana || "",
           duracao: cfg.mentoria_duracao || "75 min",
           zoom: cfg.mentoria_zoom || "",
+          desafio: cfg.desafio_texto || "",
+          inicio: cfg.jornada_inicio || "",
         });
       });
   }, []);
@@ -10904,7 +11554,74 @@ function PainelMentora({ ir }) {
         for (const ck of (cks || [])) {
           if (!ultimoCk[ck.user_id]) ultimoCk[ck.user_id] = ck;
         }
-        setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null })));
+        // Jornada v2: registros, usos do Kit, metas e progressão (seção 10)
+        const [regsR, kitR, metasR, histR] = await Promise.all([
+          supabase.rpc("get_registros_admin"),
+          supabase.rpc("get_kit_usos_admin"),
+          supabase.rpc("get_metas_admin"),
+          supabase.rpc("get_metas_hist_admin"),
+        ]);
+        const regsPor = {}, kitPor = {}, metasPor = {}, histPor = {};
+        for (const r of (regsR.data || [])) {
+          if (!regsPor[r.user_id]) regsPor[r.user_id] = {};
+          if (!regsPor[r.user_id][r.data]) regsPor[r.user_id][r.data] = {};
+          regsPor[r.user_id][r.data][r.habito] = { dif: r.dificuldade };
+        }
+        for (const k of (kitR.data || [])) {
+          if (!kitPor[k.user_id]) kitPor[k.user_id] = [];
+          kitPor[k.user_id].push(k.data);
+        }
+        for (const m of (metasR.data || [])) metasPor[m.user_id] = m;
+        for (const h of (histR.data || [])) {
+          if (!histPor[h.user_id]) histPor[h.user_id] = [];
+          histPor[h.user_id].push(h);
+        }
+        const segunda = mondayOf(localDateStr());
+        const analisa = (uid) => {
+          const regsU = regsPor[uid] || {};
+          const mU = metasPor[uid];
+          const metaDe = (hid) =>
+            hid === "movimento" ? (mU?.mov_freq ?? 3) : hid === "sono" ? (mU?.sono_freq ?? 7) : (mU?.tsi_freq ?? 3);
+          const semStats = (seg) => {
+            const dias = weekDays(seg);
+            const out = {};
+            for (const h of HABS_FIXOS) {
+              const fs = dias.filter((d) => regsU[d]?.[h.id]);
+              const difs = fs.map((d) => regsU[d][h.id]?.dif).filter(Boolean);
+              let predom = null;
+              if (difs.length) {
+                const cont = {};
+                difs.forEach((v) => (cont[v] = (cont[v] || 0) + 1));
+                predom = +Object.entries(cont).sort((x, y) => y[1] - x[1])[0][0];
+              }
+              out[h.id] = { feitas: fs.length, predom };
+            }
+            return out;
+          };
+          const atual = semStats(segunda);
+          const s1 = semStats(addDaysStr(segunda, -7));
+          const s2 = semStats(addDaysStr(segunda, -14));
+          const _dowA = new Date(localDateStr() + "T12:00:00").getDay();
+          const dRest = _dowA === 0 ? 1 : 8 - _dowA;
+          const zonas = {};
+          for (const h of HABS_FIXOS) zonas[h.id] = zonaDe(metaDe(h.id), atual[h.id].feitas, dRest);
+          // "muito difícil" por 2 semanas seguidas em algum hábito (seção 10)
+          const dificuldadeAlta = HABS_FIXOS.filter((h) => s1[h.id].predom === 5 && s2[h.id].predom === 5).map((h) => h.nome);
+          // zona Atenção há mais de 1 semana sem acionar o Kit (seção 10)
+          const kitDatas = kitPor[uid] || [];
+          const kitRecente = kitDatas.some((d) => d >= addDaysStr(localDateStr(), -14));
+          const atencaoPersistente = HABS_FIXOS.filter(
+            (h) => zonas[h.id] === "atencao" && s1[h.id].feitas < metaDe(h.id),
+          ).map((h) => h.nome);
+          return {
+            zonas,
+            dificuldadeAlta,
+            atencaoSemKit: !kitRecente && atencaoPersistente.length > 0 ? atencaoPersistente : [],
+            kitTotal: kitDatas.length,
+            progressoes: histPor[uid] || [],
+          };
+        };
+        setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null, v2: analisa(p.id) })));
         setLoadingA(false);
       });
   }, [aba]);
@@ -10943,6 +11660,8 @@ function PainelMentora({ ir }) {
       { id: "mentoria_semana", valor: ment.semana },
       { id: "mentoria_duracao", valor: ment.duracao },
       { id: "mentoria_zoom", valor: ment.zoom },
+      { id: "desafio_texto", valor: ment.desafio },
+      { id: "jornada_inicio", valor: ment.inicio },
     ];
     await Promise.all(upserts.map((u) => supabase.from("config").upsert(u, { onConflict: "id" })));
     setSalvandoM(false);
@@ -10959,15 +11678,15 @@ function PainelMentora({ ir }) {
   return (
     <Grain style={{ minHeight: 760, animation: "fadeUp .35s ease" }}>
       {/* Header */}
-      <div style={{ background: C.obs, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.ouro}18` }}>
+      <div style={{ background: C.creme, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.ouro}18` }}>
         <button onClick={() => ir(S.PF)} style={{ background: "transparent", border: "none", color: C.ouro, cursor: "pointer", fontSize: 18, padding: 0 }}>←</button>
         <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>Painel da Mentora</div>
       </div>
 
       {/* Abas */}
-      <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.obs }}>
+      <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.creme }}>
         {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["alunas", "Alunas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 14, color: aba === id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer", transition: "all .2s" }}>
+          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 14, color: aba === id ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer", transition: "all .2s" }}>
             {label}
           </button>
         ))}
@@ -10979,7 +11698,7 @@ function PainelMentora({ ir }) {
         {aba === "videos" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)` }}>Aulas no YouTube</div>
+              <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Aulas no YouTube</div>
               <button onClick={() => setMostrarForm((v) => !v)} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 20, padding: "6px 14px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.ouro, cursor: "pointer" }}>
                 {mostrarForm ? "Cancelar" : "+ Adicionar"}
               </button>
@@ -10987,7 +11706,7 @@ function PainelMentora({ ir }) {
 
             {/* Formulário de novo vídeo */}
             {mostrarForm && (
-              <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
+              <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
                 <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>Novo vídeo</div>
                 {[
                   ["Título", "titulo", "Ex: Yoga para mobilidade"],
@@ -10996,21 +11715,21 @@ function PainelMentora({ ir }) {
                   ["Descrição (opcional)", "descricao", "Breve descrição da aula"],
                 ].map(([lb, field, ph]) => (
                   <div key={field} style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, marginBottom: 5 }}>{lb}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>{lb}</div>
                     <input
                       value={formV[field]}
                       onChange={(e) => setFormV((f) => ({ ...f, [field]: e.target.value }))}
                       placeholder={ph}
-                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "6px 0" }}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "6px 0" }}
                     />
                   </div>
                 ))}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, marginBottom: 5 }}>Categoria</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>Categoria</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {CATS_ADMIN.map((cat) => (
                       <button key={cat.id} onClick={() => setFormV((f) => ({ ...f, categoria: cat.id }))}
-                        style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: formV.categoria === cat.id ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+                        style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: formV.categoria === cat.id ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer" }}>
                         {cat.label}
                       </button>
                     ))}
@@ -11024,19 +11743,19 @@ function PainelMentora({ ir }) {
 
             {/* Lista de vídeos */}
             {loadingV ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : videos.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
             ) : videos.map((v) => (
-              <div key={v.id} style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div key={v.id} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
                 {v.youtube_id && (
                   <img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" style={{ width: 60, height: 45, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.92)`, marginBottom: 3 }}>{v.titulo}</div>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.8)` }}>{v.categoria} · {v.duracao}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(28,26,23,.92)`, marginBottom: 3 }}>{v.titulo}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.8)` }}>{v.categoria} · {v.duracao}</div>
                 </div>
-                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(255,255,255,.78)`, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
+                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(28,26,23,.78)`, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
               </div>
             ))}
           </div>
@@ -11045,20 +11764,22 @@ function PainelMentora({ ir }) {
         {/* ── ABA MENTORIA ── */}
         {aba === "mentoria" && (
           <div>
-            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)`, marginBottom: 20 }}>Próxima mentoria</div>
+            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 20 }}>Próxima mentoria</div>
             {[
               ["Data e horário", "data", "Ex: 15 de julho · 19h"],
               ["Semana da jornada", "semana", "Ex: Semana 3"],
               ["Duração", "duracao", "Ex: 75 min"],
               ["Link do Zoom", "zoom", "https://zoom.us/j/..."],
+              ["Desafio da Semana (turma)", "desafio", "Ex: ler 5 páginas por dia"],
+              ["Início da Jornada (segunda-feira da S1)", "inicio", "AAAA-MM-DD, ex: 2026-07-06"],
             ].map(([lb, field, ph]) => (
               <div key={field} style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
                 <input
                   value={ment[field]}
                   onChange={(e) => setMent((m) => ({ ...m, [field]: e.target.value }))}
                   placeholder={ph}
-                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "7px 0" }}
+                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "7px 0" }}
                 />
               </div>
             ))}
@@ -11071,27 +11792,72 @@ function PainelMentora({ ir }) {
         {/* ── ABA ALUNAS ── */}
         {aba === "alunas" && (
           <div>
-            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(255,255,255,.95)`, marginBottom: 16 }}>Alunas ativas</div>
+            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 16 }}>Alunas ativas</div>
             {loadingA ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : alunas.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(255,255,255,.8)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
-            ) : alunas.map((a) => {
-              const dias = diasSemCk(a.ultimoCk);
-              const statusCor = dias === null ? `rgba(255,255,255,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
-              const statusTxt = dias === null ? "Sem checkin" : dias === 0 ? "Checkin hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
-              return (
-                <div key={a.id} style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 16, color: `rgba(255,255,255,.92)` }}>{a.nome || "—"}</div>
-                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: statusCor }}>{statusTxt}</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
+            ) : (
+              <div>
+                {/* Lista 1: dificuldade alta persistente (seção 10) */}
+                {alunas.filter((a) => a.v2?.dificuldadeAlta?.length > 0).length > 0 && (
+                  <div style={{ background: `${C.blush}22`, border: `1px solid ${C.blush}88`, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 10, color: C.terra, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>
+                      Dificuldade alta persistente (2 semanas)
+                    </div>
+                    {alunas.filter((a) => a.v2?.dificuldadeAlta?.length > 0).map((a) => (
+                      <div key={"d" + a.id} style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.obs2, marginBottom: 4 }}>
+                        {a.nome || "—"} · {a.v2.dificuldadeAlta.join(", ")}
+                      </div>
+                    ))}
                   </div>
-                  <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.8)` }}>
-                    {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
+                )}
+                {/* Lista 2: zona Atenção há mais de 1 semana sem acionar o Kit (seção 10) */}
+                {alunas.filter((a) => a.v2?.atencaoSemKit?.length > 0).length > 0 && (
+                  <div style={{ background: `${C.ouro}18`, border: `1px solid ${C.ouro}66`, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 10, color: C.ouroDk, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>
+                      Em Atenção há +1 semana, sem usar o Kit
+                    </div>
+                    {alunas.filter((a) => a.v2?.atencaoSemKit?.length > 0).map((a) => (
+                      <div key={"k" + a.id} style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.obs2, marginBottom: 4 }}>
+                        {a.nome || "—"} · {a.v2.atencaoSemKit.join(", ")}
+                      </div>
+                    ))}
                   </div>
-                </div>
-              );
-            })}
+                )}
+                {/* Visão geral por aluna (seção 10) */}
+                {alunas.map((a) => {
+                  const dias = diasSemCk(a.ultimoCk);
+                  const statusCor = dias === null ? `rgba(28,26,23,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
+                  const statusTxt = dias === null ? "Sem checkin" : dias === 0 ? "Checkin hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
+                  return (
+                    <div key={a.id} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.92)` }}>{a.nome || "—"}</div>
+                        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: statusCor }}>{statusTxt}</div>
+                      </div>
+                      {a.v2 && (
+                        <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+                          {HABS_FIXOS.map((h) => {
+                            const z = a.v2.zonas[h.id];
+                            return (
+                              <span key={h.id} style={{ background: `${ZONAS[z].cor}30`, border: `1px solid ${ZONAS[z].cor}`, borderRadius: 12, padding: "2px 8px", fontFamily: FB, fontSize: 9, color: C.obs2 }}>
+                                {h.ic} {ZONAS[z].label}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.4)` }}>
+                        {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
+                        {a.v2 ? ` · Kit usado ${a.v2.kitTotal}x` : ""}
+                        {a.v2?.progressoes?.length ? ` · ${a.v2.progressoes.length} ajuste(s) de meta` : ""}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -11115,7 +11881,26 @@ function Perfil({
   historico,
   mentoria,
   ir,
+  anc,
+  setAnc,
+  metas,
+  habStats,
+  salvarMeta,
+  kitPessoa,
+  fraseFoco,
+  salvarKitPessoal,
+  notifStatus,
+  setNotifStatus,
+  tk,
 }) {
+  // ── Configurações (seção 9): fonte única de dados, múltiplos pontos de entrada ──
+  const [editAnc, setEditAnc] = useState(false);
+  const [ancE, setAncE] = useState(anc);
+  const [editPessoaC, setEditPessoaC] = useState(false);
+  const [pnC, setPnC] = useState(kitPessoa?.nome || "");
+  const [pfC, setPfC] = useState(kitPessoa?.fone || "");
+  const [editFraseC, setEditFraseC] = useState(false);
+  const [ffC, setFfC] = useState(fraseFoco || "");
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(usuario?.nome || "");
   const [emailEdit, setEmailEdit] = useState(usuario?.email || "");
@@ -11148,7 +11933,7 @@ function Perfil({
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div
         style={{
-          background: C.obs,
+          background: C.creme,
           padding: "24px 18px 30px",
           textAlign: "center",
           borderBottom: `1px solid ${C.ouro}12`,
@@ -11217,7 +12002,7 @@ function Perfil({
             padding: "3px 0", letterSpacing: "0.05em",
           }}>📷</div>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(255,255,255,.8)`, marginBottom: 8 }}>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.8)`, marginBottom: 8 }}>
           Toque para alterar foto
         </div>
         <div
@@ -11225,7 +12010,7 @@ function Perfil({
             fontFamily: FS,
             fontSize: 22,
             fontWeight: 300,
-            color: `rgba(255,255,255,.97)`,
+            color: `rgba(28,26,23,.97)`,
           }}
         >
           {usuario?.nome || "—"}
@@ -11235,7 +12020,7 @@ function Perfil({
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: `rgba(255,255,255,.88)`,
+            color: `rgba(28,26,23,.88)`,
             marginTop: 3,
           }}
         >
@@ -11312,13 +12097,13 @@ function Perfil({
               onClick={logout}
               style={{
                 background: "transparent",
-                border: `1px solid rgba(255,255,255,.1)`,
+                border: `1px solid rgba(28,26,23,.1)`,
                 borderRadius: 20,
                 padding: "6px 16px",
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.88)`,
+                color: `rgba(28,26,23,.88)`,
                 cursor: "pointer",
                 letterSpacing: "0.1em",
               }}
@@ -11359,7 +12144,7 @@ function Perfil({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.8)`,
+                color: `rgba(28,26,23,.8)`,
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
                 marginBottom: 6,
@@ -11374,7 +12159,7 @@ function Perfil({
                 width: "100%",
                 background: "transparent",
                 border: "none",
-                borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
+                borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
                 color: C.branco,
                 fontFamily: FS,
                 fontSize: 16,
@@ -11389,7 +12174,7 @@ function Perfil({
                 fontFamily: FB,
                 fontWeight: 300,
                 fontSize: 13,
-                color: `rgba(255,255,255,.8)`,
+                color: `rgba(28,26,23,.8)`,
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
                 marginBottom: 6,
@@ -11405,7 +12190,7 @@ function Perfil({
                 width: "100%",
                 background: "transparent",
                 border: "none",
-                borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(255,255,255,.45)"}`,
+                borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
                 color: C.branco,
                 fontFamily: FS,
                 fontSize: 16,
@@ -11437,7 +12222,7 @@ function Perfil({
             <div
               key={l}
               style={{
-                background: `rgba(255,255,255,.04)`,
+                background: `rgba(28,26,23,.04)`,
                 border: `1px solid ${C.ouro}12`,
                 borderRadius: 10,
                 padding: "13px 14px",
@@ -11448,7 +12233,7 @@ function Perfil({
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 13,
-                  color: `rgba(255,255,255,.92)`,
+                  color: `rgba(28,26,23,.92)`,
                   marginBottom: 4,
                 }}
               >
@@ -11485,7 +12270,7 @@ function Perfil({
                     key={med.id}
                     style={{
                       flex: 1,
-                      background: ok ? `${med.cor}12` : `rgba(255,255,255,.02)`,
+                      background: ok ? `${med.cor}12` : `rgba(28,26,23,.02)`,
                       border: `1px solid ${ok ? med.cor + "28" : C.ouro + "10"}`,
                       borderRadius: 10,
                       padding: "10px 6px",
@@ -11507,8 +12292,8 @@ function Perfil({
                         fontWeight: 300,
                         fontSize: 11,
                         color: ok
-                          ? `rgba(255,255,255,.45)`
-                          : `rgba(255,255,255,.15)`,
+                          ? `rgba(28,26,23,.45)`
+                          : `rgba(28,26,23,.15)`,
                         marginTop: 4,
                         lineHeight: 1.4,
                       }}
@@ -11524,16 +12309,103 @@ function Perfil({
 
 
         {/* Preferências para o radar de amigas — só no Clube */}
+        {/* ── Configurações (seção 9) ── */}
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouroDk, letterSpacing: "0.3em", textTransform: "uppercase", margin: "18px 0 10px" }}>
+          Configurações
+        </div>
+
+        {/* Âncora de Identidade */}
+        <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}>⚓ Âncora de Identidade</div>
+          {!editAnc ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, fontFamily: FS, fontStyle: "italic", fontSize: 14, color: C.obs, lineHeight: 1.5 }}>"{anc}"</div>
+              <button onClick={() => { setAncE(anc); setEditAnc(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
+            </div>
+          ) : (
+            <div>
+              <textarea value={ancE} onChange={(e) => setAncE(e.target.value)}
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 14, color: C.obs, resize: "none", height: 60, marginBottom: 7 }} />
+              <button onClick={() => { const t = ancE.trim(); if (!t) return; setAnc(t); syncDB("ancora", { texto: t }, { onConflict: "user_id" }); setEditAnc(false); tk("Âncora atualizada 💛"); }}
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            </div>
+          )}
+        </div>
+
+        {/* Objetivos dos hábitos (Mínimos Viáveis) — mesma fonte da Hoje e do Meu Mapa */}
+        <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
+
+        {/* Pessoa de Referência (Kit de Emergência) */}
+        <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}>💛 Pessoa de Referência (Kit de Emergência)</div>
+          {!editPessoaC ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.obs }}>
+                {kitPessoa?.nome ? `${kitPessoa.nome}${kitPessoa.fone ? ` · ${kitPessoa.fone}` : ""}` : "Ninguém cadastrada ainda"}
+              </div>
+              <button onClick={() => { setPnC(kitPessoa?.nome || ""); setPfC(kitPessoa?.fone || ""); setEditPessoaC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
+            </div>
+          ) : (
+            <div>
+              <input value={pnC} onChange={(e) => setPnC(e.target.value)} placeholder="Nome"
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 13, color: C.obs, marginBottom: 7 }} />
+              <input value={pfC} onChange={(e) => setPfC(e.target.value)} placeholder="WhatsApp com DDD"
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 13, color: C.obs, marginBottom: 7 }} />
+              <button onClick={() => { salvarKitPessoal({ pessoa_nome: pnC.trim(), pessoa_fone: pfC.trim() }); setEditPessoaC(false); tk("Pessoa de Referência salva 💛"); }}
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            </div>
+          )}
+        </div>
+
+        {/* Frase de Retorno ao Foco (Kit de Emergência) */}
+        <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}>🗝️ Frase de Retorno ao Foco (Kit de Emergência)</div>
+          {!editFraseC ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, fontFamily: FS, fontStyle: "italic", fontSize: 13.5, color: fraseFoco ? C.obs : C.lt, lineHeight: 1.5 }}>
+                {fraseFoco ? `"${fraseFoco}"` : "Ainda não definida"}
+              </div>
+              <button onClick={() => { setFfC(fraseFoco || ""); setEditFraseC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
+            </div>
+          ) : (
+            <div>
+              <textarea value={ffC} onChange={(e) => setFfC(e.target.value)}
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 14, color: C.obs, resize: "none", height: 60, marginBottom: 7 }} />
+              <button onClick={() => { salvarKitPessoal({ frase_foco: ffC.trim() }); setEditFraseC(false); tk("Frase salva 💛"); }}
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            </div>
+          )}
+        </div>
+
+        {/* Notificações e lembretes — ligar/desligar (seção 9) */}
+        <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra }}>🔔 Notificações e lembretes</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, marginTop: 3 }}>
+              {notifStatus === "granted" ? "Ativadas" : notifStatus === "denied" ? "Bloqueadas no navegador" : "Desativadas"}
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              if (notifStatus === "granted") { setNotifStatus("dismissed"); tk("Lembretes desativados"); }
+              else {
+                const r = await requestPermission();
+                setNotifStatus(r === "granted" ? "granted" : r === "denied" ? "denied" : "dismissed");
+                if (r === "granted") tk("Lembretes ativados 💛");
+              }
+            }}
+            style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 11, color: notifStatus === "granted" ? C.obs2 : C.ouroDk, cursor: "pointer" }}
+          >
+            {notifStatus === "granted" ? "Desligar" : "Ligar"}
+          </button>
+        </div>
+
         {!IS_JORNADA && <PrefRadar authUserId={authUserId} />}
-        <EditarHabitos
-          habAngulares={habAngulares}
-          setHabAngulares={setHabAngulares}
-        />
 
         {/* Aviso legal */}
         <div
           style={{
-            background: `rgba(255,255,255,.02)`,
+            background: `rgba(28,26,23,.02)`,
             border: `1px solid ${C.ouro}10`,
             borderRadius: 10,
             padding: "12px 14px",
@@ -11545,7 +12417,7 @@ function Perfil({
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: `rgba(255,255,255,.8)`,
+              color: `rgba(28,26,23,.8)`,
               lineHeight: 1.6,
             }}
           >
@@ -11592,7 +12464,7 @@ function PrefRadar({ authUserId }) {
   };
 
   return (
-    <div style={{ background: `rgba(255,255,255,.04)`, border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "16px", marginBottom: 14 }}>
+    <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "16px", marginBottom: 14 }}>
       <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 14 }}>
         Minhas preferências · Radar de Amigas
       </div>
@@ -11601,13 +12473,13 @@ function PrefRadar({ authUserId }) {
         <div>
           {cidade && (
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.92)`, marginBottom: 4 }}>Cidade</div>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 17, color: `rgba(255,255,255,.92)` }}>{cidade}</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.92)`, marginBottom: 4 }}>Cidade</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 17, color: `rgba(28,26,23,.92)` }}>{cidade}</div>
             </div>
           )}
           {sels.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Interesses</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.92)`, marginBottom: 8 }}>Interesses</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {sels.map((i) => (
                   <span key={i} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 50, padding: "6px 13px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: C.ouro }}>
@@ -11619,26 +12491,26 @@ function PrefRadar({ authUserId }) {
           )}
           <button
             onClick={() => setEditando(true)}
-            style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}20`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.88)`, cursor: "pointer", letterSpacing: "0.1em" }}
+            style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}20`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.88)`, cursor: "pointer", letterSpacing: "0.1em" }}
           >
             Editar preferências
           </button>
         </div>
       ) : (
         <div>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)`, marginBottom: 8 }}>Cidade</div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.92)`, marginBottom: 8 }}>Cidade</div>
           <input
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex: Florianópolis"
-            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(255,255,255,.45)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
+            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.45)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
           />
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(255,255,255,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
             {INTERESSES.map((i) => {
               const s = sels.includes(i);
               return (
-                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(255,255,255,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: s ? C.ouro : `rgba(255,255,255,.4)`, cursor: "pointer" }}>
+                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: s ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer" }}>
                   {i}
                 </button>
               );
@@ -11684,7 +12556,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,.04)",
+        background: "rgba(28,26,23,.04)",
         border: `1px solid ${C.ouro}15`,
         borderRadius: 10,
         padding: "16px",
@@ -11712,7 +12584,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
               fontFamily: FB,
               fontWeight: 300,
               fontSize: 12,
-              color: "rgba(255,255,255,.92)",
+              color: "rgba(28,26,23,.92)",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
               marginBottom: 6,
@@ -11732,7 +12604,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
               width: "100%",
               background: "transparent",
               border: "none",
-              borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(255,255,255,.45)"}`,
+              borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(28,26,23,.45)"}`,
               color: C.branco,
               fontFamily: FS,
               fontSize: 16,
