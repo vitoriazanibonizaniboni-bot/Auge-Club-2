@@ -1220,6 +1220,7 @@ export default function App() {
  const [bussola, setBussola] = useState(""); // somente leitura (Encontro Individual 1)
  const [perfilAuge, setPerfilAuge] = useState(""); // selo do Questionário de Perfil
  const [desafioTexto, setDesafioTexto] = useState(""); // Desafio da Semana (admin)
+ const [guias, setGuias] = useState({}); // URLs dos guias HTML (Supabase Storage)
  const [desafioFeitos, setDesafioFeitos] = useState([]); // datas do mini check-in
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
@@ -1744,6 +1745,7 @@ export default function App() {
       });
  setDesafioTexto(cfg.desafio_texto || "");
  setJornadaInicio(cfg.jornada_inicio || null);
+ setGuias({ movimento: cfg.guia_movimento || "", sono: cfg.guia_sono || "", tempo: cfg.guia_tempo || "" });
     }
 
     // Carregar vídeos do Supabase
@@ -2306,6 +2308,7 @@ export default function App() {
  perfilAuge,
  desafioTexto,
  desafioFeitos,
+    guias,
  jornadaInicio,
  registrarHabito,
  desregistrarHabito,
@@ -8975,18 +8978,6 @@ function Jornada({
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
 
-        {/* Bússola — somente leitura (seção 7) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs }}>Sua Bússola</div>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: bussola ? C.terra : `rgba(28,26,23,.65)`, marginTop: 3, lineHeight: 1.5 }}>
-                {bussola || "Sua direção concreta — definida no Encontro Individual 1"}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
 
@@ -10891,7 +10882,7 @@ const VIDS = {
   ],
 };
 
-function Conteudo({ perfil, videos: videosDB, sem }) {
+function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  const [catSel, setCatSel] = useState("aulas");
  const [showConvite, setShowConvite] = useState(false);
  if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
@@ -11026,7 +11017,7 @@ function Conteudo({ perfil, videos: videosDB, sem }) {
             return (
               <div
                 key={h.id}
-                onClick={() => !bloq && window.open(`${import.meta.env.BASE_URL}guias/${h.id}.html`, "_blank")}
+                onClick={() => !bloq && window.open(guias?.[h.id] || `${import.meta.env.BASE_URL}guias/${h.id}.html`, "_blank")}
                 style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", opacity: bloq ? 0.55 : 1, cursor: bloq ? "default" : "pointer" }}
               >
                 {IcoH[h.id](C.terra, 17)}
@@ -11213,6 +11204,23 @@ const CATS_ADMIN = [
 ];
 
 function PainelMentora({ ir }) {
+  // ── Guias dos Hábitos (HTML) — upload direto pelo painel ──
+  const [guiaMsg, setGuiaMsg] = useState({});
+  const enviarGuia = async (habId, file) => {
+    if (!file) return;
+    setGuiaMsg((g) => ({ ...g, [habId]: "Enviando..." }));
+    const { error } = await supabase.storage
+      .from("guias")
+      .upload(`${habId}.html`, file, { upsert: true, contentType: "text/html" });
+    if (error) {
+      setGuiaMsg((g) => ({ ...g, [habId]: "Erro ao enviar — confira se o bucket 'guias' existe (SQL)." }));
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("guias").getPublicUrl(`${habId}.html`);
+    const url = `${urlData?.publicUrl}?v=${Date.now()}`;
+    await supabase.from("config").upsert({ id: `guia_${habId}`, valor: url }, { onConflict: "id" });
+    setGuiaMsg((g) => ({ ...g, [habId]: "Guia publicado — já está no ar na aba Conteúdo." }));
+  };
  const [aba, setAba] = useState("videos"); // "videos" | "mentoria" | "alunas"
   // ── estado vídeos ──
  const [videos, setVideos] = useState([]);
@@ -11500,6 +11508,35 @@ function PainelMentora({ ir }) {
             <BtnPill onClick={salvarMentoria} style={{ fontSize: 15 }}>
               {salvoM ? "✓ Salvo!" : salvandoM ? "Salvando..." : "Salvar mentoria"}
             </BtnPill>
+
+            {/* Guias dos Hábitos Angulares — anexar HTML */}
+            <div style={{ borderTop: `1px solid ${C.ouro}25`, margin: "26px 0 0", paddingTop: 18 }}>
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 15, color: C.obs, marginBottom: 4 }}>
+                Guias dos Hábitos Angulares
+              </div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.lt, marginBottom: 14, lineHeight: 1.5 }}>
+                Anexe o arquivo HTML de cada guia. Ele substitui o anterior e aparece na hora para as alunas, na aba Conteúdo.
+              </div>
+              {HABS_FIXOS.map((h) => (
+                <div key={h.id} style={{ marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.obs2 }}>
+                      Guia de {h.nome}
+                    </div>
+                    <label style={{ background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 50, padding: "7px 16px", fontFamily: FB, fontWeight: 400, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
+                      Anexar HTML
+                      <input type="file" accept=".html,.htm,text/html" style={{ display: "none" }}
+                        onChange={(e) => { enviarGuia(h.id, e.target.files?.[0]); e.target.value = ""; }} />
+                    </label>
+                  </div>
+                  {guiaMsg[h.id] && (
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11.5, color: guiaMsg[h.id].startsWith("Erro") ? "#A32D2D" : C.ouroDk, marginTop: 5 }}>
+                      {guiaMsg[h.id]}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
