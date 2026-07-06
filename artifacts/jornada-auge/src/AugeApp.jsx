@@ -2370,7 +2370,12 @@ export default function App() {
     );
 
   // Diagnóstico de Sabotadores (primeiro acesso Jornada)
- if (tela === S.DIAG)
+ // Diagnóstico desativado — nunca é exibido; qualquer acesso volta pra Hoje
+ if (tela === S.DIAG) {
+ setTimeout(() => setTela(S.HOME), 0);
+ return null;
+  }
+ if (false)
  return (
       <Phone>
         <Rolar>
