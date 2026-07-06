@@ -2625,44 +2625,58 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
 // ─── LEGENDA DE CORES (seção 3.4) — acessível na Hoje e na Trajetória ────────
 function LegendaCores({ onFechar }) {
   const Linha = ({ cor, borda, txt }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-      <div style={{ width: 14, height: 14, borderRadius: 4, background: cor, border: borda || `1px solid ${C.ouro}30`, flexShrink: 0 }} />
-      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.75)`, lineHeight: 1.45 }}>{txt}</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+      <div style={{ width: 15, height: 15, borderRadius: "50%", background: cor, border: borda || `1px solid ${C.ouro}40`, flexShrink: 0 }} />
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>{txt}</div>
     </div>
   );
   const Titulo = ({ t }) => (
-    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9, color: C.ouroDk, letterSpacing: "0.3em", textTransform: "uppercase", margin: "14px 0 8px" }}>{t}</div>
+    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 10, color: C.ouroDk, letterSpacing: "0.28em", textTransform: "uppercase", margin: "16px 0 9px", borderTop: `1px solid ${C.ouro}25`, paddingTop: 14 }}>{t}</div>
   );
   return (
     <div
       onClick={onFechar}
-      style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.72)", display: "flex", alignItems: "flex-end" }}
+      style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.45)", display: "flex", alignItems: "flex-end" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 22px 34px", maxHeight: "75%", overflowY: "auto" }}
+        style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "24px 24px 36px", maxHeight: "80%", overflowY: "auto" }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: C.obs }}>O que cada cor significa</div>
-          <button onClick={onFechar} style={{ background: "none", border: "none", fontSize: 20, color: C.lt, cursor: "pointer" }}>×</button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ flex: 1, fontFamily: FS, fontStyle: "italic", fontSize: 21, fontWeight: 300, color: C.terra, textAlign: "center" }}>
+            O que as cores significam
+          </div>
+          <button onClick={onFechar} style={{ background: "none", border: "none", fontSize: 22, color: C.lt, cursor: "pointer", padding: "0 0 0 8px" }}>×</button>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, lineHeight: 1.5, marginBottom: 4 }}>
-          A mesma cor pode contar histórias diferentes dependendo da tela.
+
+        <Titulo t="Nos seus hábitos, hoje" />
+        <Linha cor={ZONAS.tranquila.cor} txt="Tranquila — segue tranquila" />
+        <Linha cor={ZONAS.ajuste.cor} txt="Ajuste — hoje ainda dá" />
+        <Linha cor={ZONAS.atencao.cor} txt="Atenção — essa semana está mais difícil" />
+
+        <Titulo t="No seu calendário do mês" />
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.8)`, lineHeight: 1.5, marginBottom: 10 }}>
+          Quanto mais forte a cor, mais hábitos você cumpriu naquele dia
         </div>
-        <Titulo t="Na Hoje — zona de cada hábito" />
-        <Linha cor={ZONAS.tranquila.cor} txt="Tranquila — ainda sobra folga pra bater a meta da semana" />
-        <Linha cor={ZONAS.ajuste.cor} txt='Ajuste — hoje é o último dia de folga. "Opa, ainda dá!"' />
-        <Linha cor={ZONAS.atencao.cor} txt="Atenção — já não dá mais pra bater a meta. Semana que vem recomeça" />
-        <Titulo t="Na Trajetória — calendário mensal" />
-        <Linha cor={HEAT_CORES[0]} txt="Nenhum hábito registrado no dia" />
-        <Linha cor={HEAT_CORES[1]} txt="1 hábito feito" />
-        <Linha cor={HEAT_CORES[2]} txt="2 hábitos feitos" />
-        <Linha cor={HEAT_CORES[3]} txt="3 hábitos feitos" />
-        <Titulo t="Na Trajetória — semana a semana" />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          {HEAT_CORES.map((c, i) => (
+            <div key={i} style={{ width: 30, height: 30, borderRadius: 8, background: c, border: `1px solid ${C.ouro}40` }} />
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", width: 144, fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginBottom: 2 }}>
+          <span>0</span>
+          <span>3 hábitos</span>
+        </div>
+
+        <Titulo t="Na sua trajetória semanal" />
         <Linha cor={C.ouro} txt="Meta da semana cumprida" />
-        <Linha cor={`${C.terra}66`} txt="Semana parcial — fez algo, não bateu a meta" />
-        <Linha cor={`${C.blush}55`} borda={`1.5px solid ${C.blush}`} txt="Kit de Emergência acionado naquela semana" />
-        <Linha cor="transparent" txt="Semana ainda não chegou" />
+        <Linha cor={`${C.terra}66`} txt="Semana parcial" />
+        <Linha cor={`${C.blush}55`} borda={`1.5px solid ${C.blush}`} txt="Você acionou o Kit de Emergência" />
+        <Linha cor="transparent" txt="Semana que ainda não chegou" />
+
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: C.ouroDk, textAlign: "center", marginTop: 18, lineHeight: 1.55 }}>
+          Acessível a qualquer momento pelo ícone (i) na Hoje e na Trajetória
+        </div>
       </div>
     </div>
   );
