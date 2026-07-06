@@ -8928,11 +8928,11 @@ function Jornada({
  style={{
  fontFamily: FS,
  fontStyle: "italic",
- fontSize: 15,
- color: `${C.ouroLt}55`,
+ fontSize: 15.5,
+ color: C.terra,
  lineHeight: 1.5,
  marginBottom: 16,
- borderLeft: `1px solid ${C.ouro}33`,
+ borderLeft: `2px solid ${C.ouro}`,
  paddingLeft: 12,
           }}
         >
