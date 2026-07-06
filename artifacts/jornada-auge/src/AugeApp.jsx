@@ -2721,9 +2721,6 @@ function LegendaCores({ onFechar }) {
         <Linha cor={`${C.blush}55`} borda={`1.5px solid ${C.blush}`} txt="Você acionou o Kit de Emergência" />
         <Linha cor="transparent" txt="Semana que ainda não chegou" />
 
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: C.ouroDk, textAlign: "center", marginTop: 18, lineHeight: 1.55 }}>
- Acessível a qualquer momento pelo ícone (i) na Hoje e na Trajetória
-        </div>
       </div>
     </div>
   );
@@ -9866,6 +9863,45 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
       {legenda && <LegendaCores onFechar={() => setLegenda(false)} />}
       <Grain style={{ padding: "18px 18px 32px" }}>
 
+        {/* ── Calendário mensal — heatmap 0–3 (seção 5.1) ── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouroDk, letterSpacing: "0.35em", textTransform: "uppercase" }}>
+            {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
+          </div>
+          <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 18 }}>
+          {["S","T","Q","Q","S","S","D"].map((d, i) => (
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.lt, padding: "2px 0" }}>{d}</div>
+          ))}
+          {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
+          {Array.from({ length: diasNoMes }, (_, i) => {
+ const dia = i + 1;
+ const ds = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+ const n = contaDia(ds);
+ const isHoje = ds === todayStr;
+ return (
+              <div key={dia} onClick={() => n > 0 && setDiaSel(ds)} style={{
+ aspectRatio: "1", borderRadius: 7,
+ background: HEAT_CORES[Math.min(3, n)],
+ border: isHoje ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
+ display: "flex", alignItems: "center", justifyContent: "center",
+ fontSize: 10, fontFamily: FS, fontWeight: 300,
+ color: n >= 3 ? C.creme : C.obs2,
+ cursor: n > 0 ? "pointer" : "default",
+              }}>
+                {dia}
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ borderTop: `1px solid ${C.ouro}30`, margin: "6px 0 14px", paddingTop: 14, fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.ouroDk, textAlign: "center" }}>
+ Sexta é dia de Vitória da Semana
+        </div>
+
+
         {/* ── Trajetória semanal (seção 5.2) ── */}
         <div style={{ padding: "4px 2px 8px", marginBottom: 6 }}>
           <svg width="100%" viewBox="0 0 380 158" fill="none" style={{ display: "block", marginBottom: 6 }}>
@@ -9901,44 +9937,6 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
         </button>
         <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12, color: C.lt, marginTop: 14, textAlign: "center" }}>
  Pequeno, repetido e infinito. Qualquer cor é uma vitória.
-        </div>
-
-        <div style={{ borderTop: `1px solid ${C.ouro}30`, margin: "6px 0 14px", paddingTop: 14, fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.ouroDk, textAlign: "center" }}>
- Sexta é dia de Vitória da Semana
-        </div>
-
-        {/* ── Calendário mensal — heatmap 0–3 (seção 5.1) ── */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.ouroDk, letterSpacing: "0.35em", textTransform: "uppercase" }}>
-            {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
-          </div>
-          <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 18 }}>
-          {["S","T","Q","Q","S","S","D"].map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 9, color: C.lt, padding: "2px 0" }}>{d}</div>
-          ))}
-          {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
-          {Array.from({ length: diasNoMes }, (_, i) => {
- const dia = i + 1;
- const ds = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
- const n = contaDia(ds);
- const isHoje = ds === todayStr;
- return (
-              <div key={dia} onClick={() => n > 0 && setDiaSel(ds)} style={{
- aspectRatio: "1", borderRadius: 7,
- background: HEAT_CORES[Math.min(3, n)],
- border: isHoje ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
- display: "flex", alignItems: "center", justifyContent: "center",
- fontSize: 10, fontFamily: FS, fontWeight: 300,
- color: n >= 3 ? C.creme : C.obs2,
- cursor: n > 0 ? "pointer" : "default",
-              }}>
-                {dia}
-              </div>
-            );
-          })}
         </div>
 
         {/* detalhe do dia — sob demanda (seção 5.1) */}
