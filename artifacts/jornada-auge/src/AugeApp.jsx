@@ -179,9 +179,9 @@ function zonaDe(meta, feitas, diasRestantes) {
  return "atencao";
 }
 const ZONAS = {
- tranquila: { cor: "#C4A882", label: "Tranquila" },
- ajuste: { cor: "#A8865A", label: "Ajuste" },
- atencao: { cor: "#E2B9A8", label: "Atenção" },
+ tranquila: { cor: "#C4A882", bg: "#EAD8B8", fg: "#7E5344", label: "Tranquila" },
+ ajuste: { cor: "#A8865A", bg: "#A8865A", fg: "#FFFFFF", label: "Ajuste" },
+ atencao: { cor: "#E2B9A8", bg: "#E2B9A8", fg: "#5A3A2E", label: "Atenção" },
 };
 
 // Cor por intensidade — heatmap mensal (seção 3.2): 0..3 hábitos no dia
@@ -2564,7 +2564,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  const tabs = [
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
-    { id: S.FEED, label: "Mural do 1%", icon: Ico.mural, msgCount: IS_CLUBE ? 0 : msgCount },
+    { id: S.FEED, label: "Mural", icon: Ico.mural, msgCount: IS_CLUBE ? 0 : msgCount },
     ...(IS_CLUBE ? [{ id: S.CX, label: "Amigas", icon: Ico.cx, msgCount }] : []),
     { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
     { id: S.CT, label: "Conteúdo", icon: Ico.livro },
@@ -2636,15 +2636,15 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  gap: 4,
             }}
           >
-            {t.icon(aba === t.id ? C.ouro : C.lt)}
+            {t.icon(aba === t.id ? C.ouroDk : C.lt)}
             <div
  style={{
  fontFamily: FB,
- fontWeight: 400,
- fontSize: 9.5,
- letterSpacing: "0.1em",
+ fontWeight: aba === t.id ? 600 : 400,
+ fontSize: 8.5,
+ letterSpacing: "0.05em",
  textTransform: "uppercase",
- color: aba === t.id ? C.ouro : C.lt,
+ color: aba === t.id ? C.ouroDk : C.lt,
  transition: "color .2s",
  whiteSpace: "nowrap",
               }}
@@ -2652,17 +2652,6 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
               {t.label}
             </div>
           </div>
-          {aba === t.id && (
-            <div
- style={{
- width: 18,
- height: 1.5,
- background: C.ouro,
- margin: "3px auto 0",
- borderRadius: 100,
-              }}
-            />
-          )}
         </div>
       ))}
     </div>
@@ -4339,16 +4328,18 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
 
   // Bloqueado por calendário (seção 4.7) — cadeado dourado
  if (st.bloqueado) {
- return (
-      <div style={{ background: `rgba(28,26,23,.03)`, border: `1px dashed ${C.ouro}44`, borderRadius: 12, padding: "16px 15px", marginBottom: 12, display: "flex", alignItems: "center", gap: 13, opacity: 0.75 }}>
-        {IcoH[h.id](C.lt, 22)}
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 500, color: `rgba(28,26,23,.72)` }}>{h.nome}</div>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginTop: 2 }}>
- Desbloqueia na Semana {h.unlock}
+    return (
+      <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "15px 17px", marginBottom: 13 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          {IcoH.cadeado(C.lt, 16)}
+          <div style={{ flex: 1, fontFamily: FB, fontSize: 14, fontWeight: 600, color: `rgba(28,26,23,.65)` }}>{h.nome}</div>
+          <div style={{ background: C.linho, borderRadius: 9, padding: "4px 10px", fontFamily: FB, fontWeight: 600, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: C.lt }}>
+            Bloqueado
           </div>
         </div>
-        <div>{IcoH.cadeado(C.ouroDk, 18)}</div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginTop: 7 }}>
+          Libera na semana {h.unlock}
+        </div>
       </div>
     );
   }
@@ -4361,12 +4352,12 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
   };
 
  return (
-    <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "17px 17px 15px", marginBottom: 13 }}>
+    <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "17px 17px 15px", marginBottom: 13 }}>
       {/* nome + selo de zona */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         {IcoH[h.id](C.terra)}
         <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 500, color: C.obs }}>{h.nome}</div>
-        <div style={{ background: metaBatida ? `${C.ouro}40` : `${zona.cor}40`, borderRadius: 20, padding: "4px 12px", fontFamily: FB, fontWeight: 400, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: C.obs2 }}>
+        <div style={{ background: metaBatida ? ZONAS.tranquila.bg : zona.bg, borderRadius: 9, padding: "4px 10px", fontFamily: FB, fontWeight: 600, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: metaBatida ? ZONAS.tranquila.fg : zona.fg }}>
           {metaBatida ? "Meta ✓" : zona.label}
         </div>
       </div>
@@ -4432,39 +4423,38 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {/* registro — Sono é referente à noite anterior (seções 4.2 e 4.3) */}
       {!marcado ? (
         <div>
-          <button onClick={() => { registrarHabito(h.id, dataAlvo, null); setPedindoDif(true); }}
- style={{ width: "100%", background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 50, padding: "12px", fontFamily: FB, fontWeight: 400, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
+          <button onClick={() => registrarHabito(h.id, dataAlvo, null)}
+            style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.03em", color: C.ouroDk, cursor: "pointer" }}>
             {h.id === "sono" ? "Cumpri ontem à noite" : "Marquei hoje"}
           </button>
           {contaSemanaPassada && (
             <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, textAlign: "center", marginTop: 6, lineHeight: 1.45 }}>
- Hoje é segunda: a noite de ontem fecha a semana que terminou. Os pontos desta semana começam amanhã.
+              Hoje é segunda: a noite de ontem fecha a semana que terminou. Os pontos desta semana começam amanhã.
             </div>
           )}
         </div>
-      ) : !regAlvo.dif && pedindoDif ? (
+      ) : (
         <div>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, marginBottom: 8 }}>
- Como foi manter esse hábito hoje?
+          <button onClick={() => desregistrarHabito(h.id, dataAlvo)}
+            style={{ width: "100%", background: C.ouro, border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 500, fontSize: 12.5, letterSpacing: "0.03em", color: C.branco, cursor: "pointer" }}>
+            {h.id === "sono" ? "Cumpri ontem à noite ✓" : "Marquei hoje ✓"}
+          </button>
+          {contaSemanaPassada && (
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, textAlign: "center", marginTop: 6, lineHeight: 1.45 }}>
+              Noite de domingo — fechou a semana passada.
+            </div>
+          )}
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, margin: "10px 0 6px" }}>
+            Como foi manter esse hábito hoje?
           </div>
-          <div style={{ display: "flex", gap: 5 }}>
+          <div style={{ display: "flex", gap: 4 }}>
             {DIF_OPTS.map((d) => (
-              <button key={d.v} onClick={() => { registrarHabito(h.id, dataAlvo, d.v); setPedindoDif(false); }}
- style={{ flex: 1, background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}40`, borderRadius: 8, padding: "7px 2px", fontFamily: FB, fontWeight: 300, fontSize: 8.5, color: C.obs2, cursor: "pointer", lineHeight: 1.3 }}>
+              <button key={d.v} onClick={() => registrarHabito(h.id, dataAlvo, d.v)}
+                style={{ flex: 1, background: regAlvo.dif === d.v ? C.ouroDk : C.branco, border: `1px solid ${regAlvo.dif === d.v ? C.ouroDk : C.linho}`, borderRadius: 6, padding: "7px 2px", fontFamily: FB, fontWeight: regAlvo.dif === d.v ? 500 : 300, fontSize: 8.5, color: regAlvo.dif === d.v ? C.branco : C.terra, cursor: "pointer", lineHeight: 1.3 }}>
                 {d.l}
               </button>
             ))}
           </div>
-        </div>
-      ) : (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.ouroDk }}>
-            ✓ {contaSemanaPassada ? "Noite de domingo registrada — fechou a semana passada" : h.id === "sono" ? "Noite registrada" : "Feito hoje"}{regAlvo.dif ? ` · ${difLabel(regAlvo.dif)}` : ""}
-          </div>
-          <button onClick={() => { desregistrarHabito(h.id, dataAlvo); setPedindoDif(false); }}
- style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>
- desfazer
-          </button>
         </div>
       )}
     </div>
@@ -4515,23 +4505,21 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
  if (!texto) return null;
  const feitoHoje = desafioFeitos.includes(TODAY);
  return (
-    <div style={{ background: C.branco, border: `1.5px dashed ${C.ouro}77`, borderRadius: 16, padding: "16px 17px", marginTop: 16, marginBottom: 8 }}>
+    <div style={{ background: C.branco, border: `1.5px dashed ${C.ouro}`, borderRadius: 14, padding: "16px 17px", marginTop: 16, marginBottom: 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
         {IcoH.estrela(C.ouro)}
         <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 15.5, color: C.obs }}>Desafio da Semana</div>
       </div>
       <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15.5, fontWeight: 300, color: C.terra, lineHeight: 1.45, marginBottom: 12 }}>{texto}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
-          {diasDaSemana.map((d) => (
-            <div key={d} style={{ width: 10, height: 10, borderRadius: "50%", background: desafioFeitos.includes(d) ? C.ouro : "transparent", border: `1px solid ${C.ouro}77` }} />
-          ))}
-        </div>
-        <button onClick={toggleDesafio}
- style={{ background: feitoHoje ? `${C.ouro}25` : "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 10.5, letterSpacing: "0.15em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer", whiteSpace: "nowrap" }}>
-          {feitoHoje ? "Feito · desfazer" : "Feito hoje"}
-        </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        {diasDaSemana.map((d) => (
+          <div key={d} style={{ width: 10, height: 10, borderRadius: "50%", background: desafioFeitos.includes(d) ? C.ouro : "transparent", border: `1px solid ${C.linho}` }} />
+        ))}
       </div>
+      <button onClick={toggleDesafio}
+        style={{ width: "100%", background: feitoHoje ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 12, color: feitoHoje ? C.branco : C.ouroDk, cursor: "pointer" }}>
+        {feitoHoje ? "Feito hoje ✓" : "Feito hoje"}
+      </button>
       <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginTop: 10 }}>
  Só aqui — não entra no calendário nem na trajetória
       </div>
@@ -4795,7 +4783,7 @@ function Home({
           {Ico.gear(C.terra)}
           <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 7, letterSpacing: "0.12em", color: C.terra, textTransform: "uppercase" }}>Perfil</span>
         </div>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 26, fontWeight: 300, color: C.ouroDk, textTransform: "capitalize", marginTop: 6 }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 21, fontWeight: 400, color: C.ouroDk, textTransform: "capitalize", marginTop: 6 }}>
           {new Date(TODAY + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}
         </div>
         <div
@@ -5186,15 +5174,15 @@ function Home({
  marginTop: 12,
  background: C.blush,
  border: "none",
- borderRadius: 50,
+ borderRadius: 22,
  padding: "16px",
  cursor: "pointer",
  textAlign: "center",
  fontFamily: FB,
- fontWeight: 500,
+ fontWeight: 600,
  fontSize: 13,
  color: "#5C3A2E",
- letterSpacing: "0.22em",
+ letterSpacing: "0.06em",
  textTransform: "uppercase",
               }}
             >
@@ -5512,8 +5500,8 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", borderBottom: `1px solid ${C.ouro}20` }}>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 26, fontWeight: 300, color: C.ouroDk }}>Mural do 1%</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.lt, letterSpacing: "0.28em", textTransform: "uppercase", marginTop: 6 }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 21, fontWeight: 400, color: C.ouroDk }}>Mural do 1%</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9.5, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
  Cada vitória pequena conta
         </div>
       </div>
@@ -8230,8 +8218,8 @@ function JornadaClube({ ir }) {
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div style={{ background: C.creme, padding: "22px 18px 14px", textAlign: "center", borderBottom: `1px solid ${C.ouro}20` }}>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 26, fontWeight: 300, color: C.ouroDk }}>Meu Mapa</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.lt, letterSpacing: "0.28em", textTransform: "uppercase", marginTop: 6 }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 21, fontWeight: 400, color: C.ouroDk }}>Meu Mapa</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9.5, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
  Seu mapa pessoal na Jornada
         </div>
       </div>
@@ -8809,8 +8797,8 @@ function MinimosViaveis({ metas, habStats, salvarMeta, tk }) {
  const [freqE, setFreqE] = useState(3);
  const [descE, setDescE] = useState("");
  return (
-    <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
-      <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs, marginBottom: 2 }}>
+    <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
+      <div style={{ fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs, marginBottom: 2 }}>
  Seus Mínimos Viáveis
       </div>
       <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginBottom: 10 }}>
@@ -8953,9 +8941,9 @@ function Jornada({
         </div>
 
         {/* Roda AUGE */}
-        <div onClick={() => ir(S.RODA)} style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+        <div onClick={() => ir(S.RODA)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs }}>Roda AUGE</div>
+            <div style={{ fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs }}>Roda AUGE</div>
             <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>5 dimensões · 25 perguntas · aplicada na S1, S6 e S12</div>
           </div>
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
@@ -8965,17 +8953,17 @@ function Jornada({
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
 
         {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
-        <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+        <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs }}>Espaços de escrita</div>
+            <div style={{ fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs }}>Espaços de escrita</div>
             <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>Vitórias, Âncora, Porquês e Carta para o Futuro</div>
           </div>
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
         {/* Configurações — dados pessoais, notificações, sair (seção 9) */}
-        <div onClick={() => ir(S.PF)} style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+        <div onClick={() => ir(S.PF)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs }}>Perfil e Configurações</div>
+            <div style={{ fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs }}>Perfil e Configurações</div>
             <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>Meus dados, objetivos, notificações, sair da conta</div>
           </div>
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
@@ -9853,10 +9841,10 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 26, fontWeight: 300, color: C.ouroDk }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 21, fontWeight: 400, color: C.ouroDk }}>
  Sua trajetória
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.lt, letterSpacing: "0.28em", textTransform: "uppercase", marginTop: 6 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9.5, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
  Semana {sem} de 12
         </div>
       </div>
@@ -10654,13 +10642,13 @@ function Emergencia({
   };
 
  const Sec = ({ label, children }) => (
-    <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "17px 17px 15px", marginBottom: 13 }}>
+    <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "17px 17px 15px", marginBottom: 13 }}>
       <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 15.5, color: C.obs, marginBottom: 8 }}>{label}</div>
       {children}
     </div>
   );
  const BtnAcao = ({ onClick, children }) => (
-    <button onClick={onClick} style={{ width: "100%", background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 11.5, letterSpacing: "0.16em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer", marginTop: 12 }}>
+    <button onClick={onClick} style={{ width: "100%", background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.ouroDk, cursor: "pointer", marginTop: 12 }}>
       {children}
     </button>
   );
@@ -10674,10 +10662,10 @@ function Emergencia({
         <button onClick={back} style={{ position: "absolute", left: 14, top: 18, background: "none", border: "none", color: C.terra, fontFamily: FB, fontWeight: 300, fontSize: 13, cursor: "pointer" }}>
           ← Hoje
         </button>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 26, fontWeight: 300, color: C.ouroDk }}>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 21, fontWeight: 400, color: C.ouroDk }}>
  Kit de Emergência
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.lt, letterSpacing: "0.24em", textTransform: "uppercase", marginTop: 6 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 9.5, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
  Tá difícil agora? Vamos com calma
         </div>
       </div>
@@ -10725,8 +10713,8 @@ function Emergencia({
           </div>
           {waLink && (
             <button onClick={() => { usar("pessoa", "Falar ajuda. Sempre."); window.open(waLink, "_blank"); }}
- style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: C.branco, cursor: "pointer", marginTop: 12 }}>
- Chamar · abre no WhatsApp
+ style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 10, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 12.5, color: C.branco, cursor: "pointer", marginTop: 12 }}>
+ Chamar no WhatsApp
             </button>
           )}
         </Sec>
@@ -10994,7 +10982,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
 
       <Grain style={{ padding: "14px 16px 24px" }}>
         {/* Guia dos Hábitos Angulares — arquivos HTML, desbloqueio S1/S5/S9 (seção 7) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 16 }}>
+        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 16 }}>
           <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 15.5, color: C.obs, marginBottom: 2 }}>
             Guia dos Hábitos Angulares
           </div>
@@ -12074,7 +12062,7 @@ function Perfil({
         </div>
 
         {/* Âncora de Identidade */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
+        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}> Âncora de Identidade</div>
           {!editAnc ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -12095,7 +12083,7 @@ function Perfil({
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
 
         {/* Mínimo de emergência (Kit) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
+        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}>Mínimos Viáveis do Kit de Emergência</div>
           {!editMinC ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -12116,7 +12104,7 @@ function Perfil({
         </div>
 
         {/* Pessoa de Referência (Kit de Emergência) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
+        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}> Pessoa de Referência (Kit de Emergência)</div>
           {!editPessoaC ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -12138,7 +12126,7 @@ function Perfil({
         </div>
 
         {/* Frase de Retorno ao Foco (Kit de Emergência) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
+        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}> Frase de Retorno ao Foco (Kit de Emergência)</div>
           {!editFraseC ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -12158,7 +12146,7 @@ function Perfil({
         </div>
 
         {/* Notificações e lembretes — ligar/desligar (seção 9) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra }}> Notificações e lembretes</div>
             <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, marginTop: 3 }}>
