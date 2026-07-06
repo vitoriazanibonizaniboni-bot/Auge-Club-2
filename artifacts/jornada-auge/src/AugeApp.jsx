@@ -4791,9 +4791,6 @@ function Home({
           />
         ))}
         {/* Semana da Jornada + Configurações + legenda (seções 4.1, 3.4 e 9) */}
-        <div style={{ position: "absolute", top: 12, left: 14, cursor: "pointer" }} onClick={() => setLegenda(true)}>
-          {Ico.info(C.lt)}
-        </div>
         <div
  onClick={() => ir(S.PF)}
  style={{ position: "absolute", top: 12, right: 12, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "2px 4px" }}
@@ -4818,7 +4815,6 @@ function Home({
  Semana {sem} de 12 · {habsAtivos.length} hábito{habsAtivos.length !== 1 ? "s" : ""} hoje
         </div>
       </div>
-      {legenda && <LegendaCores onFechar={() => setLegenda(false)} />}
       {retroAberto && (
         <RetroModal
  onFechar={() => setRetroAberto(false)}
@@ -9883,7 +9879,6 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
-        <div onClick={() => setLegenda(true)} style={{ cursor: "pointer", position: "absolute", left: 14, top: 20 }}>{Ico.info(C.lt)}</div>
         <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 26, fontWeight: 300, color: C.ouroDk }}>
  Sua trajetória
         </div>
@@ -9923,6 +9918,10 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
         <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, lineHeight: 1.6 }}>
  Mais claro = menos hábitos no dia<br />Mais escuro = mais hábitos no dia
         </div>
+        <button onClick={() => setLegenda(true)}
+          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
+          {Ico.info(C.ouroDk)} O que as cores significam
+        </button>
         <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12, color: C.lt, marginTop: 14, textAlign: "center" }}>
  Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
