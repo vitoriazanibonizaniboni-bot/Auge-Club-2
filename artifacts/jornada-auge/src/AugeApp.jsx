@@ -2210,15 +2210,7 @@ export default function App() {
     };
   }, [authUser?.id]);
 
-  // ── Onboarding obrigatório: Diagnóstico → Setup de hábitos ────────────────
- useEffect(() => {
-    // Só dispara depois de loadUserData completar (loadedRef garante que diagOk já foi setado)
- if (!loadedRef.current) return;
- if (!authUser) return;
- if (perfil !== "jornada") return; // admin, pendente, comunidade nunca veem o diagnóstico
- if (diagOk) return;
- setTela(S.DIAG);
-  }, [perfil, diagOk, authUser, profileLoaded]);
+  // (Questionário de diagnóstico removido do primeiro acesso a pedido da Vitória)
 
  const ctx = {
  perfil,
@@ -8956,17 +8948,6 @@ function Jornada({
           }}
         >
  Meu Mapa
-        </div>
-
-        {/* Questionário de Perfil AUGE — resultado como selo (seção 7) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, display: "flex", alignItems: "center", gap: 13 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs }}>Questionário de Perfil AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>Preenchido uma vez, antes da S1</div>
-          </div>
-          <div style={{ background: `${C.ouro}20`, border: `1px solid ${C.ouro}66`, borderRadius: 20, padding: "4px 12px", fontFamily: FB, fontWeight: 400, fontSize: 10, color: C.ouroDk }}>
-            {perfilAuge ? `Perfil: ${perfilAuge}` : "✓ feito"}
-          </div>
         </div>
 
         {/* Roda AUGE */}
