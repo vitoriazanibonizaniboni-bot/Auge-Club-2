@@ -4244,6 +4244,9 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
   const marcado = !!regAlvo;
   const metaBatida = st.feitas >= st.meta;
   const zona = ZONAS[st.zona];
+  // Fronteira de semana do Sono (seção 4.3): na segunda de manhã, o registro
+  // é da noite de domingo e fecha a SEMANA PASSADA — não os pontos desta.
+  const contaSemanaPassada = h.id === "sono" && dataAlvo < segundaAtual;
 
   // Bloqueado por calendário (seção 4.7) — cadeado dourado
   if (st.bloqueado) {
@@ -4339,10 +4342,17 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
 
       {/* registro — Sono é referente à noite anterior (seções 4.2 e 4.3) */}
       {!marcado ? (
-        <button onClick={() => { registrarHabito(h.id, dataAlvo, null); setPedindoDif(true); }}
-          style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.obs2, cursor: "pointer" }}>
-          {h.id === "sono" ? "Cumpri ontem à noite" : "Marquei hoje"}
-        </button>
+        <div>
+          <button onClick={() => { registrarHabito(h.id, dataAlvo, null); setPedindoDif(true); }}
+            style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.obs2, cursor: "pointer" }}>
+            {h.id === "sono" ? "Cumpri ontem à noite" : "Marquei hoje"}
+          </button>
+          {contaSemanaPassada && (
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, textAlign: "center", marginTop: 6, lineHeight: 1.45 }}>
+              Hoje é segunda: a noite de ontem fecha a semana que terminou. Os pontos desta semana começam amanhã.
+            </div>
+          )}
+        </div>
       ) : !regAlvo.dif && pedindoDif ? (
         <div>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, marginBottom: 8 }}>
@@ -4360,7 +4370,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       ) : (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.ouroDk }}>
-            ✓ {h.id === "sono" ? "Noite registrada" : "Feito hoje"}{regAlvo.dif ? ` · ${difLabel(regAlvo.dif)}` : ""}
+            ✓ {contaSemanaPassada ? "Noite de domingo registrada — fechou a semana passada" : h.id === "sono" ? "Noite registrada" : "Feito hoje"}{regAlvo.dif ? ` · ${difLabel(regAlvo.dif)}` : ""}
           </div>
           <button onClick={() => { desregistrarHabito(h.id, dataAlvo); setPedindoDif(false); }}
             style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>
