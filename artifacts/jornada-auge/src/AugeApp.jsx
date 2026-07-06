@@ -4748,24 +4748,6 @@ function Home({
         >
           Semana {sem} de 12
         </div>
-        {/* Kit de Emergência — sempre visível e acessível (seção 4.9) */}
-        <button
-          onClick={() => ir(S.EM)}
-          style={{
-            marginTop: 10,
-            background: `${C.blush}30`,
-            border: `1px solid ${C.blush}`,
-            borderRadius: 20,
-            padding: "6px 22px",
-            color: C.terra,
-            fontFamily: FB,
-            fontSize: 11,
-            cursor: "pointer",
-            letterSpacing: "0.1em",
-          }}
-        >
-          SOS · Kit de Emergência
-        </button>
       </div>
       {legenda && <LegendaCores onFechar={() => setLegenda(false)} />}
       {retroAberto && (
@@ -4907,24 +4889,6 @@ function Home({
               "Olá, {usuario?.nome?.split(" ")[0] || "bem-vinda"}! Que bom te ter aqui. Vamos começar pelo checkin?"
             </div>
           </div>
-        )}
-
-        {/* Banner motivacional estilo Duolingo */}
-        {diasSemTreino !== -1 && (
-          <MotivBanner
-            ckOk={ckOk}
-            streakAtual={streakAtual}
-            diasSemTreino={diasSemTreino}
-            ir={ir}
-          />
-        )}
-        {diasSemTreino === -1 && ckOk && (
-          <MotivBanner
-            ckOk={ckOk}
-            streakAtual={streakAtual}
-            diasSemTreino={diasSemTreino}
-            ir={ir}
-          />
         )}
 
         {/* Banner carta semana 12 */}
@@ -5229,6 +5193,28 @@ function Home({
               toggleDesafio={toggleDesafio}
               diasDaSemana={diasDaSemana}
             />
+
+            {/* Kit de Emergência — sempre visível e acessível na Hoje (seção 4.9) */}
+            <button
+              onClick={() => ir(S.EM)}
+              style={{
+                width: "100%",
+                marginTop: 10,
+                background: `${C.blush}30`,
+                border: `1.5px solid ${C.blush}`,
+                borderRadius: 12,
+                padding: "14px",
+                cursor: "pointer",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, letterSpacing: "0.1em" }}>
+                SOS · Kit de Emergência
+              </div>
+              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12.5, color: C.terra, marginTop: 3, opacity: 0.85 }}>
+                Para os dias difíceis — o mínimo possível para voltar
+              </div>
+            </button>
           </div>
         )}
 
