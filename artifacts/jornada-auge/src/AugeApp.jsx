@@ -592,9 +592,9 @@ function Logo({ width = 200, fundo = "escuro" }) {
         y="144"
         textAnchor="middle"
         fontFamily="'Inter',sans-serif"
-        fontWeight="300"
-        fontSize="7"
-        letterSpacing="4.5"
+        fontWeight="400"
+        fontSize="10"
+        letterSpacing="3.2"
         fill={tag}
       >
         MÉTODO · MOVIMENTO · 40+
@@ -1526,7 +1526,8 @@ export default function App() {
       const p = profileRes.data;
       meusInteresses = p.radar_interesses || [];
       setMinhaFoto(p.avatar_url || null);
-      setPerfil(FORCED_PLANO);
+      // Conta admin mantém acesso ao Painel da Facilitadora
+      setPerfil(p.plano === "admin" ? "admin" : FORCED_PLANO);
       setUsuario({ nome: p.nome || "", email: p.email || "" });
       setLgpdOk(!!p.lgpd_aceito);
       setBussola(p.bussola || "");
@@ -1557,7 +1558,7 @@ export default function App() {
       loadedRef.current = true;
       // Cache local do perfil para evitar tela errada se Supabase falhar
       try {
-        localStorage.setItem("auge_perfil_plano", FORCED_PLANO);
+        localStorage.setItem("auge_perfil_plano", p.plano === "admin" ? "admin" : FORCED_PLANO);
         if (p.data_cadastro) localStorage.setItem("auge_perfil_datacad", p.data_cadastro);
       } catch {}
     } else {
@@ -4685,8 +4686,12 @@ function Home({
         <div style={{ position: "absolute", top: 12, left: 14, cursor: "pointer" }} onClick={() => setLegenda(true)}>
           {Ico.info(C.lt)}
         </div>
-        <div style={{ position: "absolute", top: 12, right: 14, cursor: "pointer" }} onClick={() => ir(S.PF)}>
-          {Ico.gear(C.lt)}
+        <div
+          onClick={() => ir(S.PF)}
+          style={{ position: "absolute", top: 12, right: 12, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "2px 4px" }}
+        >
+          {Ico.gear(C.terra)}
+          <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 7, letterSpacing: "0.12em", color: C.terra, textTransform: "uppercase" }}>Perfil</span>
         </div>
         <Logo width={160} fundo="claro" />
         <div
@@ -9252,6 +9257,16 @@ function Jornada({
               </div>
             );
           })}
+        </div>
+
+        {/* Configurações — dados pessoais, notificações, sair (seção 9) */}
+        <div onClick={() => ir(S.PF)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+          <div style={{ fontSize: 20 }}>⚙️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Perfil e Configurações</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Meus dados, objetivos, notificações, sair da conta</div>
+          </div>
+          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
         </div>
 
         {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
