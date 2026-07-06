@@ -10884,6 +10884,11 @@ const VIDS = {
 
 function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  const [catSel, setCatSel] = useState("aulas");
+ const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
+ const ytEmbed = (url) => {
+ const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1];
+ return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1` : null;
+  };
  const [showConvite, setShowConvite] = useState(false);
  if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
 
@@ -11121,7 +11126,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  return (
           <div
  key={v.id}
- onClick={() => !bloqVideo && v.url && window.open(v.url, "_blank")}
+ onClick={() => !bloqVideo && v.url && setVideoAberto(v)}
  style={{
  background: `rgba(28,26,23,.04)`,
  border: `1px solid ${C.ouro}12`,
@@ -11186,6 +11191,43 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
           </div>
           );
         })}
+
+        {/* Player interno — o vídeo toca dentro do app (sem ir ao YouTube) */}
+        {videoAberto && (
+          <div onClick={() => setVideoAberto(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.creme, paddingRight: 10 }}>
+                  {videoAberto.titulo}
+                </div>
+                <button onClick={() => setVideoAberto(null)}
+                  style={{ background: "none", border: `1px solid ${C.creme}66`, borderRadius: "50%", width: 34, height: 34, color: C.creme, fontSize: 16, cursor: "pointer", flexShrink: 0 }}>
+                  ✕
+                </button>
+              </div>
+              <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", borderRadius: 14, overflow: "hidden" }}>
+                {ytEmbed(videoAberto.url) ? (
+                  <iframe
+                    src={ytEmbed(videoAberto.url)}
+                    title={videoAberto.titulo}
+                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+                  />
+                ) : (
+                  <video src={videoAberto.url} controls autoPlay playsInline
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+                )}
+              </div>
+              {videoAberto.dur && (
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `${C.creme}AA`, marginTop: 8 }}>
+                  {videoAberto.dur}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Grain>
     </div>
   );
