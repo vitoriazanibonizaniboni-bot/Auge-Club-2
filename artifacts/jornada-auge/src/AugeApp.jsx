@@ -11926,6 +11926,9 @@ function Perfil({
   const [pfC, setPfC] = useState(kitPessoa?.fone || "");
   const [editFraseC, setEditFraseC] = useState(false);
   const [ffC, setFfC] = useState(fraseFoco || "");
+  const [senhaNova, setSenhaNova] = useState("");
+  const [senhaMsg, setSenhaMsg] = useState(null);
+  const [salvandoSenha, setSalvandoSenha] = useState(false);
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(usuario?.nome || "");
   const [emailEdit, setEmailEdit] = useState(usuario?.email || "");
@@ -12144,8 +12147,8 @@ function Perfil({
       {editando && (
         <div
           style={{
-            background: `${C.obs2}`,
-            borderBottom: `1px solid ${C.ouro}12`,
+            background: C.linho,
+            borderBottom: `1px solid ${C.ouro}25`,
             padding: "20px 20px 24px",
             animation: "fadeUp .25s ease",
           }}
@@ -12185,7 +12188,7 @@ function Perfil({
                 background: "transparent",
                 border: "none",
                 borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
-                color: C.branco,
+                color: C.obs,
                 fontFamily: FS,
                 fontSize: 16,
                 fontWeight: 300,
@@ -12216,7 +12219,7 @@ function Perfil({
                 background: "transparent",
                 border: "none",
                 borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
-                color: C.branco,
+                color: C.obs,
                 fontFamily: FS,
                 fontSize: 16,
                 fontWeight: 300,
@@ -12227,6 +12230,42 @@ function Perfil({
           <BtnPill onClick={salvarEdicao} style={{ opacity: editOk ? 1 : 0.4 }}>
             Salvar alterações
           </BtnPill>
+
+          {/* Alterar senha */}
+          <div style={{ marginTop: 22 }}>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.8)`, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>
+              Alterar senha
+            </div>
+            <input
+              type="password"
+              value={senhaNova}
+              onChange={(e) => { setSenhaNova(e.target.value); setSenhaMsg(null); }}
+              placeholder="Nova senha (mínimo 6 caracteres)"
+              style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`, color: C.obs, fontFamily: FS, fontSize: 16, fontWeight: 300, padding: "6px 0", marginBottom: 12 }}
+            />
+            {senhaMsg && (
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: senhaMsg.ok ? C.ouroDk : "#A32D2D", marginBottom: 10 }}>
+                {senhaMsg.txt}
+              </div>
+            )}
+            <button
+              onClick={async () => {
+                if (senhaNova.length < 6) { setSenhaMsg({ ok: false, txt: "A senha precisa ter pelo menos 6 caracteres." }); return; }
+                setSalvandoSenha(true);
+                const { error } = await supabase.auth.updateUser({ password: senhaNova });
+                setSalvandoSenha(false);
+                if (error) {
+                  setSenhaMsg({ ok: false, txt: error.message.includes("different") ? "A nova senha precisa ser diferente da atual." : "Não deu pra trocar agora. Tente de novo em instantes." });
+                } else {
+                  setSenhaNova("");
+                  setSenhaMsg({ ok: true, txt: "Senha alterada com sucesso 💛" });
+                }
+              }}
+              style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroDk, cursor: "pointer", opacity: salvandoSenha ? 0.5 : 1 }}
+            >
+              {salvandoSenha ? "Alterando..." : "Alterar senha"}
+            </button>
+          </div>
         </div>
       )}
       <Grain style={{ padding: "18px 18px 32px" }}>
