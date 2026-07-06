@@ -10697,13 +10697,6 @@ function Emergencia({
 }) {
   // Kit de Emergência v2 (seção 4.9) — acionamento sempre manual:
   // só conta como usado quando a aluna ESCOLHE uma ação aqui dentro.
- const [editMin, setEditMin] = useState(false);
- const [tm, setTm] = useState(kitMin);
- const [editPessoa, setEditPessoa] = useState(false);
- const [pn, setPn] = useState(kitPessoa?.nome || "");
- const [pf, setPf] = useState(kitPessoa?.fone || "");
- const [editFrase, setEditFrase] = useState(false);
- const [ff, setFf] = useState(fraseFoco || "");
  const [usou, setUsou] = useState(null); // ação escolhida hoje
 
  const usar = (acao, msg) => {
@@ -10762,19 +10755,9 @@ function Emergencia({
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>
  Se não vai dar pra fazer tudo, vamos de mínimos possíveis.
           </div>
-          {!editMin ? (
-            <div onClick={() => { setTm(kitMin); setEditMin(true); }} style={{ fontFamily: FS, fontSize: 15, color: C.obs, lineHeight: 1.6, cursor: "pointer" }}>
-              {kitMin || "Toque para definir seu mínimo (ex: caminhar 10 minutos)"} <span style={{ fontSize: 10, color: C.lt }}></span>
-            </div>
-          ) : (
-            <div>
-              <textarea value={tm} onChange={(e) => setTm(e.target.value)}
- placeholder="ex: caminhar 10 minutos, não 30"
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 14, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
-              <button onClick={() => { setKitMin(tm); syncDB("kit_emergencia", { min_viavel: tm }, { onConflict: "user_id" }); setEditMin(false); tk("Mínimo salvo "); }}
- style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
-            </div>
-          )}
+          <div style={{ fontFamily: FS, fontSize: 15, color: C.obs, lineHeight: 1.6 }}>
+            {kitMin || "Seu mínimo de emergência ainda não foi definido — ajuste nas Configurações."}
+          </div>
           {usou === "minimos" ? (
             <div style={{ fontFamily: FB, fontSize: 11, color: C.ouroDk, marginTop: 10 }}>✓ Registrado — mínimo é suficiente.</div>
           ) : (
@@ -10784,27 +10767,15 @@ function Emergencia({
 
         {/* 3 · Pessoa de Referência — rede pessoal, via WhatsApp (seção 4.9) */}
         <Sec label="Sua Pessoa de Referência">
-          {!editPessoa ? (
-            <div>
-              <div style={{ fontFamily: FS, fontSize: 16, color: C.obs }}>
-                {kitPessoa?.nome || "Ninguém cadastrada ainda"}
-              </div>
-              <div onClick={() => { setPn(kitPessoa?.nome || ""); setPf(kitPessoa?.fone || ""); setEditPessoa(true); }}
- style={{ fontFamily: FB, fontWeight: 300, fontSize: 10.5, color: C.lt, marginTop: 3, cursor: "pointer", textDecoration: "underline" }}>
- toque para trocar
-              </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <div style={{ width: 38, height: 38, borderRadius: "50%", background: `${C.ouro}45`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FB, fontWeight: 500, fontSize: 15, color: C.obs2, flexShrink: 0 }}>
+              {(kitPessoa?.nome || "?").slice(0, 1).toUpperCase()}
             </div>
-          ) : (
-            <div>
-              <input value={pn} onChange={(e) => setPn(e.target.value)} placeholder="Nome"
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 13, color: C.obs, marginBottom: 7 }} />
-              <input value={pf} onChange={(e) => setPf(e.target.value)} placeholder="WhatsApp com DDD (ex: 48 99999-9999)"
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 13, color: C.obs, marginBottom: 8 }} />
-              <button onClick={() => { salvarKitPessoal({ pessoa_nome: pn.trim(), pessoa_fone: pf.trim() }); setEditPessoa(false); tk("Pessoa de Referência salva "); }}
- style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            <div style={{ flex: 1, fontFamily: FS, fontSize: 16, color: C.obs }}>
+              {kitPessoa?.nome || "Ninguém cadastrada ainda — ajuste nas Configurações"}
             </div>
-          )}
-          {waLink && !editPessoa && (
+          </div>
+          {waLink && (
             <button onClick={() => { usar("pessoa", "Falar ajuda. Sempre."); window.open(waLink, "_blank"); }}
  style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: C.branco, cursor: "pointer", marginTop: 12 }}>
  Chamar · abre no WhatsApp
@@ -11632,10 +11603,14 @@ function Perfil({
  notifStatus,
  setNotifStatus,
  tk,
+ kitMin,
+ setKitMin,
 }) {
   // ── Configurações (seção 9): fonte única de dados, múltiplos pontos de entrada ──
  const [editAnc, setEditAnc] = useState(false);
  const [ancE, setAncE] = useState(anc);
+ const [editMinC, setEditMinC] = useState(false);
+ const [tmC, setTmC] = useState("");
  const [editPessoaC, setEditPessoaC] = useState(false);
  const [pnC, setPnC] = useState(kitPessoa?.nome || "");
  const [pfC, setPfC] = useState(kitPessoa?.fone || "");
@@ -12052,6 +12027,27 @@ function Perfil({
 
         {/* Objetivos dos hábitos (Mínimos Viáveis) — mesma fonte da Hoje e do Meu Mapa */}
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
+
+        {/* Mínimo de emergência (Kit) */}
+        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.terra, marginBottom: 6 }}>Mínimos Viáveis do Kit de Emergência</div>
+          {!editMinC ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, fontFamily: FS, fontSize: 14, color: kitMin ? C.obs : C.lt, lineHeight: 1.5 }}>
+                {kitMin || "Ainda não definido (ex: caminhar 10 minutos, não 30)"}
+              </div>
+              <button onClick={() => { setTmC(kitMin || ""); setEditMinC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 12, color: C.ouroDk, cursor: "pointer" }}>Editar</button>
+            </div>
+          ) : (
+            <div>
+              <textarea value={tmC} onChange={(e) => setTmC(e.target.value)}
+                placeholder="ex: caminhar 10 minutos, não 30"
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 14, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
+              <button onClick={() => { setKitMin(tmC); syncDB("kit_emergencia", { min_viavel: tmC }, { onConflict: "user_id" }); setEditMinC(false); tk("Mínimo do Kit salvo"); }}
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            </div>
+          )}
+        </div>
 
         {/* Pessoa de Referência (Kit de Emergência) */}
         <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
