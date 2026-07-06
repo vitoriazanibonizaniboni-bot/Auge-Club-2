@@ -8994,32 +8994,6 @@ function Jornada({
         {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
 
-        {/* Guia dos Hábitos Angulares — mesmo desbloqueio por calendário (seção 7) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontSize: 15.5, fontWeight: 500, color: C.obs, marginBottom: 2 }}>
- Guia dos Hábitos Angulares
-          </div>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginBottom: 8 }}>
- Material de apoio de cada hábito
-          </div>
-          {HABS_FIXOS.map((h) => {
- const bloq = sem < h.unlock;
- return (
-              <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "9px 0", opacity: bloq ? 0.6 : 1 }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: C.ouro, display: "inline-block", flexShrink: 0 }} />
-                <div style={{ flex: 1, fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.obs2 }}>
- Guia de {h.nome}
-                </div>
-                {bloq ? (
-                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FB, fontSize: 10.5, color: C.ouroDk }}>{IcoH.cadeado(C.ouroDk, 13)} Semana {h.unlock}</span>
-                ) : (
-                  <span onClick={() => ir(S.CT)} style={{ fontFamily: FB, fontSize: 10.5, color: C.ouroDk, cursor: "pointer", textDecoration: "underline" }}>abrir</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
         {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
         <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
@@ -10918,7 +10892,7 @@ const VIDS = {
   ],
 };
 
-function Conteudo({ perfil, videos: videosDB }) {
+function Conteudo({ perfil, videos: videosDB, sem }) {
  const [catSel, setCatSel] = useState("aulas");
  const [showConvite, setShowConvite] = useState(false);
  if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
@@ -11040,6 +11014,36 @@ function Conteudo({ perfil, videos: videosDB }) {
       </div>
 
       <Grain style={{ padding: "14px 16px 24px" }}>
+        {/* Guia dos Hábitos Angulares — arquivos HTML, desbloqueio S1/S5/S9 (seção 7) */}
+        <div style={{ background: C.branco, border: `1px solid ${C.ouro}25`, borderRadius: 16, padding: "16px 17px", marginBottom: 16 }}>
+          <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 15.5, color: C.obs, marginBottom: 2 }}>
+            Guia dos Hábitos Angulares
+          </div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11.5, color: C.lt, marginBottom: 8 }}>
+            Material de apoio de cada hábito
+          </div>
+          {HABS_FIXOS.map((h) => {
+            const bloq = sem < h.unlock;
+            return (
+              <div
+                key={h.id}
+                onClick={() => !bloq && window.open(`${import.meta.env.BASE_URL}guias/${h.id}.html`, "_blank")}
+                style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", opacity: bloq ? 0.55 : 1, cursor: bloq ? "default" : "pointer" }}
+              >
+                {IcoH[h.id](C.terra, 17)}
+                <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2 }}>
+                  Guia de {h.nome}
+                </div>
+                {bloq ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FB, fontSize: 10.5, color: C.ouroDk }}>{IcoH.cadeado(C.ouroDk, 13)} Semana {h.unlock}</span>
+                ) : (
+                  <span style={{ fontFamily: FB, fontSize: 12, color: C.ouroDk }}>abrir ›</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
         {/* Título da categoria selecionada */}
         <div
  style={{
