@@ -9269,6 +9269,15 @@ function Jornada({
           })}
         </div>
 
+        {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
+        <div onClick={() => ir(S.ESC)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+          <div style={{ fontSize: 20 }}>✍️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Espaços de escrita</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Vitórias, Âncora, Porquês e Carta para o Futuro</div>
+          </div>
+          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+        </div>
         {/* Configurações — dados pessoais, notificações, sair (seção 9) */}
         <div onClick={() => ir(S.PF)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ fontSize: 20 }}>⚙️</div>
@@ -9279,15 +9288,6 @@ function Jornada({
           <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
         </div>
 
-        {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
-        <div onClick={() => ir(S.ESC)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
-          <div style={{ fontSize: 20 }}>✍️</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Espaços de escrita</div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Vitórias, Âncora, Porquês e Carta para o Futuro</div>
-          </div>
-          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
-        </div>
       </Grain>
     </div>
   );
