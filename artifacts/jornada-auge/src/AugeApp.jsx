@@ -1050,7 +1050,7 @@ function Cab({ titulo, voltar, acao, destino }) {
           fontSize: 17,
           fontWeight: 300,
           letterSpacing: "0.12em",
-          color: C.linho,
+          color: C.obs,
           textAlign: "center",
         }}
       >
@@ -2908,7 +2908,7 @@ function Onboarding({ onConcluir }) {
           fontFamily: FS,
           fontSize: 24,
           fontWeight: 300,
-          color: C.linho,
+          color: C.obs,
           marginTop: 24,
           marginBottom: 6,
           textAlign: "center",
@@ -2956,7 +2956,7 @@ function Onboarding({ onConcluir }) {
             background: "transparent",
             border: "none",
             borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
-            color: C.branco,
+            color: C.obs,
             fontFamily: FS,
             fontSize: 17,
             fontWeight: 300,
@@ -2991,7 +2991,7 @@ function Onboarding({ onConcluir }) {
             background: "transparent",
             border: "none",
             borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
-            color: C.branco,
+            color: C.obs,
             fontFamily: FS,
             fontSize: 17,
             fontWeight: 300,
@@ -3073,7 +3073,7 @@ function ModalTermos({ onAceitar, onFechar }) {
               fontSize: 17,
               fontWeight: 300,
               letterSpacing: "0.08em",
-              color: C.linho,
+              color: C.obs,
             }}
           >
             Termos de Uso
@@ -3280,7 +3280,7 @@ function TelaAuth({ onAuth }) {
     background: "transparent",
     border: "none",
     borderBottom: `1px solid rgba(28,26,23,.82)`,
-    color: C.branco,
+    color: C.obs,
     fontFamily: FB,
     fontWeight: 300,
     fontSize: 16,
@@ -3315,7 +3315,7 @@ function TelaAuth({ onAuth }) {
             fontFamily: FS,
             fontSize: 20,
             fontWeight: 300,
-            color: C.linho,
+            color: C.obs,
             marginTop: 24,
             marginBottom: 8,
           }}
@@ -3422,7 +3422,7 @@ function TelaAuth({ onAuth }) {
             fontFamily: FS,
             fontSize: 20,
             fontWeight: 300,
-            color: C.linho,
+            color: C.obs,
             marginTop: 16,
             marginBottom: 6,
             textAlign: "center",
@@ -3669,7 +3669,7 @@ function TelaAuth({ onAuth }) {
           fontFamily: FS,
           fontSize: 22,
           fontWeight: 300,
-          color: C.linho,
+          color: C.obs,
           marginTop: 20,
           marginBottom: 8,
           textAlign: "center",
@@ -3973,7 +3973,7 @@ function DefinirHabitos({ onSalvar }) {
               background: "transparent",
               border: "none",
               borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
-              color: C.branco,
+              color: C.obs,
               fontFamily: FS,
               fontSize: 17,
               fontWeight: 300,
@@ -6200,7 +6200,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     borderRadius: "50%",
                     width: 32,
                     height: 32,
-                    color: C.branco,
+                    color: C.obs,
                     fontSize: 16,
                     cursor: "pointer",
                   }}
@@ -6378,7 +6378,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       padding: "8px 12px",
                       fontSize: 15,
                       fontFamily: FB,
-                      color: C.branco,
+                      color: C.obs,
                     }}
                   />
                   <button
@@ -6481,7 +6481,7 @@ function Novo({ back, postTreino }) {
             padding: "12px 14px",
             fontSize: 16,
             fontFamily: FB,
-            color: C.branco,
+            color: C.obs,
             resize: "none",
             height: 72,
             lineHeight: 1.65,
@@ -8019,7 +8019,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
             fontSize: 15,
             fontFamily: FB,
             fontWeight: 300,
-            color: C.branco,
+            color: C.obs,
           }}
         />
         <button
@@ -8978,7 +8978,7 @@ function Jornada({
             fontSize: 18,
             fontWeight: 300,
             letterSpacing: "0.1em",
-            color: C.linho,
+            color: C.obs,
           }}
         >
           Jornada AUGE
@@ -11745,7 +11745,7 @@ function PainelMentora({ ir }) {
                       value={formV[field]}
                       onChange={(e) => setFormV((f) => ({ ...f, [field]: e.target.value }))}
                       placeholder={ph}
-                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "6px 0" }}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "6px 0" }}
                     />
                   </div>
                 ))}
@@ -11804,7 +11804,7 @@ function PainelMentora({ ir }) {
                   value={ment[field]}
                   onChange={(e) => setMent((m) => ({ ...m, [field]: e.target.value }))}
                   placeholder={ph}
-                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "7px 0" }}
+                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "7px 0" }}
                 />
               </div>
             ))}
@@ -12567,7 +12567,7 @@ function PrefRadar({ authUserId }) {
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex: Florianópolis"
-            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.45)`, color: C.branco, fontFamily: FB, fontWeight: 300, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
+            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.45)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
           />
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
@@ -12669,7 +12669,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
               background: "transparent",
               border: "none",
               borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(28,26,23,.45)"}`,
-              color: C.branco,
+              color: C.obs,
               fontFamily: FS,
               fontSize: 16,
               fontWeight: 300,
