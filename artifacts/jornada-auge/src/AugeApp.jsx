@@ -1493,7 +1493,26 @@ export default function App() {
         tempo: { freq: m.tsi_freq ?? 3, desc: m.tsi_desc || "" },
       });
     } else {
-      setMetas({});
+      // Primeira vez na v2: aproveita os hábitos escolhidos no cadastro antigo
+      // como objetivo personalizado dos cards (a aluna pode editar depois).
+      const pOld = profileRes?.data;
+      const antigos = [pOld?.habito_1, pOld?.habito_2, pOld?.habito_3].filter(Boolean);
+      const achar = (kws) =>
+        antigos.find((t) => kws.some((k) => t.toLowerCase().includes(k))) || "";
+      const movDesc = achar(["caminh", "trein", "exerc", "moviment", "muscula", "pilates", "yoga", "danç", "danc", "nad", "corr", "along", "pedal", "academia"]);
+      const sonoDesc = achar(["sono", "dormir", "tela", "celular", "deitar", "acordar", "noite"]);
+      const tsiDesc = achar(["tempo", "ler", "leitura", "medita", "escrev", "hobby", "respir", "autocuidado", "diário", "diario", "só me", "so me"]);
+      setMetas({
+        movimento: { freq: 3, desc: movDesc },
+        sono: { freq: 7, desc: sonoDesc },
+        tempo: { freq: 3, desc: tsiDesc },
+      });
+      if (movDesc || sonoDesc || tsiDesc) {
+        supabase.from("habitos_metas").upsert(
+          { user_id: userId, mov_desc: movDesc, sono_desc: sonoDesc, tsi_desc: tsiDesc },
+          { onConflict: "user_id" },
+        ).then(() => {});
+      }
     }
     if (regsRes?.data) {
       const r = {};
