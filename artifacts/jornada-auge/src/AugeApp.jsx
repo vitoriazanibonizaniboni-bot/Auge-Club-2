@@ -10,7 +10,7 @@ const C = {
   obs: "#1C1A17",
   obs2: "#2E2825",
   mid: "#5A4B43",
-  lt: "#9C8880",
+  lt: "#6E5B50",
   ouro: "#C4A882",
   ouroDk: "#A8865A",
   ouroLt: "#EAD8B8",
@@ -1584,6 +1584,9 @@ export default function App() {
       }
     }
 
+    if (!checkinsRes.data?.length) {
+      setCkOk(false);
+    }
     if (checkinsRes.data?.length) {
       const hist = {};
       for (const c of checkinsRes.data) {
@@ -1594,10 +1597,14 @@ export default function App() {
         };
       }
       setHist(hist);
-      // Sincronizar ckOk com o checkin de hoje vindo do Supabase
+      // Sincronizar ckOk com o checkin de hoje vindo do Supabase.
+      // Fonte de verdade é o banco: sem check-in de hoje, o dia está aberto
+      // (evita "Dia fechado" herdado do aparelho ao trocar de conta).
       const hoje = localDateStr();
       if (hist[hoje] && (hist[hoje].feitos > 0 || hist[hoje].retomada)) {
         setCkOk(true);
+      } else {
+        setCkOk(false);
       }
       // Sincroniza hábitos marcados e chips de hoje entre aparelhos
       const cHoje = checkinsRes.data.find((c) => c.data === hoje);
@@ -1807,6 +1814,11 @@ export default function App() {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    // limpa o estado do dia guardado no aparelho (não pertence à próxima conta)
+    setCkOk(false);
+    setHabF({});
+    setChips([]);
+    setNotas("");
     setAuthUser(null);
     setPerfil(null);
     setUsuario(null);
@@ -2562,9 +2574,9 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
             <div
               style={{
                 fontFamily: FB,
-                fontWeight: 300,
-                fontSize: 8,
-                letterSpacing: "0.14em",
+                fontWeight: 400,
+                fontSize: 9.5,
+                letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 color: aba === t.id ? C.ouro : C.lt,
                 transition: "color .2s",
@@ -2605,7 +2617,7 @@ function LegendaCores({ onFechar }) {
   return (
     <div
       onClick={onFechar}
-      style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.35)", display: "flex", alignItems: "flex-end" }}
+      style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.72)", display: "flex", alignItems: "flex-end" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -2955,7 +2967,7 @@ function Onboarding({ onConcluir }) {
             width: "100%",
             background: "transparent",
             border: "none",
-            borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
+            borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.65)"}`,
             color: C.obs,
             fontFamily: FS,
             fontSize: 17,
@@ -2990,7 +3002,7 @@ function Onboarding({ onConcluir }) {
             width: "100%",
             background: "transparent",
             border: "none",
-            borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
+            borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.65)"}`,
             color: C.obs,
             fontFamily: FS,
             fontSize: 17,
@@ -3972,7 +3984,7 @@ function DefinirHabitos({ onSalvar }) {
               width: "100%",
               background: "transparent",
               border: "none",
-              borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
+              borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(28,26,23,.65)"}`,
               color: C.obs,
               fontFamily: FS,
               fontSize: 17,
@@ -3996,7 +4008,7 @@ function DefinirHabitos({ onSalvar }) {
             fontFamily: FB,
             fontWeight: 300,
             fontSize: 13,
-            color: "rgba(28,26,23,.4)",
+            color: "rgba(28,26,23,.65)",
             lineHeight: 1.65,
           }}
         >
@@ -4254,7 +4266,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       <div style={{ background: `rgba(28,26,23,.03)`, border: `1px dashed ${C.ouro}44`, borderRadius: 12, padding: "16px 15px", marginBottom: 12, display: "flex", alignItems: "center", gap: 13, opacity: 0.75 }}>
         <div style={{ fontSize: 22 }}>{h.ic}</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: FS, fontSize: 17, fontWeight: 300, color: `rgba(28,26,23,.55)` }}>{h.nome}</div>
+          <div style={{ fontFamily: FS, fontSize: 17, fontWeight: 300, color: `rgba(28,26,23,.72)` }}>{h.nome}</div>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginTop: 2 }}>
             Desbloqueia na Semana {h.unlock}
           </div>
@@ -4390,7 +4402,7 @@ function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, 
     return d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "short" });
   };
   return (
-    <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.35)", display: "flex", alignItems: "flex-end" }}>
+    <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.72)", display: "flex", alignItems: "flex-end" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 20px 34px", maxHeight: "80%", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: C.obs }}>Registrar dias anteriores</div>
@@ -4652,7 +4664,7 @@ function Home({
       return { bg: C.ouroDk, tc: C.branco, bo: `2px solid ${C.ouro}` };
     return {
       bg: "transparent",
-      tc: `rgba(28,26,23,.45)`,
+      tc: `rgba(28,26,23,.65)`,
       bo: `1px solid ${C.ouro}12`,
     };
   };
@@ -4709,7 +4721,7 @@ function Home({
             marginTop: 4,
             fontFamily: FB,
             fontWeight: 400,
-            fontSize: 10,
+            fontSize: 11.5,
             color: C.ouroDk,
             letterSpacing: "0.35em",
             textTransform: "uppercase",
@@ -5257,7 +5269,7 @@ function Home({
                         fontFamily: FB,
                         fontWeight: 300,
                         fontSize: 14,
-                        color: s ? C.ouro : `rgba(28,26,23,.4)`,
+                        color: s ? C.ouro : `rgba(28,26,23,.65)`,
                       }}
                     >
                       {c.l}
@@ -5572,7 +5584,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
       {/* Filtro Todas / Minhas */}
       <div style={{ background: C.creme, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: filtro === id ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer" }}>
+          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: filtro === id ? C.ouro : `rgba(28,26,23,.65)`, cursor: "pointer" }}>
             {label}
           </button>
         ))}
@@ -6018,7 +6030,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                               background: "none",
                               border: "none",
                               cursor: "pointer",
-                              color: `rgba(28,26,23,.5)`,
+                              color: `rgba(28,26,23,.7)`,
                               fontSize: 13,
                               padding: "2px 4px",
                               flexShrink: 0,
@@ -6051,7 +6063,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                               <span style={{ fontWeight: 500, fontSize: 11, color: C.terra }}>{r.q} · </span>{r.t}
                             </div>
                             {r.cid && r.userId === authUserId && (
-                              <button onClick={() => setConfirmaComent({ postId: p.id, cid: r.cid })} style={{ background: "none", border: "none", cursor: "pointer", color: `rgba(28,26,23,.4)`, fontSize: 11, flexShrink: 0 }}>🗑️</button>
+                              <button onClick={() => setConfirmaComent({ postId: p.id, cid: r.cid })} style={{ background: "none", border: "none", cursor: "pointer", color: `rgba(28,26,23,.65)`, fontSize: 11, flexShrink: 0 }}>🗑️</button>
                             )}
                           </div>
                         ))}
@@ -6353,7 +6365,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: `rgba(28,26,23,.5)`,
+                          color: `rgba(28,26,23,.7)`,
                           fontSize: 13,
                           padding: "2px 4px",
                           flexShrink: 0,
@@ -7622,7 +7634,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
             width: 76,
             height: 76,
             borderRadius: "50%",
-            background: `rgba(28,26,23,.45)`,
+            background: `rgba(28,26,23,.65)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -8889,7 +8901,7 @@ function MinimosViaveis({ metas, habStats, salvarMeta, tk }) {
       <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 2 }}>
         📏 Mínimos Viáveis
       </div>
-      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginBottom: 10 }}>
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginBottom: 10 }}>
         A meta específica de cada hábito — editável por você, a qualquer momento
       </div>
       {HABS_FIXOS.map((h) => {
@@ -9184,7 +9196,7 @@ function Jornada({
           <div style={{ fontSize: 20 }}>🎯</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Questionário de Perfil AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Preenchido uma vez, antes da S1</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>Preenchido uma vez, antes da S1</div>
           </div>
           <div style={{ background: `${C.ouro}20`, border: `1px solid ${C.ouro}66`, borderRadius: 20, padding: "4px 12px", fontFamily: FB, fontWeight: 400, fontSize: 10, color: C.ouroDk }}>
             {perfilAuge ? `Perfil: ${perfilAuge}` : "✓ feito"}
@@ -9196,9 +9208,9 @@ function Jornada({
           <div style={{ fontSize: 20 }}>⭕</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Roda AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>5 dimensões · 25 perguntas · aplicada na S1, S6 e S12</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>5 dimensões · 25 perguntas · aplicada na S1, S6 e S12</div>
           </div>
-          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+          <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
 
         {/* Âncora de Identidade — editável a qualquer momento */}
@@ -9209,7 +9221,7 @@ function Jornada({
               <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Âncora de Identidade</div>
               <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12.5, color: C.terra, marginTop: 3 }}>"{anc}"</div>
             </div>
-            <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+            <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
           </div>
         </div>
 
@@ -9219,7 +9231,7 @@ function Jornada({
             <div style={{ fontSize: 20 }}>🧭</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Bússola</div>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: bussola ? C.terra : `rgba(28,26,23,.45)`, marginTop: 3, lineHeight: 1.5 }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: bussola ? C.terra : `rgba(28,26,23,.65)`, marginTop: 3, lineHeight: 1.5 }}>
                 {bussola || "Sua direção concreta — definida no Encontro Individual 1"}
               </div>
             </div>
@@ -9232,11 +9244,11 @@ function Jornada({
             <div style={{ fontSize: 20 }}>💭</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Porquês</div>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>
                 {[pq1, pq2, pq3].filter(Boolean).length > 0 ? [pq1, pq2, pq3].filter(Boolean).join(" · ") : "Os seus motivos, capturados no Encontro Individual 1"}
               </div>
             </div>
-            <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+            <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
           </div>
         </div>
 
@@ -9248,7 +9260,7 @@ function Jornada({
           <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 2 }}>
             📖 Guia dos Hábitos Angulares
           </div>
-          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginBottom: 8 }}>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginBottom: 8 }}>
             Material de apoio de cada hábito
           </div>
           {HABS_FIXOS.map((h) => {
@@ -9274,18 +9286,18 @@ function Jornada({
           <div style={{ fontSize: 20 }}>✍️</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Espaços de escrita</div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Vitórias, Âncora, Porquês e Carta para o Futuro</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>Vitórias, Âncora, Porquês e Carta para o Futuro</div>
           </div>
-          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+          <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
         {/* Configurações — dados pessoais, notificações, sair (seção 9) */}
         <div onClick={() => ir(S.PF)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, padding: "13px 15px", marginBottom: 9, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ fontSize: 20 }}>⚙️</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FS, fontSize: 16, fontWeight: 300, color: `rgba(28,26,23,.95)` }}>Perfil e Configurações</div>
-            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.55)`, marginTop: 3 }}>Meus dados, objetivos, notificações, sair da conta</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>Meus dados, objetivos, notificações, sair da conta</div>
           </div>
-          <div style={{ color: `rgba(28,26,23,.45)`, fontSize: 16 }}>›</div>
+          <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
 
       </Grain>
@@ -9700,7 +9712,7 @@ function Roda({
             const n = notas[d];
             const dc =
               n === null
-                ? { c: `rgba(28,26,23,.45)` }
+                ? { c: `rgba(28,26,23,.65)` }
                 : n <= 3.9
                   ? { c: C.atencao }
                   : n <= 6.9
@@ -10240,7 +10252,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
 
         {/* detalhe do dia — sob demanda (seção 5.1) */}
         {diaSel && (
-          <div onClick={() => setDiaSel(null)} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.35)", display: "flex", alignItems: "flex-end" }}>
+          <div onClick={() => setDiaSel(null)} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.72)", display: "flex", alignItems: "flex-end" }}>
             <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 22px 34px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div style={{ fontFamily: FS, fontSize: 19, fontWeight: 300, color: C.obs, textTransform: "capitalize" }}>
@@ -10280,11 +10292,11 @@ function Calendario({ back, historico, dataCadastro }) {
 
   const rdCor = (dataStr) => {
     const d = historico[dataStr];
-    if (!d) return { bg: "transparent", tc: `rgba(28,26,23,.45)`, bo: `1px solid ${C.ouro}10` };
+    if (!d) return { bg: "transparent", tc: `rgba(28,26,23,.65)`, bo: `1px solid ${C.ouro}10` };
     if (d.retomada) return { bg: `${C.blush}40`, tc: C.blush, bo: "none" };
     if (d.total > 0 && d.feitos === d.total) return { bg: C.ouro, tc: C.obs, bo: "none" };
     if (d.feitos > 0) return { bg: `${C.ouroLt}30`, tc: C.ouroDk, bo: `1.5px solid ${C.ouro}` };
-    return { bg: "transparent", tc: `rgba(28,26,23,.45)`, bo: `1px solid ${C.ouro}10` };
+    return { bg: "transparent", tc: `rgba(28,26,23,.65)`, bo: `1px solid ${C.ouro}10` };
   };
 
   // Barras de semanas baseadas em checkins reais
@@ -10328,7 +10340,7 @@ function Calendario({ back, historico, dataCadastro }) {
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase" }}>
             {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
           </div>
-          <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? `rgba(28,26,23,.5)` : `rgba(28,26,23,.15)`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
+          <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? `rgba(28,26,23,.7)` : `rgba(28,26,23,.15)`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 16 }}>
           {["D","S","T","Q","Q","S","S"].map((d, i) => (
@@ -11340,8 +11352,8 @@ function Conteudo({ perfil, videos: videosDB }) {
                     color: ativa
                       ? C.ouro
                       : bloq
-                        ? `rgba(28,26,23,.45)`
-                        : `rgba(28,26,23,.45)`,
+                        ? `rgba(28,26,23,.65)`
+                        : `rgba(28,26,23,.65)`,
                     lineHeight: 1.3,
                   }}
                 >
@@ -11497,7 +11509,7 @@ function Conteudo({ perfil, videos: videosDB }) {
                   fontFamily: FB,
                   fontWeight: 300,
                   fontSize: 12,
-                  color: bloqCat ? C.ouro : `rgba(28,26,23,.45)`,
+                  color: bloqCat ? C.ouro : `rgba(28,26,23,.65)`,
                 }}
               >
                 {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
@@ -11711,7 +11723,7 @@ function PainelMentora({ ir }) {
       {/* Abas */}
       <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.creme }}>
         {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["alunas", "Alunas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 14, color: aba === id ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer", transition: "all .2s" }}>
+          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 14, color: aba === id ? C.ouro : `rgba(28,26,23,.65)`, cursor: "pointer", transition: "all .2s" }}>
             {label}
           </button>
         ))}
@@ -11754,7 +11766,7 @@ function PainelMentora({ ir }) {
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {CATS_ADMIN.map((cat) => (
                       <button key={cat.id} onClick={() => setFormV((f) => ({ ...f, categoria: cat.id }))}
-                        style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: formV.categoria === cat.id ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer" }}>
+                        style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: formV.categoria === cat.id ? C.ouro : `rgba(28,26,23,.65)`, cursor: "pointer" }}>
                         {cat.label}
                       </button>
                     ))}
@@ -11873,7 +11885,7 @@ function PainelMentora({ ir }) {
                           })}
                         </div>
                       )}
-                      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.4)` }}>
+                      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.65)` }}>
                         {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
                         {a.v2 ? ` · Kit usado ${a.v2.kitTotal}x` : ""}
                         {a.v2?.progressoes?.length ? ` · ${a.v2.progressoes.length} ajuste(s) de meta` : ""}
@@ -12187,7 +12199,7 @@ function Perfil({
                 width: "100%",
                 background: "transparent",
                 border: "none",
-                borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
+                borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.65)"}`,
                 color: C.obs,
                 fontFamily: FS,
                 fontSize: 16,
@@ -12218,7 +12230,7 @@ function Perfil({
                 width: "100%",
                 background: "transparent",
                 border: "none",
-                borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.45)"}`,
+                borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.65)"}`,
                 color: C.obs,
                 fontFamily: FS,
                 fontSize: 16,
@@ -12241,7 +12253,7 @@ function Perfil({
               value={senhaNova}
               onChange={(e) => { setSenhaNova(e.target.value); setSenhaMsg(null); }}
               placeholder="Nova senha (mínimo 6 caracteres)"
-              style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : "rgba(28,26,23,.45)"}`, color: C.obs, fontFamily: FS, fontSize: 16, fontWeight: 300, padding: "6px 0", marginBottom: 12 }}
+              style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : "rgba(28,26,23,.65)"}`, color: C.obs, fontFamily: FS, fontSize: 16, fontWeight: 300, padding: "6px 0", marginBottom: 12 }}
             />
             {senhaMsg && (
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: senhaMsg.ok ? C.ouroDk : "#A32D2D", marginBottom: 10 }}>
@@ -12356,7 +12368,7 @@ function Perfil({
                         fontWeight: 300,
                         fontSize: 11,
                         color: ok
-                          ? `rgba(28,26,23,.45)`
+                          ? `rgba(28,26,23,.65)`
                           : `rgba(28,26,23,.15)`,
                         marginTop: 4,
                         lineHeight: 1.4,
@@ -12567,14 +12579,14 @@ function PrefRadar({ authUserId }) {
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex: Florianópolis"
-            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.45)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
+            style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.65)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
           />
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
             {INTERESSES.map((i) => {
               const s = sels.includes(i);
               return (
-                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: s ? C.ouro : `rgba(28,26,23,.4)`, cursor: "pointer" }}>
+                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 300, fontSize: 14, color: s ? C.ouro : `rgba(28,26,23,.65)`, cursor: "pointer" }}>
                   {i}
                 </button>
               );
@@ -12668,7 +12680,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
               width: "100%",
               background: "transparent",
               border: "none",
-              borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(28,26,23,.45)"}`,
+              borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(28,26,23,.65)"}`,
               color: C.obs,
               fontFamily: FS,
               fontSize: 16,
