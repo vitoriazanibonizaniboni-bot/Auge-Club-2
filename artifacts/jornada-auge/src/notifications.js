@@ -72,9 +72,9 @@ export async function scheduleAll(diasSemCheckin = 0) {
   // Gatilho 2 — Ritual de Sexta (toda sexta às 17h)
   schedule["g2_sexta"] = {
     title: "Clube do Auge",
-    body: "Mais uma semana concluída na sua construção de longevidade. Qual foi a sua pequena vitória desses últimos dias, por menor que pareça? Entre no app e registre.",
+    body: "Hoje é sexta. Que tal comemorar a sua vitória da semana contando pra gente? Compartilhe no Mural do 1% — por menor que pareça, ela conta.",
     fireAt: nextWeekdayAt(5, 17),
-    url: BASE + "/?open=escritas-vitorias",
+    url: BASE + "/?open=mural",
     repeat: "weekly",
   };
 

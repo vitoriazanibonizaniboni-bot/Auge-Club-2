@@ -1181,7 +1181,7 @@ export default function App() {
   );
  const [kitMin, setKitMin] = useLocalStorage("auge_kitMin", "");
  const [kitApoio, setKitApoio] = useLocalStorage("auge_kitApoio", "");
- const [escT, setEscT] = useState("vitorias");
+ const [escT, setEscT] = useState("ancora");
  const [vit, setVit] = useLocalStorage("auge_vit", []);
  const [historico, setHist] = useLocalStorage("auge_historico", {});
   // Hábitos angulares personalizados — persistidos entre sessões
@@ -2093,9 +2093,8 @@ export default function App() {
  if (param === "retomada") {
  ir(S.RET);
     }
- if (param === "escritas-vitorias") {
- setEscT("vitorias");
- ir(S.ESC);
+ if (param === "mural" || param === "escritas-vitorias") {
+ ir(S.FEED);
     }
  if (param === "home") {
  ir(S.HOME);
@@ -4755,26 +4754,6 @@ function Home({
  position: "relative",
         }}
       >
-        {Array.from({ length: 18 }, (_, i) => ({
- w: i % 4 === 0 ? 2 : 1,
- op: 0.06 + ((i * 31) % 60) / 1000,
- l: ((i * 59 + 11) % 96) + 2,
- t: ((i * 41 + 5) % 90) + 5,
-        })).map((s, i) => (
-          <div
- key={i}
- style={{
- position: "absolute",
- width: s.w,
- height: s.w,
- borderRadius: "50%",
- background: C.ouro,
- opacity: s.op,
- left: `${s.l}%`,
- top: `${s.t}%`,
-            }}
-          />
-        ))}
         {/* Semana da Jornada + Configurações + legenda (seções 4.1, 3.4 e 9) */}
         <div
  onClick={() => ir(S.PF)}
@@ -5109,17 +5088,6 @@ function Home({
           </div>
         )}
 
-        {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
-        {passo === 0 && ehSexta && !vitSemOk && (
-          <VitoriaSemana
- habStats={habStats}
- sem={sem}
- segundaAtual={segundaAtual}
- postTreino={postTreino}
- tk={tk}
- onFechar={() => setVitSemOk(true)}
-          />
-        )}
 
         {/* Cards dos 3 hábitos angulares (seção 4.2) */}
         {passo === 0 && (
@@ -10117,7 +10085,6 @@ function Escritas({
           }}
         >
           {[
-            ["vitorias", "Vitórias"],
             ["ancora", "Âncora"],
             ["porques", "Porquês"],
             ["carta", "Carta"],
