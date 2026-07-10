@@ -209,156 +209,36 @@ const HAB = {
 const FEED0 = [];
 
 const RODA_Q = [
-  {
- id: 1,
- dim: "Energia",
- tipo: "f",
- q: "Acordo com disposição e energia para começar o dia.",
-  },
-  {
- id: 2,
- dim: "Energia",
- tipo: "f",
- q: "Tenho energia suficiente para cumprir minhas obrigações sem me sentir esgotada no fim do dia.",
-  },
-  {
- id: 3,
- dim: "Energia",
- tipo: "f",
- q: "Me movimento ou pratico alguma atividade física durante a semana.",
-  },
-  {
- id: 4,
- dim: "Energia",
- tipo: "f",
- q: "Durmo e acordo em horários regulares.",
-  },
-  {
- id: 5,
- dim: "Energia",
- tipo: "f",
- q: "Consigo descansar de verdade quando preciso, sem culpa ou ansiedade.",
-  },
-  {
- id: 6,
- dim: "Consciência",
- tipo: "c",
- q: "Sei identificar o que me drena energia e o que me renova.",
-  },
-  {
- id: 7,
- dim: "Consciência",
- tipo: "c",
- q: "Conheço meus padrões de sabotagem: o que me faz desistir quando começo algo.",
-  },
-  {
- id: 8,
- dim: "Consciência",
- tipo: "c",
- q: "Consigo nomear o que quero para os próximos anos da minha vida.",
-  },
-  {
- id: 9,
- dim: "Consciência",
- tipo: "c",
- q: "Me percebo mudando com o tempo e aceito isso sem tanto sofrimento.",
-  },
-  {
- id: 10,
- dim: "Consciência",
- tipo: "c",
- q: "Consigo diferenciar o que é meu do que são expectativas dos outros sobre mim.",
-  },
-  {
- id: 11,
- dim: "Organização",
- tipo: "f",
- q: "Sei quais são minhas prioridades da semana antes de ela começar.",
-  },
-  {
- id: 12,
- dim: "Organização",
- tipo: "f",
- q: "Cumpro o que me comprometo a fazer por mim mesma.",
-  },
-  {
- id: 13,
- dim: "Organização",
- tipo: "f",
- q: "Tenho ao menos um momento na semana dedicado exclusivamente a mim.",
-  },
-  {
- id: 14,
- dim: "Organização",
- tipo: "f",
- q: "Quando a rotina desmorona, consigo retomar sem esperar o momento perfeito.",
-  },
-  {
- id: 15,
- dim: "Organização",
- tipo: "f",
- q: "Distribuo minhas tarefas de forma que não me sobrecarregue num único dia.",
-  },
-  {
- id: 16,
- dim: "Autocuidado",
- tipo: "f",
- q: "Faço refeições com qualidade, sem pular nenhuma ao longo do dia.",
-  },
-  {
- id: 17,
- dim: "Autocuidado",
- tipo: "f",
- q: "Bebo água com regularidade durante o dia.",
-  },
-  {
- id: 18,
- dim: "Autocuidado",
- tipo: "f",
- q: "Tenho algum ritual de cuidado pessoal que faço por mim, não por obrigação.",
-  },
-  {
- id: 19,
- dim: "Autocuidado",
- tipo: "f",
- q: "Vou a consultas médicas e exames de rotina sem precisar ser lembrada.",
-  },
-  {
- id: 20,
- dim: "Autocuidado",
- tipo: "f",
- q: "Dedico tempo ao que me dá prazer fora das obrigações do trabalho e da família.",
-  },
-  {
- id: 21,
- dim: "Protagonismo",
- tipo: "c",
- q: "Sinto que tenho controle sobre as escolhas que definem minha vida.",
-  },
-  {
- id: 22,
- dim: "Protagonismo",
- tipo: "c",
- q: "Quando algo não está bem, busco ativamente mudar em vez de esperar.",
-  },
-  {
- id: 23,
- dim: "Protagonismo",
- tipo: "c",
- q: "Me permito colocar minhas necessidades como prioridade sem me sentir egoísta.",
-  },
-  {
- id: 24,
- dim: "Protagonismo",
- tipo: "c",
- q: "Acredito que o melhor da minha vida ainda está por vir.",
-  },
-  {
- id: 25,
- dim: "Protagonismo",
- tipo: "c",
- q: "Tomo decisões sobre minha saúde e bem-estar sem depender da aprovação de outros.",
-  },
+  // Energia — frequência
+  { id: 1, dim: "Energia", tipo: "f", pol: "+", q: "Acordo com vontade de começar o dia." },
+  { id: 2, dim: "Energia", tipo: "f", pol: "-", q: "Deixei de fazer algo que gosto porque estava cansada demais." },
+  { id: 3, dim: "Energia", tipo: "f", pol: "-", q: "Preciso de café ou algum estímulo só pra conseguir encarar o dia." },
+  { id: 4, dim: "Energia", tipo: "f", pol: "+", q: "Tenho energia sobrando pra fazer algo além do obrigatório do dia." },
+  { id: 5, dim: "Energia", tipo: "f", pol: "-", q: "Chego no fim do dia sem fôlego pra mais nada, nem pra mim." },
+  // Consciência — identificação
+  { id: 6, dim: "Consciência", tipo: "i", pol: "-", q: "Exercício físico não é pra mim, nunca foi." },
+  { id: 7, dim: "Consciência", tipo: "i", pol: "-", q: "Sou preguiçosa quando o assunto é minha própria rotina." },
+  { id: 8, dim: "Consciência", tipo: "i", pol: "+", q: "Sei que manter um hábito tem mais a ver com estrutura do que com força de vontade." },
+  { id: 9, dim: "Consciência", tipo: "i", pol: "+", q: "Acredito que consigo mudar, mesmo já tendo tentado várias vezes e falhado." },
+  { id: 10, dim: "Consciência", tipo: "i", pol: "-", q: "Quando falho, acho que o problema sou eu, não a falta de um método." },
+  // Organização — frequência
+  { id: 11, dim: "Organização", tipo: "f", pol: "-", q: "Fui dormir tarde porque fiquei resolvendo pendências de casa ou do trabalho." },
+  { id: 12, dim: "Organização", tipo: "f", pol: "-", q: "Pulei o movimento porque não deu tempo." },
+  { id: 13, dim: "Organização", tipo: "f", pol: "-", q: "Deixei de fazer algo só pra mim (unha, cabelo, ver uma amiga) porque a rotina não deixou." },
+  { id: 14, dim: "Organização", tipo: "f", pol: "-", q: "Cancelei um compromisso meu pra resolver algo de outra pessoa." },
+  { id: 15, dim: "Organização", tipo: "f", pol: "+", q: "Consigo reservar um tempo da semana que é só meu, sem compromisso de ninguém." },
+  // Autocuidado — identificação
+  { id: 16, dim: "Autocuidado", tipo: "i", pol: "-", q: "Não lembro a última vez que fiz algo só por prazer, sem culpa." },
+  { id: 17, dim: "Autocuidado", tipo: "i", pol: "+", q: "Consigo aproveitar um momento só meu sem ficar pensando em tudo que eu deveria estar fazendo." },
+  { id: 18, dim: "Autocuidado", tipo: "i", pol: "-", q: "Cancelo comigo mesma com muito mais facilidade do que cancelo com os outros." },
+  { id: 19, dim: "Autocuidado", tipo: "i", pol: "-", q: "Minhas vontades vêm depois das de todo mundo, quase sempre." },
+  { id: 20, dim: "Autocuidado", tipo: "i", pol: "+", q: "Quando defino um limite pra mim, eu me mantenho nele." },
+  // Protagonismo — identificação
+  { id: 21, dim: "Protagonismo", tipo: "i", pol: "-", q: "Meus dias me atropelam, eu não escolho o ritmo deles." },
+  { id: 22, dim: "Protagonismo", tipo: "i", pol: "-", q: "Perdi a confiança em mim depois de tantas tentativas que não deram certo." },
+  { id: 23, dim: "Protagonismo", tipo: "i", pol: "-", q: "Já tentei de tudo e não continuei, o problema sou eu." },
+  { id: 24, dim: "Protagonismo", tipo: "i", pol: "+", q: "Sei dizer não pro que não serve mais pra mim, mesmo que isso decepcione alguém." },
+  { id: 25, dim: "Protagonismo", tipo: "i", pol: "+", q: "Tomo as decisões da minha vida, não deixo a vida decidir por mim." },
 ];
 const DIMS = [
  "Energia",
@@ -367,17 +247,44 @@ const DIMS = [
  "Autocuidado",
  "Protagonismo",
 ];
+
+// Textos da tela de resultado da Roda AUGE (spec interna, sem CTA de venda)
+const RODA_TXT = {
+ zona: {
+ atencao: "Pelo que você respondeu, várias dessas dores não são exceção na sua rotina, são o normal do seu dia a dia. Isso não é falta de força de vontade. É a ausência de um método construído pra vida real que você tem, não pra vida ideal que você não tem.",
+ dev: "Você já tem alguma base, mas vive alternando entre dias em que consegue e dias em que tudo desmorona, e isso cansa mais do que nunca ter tentado. O que falta não é começar de novo, é sustentar o que você já construiu e saber voltar rápido quando cai.",
+ auge: "Você está numa fase mais estruturada do que a maioria das mulheres que respondem esse teste, mas só você sabe o quanto ainda oscila por dentro. Consolidar o que já é seu, sem depender só de disciplina, é o que separa uma fase boa de uma transformação que dura.",
+  },
+ forte: {
+ "Energia": "Energia não é o seu maior problema hoje, e isso é uma base rara pra construir em cima. Quando o corpo já tem gás, fica muito mais fácil sustentar um hábito novo sem depender só de força de vontade.",
+ "Consciência": "Você já entende que constância tem mais a ver com estrutura do que com força de vontade. Isso é raro, e é exatamente o ponto de partida que a Jornada usa pra te levar além.",
+ "Organização": "Você já consegue proteger algum espaço da semana só pra você, isso é raro. A Jornada existe pra ampliar esse espaço, não te fazer começar do zero.",
+ "Autocuidado": "Você já sabe aproveitar um momento seu sem culpa. Isso vale muito, e a Jornada ajuda a sustentar isso mesmo nas semanas em que a vida não colabora.",
+ "Protagonismo": "Você já toma as decisões da sua vida em vez de deixar a vida decidir por você. Essa é a base que sustenta o resto da Jornada.",
+  },
+ atencao: {
+ "Energia": "Energia é a base de tudo, sem ela, até a vontade de tentar de novo cansa. Isso não é falta de disposição, é o corpo pedindo um recomeço estruturado. O hábito angular de Movimento existe justamente pra isso: o mínimo que devolve energia, não o máximo que esgota ainda mais.",
+ "Consciência": "Você carrega crenças travadas sobre quem você é e o que consegue manter (não sou disciplinada, não é pra mim). Isso não é verdade sobre você, é resultado de tentar sem método. Vale trazer isso pro seu próximo encontro.",
+ "Organização": "Sua agenda ainda está cheia de todo mundo, menos de você (dormir tarde resolvendo pendência, pular o movimento por falta de tempo, deixar de fazer o que é seu porque a rotina não deixa). Isso se resolve organizando a semana ao redor de você antes dos outros, o que a gente já começou a construir no seu plano de ação.",
+ "Autocuidado": "Você cancela compromissos com você mesma com mais facilidade do que com qualquer outro, e sente culpa quando para. É exatamente esse padrão que o Kit de Emergência e a Âncora de Identidade existem pra quebrar, vale revisitar os dois essa semana.",
+ "Protagonismo": "Seus dias ainda te atropelam, e é fácil achar que o problema é você. Não é. É a ausência de um protocolo pra quando as coisas saem do combinado. Esse é o momento de usar o Protocolo de Retomada em vez de recomeçar do zero.",
+  },
+ equilibrado: "Seu resultado está bem distribuído entre as 5 áreas, não é uma coisa isolada que está pesando, é o conjunto.",
+ fechamento: "Essa é a sua fotografia de hoje. Guarda esse resultado, você vai revisitar ele na próxima aplicação da Roda AUGE pra ver com os próprios olhos o que já se moveu. Se quiser, leva o que mais te chamou atenção aqui pro seu próximo encontro, é esse tipo de coisa que a gente usa pra ajustar o seu plano.",
+};
 const OFREQ = [
-  { l: "Nunca", v: 0 },
-  { l: "Às vezes", v: 3.33 },
-  { l: "Quase sempre", v: 6.67 },
-  { l: "Sempre", v: 10 },
+  { l: "Nunca", v: 1 },
+  { l: "Raramente", v: 2 },
+  { l: "Às vezes", v: 3 },
+  { l: "Frequentemente", v: 4 },
+  { l: "Sempre", v: 5 },
 ];
-const OCONC = [
-  { l: "Discordo totalmente", v: 0 },
-  { l: "Discordo", v: 3.33 },
-  { l: "Concordo", v: 6.67 },
-  { l: "Concordo totalmente", v: 10 },
+const OIDENT = [
+  { l: "Não me identifico nada", v: 1 },
+  { l: "Quase nada", v: 2 },
+  { l: "Mais ou menos", v: 3 },
+  { l: "Bastante", v: 4 },
+  { l: "Isso sou eu", v: 5 },
 ];
 const CAL_D = {
   1: "f",
@@ -2016,14 +1923,16 @@ export default function App() {
  DIMS.map((d) => {
  const ps = RODA_Q.filter((p) => p.dim === d);
  const vs = ps
-          .map((p) => rodaR[p.id])
-          .filter((v) => v !== null && v !== undefined);
- return [
- d,
- vs.length
-            ? +(vs.reduce((a, b) => a + b, 0) / vs.length).toFixed(1)
-            : null,
-        ];
+          .map((p) => {
+ const r = rodaR[p.id];
+ if (r === null || r === undefined) return null;
+ return p.pol === "-" ? 6 - r : r;
+          })
+          .filter((v) => v !== null);
+ if (!vs.length) return [d, null];
+ const media = vs.reduce((a, b) => a + b, 0) / vs.length;
+ const final = (media - 1) * 2.5;
+ return [d, +final.toFixed(1)];
       }),
     );
  const zc = (n) =>
@@ -9067,7 +8976,7 @@ function Roda({
  const canvasRef = useRef(null);
  const chartRef = useRef(null);
  const perg = RODA_Q[rodaI];
- const opts = perg?.tipo === "f" ? OFREQ : OCONC;
+ const opts = perg?.tipo === "f" ? OFREQ : OIDENT;
 
  const resp = (v) => {
  setRodaR((r) => ({ ...r, [perg.id]: v }));
@@ -9266,10 +9175,7 @@ function Roda({
  if (fase === "perguntas" && perg) {
  const posInDim =
  RODA_Q.filter((p, i) => i < rodaI && p.dim === perg.dim).length + 1;
- const skipTxt =
- perg.tipo === "f"
-        ? "Isso não faz parte da minha rotina"
-        : "Não consigo avaliar agora";
+ const skipTxt = "Não consigo avaliar";
  return (
       <Grain style={{ minHeight: 760, animation: "fadeUp .35s ease" }}>
         <div style={{ padding: "1.5rem 1.25rem" }}>
@@ -9502,6 +9408,35 @@ function Roda({
             );
           })}
         </div>
+        {(() => {
+ const dimsN = DIMS.filter((d) => notas[d] !== null);
+ if (!dimsN.length) return null;
+ const ordN = [...dimsN].sort((a, b) => notas[b] - notas[a]);
+ const maxN = notas[ordN[0]];
+ const minN = notas[ordN[ordN.length - 1]];
+ const fortes = dimsN.filter((d) => notas[d] === maxN);
+ const fracas = dimsN.filter((d) => notas[d] === minN);
+ const equilibrado = maxN - minN < 1.5;
+ const zonaTxt = ind == null ? "" : ind <= 3.9 ? RODA_TXT.zona.atencao : ind <= 6.9 ? RODA_TXT.zona.dev : RODA_TXT.zona.auge;
+ const pStyle = { fontFamily: FB, fontWeight: 300, fontSize: 14, color: "rgba(28,26,23,.85)", lineHeight: 1.7, marginBottom: 14 };
+ const tStyle = (c) => ({ fontFamily: FB, fontWeight: 400, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: c, marginBottom: 6, marginTop: 4 });
+ return (
+            <div style={{ marginBottom: "1.2rem" }}>
+              {zonaTxt && <div style={pStyle}>{zonaTxt}</div>}
+              {equilibrado ? (
+                <div style={pStyle}>{RODA_TXT.equilibrado}</div>
+              ) : (
+                <>
+                  <div style={tStyle(C.augeZ)}>Seu ponto forte hoje</div>
+                  {fortes.map((d) => (<div key={d} style={pStyle}><b style={{ fontWeight: 500 }}>{d}. </b>{RODA_TXT.forte[d]}</div>))}
+                  <div style={tStyle(C.terra)}>O que mais pede atenção agora</div>
+                  {fracas.map((d) => (<div key={d} style={pStyle}><b style={{ fontWeight: 500 }}>{d}. </b>{RODA_TXT.atencao[d]}</div>))}
+                </>
+              )}
+              <div style={{ ...pStyle, fontStyle: "italic", fontFamily: FS, fontSize: 15, color: `rgba(28,26,23,.9)` }}>{RODA_TXT.fechamento}</div>
+            </div>
+          );
+        })()}
         <div
  style={{
  borderLeft: `1px solid ${C.ouro}44`,
