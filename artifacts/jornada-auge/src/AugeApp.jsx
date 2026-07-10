@@ -8789,7 +8789,7 @@ const PA_FECHA = "Independente do perfil que aparecer agora, uma coisa não muda
 const PA_NOTA = "Nenhum perfil é fixo. Ele é um retrato do momento atual, não uma identidade permanente. Podemos mudar e evoluir, e esse é justamente o objetivo.";
 
 const PA_Q = [
-  { t: "Se eu perco o movimento de segunda, faço na terça, sem me cobrar por isso.", p: "constru" },
+  { t: "Se eu perco o exercício de segunda, faço na terça, sem me cobrar por isso.", p: "constru" },
   { t: "Quando começo uma rotina nova, sigo à risca por semanas, mas se um imprevisto quebra a sequência, eu simplesmente paro de vez.", p: "montanha" },
   { t: "Se não tenho os 45 minutos completos pra me movimentar, prefiro não fazer nada.", p: "tudonada" },
   { t: "Se alguém da minha família precisa de mim, largo meus compromissos e prioridades na hora.", p: "ultima" },
@@ -8810,7 +8810,7 @@ const PERFIS = {
   constru: {
     nome: "A Construtora", base: "Flexível Ótimo",
     frase: "Quando algo não funciona, eu mudo o método. Não desisto dele.",
-    quem: "Você é o tipo que a maioria das mulheres 40+ gostaria de ser. Consegue começar sozinha, e quando a semana desanda, você ajusta o plano em vez de abandonar tudo. Perdeu o movimento de segunda? Se movimenta terça, sem se cobrar por isso. Você não é perfeita, mas tem uma flexibilidade que segura o hábito mesmo quando a vida atravessa no meio do caminho.",
+    quem: "Você é o tipo que a maioria das mulheres 40+ gostaria de ser. Consegue começar sozinha, e quando a semana desanda, você ajusta o plano em vez de abandonar tudo. Perdeu o exercício de segunda? Faz na terça, sem se cobrar por isso. Você não é perfeita, mas tem uma flexibilidade que segura o hábito mesmo quando a vida atravessa no meio do caminho.",
     fortes: ["Autoconfiança realista, construída em cima de resultado, não de discurso", "Flexibiliza o plano sem perder o rumo", "Aprende rápido com o próprio erro, sem se punir por ele", "Sustenta hábitos complexos por longos períodos"],
     desafios: ["Pode achar que não precisa de ajuda e demorar a pedir suporte quando realmente precisa", "Tende a virar o ponto de apoio de todo mundo ao redor e esquecer de olhar pra si", "Corre o risco de estagnar dentro do que já funciona, sem buscar o próximo nível"],
     quando: "Quando você vira o pilar de sustentação de todo mundo ao seu redor e esquece de se priorizar, porque você dá conta. Dar conta pode virar desculpa pra sumir da própria lista.",
