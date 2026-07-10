@@ -8875,8 +8875,52 @@ function MinimosViaveis({ metas, habStats, salvarMeta, tk }) {
   );
 }
 
+// ─── Mini resultado da Roda AUGE (Meu Mapa) — mostra a roda preenchida + comparação ──
+function RodaResumo({ rodaResultados = [] }) {
+ const ORDEM = ["S1", "S6", "S12"];
+ const momsSalvos = ORDEM.filter((m) => rodaResultados.some((r) => r.momento === m));
+ const [mSel, setMSel] = useState(momsSalvos[momsSalvos.length - 1] || null);
+ const canvasRef = useRef(null);
+ const chartRef = useRef(null);
+ const atual = rodaResultados.find((r) => r.momento === mSel);
+ useEffect(() => {
+ if (!atual || !canvasRef.current) return;
+ const vals = [atual.nota_energia, atual.nota_consciencia, atual.nota_organizacao, atual.nota_autocuidado, atual.nota_protagonismo].map((v) => (v == null ? 0 : v));
+ const draw = () => {
+ const ctx = canvasRef.current?.getContext("2d");
+ if (!ctx || !window.Chart) return;
+ if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+ chartRef.current = new window.Chart(ctx, {
+ type: "radar",
+ data: { labels: DIMS, datasets: [{ data: vals, backgroundColor: "rgba(196,168,130,0.12)", borderColor: "#C4A882", borderWidth: 1.5, pointBackgroundColor: "#C4A882", pointRadius: 3 }] },
+ options: { responsive: false, scales: { r: { min: 0, max: 10, ticks: { display: false }, grid: { color: "rgba(90,75,67,0.3)" }, angleLines: { color: "rgba(90,75,67,0.3)" }, pointLabels: { color: "rgba(90,75,67,0.6)", font: { size: 9, family: "sans-serif" } } } }, plugins: { legend: { display: false } } },
+      });
+    };
+ if (window.Chart) draw();
+ else { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"; sc.onload = draw; document.head.appendChild(sc); }
+ return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [mSel, atual]);
+ if (!momsSalvos.length || !atual) return null;
+ const idx = momsSalvos.indexOf(mSel);
+ const ind = atual.indice_auge;
+ const z = ind == null ? null : ind <= 3.9 ? { l: "Zona de Atenção", c: C.atencao } : ind <= 6.9 ? { l: "Zona de Desenvolvimento", c: C.dev } : { l: "Zona de Auge", c: C.augeZ };
+ return (
+    <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "14px 16px 18px", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 2 }}>
+        <button onClick={() => idx > 0 && setMSel(momsSalvos[idx - 1])} disabled={idx <= 0} style={{ background: "none", border: "none", color: idx > 0 ? C.terra : `${C.terra}33`, fontSize: 20, cursor: idx > 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>‹</button>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: C.ouroDk }}>Roda AUGE · {mSel}</div>
+        <button onClick={() => idx < momsSalvos.length - 1 && setMSel(momsSalvos[idx + 1])} disabled={idx >= momsSalvos.length - 1} style={{ background: "none", border: "none", color: idx < momsSalvos.length - 1 ? C.terra : `${C.terra}33`, fontSize: 20, cursor: idx < momsSalvos.length - 1 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
+      </div>
+      <div style={{ textAlign: "center", fontFamily: FS, fontSize: 40, fontWeight: 300, color: C.ouro, lineHeight: 1.1 }}>{ind != null ? ind.toFixed(1) : "—"}</div>
+      {z && <div style={{ textAlign: "center", fontFamily: FB, fontWeight: 300, fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: z.c, marginBottom: 4 }}>{z.l}</div>}
+      <div style={{ display: "flex", justifyContent: "center" }}><canvas ref={canvasRef} width={220} height={220} /></div>
+    </div>
+  );
+}
+
 function Jornada({
  sem,
+ rodaResultados = [],
  hDia,
  feitos,
  ckOk,
@@ -8975,6 +9019,7 @@ function Jornada({
           </div>
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
+        <RodaResumo rodaResultados={rodaResultados} />
 
         {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
@@ -9919,14 +9964,6 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
         <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, lineHeight: 1.6 }}>
  Mais claro = menos hábitos no dia<br />Mais escuro = mais hábitos no dia
         </div>
-        <button onClick={() => setLegenda(true)}
-          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
-          {Ico.info(C.ouroDk)} O que as cores significam
-        </button>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12, color: C.lt, marginTop: 14, textAlign: "center" }}>
- Pequeno, repetido e infinito. Qualquer cor é uma vitória.
-        </div>
-
         {/* ── Calendário mensal — heatmap 0–3 (seção 5.1) ── */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
@@ -9959,6 +9996,14 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
               </div>
             );
           })}
+        </div>
+
+        <button onClick={() => setLegenda(true)}
+          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
+          {Ico.info(C.ouroDk)} O que as cores significam
+        </button>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12, color: C.lt, marginTop: 14, textAlign: "center" }}>
+ Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
 
         <div style={{ borderTop: `1px solid ${C.ouro}30`, margin: "6px 0 14px", paddingTop: 14, fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.ouroDk, textAlign: "center" }}>
