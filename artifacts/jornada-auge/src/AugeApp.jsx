@@ -10709,6 +10709,7 @@ const CATS = [
   { id: "meditacoes", icon: "", label: "Meditações", lock: false, cor: "#1E2E2A" },
   { id: "yoga", icon: "", label: "Aulas de yoga", lock: false, cor: "#1E2820" },
   { id: "curadoria", icon: "", label: "Curadoria de livros, séries e filmes", lock: false, cor: "#1E252E" },
+  { id: "artigos", icon: "", label: "Artigos", lock: false, cor: "#2A2320" },
 ];
 // vídeos antigos do banco continuam aparecendo: mapeamento de categorias legadas
 const CAT_LEGADO = {
@@ -10716,6 +10717,7 @@ const CAT_LEGADO = {
  meditacoes: ["meditacoes", "meditacao"],
  yoga: ["yoga"],
  curadoria: ["curadoria"],
+ artigos: ["artigos"],
 };
 
 const VIDS = {
@@ -11077,7 +11079,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  return (
           <div
  key={v.id}
- onClick={() => !bloqVideo && v.url && setVideoAberto(v)}
+ onClick={() => !bloqVideo && v.url && (catSel === "artigos" ? window.open(v.url, "_blank", "noopener") : setVideoAberto(v))}
  style={{
  background: `rgba(28,26,23,.04)`,
  border: `1px solid ${C.ouro}12`,
@@ -11101,7 +11103,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  color: `rgba(28,26,23,.82)`,
               }}
             >
-              {bloqVideo ? "" : "▶"}
+              {bloqVideo ? "" : (catSel === "artigos" ? "↗" : "▶")}
             </div>
             <div style={{ padding: "11px 13px", flex: 1 }}>
               <div
@@ -11136,7 +11138,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  color: bloqCat ? C.ouro : `rgba(28,26,23,.65)`,
                 }}
               >
-                {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
+                {bloqCat ? "Exclusivo Jornada AUGE" : (catSel === "artigos" ? "Ler artigo ›" : v.dur)}
               </div>
             </div>
           </div>
@@ -11194,6 +11196,7 @@ const CATS_ADMIN = [
   { id: "meditacoes", label: "Meditações" },
   { id: "yoga", label: "Aulas de yoga" },
   { id: "curadoria", label: "Curadoria (livros, séries e filmes)" },
+  { id: "artigos", label: "Artigos (links)" },
 ];
 
 function PainelMentora({ ir }) {
@@ -11422,13 +11425,20 @@ function PainelMentora({ ir }) {
             {/* Formulário de novo vídeo */}
             {mostrarForm && (
               <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>Novo vídeo</div>
-                {[
-                  ["Título", "titulo", "Ex: Yoga para mobilidade"],
-                  ["Link do YouTube", "url", "https://youtube.com/watch?v=..."],
-                  ["Duração", "duracao", "Ex: 30 min"],
-                  ["Descrição (opcional)", "descricao", "Breve descrição da aula"],
-                ].map(([lb, field, ph]) => (
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>{formV.categoria === "artigos" ? "Novo artigo" : "Novo vídeo"}</div>
+                {(formV.categoria === "artigos"
+                  ? [
+                      ["Título", "titulo", "Ex: Como dormir melhor depois dos 40"],
+                      ["Link do artigo", "url", "https://..."],
+                      ["Descrição (opcional)", "descricao", "Breve resumo do artigo"],
+                    ]
+                  : [
+                      ["Título", "titulo", "Ex: Yoga para mobilidade"],
+                      ["Link do YouTube", "url", "https://youtube.com/watch?v=..."],
+                      ["Duração", "duracao", "Ex: 30 min"],
+                      ["Descrição (opcional)", "descricao", "Breve descrição da aula"],
+                    ]
+                ).map(([lb, field, ph]) => (
                   <div key={field} style={{ marginBottom: 14 }}>
                     <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>{lb}</div>
                     <input
@@ -11451,7 +11461,7 @@ function PainelMentora({ ir }) {
                   </div>
                 </div>
                 <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 15 }}>
-                  {salvandoV ? "Salvando..." : "Salvar vídeo"}
+                  {salvandoV ? "Salvando..." : (formV.categoria === "artigos" ? "Salvar artigo" : "Salvar vídeo")}
                 </BtnPill>
               </div>
             )}
