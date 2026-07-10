@@ -5089,6 +5089,18 @@ function Home({
         )}
 
 
+        {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
+        {passo === 0 && ehSexta && !vitSemOk && (
+          <VitoriaSemana
+ habStats={habStats}
+ sem={sem}
+ segundaAtual={segundaAtual}
+ postTreino={postTreino}
+ tk={tk}
+ onFechar={() => setVitSemOk(true)}
+          />
+        )}
+
         {/* Cards dos 3 hábitos angulares (seção 4.2) */}
         {passo === 0 && (
           <div>
