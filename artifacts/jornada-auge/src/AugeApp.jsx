@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { requestPermission, scheduleAll, clearAll } from "./notifications.js";
+import { requestPermission, scheduleAll, clearAll, initOneSignalNative } from "./notifications.js";
 import { supabase } from "./supabase.js";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
@@ -2021,6 +2021,9 @@ export default function App() {
  ir(S.HOME);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── OneSignal nativo (apps das lojas) — no-op no navegador
+ useEffect(() => { initOneSignalNative(); }, []);
 
   // ── Reagenda notificações sempre que diasSemTreino muda (ou permissão é concedida)
  useEffect(() => {

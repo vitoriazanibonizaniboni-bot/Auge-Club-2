@@ -35,6 +35,8 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function (OneSignal) {
+        // No app nativo (Capacitor) quem cuida do push é o plugin nativo do OneSignal
+        if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return;
         await OneSignal.init({
           appId: "c0ce93ea-ba72-44c1-abfe-367a510aed39",
         });

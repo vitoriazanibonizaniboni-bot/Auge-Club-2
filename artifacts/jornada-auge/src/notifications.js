@@ -96,3 +96,31 @@ export async function scheduleAll(diasSemCheckin = 0, nHab = 0) {
 export async function clearAll() {
   await postToSW({ type: "CLEAR_NOTIFICATIONS" });
 }
+
+
+// ─── ONESIGNAL NATIVO (Capacitor / apps das lojas) ───────────────────────────
+// Roda só dentro do app nativo. No navegador (PWA) o SDK web continua cuidando.
+const ONESIGNAL_APP_ID = "c0ce93ea-ba72-44c1-abfe-367a510aed39";
+export function initOneSignalNative() {
+  try {
+    const isNative = typeof window !== "undefined" && window.Capacitor &&
+      window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    if (!isNative) return;
+    const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
+    if (!OS || typeof OS.initialize !== "function") return;
+    OS.initialize(ONESIGNAL_APP_ID);
+    if (OS.Notifications && typeof OS.Notifications.requestPermission === "function") {
+      OS.Notifications.requestPermission(true);
+    }
+    // Ao tocar na notificação, abre o deep-link do app (?open=...)
+    if (OS.Notifications && typeof OS.Notifications.addEventListener === "function") {
+      OS.Notifications.addEventListener("click", (ev) => {
+        try {
+          const url = (ev && ev.notification && ev.notification.additionalData && ev.notification.additionalData.url) ||
+            (ev && ev.result && ev.result.url);
+          if (url) window.location.href = url;
+        } catch (e) {}
+      });
+    }
+  } catch (e) {}
+}
