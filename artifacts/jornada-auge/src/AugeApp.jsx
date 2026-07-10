@@ -545,17 +545,23 @@ const syncInsert = (table, data) => {
 // ─── IA ───────────────────────────────────────────────────────────────────────
 const iaCache = new Map();
 const callISA = async (msg) => {
- if (iaCache.has(msg)) return iaCache.get(msg);
+ // Garante a saudação correta para o horário local em TODA resposta da ISA
+ const _h = new Date().getHours();
+ const _per = _h >= 5 && _h < 12 ? "manhã" : _h >= 12 && _h < 18 ? "tarde" : "noite";
+ const _saud = _per === "manhã" ? "Bom dia" : _per === "tarde" ? "Boa tarde" : "Boa noite";
+ const _emo = _per === "manhã" ? "☀️" : _per === "tarde" ? "🌤️" : "🌙";
+ const msgP = `${msg}\n\n[HORÁRIO ATUAL: ${_per}. Se abrir com saudação, use OBRIGATORIAMENTE "${_saud}" e, se usar emoji de período, use ${_emo}. NUNCA diga "Bom dia" nem use ☀️ fora da manhã.]`;
+ if (iaCache.has(msgP)) return iaCache.get(msgP);
  try {
  const r = await fetch(`${import.meta.env.BASE_URL}api/isa`, {
  method: "POST",
  headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ message: msg }),
+ body: JSON.stringify({ message: msgP }),
     });
  const d = await r.json();
  const t =
  d.text || d.error || "Não consegui processar agora. Tente em instantes!";
- iaCache.set(msg, t);
+ iaCache.set(msgP, t);
  return t;
   } catch {
  return "Estou com dificuldade de conexão. Tente em instantes! ";
