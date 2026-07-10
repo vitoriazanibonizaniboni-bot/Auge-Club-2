@@ -2023,7 +2023,7 @@ export default function App() {
   // ── Reagenda notificações sempre que diasSemTreino muda (ou permissão é concedida)
  useEffect(() => {
  if (perfil === "jornada" && notifStatus === "granted") {
- scheduleAll(diasSemTreino < 0 ? 0 : diasSemTreino);
+ scheduleAll(diasSemTreino < 0 ? 0 : diasSemTreino, HABS_FIXOS.filter((h) => !habStats[h.id]?.bloqueado).length);
     }
  if (notifStatus !== "granted") {
  clearAll();
@@ -2631,6 +2631,12 @@ function LegendaCores({ onFechar }) {
         <div style={{ display: "flex", justifyContent: "space-between", width: 144, fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginBottom: 2 }}>
           <span>0</span>
           <span>3 hábitos</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: C.ouroDk, position: "relative", flexShrink: 0 }}>
+            <span style={{ position: "absolute", top: 1, right: 3, fontSize: 10, color: C.creme, fontFamily: FB }}>↺</span>
+          </div>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>Dia em que você acionou o Protocolo de Retomada</div>
         </div>
 
         <Titulo t="Na sua trajetória semanal" />
@@ -9541,7 +9547,7 @@ function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario
 // ═══════════════════════════════════════════════════════════════════
 // ABA TRAJETÓRIA (seção 5) — calendário mensal + trajetória semanal
 // ═══════════════════════════════════════════════════════════════════
-function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir }) {
+function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir }) {
  const hojeReal = new Date();
  const [offset, setOffset] = useState(0);
  const [legenda, setLegenda] = useState(false);
@@ -9655,17 +9661,21 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
  const ds = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
  const n = contaDia(ds);
  const isHoje = ds === todayStr;
+ const isRet = historico?.[ds]?.retomada;
+ const clic = n > 0 || isRet;
  return (
-              <div key={dia} onClick={() => n > 0 && setDiaSel(ds)} style={{
+              <div key={dia} onClick={() => clic && setDiaSel(ds)} style={{
+ position: "relative",
  aspectRatio: "1", borderRadius: 7,
- background: HEAT_CORES[Math.min(3, n)],
+ background: isRet ? C.ouroDk : HEAT_CORES[Math.min(3, n)],
  border: isHoje ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
  display: "flex", alignItems: "center", justifyContent: "center",
  fontSize: 10, fontFamily: FS, fontWeight: 300,
- color: n >= 3 ? C.creme : C.obs2,
- cursor: n > 0 ? "pointer" : "default",
+ color: isRet || n >= 3 ? C.creme : C.obs2,
+ cursor: clic ? "pointer" : "default",
               }}>
                 {dia}
+                {isRet && <span style={{ position: "absolute", top: 0, right: 2, fontSize: 8, color: C.creme, fontFamily: FB }}>↺</span>}
               </div>
             );
           })}

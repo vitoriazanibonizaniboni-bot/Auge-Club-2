@@ -53,16 +53,19 @@ async function postToSW(msg) {
 
 // ─── Agendar os 3 gatilhos ────────────────────────────────────────────────────
 // diasSemCheckin: calculado pelo app (diasSemTreino no estado global)
-export async function scheduleAll(diasSemCheckin = 0) {
+export async function scheduleAll(diasSemCheckin = 0, nHab = 0) {
   if (Notification.permission !== "granted") return;
 
   const schedule = {};
 
   // Gatilho 1 — Regra dos 2 Dias (às 20h, só quando ≥ 2 dias sem checkin)
   if (diasSemCheckin >= 2) {
+    const corpoRet = nHab > 1
+      ? `Você tem ${nHab} hábitos para retomar. Sem cobrança, um de cada vez. Bora voltar hoje?`
+      : "Tem um hábito te esperando pra retomar. Sem cobrança, no seu tempo. Bora voltar hoje?";
     schedule["g1_dois_dias"] = {
       title: "Clube do Auge",
-      body: "Dois dias. É agora. Não precisa ser perfeito. Precisa ser hoje. Toque aqui — você sabe o caminho.",
+      body: corpoRet,
       fireAt: nextDailyAt(20),
       url: BASE + "/?open=retomada",
       repeat: "daily",
