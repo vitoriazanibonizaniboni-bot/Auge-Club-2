@@ -47,6 +47,7 @@ const S = {
  CAL: "cal", // legado — redireciona para TRAJ
  TRAJ: "traj", // aba Trajetória (calendário mensal + trajetória semanal)
  ESC: "esc",
+ PAUGE: "pauge",
  EM: "em",
   // Diagnóstico
  DIAG: "diag",
@@ -84,6 +85,7 @@ const ABA_ORIGEM = {
   [S.CAL]: S.TRAJ,
   [S.TRAJ]: S.TRAJ,
   [S.ESC]: S.JOR,
+  [S.PAUGE]: S.JOR,
   [S.EM]: S.HOME,
   [S.CT]: S.CT,
   [S.PF]: S.HOME,
@@ -2216,6 +2218,7 @@ export default function App() {
  fraseFoco,
  bussola,
  perfilAuge,
+ setPerfilAuge,
  desafioTexto,
  desafioFeitos,
     guias,
@@ -2393,6 +2396,8 @@ export default function App() {
  return <Trajetoria {...ctx} />;
  case S.ESC:
  return <Escritas {...ctx} />;
+ case S.PAUGE:
+ return <PerfilAugeQ {...ctx} />;
  case S.EM:
  return <Emergencia {...ctx} />;
  case S.CT:
@@ -8777,6 +8782,195 @@ function RodaResumo({ rodaResultados = [] }) {
   );
 }
 
+
+// ─── QUESTIONÁRIO DE PERFIL AUGE (5 perfis, 15 afirmações) ────────────────────
+const PA_INTRO = "Antes de começar, uma coisa importante: não existe perfil certo ou errado aqui. Cada um tem seus pontos fortes e seus pontos de desafio, e provavelmente você vai se ver em mais de um. Responda pensando em como você realmente age hoje, não em como gostaria de agir.";
+const PA_FECHA = "Independente do perfil que aparecer agora, uma coisa não muda: você não é um resultado fixo. Esse é o seu jeito de lidar com hábitos hoje, não quem você vai ser daqui a 12 semanas. A gente não é estática, está sempre buscando a melhor versão de si e evoluindo. É exatamente por isso que você vai refazer esse teste lá na semana 6 e na semana 12, pra ver com os próprios olhos o quanto isso se move.";
+const PA_NOTA = "Nenhum perfil é fixo. Ele é um retrato do momento atual, não uma identidade permanente. Podemos mudar e evoluir, e esse é justamente o objetivo.";
+
+const PA_Q = [
+  { t: "Se eu perco o movimento de segunda, faço na terça, sem me cobrar por isso.", p: "constru" },
+  { t: "Quando começo uma rotina nova, sigo à risca por semanas, mas se um imprevisto quebra a sequência, eu simplesmente paro de vez.", p: "montanha" },
+  { t: "Se não tenho os 45 minutos completos pra me movimentar, prefiro não fazer nada.", p: "tudonada" },
+  { t: "Se alguém da minha família precisa de mim, largo meus compromissos e prioridades na hora.", p: "ultima" },
+  { t: "Compro o plano, marco a agenda, começo animada, mas em duas ou três semanas já perdi o interesse.", p: "comeca" },
+  { t: "Se pulo um dia da dieta, como qualquer coisa pelo resto da semana porque sinto que já estraguei tudo.", p: "tudonada" },
+  { t: "Eu me cobro sozinha. Não preciso que ninguém fique em cima de mim pra eu manter um compromisso comigo mesma.", p: "constru" },
+  { t: "Tenho aplicativo, plano, roupa de movimento guardados que usei só nos primeiros dias e depois esqueci.", p: "comeca" },
+  { t: "Mesmo sabendo que vai atrapalhar, é difícil dizer não pra uma sobremesa ou pra ficar mais uma hora no sofá em vez de fazer o que planejei.", p: "montanha" },
+  { t: "Eu remarco comigo mesma coisas que jamais remarcaria se fossem com outra pessoa.", p: "ultima" },
+  { t: "Depois de um tempo fazendo a mesma coisa, fico com vontade de trocar de método, de app ou de professor, mesmo que o que eu tenho esteja funcionando.", p: "comeca" },
+  { t: "Mesmo em semanas de viagem, imprevisto ou crise em casa, consigo manter pelo menos uma versão pequena do meu hábito.", p: "constru" },
+  { t: "Quando reservo um horário só pra mim, sinto que deveria estar usando aquele tempo pra resolver algo pra outra pessoa.", p: "ultima" },
+  { t: "Num dia ruim, prefiro não fazer nada do meu hábito a fazer uma versão mais fraca dele.", p: "tudonada" },
+  { t: "Depois de um mês de disciplina total, já passei semanas sem fazer absolutamente nada do meu hábito.", p: "montanha" },
+];
+
+const PERFIS = {
+  constru: {
+    nome: "A Construtora", base: "Flexível Ótimo",
+    frase: "Quando algo não funciona, eu mudo o método. Não desisto dele.",
+    quem: "Você é o tipo que a maioria das mulheres 40+ gostaria de ser. Consegue começar sozinha, e quando a semana desanda, você ajusta o plano em vez de abandonar tudo. Perdeu o movimento de segunda? Se movimenta terça, sem se cobrar por isso. Você não é perfeita, mas tem uma flexibilidade que segura o hábito mesmo quando a vida atravessa no meio do caminho.",
+    fortes: ["Autoconfiança realista, construída em cima de resultado, não de discurso", "Flexibiliza o plano sem perder o rumo", "Aprende rápido com o próprio erro, sem se punir por ele", "Sustenta hábitos complexos por longos períodos"],
+    desafios: ["Pode achar que não precisa de ajuda e demorar a pedir suporte quando realmente precisa", "Tende a virar o ponto de apoio de todo mundo ao redor e esquecer de olhar pra si", "Corre o risco de estagnar dentro do que já funciona, sem buscar o próximo nível"],
+    quando: "Quando você vira o pilar de sustentação de todo mundo ao seu redor e esquece de se priorizar, porque você dá conta. Dar conta pode virar desculpa pra sumir da própria lista.",
+    ancora: "Dar conta não é o mesmo que estar bem.",
+    plano: "Antes de ajudar mais alguém hoje, pergunte a si mesma o que eu preciso agora e tente fazer uma coisa pequena por você primeiro, antes de resolver o resto.",
+  },
+  tudonada: {
+    nome: "A Tudo ou Nada", base: "Orientado à Tarefa",
+    frase: "Se eu não fizer perfeito, prefiro nem começar.",
+    quem: "Você é disciplinada, cumpre tudo o que promete pros outros, tem currículo de gente que entrega. Mas trata qualquer meta pessoal como uma prova que precisa de nota máxima. Se não consegue fazer os 45 minutos completos de movimento, prefere não fazer nada. Se pulou um dia do plano, sente que a semana inteira já era.",
+    fortes: ["Alta capacidade de execução quando o plano está claro", "Comprometimento real quando decide que algo importa", "Ótima em estrutura, rotina e organização", "Não desiste fácil de coisas que valoriza de verdade"],
+    desafios: ["Mentalidade tudo ou nada, sem meio termo", "Dificuldade de aceitar uma versão menor de si mesma num dia ruim", "Tende à autocrítica severa quando o plano não sai como o previsto", "Pode se esgotar antes de sustentar, por exigir demais de cada tentativa"],
+    quando: "Quando você perde um dia do plano perfeito (viagem, imprevisto, cansaço) e, em vez de retomar no dia seguinte, sente vontade de abandonar o resto da semana ou do mês inteiro, porque já estragou mesmo.",
+    ancora: "Feito é melhor que perfeito.",
+    plano: "Quando perceber que quer desistir porque não saiu como planejado, tente fazer a versão mínima da tarefa, aquela que você dá conta sem se abandonar, em vez de não fazer nada.",
+  },
+  comeca: {
+    nome: "A Começadora", base: "Operativo",
+    frase: "Eu começo com tudo. O difícil é continuar depois da segunda semana.",
+    quem: "Você adora o começo de qualquer coisa. Se anima fácil com plano novo, compra o material, marca a agenda, começa com energia de quem não vai parar nunca. Mas na segunda ou terceira semana, a novidade esfria e você já está de olho na próxima estratégia, no próximo aplicativo, no próximo método.",
+    fortes: ["Iniciativa fácil, não tem medo de começar do zero", "Entusiasmo contagiante, arrasta gente junto", "Boa em experimentar e se adaptar a coisas novas", "Coragem pra tentar de novo, mesmo depois de várias tentativas que não vingaram"],
+    desafios: ["Dificuldade grande de sustentar depois que a novidade passa", "Tende a se distrair com o estímulo mais recente, o atalho mais brilhante", "Costuma colecionar começos sem terminar", "Corre o risco de construir a autoimagem de eu nunca termino nada, que vira profecia que se cumpre sozinha"],
+    quando: "Quando a rotina vira repetitiva. No momento em que o hábito deixa de dar aquele estímulo de coisa nova, você sente vontade de trocar de estratégia, de método, ou simplesmente de parar.",
+    ancora: "Tédio não é sinal de que está errado. É sinal de que está virando hábito.",
+    plano: "Quando bater a vontade de trocar de plano por volta da terceira semana, tente manter o mínimo por mais 7 dias antes de decidir qualquer mudança.",
+  },
+  ultima: {
+    nome: "A Última da Lista", base: "Passivo-Ajustado",
+    frase: "Quando os filhos crescerem, aí eu me cuido.",
+    quem: "Você cuida de todo mundo antes de cuidar de si. Sabe exatamente o que precisa fazer pela própria saúde, tem a informação, tem a intenção, mas sempre existe alguém ou alguma tarefa que precisa vir primeiro. Você é o sistema operacional da casa, e o próprio nome quase nunca entra na lista de prioridades do dia.",
+    fortes: ["Grande capacidade de cuidado e doação", "Confiável, mantém o que promete pros outros", "Paciência acima da média", "Sensível ao que as pessoas ao redor precisam"],
+    desafios: ["Baixa automotivação pra compromissos consigo mesma", "Tende a desistir no primeiro obstáculo quando não tem alguém cobrando", "Dificuldade de pedir espaço ou tempo só pra si", "Costuma sentir culpa quando se prioriza, mesmo em coisas pequenas"],
+    quando: "Quando um pedido externo (filho, trabalho, marido) compete com o horário que você reservou pra si. Você tende a ceder pro outro, sem questionar, e o próprio compromisso costuma ser o primeiro a cair.",
+    ancora: "Cuidar bem dos outros depende de, antes, cuidar de você.",
+    plano: "Quando um pedido externo ameaçar o tempo que você reservou pra si, pare antes de responder. Respire, olhe pra sua agenda e pergunte se aquilo é realmente mais prioridade do que você agora. Se decidir ceder, tente proteger pelo menos metade do tempo que era seu.",
+  },
+  montanha: {
+    nome: "A Montanha-Russa", base: "Caótico-Impulsivo",
+    frase: "Ou eu tô 100% dentro, ou eu simplesmente sumo.",
+    quem: "Você vive em ciclos extremos. Quando está dentro, está 100% dentro: se movimenta todo dia, come certinho, dorme cedo, é a versão mais disciplinada que existe. Quando sai, some por completo, às vezes por semanas, e volta se sentindo péssima consigo mesma, o que só alimenta o próximo sumiço.",
+    fortes: ["Capacidade real de intensidade quando está engajada", "Energia forte nos períodos de alta", "Não tem medo de recomeçar, você já recomeçou muitas vezes e sabe fazer isso", "Paixão genuína pelo que decide fazer, enquanto dura"],
+    desafios: ["Dificuldade com hábitos que não trazem recompensa imediata", "Tende a ceder fácil à tentação e ao impulso do momento", "Falta de estrutura que segure o hábito entre um pico e outro", "Ciclo de vergonha que costuma alimentar o próximo sumiço"],
+    quando: "Quando qualquer folga na estrutura (fim de semana, viagem, período de estresse) tira o apoio externo que estava segurando o hábito no lugar.",
+    ancora: "Sumir uma vez não apaga o resto.",
+    plano: "Use a regra dos 2 dias. Tente nunca ficar dois dias seguidos sem o mínimo do hábito, mesmo que seja a versão mais simples dele.",
+  },
+};
+
+function calcPerfil(resp) {
+  const soma = { constru: 0, tudonada: 0, comeca: 0, ultima: 0, montanha: 0 };
+  PA_Q.forEach((q, i) => { soma[q.p] += resp[i] || 0; });
+  const max = Math.max(...Object.values(soma));
+  return Object.keys(soma).filter((k) => soma[k] === max);
+}
+
+
+
+function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
+  const [fase, setFase] = useState(perfilAuge ? "resultado" : "intro");
+  const [resp, setResp] = useState({});
+  const [qi, setQi] = useState(0);
+  const finalizar = async (respostas) => {
+    const key = calcPerfil(respostas).join(",");
+    setPerfilAuge(key);
+    setFase("resultado");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) await supabase.from("profiles").update({ perfil_auge: key }).eq("id", session.user.id);
+    } catch (e) {}
+    if (tk) tk("Perfil AUGE registrado");
+  };
+  const responder = (v) => {
+    const novo = { ...resp, [qi]: v };
+    setResp(novo);
+    if (qi < PA_Q.length - 1) setQi(qi + 1);
+    else finalizar(novo);
+  };
+  const iniciar = () => { setResp({}); setQi(0); setFase("perguntas"); };
+
+  if (fase === "intro") return (
+    <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
+      <Cab titulo="Perfil AUGE" voltar={back} destino="Jornada" />
+      <div style={{ padding: "24px 22px 40px", textAlign: "center" }}>
+        <Logo width={120} fundo="claro" />
+        <div style={{ fontFamily: FS, fontSize: 32, fontWeight: 300, letterSpacing: "0.1em", color: C.ouro, marginTop: 12 }}>PERFIL</div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, letterSpacing: "0.35em", textTransform: "uppercase", color: "rgba(28,26,23,.88)", marginBottom: 26 }}>AUGE · 15 afirmações · 5 perfis</div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: "rgba(28,26,23,.85)", lineHeight: 1.7, textAlign: "left", marginBottom: 28 }}>{PA_INTRO}</div>
+        <BtnPill onClick={iniciar}>Começar</BtnPill>
+      </div>
+    </Grain>
+  );
+
+  if (fase === "perguntas") {
+    const q = PA_Q[qi];
+    return (
+      <Grain style={{ minHeight: 760, animation: "fadeUp .3s ease" }}>
+        <div style={{ padding: "1.5rem 1.25rem" }}>
+          <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.ouro, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "1rem" }}>{qi + 1} / 15</div>
+          <div style={{ height: 2, background: "rgba(28,26,23,.08)", borderRadius: 100, marginBottom: "1.5rem", position: "relative" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, height: "100%", background: C.ouro, borderRadius: 100, width: `${((qi + 1) / 15) * 100}%`, transition: "width .3s" }} />
+          </div>
+          <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.5, marginBottom: "2rem", minHeight: 96 }}>{q.t}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {OIDENT.map((op) => (
+              <button key={op.v} onClick={() => responder(op.v)} style={{ background: "rgba(28,26,23,.05)", border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "14px 16px", cursor: "pointer", textAlign: "left", fontFamily: FB, fontSize: 16, color: "rgba(28,26,23,.88)" }}>{op.l}</button>
+            ))}
+          </div>
+          {qi > 0 && <button onClick={() => setQi(qi - 1)} style={{ background: "none", border: "none", color: "rgba(28,26,23,.6)", fontFamily: FB, fontSize: 13, marginTop: "1.1rem", cursor: "pointer" }}>‹ Voltar</button>}
+        </div>
+      </Grain>
+    );
+  }
+
+  const chaves = (perfilAuge || "").split(",").filter(Boolean);
+  const perfis = chaves.map((k) => PERFIS[k]).filter(Boolean);
+  const tb = { fontFamily: FB, fontWeight: 400, fontSize: 10.5, letterSpacing: "0.28em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
+  const pp = { fontFamily: FB, fontWeight: 300, fontSize: 14.5, color: "rgba(28,26,23,.85)", lineHeight: 1.65 };
+  const li = { display: "flex", gap: 9, marginBottom: 6 };
+  const dot = { width: 5, height: 5, borderRadius: "50%", background: C.ouro, marginTop: 8, flexShrink: 0 };
+  return (
+    <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
+      <Cab titulo="Seu Perfil AUGE" voltar={back} destino="Jornada" />
+      <div style={{ padding: "1rem 1.25rem 2.5rem" }}>
+        {perfis.length > 1 && (
+          <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15, color: C.terra, textAlign: "center", marginBottom: 16 }}>Deu empate, e tudo bem: esses são os seus dois lados hoje.</div>
+        )}
+        {perfis.map((pf, idx) => (
+          <div key={idx} style={{ marginBottom: 26 }}>
+            <div style={{ fontFamily: FS, fontSize: 30, fontWeight: 300, color: C.ouro, textAlign: "center", lineHeight: 1.1 }}>{pf.nome}</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", color: C.lt, textAlign: "center", marginTop: 4 }}>{pf.base}</div>
+            <div style={{ background: `${C.ouro}12`, border: `1px solid ${C.ouro}25`, borderRadius: 12, padding: "13px 15px", margin: "14px 0" }}>
+              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.ouroDk, lineHeight: 1.5, textAlign: "center" }}>"{pf.frase}"</div>
+            </div>
+            <div style={tb}>Quem é você</div>
+            <div style={pp}>{pf.quem}</div>
+            <div style={tb}>Pontos fortes</div>
+            {pf.fortes.map((f, i) => (<div key={i} style={li}><div style={dot} /><div style={pp}>{f}</div></div>))}
+            <div style={tb}>Pontos de desafio</div>
+            {pf.desafios.map((f, i) => (<div key={i} style={li}><div style={{ ...dot, background: C.terra }} /><div style={pp}>{f}</div></div>))}
+            <div style={tb}>Quando esse padrão aparece mais forte</div>
+            <div style={pp}>{pf.quando}</div>
+            <div style={{ borderLeft: `2px solid ${C.ouroDk}`, padding: "8px 0 8px 14px", margin: "14px 0" }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: C.ouroDk, marginBottom: 4 }}>Âncora de enfrentamento</div>
+              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: "rgba(28,26,23,.9)", lineHeight: 1.5 }}>"{pf.ancora}"</div>
+            </div>
+            <div style={tb}>Plano de ação</div>
+            <div style={pp}>{pf.plano}</div>
+          </div>
+        ))}
+        <div style={{ background: "rgba(28,26,23,.04)", border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ ...pp, fontSize: 13.5, color: C.terra }}>{PA_NOTA}</div>
+        </div>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 15, color: "rgba(28,26,23,.88)", lineHeight: 1.65, marginBottom: 22 }}>{PA_FECHA}</div>
+        <BtnOut onClick={iniciar}>Refazer o teste</BtnOut>
+        <BtnPill onClick={back} style={{ marginTop: 10 }}>Concluir</BtnPill>
+      </div>
+    </Grain>
+  );
+}
+
 function Jornada({
  sem,
  rodaResultados = [],
@@ -8886,6 +9080,14 @@ function Jornada({
           </div>
         )}
 
+        {/* Questionário de Perfil AUGE */}
+        <div onClick={() => ir(S.PAUGE)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs }}>Questionário de Perfil AUGE</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginTop: 3 }}>{perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : "Descubra seu perfil, refeito em S1, S6 e S12"}</div>
+          </div>
+          <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
+        </div>
         {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
 
