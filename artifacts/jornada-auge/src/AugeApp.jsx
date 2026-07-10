@@ -11237,6 +11237,42 @@ function PainelMentora({ ir }) {
   // ── estado alunas ──
  const [alunas, setAlunas] = useState([]);
  const [loadingA, setLoadingA] = useState(false);
+  // ── estado avisos (push da mentora) ──
+ const [pushTit, setPushTit] = useState("Clube do Auge");
+ const [pushMsg, setPushMsg] = useState("");
+ const [pushModo, setPushModo] = useState("agora"); // "agora" | "agendar"
+ const [pushQuando, setPushQuando] = useState("");
+ const [pushLoad, setPushLoad] = useState(false);
+ const [pushStatus, setPushStatus] = useState(null);
+ const enviarPush = async () => {
+ if (!pushMsg.trim()) { setPushStatus({ ok: false, txt: "Escreva a mensagem." }); return; }
+ let sendAt = null;
+ if (pushModo === "agendar") {
+ if (!pushQuando) { setPushStatus({ ok: false, txt: "Escolha a data e a hora." }); return; }
+ const dt = new Date(pushQuando);
+ if (isNaN(dt.getTime()) || dt.getTime() < Date.now() + 30000) { setPushStatus({ ok: false, txt: "Escolha um horário no futuro." }); return; }
+ sendAt = dt.toISOString();
+    }
+ setPushLoad(true); setPushStatus(null);
+ try {
+ const { data: { session } } = await supabase.auth.getSession();
+ const r = await fetch(`${import.meta.env.BASE_URL}api/push`, {
+ method: "POST",
+ headers: { "Content-Type": "application/json" },
+ body: JSON.stringify({ title: pushTit.trim() || "Clube do Auge", message: pushMsg.trim(), sendAt, token: session?.access_token }),
+      });
+ const d = await r.json().catch(() => ({}));
+ if (r.ok && d.ok) {
+ setPushStatus({ ok: true, txt: sendAt ? "Notificação agendada para todas as alunas!" : "Notificação enviada para todas as alunas!" });
+ setPushMsg(""); setPushQuando("");
+      } else {
+ setPushStatus({ ok: false, txt: d.error || "Não consegui enviar agora." });
+      }
+    } catch {
+ setPushStatus({ ok: false, txt: "Erro de conexão. Tente de novo." });
+    }
+ setPushLoad(false);
+  };
 
   // Carregar vídeos ao montar
  useEffect(() => {
@@ -11409,7 +11445,7 @@ function PainelMentora({ ir }) {
 
       {/* Abas */}
       <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.creme }}>
-        {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["alunas", "Alunas"]].map(([id, label]) => (
+        {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["avisos", "Avisos"], ["alunas", "Alunas"]].map(([id, label]) => (
           <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 300, fontSize: 14, color: aba === id ? C.ouro : `rgba(28,26,23,.65)`, cursor: "pointer", transition: "all .2s" }}>
             {label}
           </button>
@@ -11546,6 +11582,59 @@ function PainelMentora({ ir }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ── ABA AVISOS (push da mentora) ── */}
+        {aba === "avisos" && (
+          <div>
+            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 6 }}>Enviar notificação</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.lt, lineHeight: 1.5, marginBottom: 20 }}>
+              Chega como push no celular de todas as alunas que ativaram os lembretes.
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Título</div>
+              <input value={pushTit} onChange={(e) => setPushTit(e.target.value)} placeholder="Clube do Auge"
+                style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "7px 0" }} />
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Mensagem</div>
+              <textarea value={pushMsg} onChange={(e) => setPushMsg(e.target.value)} maxLength={500} placeholder="Ex: Meninas, hoje tem encontro extra às 20h! Não percam 💛"
+                style={{ width: "100%", background: `rgba(28,26,23,.03)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "11px", resize: "none", height: 96, lineHeight: 1.5 }} />
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, textAlign: "right", marginTop: 4 }}>{pushMsg.length}/500</div>
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Quando</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[["agora", "Enviar agora"], ["agendar", "Agendar"]].map(([id, lb]) => (
+                  <button key={id} onClick={() => setPushModo(id)}
+                    style={{ flex: 1, background: pushModo === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${pushModo === id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "9px 12px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: pushModo === id ? C.ouro : `rgba(28,26,23,.65)`, cursor: "pointer" }}>
+                    {lb}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {pushModo === "agendar" && (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Data e hora</div>
+                <input type="datetime-local" value={pushQuando} onChange={(e) => setPushQuando(e.target.value)}
+                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "7px 0" }} />
+              </div>
+            )}
+
+            <BtnPill onClick={enviarPush} style={{ fontSize: 15, opacity: pushMsg.trim() && !pushLoad ? 1 : 0.5 }}>
+              {pushLoad ? "Enviando..." : pushModo === "agendar" ? "Agendar notificação" : "Enviar agora"}
+            </BtnPill>
+
+            {pushStatus && (
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: pushStatus.ok ? C.augeZ : C.atencao, marginTop: 14, lineHeight: 1.5 }}>
+                {pushStatus.txt}
+              </div>
+            )}
           </div>
         )}
 
