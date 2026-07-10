@@ -1751,7 +1751,8 @@ export default function App() {
       });
  setDesafioTexto(cfg.desafio_texto || "");
  setJornadaInicio(cfg.jornada_inicio || null);
- setGuias({ movimento: cfg.guia_movimento || "", sono: cfg.guia_sono || "", tempo: cfg.guia_tempo || "" });
+ const _pg = (id) => { try { const a = JSON.parse(cfg[`guias_${id}`] || "[]"); if (Array.isArray(a) && a.length) return a; } catch {} return cfg[`guia_${id}`] ? [{ nome: "", url: cfg[`guia_${id}`] }] : []; };
+ setGuias({ movimento: _pg("movimento"), sono: _pg("sono"), tempo: _pg("tempo") });
     }
 
     // Carregar vídeos do Supabase
@@ -10976,23 +10977,34 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
           </div>
           {HABS_FIXOS.map((h) => {
             const bloq = sem < h.unlock;
-            return (
+            if (bloq) {
+              return (
+                <div
+                  key={h.id}
+                  style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", opacity: 0.55 }}
+                >
+                  {IcoH[h.id](C.terra, 17)}
+                  <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2 }}>
+                    Guia de {h.nome}
+                  </div>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FB, fontSize: 10.5, color: C.ouroDk }}>{IcoH.cadeado(C.ouroDk, 13)} Semana {h.unlock}</span>
+                </div>
+              );
+            }
+            const lista = guias?.[h.id]?.length ? guias[h.id] : [{ nome: "", url: `${import.meta.env.BASE_URL}guias/${h.id}.html` }];
+            return lista.map((g, i) => (
               <div
-                key={h.id}
-                onClick={() => !bloq && window.open(guias?.[h.id] || `${import.meta.env.BASE_URL}guias/${h.id}.html`, "_blank")}
-                style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", opacity: bloq ? 0.55 : 1, cursor: bloq ? "default" : "pointer" }}
+                key={`${h.id}-${i}`}
+                onClick={() => g.url && window.open(g.url, "_blank")}
+                style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", cursor: "pointer" }}
               >
                 {IcoH[h.id](C.terra, 17)}
                 <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2 }}>
-                  Guia de {h.nome}
+                  {g.nome ? `Guia de ${h.nome} · ${g.nome}` : `Guia de ${h.nome}`}
                 </div>
-                {bloq ? (
-                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FB, fontSize: 10.5, color: C.ouroDk }}>{IcoH.cadeado(C.ouroDk, 13)} Semana {h.unlock}</span>
-                ) : (
-                  <span style={{ fontFamily: FB, fontSize: 12, color: C.ouroDk }}>abrir ›</span>
-                )}
+                <span style={{ fontFamily: FB, fontSize: 12, color: C.ouroDk }}>abrir ›</span>
               </div>
-            );
+            ));
           })}
         </div>
 
@@ -11205,20 +11217,33 @@ const CATS_ADMIN = [
 function PainelMentora({ ir }) {
   // ── Guias dos Hábitos (HTML) — upload direto pelo painel ──
   const [guiaMsg, setGuiaMsg] = useState({});
+  const [guiasList, setGuiasList] = useState({}); // { movimento: [{nome,url}], ... }
+  const [guiaNome, setGuiaNome] = useState({}); // nome do proximo guia por habito
   const enviarGuia = async (habId, file) => {
     if (!file) return;
     setGuiaMsg((g) => ({ ...g, [habId]: "Enviando..." }));
+    const fname = `${habId}-${Date.now()}.html`;
     const { error } = await supabase.storage
       .from("guias")
-      .upload(`${habId}.html`, file, { upsert: true, contentType: "text/html" });
+      .upload(fname, file, { upsert: true, contentType: "text/html" });
     if (error) {
       setGuiaMsg((g) => ({ ...g, [habId]: "Erro ao enviar — confira se o bucket 'guias' existe (SQL)." }));
       return;
     }
-    const { data: urlData } = supabase.storage.from("guias").getPublicUrl(`${habId}.html`);
+    const { data: urlData } = supabase.storage.from("guias").getPublicUrl(fname);
     const url = `${urlData?.publicUrl}?v=${Date.now()}`;
-    await supabase.from("config").upsert({ id: `guia_${habId}`, valor: url }, { onConflict: "id" });
+    const nome = (guiaNome[habId] || "").trim();
+    const lista = [...(guiasList[habId] || []), { nome, url }];
+    await supabase.from("config").upsert({ id: `guias_${habId}`, valor: JSON.stringify(lista) }, { onConflict: "id" });
+    setGuiasList((g) => ({ ...g, [habId]: lista }));
+    setGuiaNome((g) => ({ ...g, [habId]: "" }));
     setGuiaMsg((g) => ({ ...g, [habId]: "Guia publicado — já está no ar na aba Conteúdo." }));
+  };
+  const removerGuia = async (habId, idx) => {
+    const lista = (guiasList[habId] || []).filter((_, i) => i !== idx);
+    await supabase.from("config").upsert({ id: `guias_${habId}`, valor: JSON.stringify(lista) }, { onConflict: "id" });
+    setGuiasList((g) => ({ ...g, [habId]: lista }));
+    setGuiaMsg((g) => ({ ...g, [habId]: "Guia removido." }));
   };
  const [aba, setAba] = useState("videos"); // "videos" | "mentoria" | "alunas"
   // ── estado vídeos ──
@@ -11291,6 +11316,8 @@ function PainelMentora({ ir }) {
  desafio: cfg.desafio_texto || "",
  inicio: cfg.jornada_inicio || "",
         });
+ const pg = (id) => { try { const a = JSON.parse(cfg[`guias_${id}`] || "[]"); if (Array.isArray(a) && a.length) return a; } catch {} return cfg[`guia_${id}`] ? [{ nome: "", url: cfg[`guia_${id}`] }] : []; };
+ setGuiasList({ movimento: pg("movimento"), sono: pg("sono"), tempo: pg("tempo") });
       });
   }, []);
 
@@ -11550,16 +11577,24 @@ function PainelMentora({ ir }) {
                 Guias dos Hábitos Angulares
               </div>
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.lt, marginBottom: 14, lineHeight: 1.5 }}>
-                Anexe o arquivo HTML de cada guia. Ele substitui o anterior e aparece na hora para as alunas, na aba Conteúdo.
+                Anexe quantos guias quiser em cada hábito. Dê um nome a cada um para a aluna diferenciar. Aparecem na hora na aba Conteúdo.
               </div>
               {HABS_FIXOS.map((h) => (
-                <div key={h.id} style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.obs2 }}>
-                      Guia de {h.nome}
+                <div key={h.id} style={{ marginBottom: 22 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 13, color: C.obs2, marginBottom: 8 }}>
+                    Guia de {h.nome}
+                  </div>
+                  {(guiasList[h.id] || []).map((g, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <div style={{ flex: 1, fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.lt }}>• {g.nome || "Guia sem nome"}</div>
+                      <button onClick={() => removerGuia(h.id, i)} style={{ background: "none", border: "none", color: C.atencao, fontSize: 11.5, cursor: "pointer", fontFamily: FB }}>remover</button>
                     </div>
-                    <label style={{ background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 50, padding: "7px 16px", fontFamily: FB, fontWeight: 400, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
-                      Anexar HTML
+                  ))}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                    <input value={guiaNome[h.id] || ""} onChange={(e) => setGuiaNome((g) => ({ ...g, [h.id]: e.target.value }))} placeholder="Nome do guia (ex: Aquecimento)"
+                      style={{ flex: 1, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 13, padding: "6px 0" }} />
+                    <label style={{ background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 50, padding: "7px 14px", fontFamily: FB, fontWeight: 400, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer", whiteSpace: "nowrap" }}>
+                      + Anexar HTML
                       <input type="file" accept=".html,.htm,text/html" style={{ display: "none" }}
                         onChange={(e) => { enviarGuia(h.id, e.target.files?.[0]); e.target.value = ""; }} />
                     </label>
