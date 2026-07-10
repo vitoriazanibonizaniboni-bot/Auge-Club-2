@@ -4486,9 +4486,6 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
         style={{ width: "100%", background: feitoHoje ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 12, color: feitoHoje ? C.branco : C.ouroDk, cursor: "pointer" }}>
         {feitoHoje ? "Feito hoje ✓" : "Feito hoje"}
       </button>
-      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginTop: 10 }}>
- Só aqui — não entra no calendário nem na trajetória
-      </div>
     </div>
   );
 }
