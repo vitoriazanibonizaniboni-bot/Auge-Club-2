@@ -8796,7 +8796,7 @@ const PA_Q = [
   { t: "Compro o plano, marco a agenda, começo animada, mas em duas ou três semanas já perdi o interesse.", p: "comeca" },
   { t: "Se pulo um dia da dieta, como qualquer coisa pelo resto da semana porque sinto que já estraguei tudo.", p: "tudonada" },
   { t: "Eu me cobro sozinha. Não preciso que ninguém fique em cima de mim pra eu manter um compromisso comigo mesma.", p: "constru" },
-  { t: "Tenho aplicativo, plano, roupa de movimento guardados que usei só nos primeiros dias e depois esqueci.", p: "comeca" },
+  { t: "Tenho aplicativo, plano, roupa de exercício guardados que usei só nos primeiros dias e depois esqueci.", p: "comeca" },
   { t: "Mesmo sabendo que vai atrapalhar, é difícil dizer não pra uma sobremesa ou pra ficar mais uma hora no sofá em vez de fazer o que planejei.", p: "montanha" },
   { t: "Eu remarco comigo mesma coisas que jamais remarcaria se fossem com outra pessoa.", p: "ultima" },
   { t: "Depois de um tempo fazendo a mesma coisa, fico com vontade de trocar de método, de app ou de professor, mesmo que o que eu tenho esteja funcionando.", p: "comeca" },
