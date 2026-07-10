@@ -4903,50 +4903,6 @@ function Home({
           </div>
         )}
 
-        {/* Micro-card Protocolo de Retomada (quando >24h sem registro, só Jornada) */}
-        {perfil === "jornada" && diasSemTreino >= 1 && passo === 0 && (
-          <div
- style={{
- background: `${C.blush}12`,
- border: `1px solid ${C.blush}33`,
- borderRadius: 10,
- padding: "13px 15px",
- marginBottom: 14,
-            }}
-          >
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 15,
- color: C.blush,
- lineHeight: 1.5,
- marginBottom: 10,
-              }}
-            >
- Faz {diasSemTreino} dia{diasSemTreino !== 1 ? "s" : ""} sem
- registro. Amanhã vira o limite. Quer voltar agora?
-            </div>
-            <button
- onClick={() => ir(S.RET)}
- style={{
- background: C.blush,
- border: "none",
- borderRadius: 50,
- padding: "10px",
- width: "100%",
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: C.obs2,
- cursor: "pointer",
-              }}
-            >
- Estou voltando agora →
-            </button>
-          </div>
-        )}
-
         {/* Card de permissão de notificações (Jornada, primeira vez) */}
         {perfil === "jornada" &&
  notifStatus === "pending" && (
@@ -5102,28 +5058,15 @@ function Home({
  diasDaSemana={diasDaSemana}
             />
 
-            {/* Kit de Emergência — sempre visível e acessível na Hoje (seção 4.9) */}
-            <button
- onClick={() => ir(S.EM)}
- style={{
- width: "100%",
- marginTop: 12,
- background: C.blush,
- border: "none",
- borderRadius: 22,
- padding: "16px",
- cursor: "pointer",
- textAlign: "center",
- fontFamily: FB,
- fontWeight: 600,
- fontSize: 13,
- color: "#5C3A2E",
- letterSpacing: "0.06em",
- textTransform: "uppercase",
-              }}
-            >
+            {/* Kit de Emergência (Blush) + Protocolo de Retomada (Ouro Escuro) — só o nome (spec) */}
+            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+              <button onClick={() => ir(S.EM)} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 12, color: "#5C3A2E", letterSpacing: "0.04em", lineHeight: 1.3 }}>
  Kit de Emergência
-            </button>
+              </button>
+              <button onClick={() => ir(S.RET)} style={{ flex: 1, background: C.ouroDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 12, color: C.creme, letterSpacing: "0.04em", lineHeight: 1.3 }}>
+ Protocolo de Retomada
+              </button>
+            </div>
           </div>
         )}
 
@@ -8929,6 +8872,12 @@ function Jornada({
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
         <RodaResumo rodaResultados={rodaResultados} />
+        {retomadas > 0 && (
+          <div style={{ background: `${C.ouroDk}12`, border: `1px solid ${C.ouroDk}33`, borderRadius: 14, padding: "14px 16px", marginBottom: 12, textAlign: "center" }}>
+            <div style={{ fontFamily: FS, fontSize: 22, fontWeight: 300, color: C.ouroDk }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.terra, marginTop: 3 }}>Isso é motivo pra comemorar. Cada volta conta como resiliência, nunca como falha.</div>
+          </div>
+        )}
 
         {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
@@ -9518,46 +9467,26 @@ function Roda({
 }
 
 // ─── RETOMADA ─────────────────────────────────────────────────────────────────
-function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
- const [mot, setMot] = useState("");
- const [onde, setOnde] = useState("");
- const [p, setP] = useState(1);
+function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario }) {
+ const [registrado, setRegistrado] = useState(false);
  const [isaMsg, setIsaMsg] = useState(null);
  const [isaLoad, setIsaLoad] = useState(false);
- const [registrado, setRegistrado] = useState(false);
-
  const registrar = async () => {
  setRet((r) => r + 1);
  const hoje = new Date().toISOString().split("T")[0];
- syncDB(
- "checkins",
-      {
- data: hoje,
- total_feitos: 0,
- total: 0,
- percentual: 0,
- retomada: true,
- chips: [],
-      },
-      { onConflict: "user_id,data" },
-    );
- tk("Retomada registrada. +20 pontos AUGE ");
+ syncDB("checkins", { data: hoje, total_feitos: 0, total: 0, percentual: 0, retomada: true, chips: [] }, { onConflict: "user_id,data" });
+ tk("Retomada registrada. +20 pontos AUGE");
  setRegistrado(true);
  setIsaLoad(true);
- const motTxt = mot.trim() ? `"${mot.trim()}"` : "não descreveu";
- const porquesRet = [pq1, pq2, pq3].filter(Boolean);
  const nomeRet = usuario?.nome ? usuario.nome.split(" ")[0] : null;
- const resp = await callISA(
-      [
-        `A aluna acabou de ativar o Protocolo de Retomada — clicou em "Estou voltando agora".`,
+ const porquesRet = [pq1, pq2, pq3].filter(Boolean);
+ const resp = await callISA([
+      `A aluna acabou de clicar em "Retomei!" no Protocolo de Retomada (ela ficou um dia sem o hábito e está voltando).`,
  nomeRet ? `Nome dela: ${nomeRet}.` : null,
-        `O que aconteceu segundo ela: ${motTxt}.`,
-        `Onde ela disse que quebrou: ${onde || "não especificou"}.`,
-        `Âncora de identidade dela: "${anc}".`,
- porquesRet.length > 0 ? `Os porquês dela: ${porquesRet.join(" / ")}.` : null,
-        `Acolha o que ela compartilhou diretamente, sem generalizar. Convoque ao movimento com a energia do método: acolhe e chama. Conecte aos porquês dela se existirem. Termine com a frase da marca se fizer sentido natural: "O auge não é o que você foi. É o que você está construindo."`,
-      ].filter(Boolean).join("\n"),
-    );
+ anc ? `Âncora de identidade dela: "${anc}".` : null,
+ porquesRet.length ? `Os porquês dela: ${porquesRet.join(" / ")}.` : null,
+      `Acolha sem dramatizar, celebre a volta, sem cobrança nem culpa. Convoque ao movimento com metade da intensidade. Termine com a frase da marca se fizer sentido: "O auge não é o que você foi. É o que você está construindo."`,
+    ].filter(Boolean).join("\n"));
  setIsaMsg(resp);
  setIsaLoad(false);
   };
@@ -9565,234 +9494,43 @@ function Retomada({ anc, back, tk, setRet, pq1, pq2, pq3, usuario }) {
     <div style={{ animation: "fadeUp .4s ease" }}>
       <Cab titulo="Protocolo de Retomada" voltar={back} destino="Jornada" />
       <Grain style={{ padding: "20px 20px 36px" }}>
-        <div
- style={{
- fontFamily: FS,
- fontSize: 24,
- fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
- lineHeight: 1.25,
- marginBottom: 16,
-          }}
-        >
- Caiu. Faz parte.
-          <br />
- Agora você volta.
+        <div style={{ fontFamily: FS, fontSize: 22, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.35, marginBottom: 14 }}>
+ Você ficou um dia sem fazer. É agora que se decide se isso vira exceção ou vira rotina.
         </div>
-        <div
- style={{
- background: `${C.ouro}10`,
- border: `1px solid ${C.ouro}20`,
- borderRadius: 10,
- padding: "15px",
- marginBottom: 18,
- textAlign: "center",
-          }}
-        >
-          <div
- style={{
- fontFamily: FS,
- fontStyle: "italic",
- fontSize: 16,
- color: C.ouro,
- lineHeight: 1.5,
-            }}
-          >
- "{anc}"
-          </div>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: C.ouroDk, lineHeight: 1.6, marginBottom: 20 }}>
+ Não rolou dessa vez. Tudo bem. Isso não apaga nada do que você já construiu.
         </div>
-        <div
- style={{
- background: `rgba(28,26,23,.04)`,
- border: `1px solid ${C.ouro}12`,
- borderRadius: 10,
- padding: "15px",
- marginBottom: 18,
-          }}
-        >
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 11,
- color: C.ouro,
- letterSpacing: "0.35em",
- textTransform: "uppercase",
- marginBottom: 12,
-            }}
-          >
- A regra dos 2 dias
-          </div>
+        <div style={{ background: `${C.ouroDk}0F`, border: `1px solid ${C.ouroDk}30`, borderRadius: 12, padding: "16px", marginBottom: 18 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11, color: C.ouroDk, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 12 }}>As regras da retomada</div>
           {[
- "Dois dias é o limite. No terceiro, você já não é mais a mesma.",
- "Ontem não conta. Hoje conta com metade — e isso já é tudo.",
- "Não compensa. Não é hora de provar nada. É hora de voltar.",
- "O dia que você volta vale igual ao dia perfeito. Às vezes vale mais.",
+ "Falhou uma vez, volta na próxima. Sem esperar segunda-feira, sem esperar a semana que vem.",
+ "Metade da intensidade. Não pensa em dar o seu melhor, pensa em continuar em movimento.",
+ "Nunca compensar. Não dobra pra recuperar o tempo perdido.",
+ "Continua de onde parou, não do início.",
           ].map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8 }}>
-              <div style={{ color: C.ouro, fontSize: 17, flexShrink: 0 }}>
-                ·
-              </div>
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 15,
- color: `rgba(28,26,23,.8)`,
- lineHeight: 1.5,
-                }}
-              >
-                {r}
-              </div>
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 9 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.ouroDk, marginTop: 7, flexShrink: 0 }} />
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14.5, color: "rgba(28,26,23,.82)", lineHeight: 1.5 }}>{r}</div>
             </div>
           ))}
         </div>
-        {p >= 1 && (
-          <div style={{ marginBottom: 14 }}>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 13,
- color: `rgba(28,26,23,.92)`,
- marginBottom: 8,
-              }}
-            >
- O que aconteceu?
-            </div>
-            <textarea
- value={mot}
- onChange={(e) => setMot(e.target.value)}
- placeholder="Sem julgamento. E sem rodeio. Escreve curto, pra você ver com clareza."
- style={{
- width: "100%",
- background: `rgba(28,26,23,.04)`,
- border: `1px solid ${C.ouro}15`,
- borderRadius: 10,
- padding: "12px",
- fontSize: 16,
- fontFamily: FS,
- color: `rgba(28,26,23,.82)`,
- resize: "none",
- height: 76,
- lineHeight: 1.6,
-              }}
-            />
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 16, color: "rgba(28,26,23,.9)", lineHeight: 1.6, marginBottom: 20, textAlign: "center" }}>
+ É mais fácil continuar em movimento do que começar tudo de novo. Só vai.
+        </div>
+        {!registrado && (
+          <button onClick={registrar} style={{ width: "100%", background: C.ouroDk, border: "none", borderRadius: 50, padding: "15px", fontFamily: FB, fontWeight: 500, fontSize: 15, color: C.creme, cursor: "pointer", letterSpacing: "0.04em" }}>
+ Retomei!
+          </button>
+        )}
+        {(isaLoad || isaMsg) && <div style={{ marginTop: 16 }}><IsaCard text={isaMsg} loading={isaLoad} /></div>}
+        {registrado && (
+          <div style={{ marginTop: 18, background: `${C.ouroDk}12`, border: `1px solid ${C.ouroDk}33`, borderRadius: 12, padding: "16px", textAlign: "center" }}>
+            <div style={{ fontFamily: FS, fontSize: 26, fontWeight: 300, color: C.ouroDk }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.terra, marginTop: 4 }}>Isso é motivo pra comemorar. Cada volta é prova de que você não desiste.</div>
           </div>
         )}
-        {p >= 2 && (
-          <div style={{ marginBottom: 14 }}>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 13,
- color: `rgba(28,26,23,.92)`,
- marginBottom: 8,
-              }}
-            >
- Onde quebrou?
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {[
- "Falta de tempo",
- "Cansaço",
- "Imprevisto",
- "Esqueci",
- "Outro",
-              ].map((op) => (
-                <button
- key={op}
- onClick={() => setOnde(op)}
- style={{
- padding: "9px 14px",
- borderRadius: 50,
- border: `1px solid ${onde === op ? C.ouro + "55" : C.ouro + "15"}`,
- background:
- onde === op ? `${C.ouro}20` : `rgba(28,26,23,.03)`,
- color: onde === op ? C.ouro : `rgba(28,26,23,.88)`,
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 15,
- cursor: "pointer",
-                  }}
-                >
-                  {op}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {p === 1 && (
-          <BtnPill
- onClick={() => mot && setP(2)}
- style={{ opacity: mot ? 1 : 0.4 }}
-          >
- Continuar
-          </BtnPill>
-        )}
-        {p >= 2 && (
-          <div>
-            <div
- style={{
- background: `${C.ouroLt}10`,
- border: `1px solid ${C.ouro}25`,
- borderRadius: 10,
- padding: "14px",
- marginBottom: 14,
-              }}
-            >
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 11,
- color: C.ouro,
- letterSpacing: "0.18em",
- textTransform: "uppercase",
- marginBottom: 8,
-                }}
-              >
- Com o que você volta hoje?
-              </div>
-              <div
- style={{
- fontFamily: FS,
- fontStyle: "italic",
- fontSize: 16,
- color: `rgba(28,26,23,.88)`,
- lineHeight: 1.6,
-                }}
-              >
-                5 minutos de movimento. Uma refeição no horário. Um copo de
- água. Isso conta.
-              </div>
-            </div>
-            {!registrado && (
-              <BtnPill onClick={registrar}>Estou voltando agora</BtnPill>
-            )}
-            {(isaLoad || isaMsg) && <IsaCard text={isaMsg} loading={isaLoad} />}
-            {registrado && !isaLoad && (
-              <>
-              <p
- style={{
- fontFamily: FS,
- fontStyle: 'italic',
- fontSize: 15,
- color: C.ouro,
- lineHeight: 1.6,
- marginTop: 14,
- textAlign: 'center',
-                }}
-              >
- "O auge não é o que você foi. É o que você está construindo."
-              </p>
-                <BtnPill onClick={back} style={{ marginTop: 16 }}>
- Concluir ←
-                </BtnPill>
-              </>
-            )}
-          </div>
+        {registrado && !isaLoad && (
+          <BtnPill onClick={back} style={{ marginTop: 16 }}>Concluir</BtnPill>
         )}
       </Grain>
     </div>
