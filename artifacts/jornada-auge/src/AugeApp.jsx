@@ -11304,6 +11304,11 @@ function PainelMentora({ ir }) {
  const { error } = await supabase.rpc("set_aluna_plano", { p_user_id: id, p_plano: plano });
  if (!error) setPendentes((ps) => ps.filter((x) => x.id !== id));
   };
+ const [whatsSalvo, setWhatsSalvo] = useState(false);
+ const salvarWhats = async () => {
+ await supabase.from("config").upsert({ id: "contato_whatsapp", valor: ment.whatsapp || "" }, { onConflict: "id" });
+ setWhatsSalvo(true); setTimeout(() => setWhatsSalvo(false), 2500);
+  };
   // ── estado avisos (push da mentora) ──
  const [pushTit, setPushTit] = useState("Clube do Auge");
  const [pushMsg, setPushMsg] = useState("");
@@ -11604,7 +11609,6 @@ function PainelMentora({ ir }) {
               ["Link do Zoom", "zoom", "https://zoom.us/j/..."],
               ["Desafio da Semana (turma)", "desafio", "Ex: ler 5 páginas por dia"],
               ["Início da Jornada (segunda-feira da S1)", "inicio", "AAAA-MM-DD, ex: 2026-07-06"],
-              ["Contato WhatsApp (tela de espera)", "whatsapp", "Ex: (48) 99999-0000"],
             ].map(([lb, field, ph]) => (
               <div key={field} style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
@@ -11715,6 +11719,17 @@ function PainelMentora({ ir }) {
         {/* ── ABA ALUNAS ── */}
         {aba === "alunas" && (
           <div>
+            <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 10.5, color: C.ouroDk, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>WhatsApp de suporte</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11.5, color: C.lt, marginBottom: 10, lineHeight: 1.5 }}>Aparece na tela de espera, para a aluna que ainda não foi liberada falar com você.</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input value={ment.whatsapp} onChange={(e) => setMent((m) => ({ ...m, whatsapp: e.target.value }))} placeholder="Ex: (48) 99999-0000"
+                  style={{ flex: 1, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 15, padding: "7px 0" }} />
+                <button onClick={salvarWhats} style={{ background: C.ouro, border: "none", borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 500, fontSize: 12, color: C.branco, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  {whatsSalvo ? "✓ Salvo" : "Salvar"}
+                </button>
+              </div>
+            </div>
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 16 }}>Alunas ativas</div>
             {pendentes.length > 0 && (
               <div style={{ background: `${C.ouro}12`, border: `1px solid ${C.ouro}44`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
