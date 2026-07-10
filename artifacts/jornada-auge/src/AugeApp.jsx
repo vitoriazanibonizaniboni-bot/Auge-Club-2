@@ -9090,7 +9090,7 @@ function Roda({
  chartRef.current = null;
       }
     };
-  }, [fase]);
+  }, [fase, rodaR]);
 
  if (fase === "intro")
  return (
@@ -9345,20 +9345,32 @@ function Roda({
     <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
       <Cab titulo="Resultado" voltar={back} destino="Jornada" />
       <div style={{ padding: "1.5rem 1.25rem" }}>
-        <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 11,
- letterSpacing: "0.4em",
- textTransform: "uppercase",
- color: `rgba(28,26,23,.88)`,
- textAlign: "center",
- marginBottom: "0.5rem",
-          }}
-        >
+        {(() => {
+ const momsSalvos = ["S1", "S6", "S12"].filter((m) => rodaResultados.some((r) => r.momento === m));
+ const verMomento = (m) => {
+ const sv = rodaResultados.find((r) => r.momento === m);
+ if (sv?.respostas) { setRodaR(sv.respostas); setRodaI(24); setMom(m); }
+          };
+ const idx = momsSalvos.indexOf(momento);
+ const temComparacao = momsSalvos.length > 1;
+ const anterior = idx > 0 ? momsSalvos[idx - 1] : null;
+ const proximo = idx >= 0 && idx < momsSalvos.length - 1 ? momsSalvos[idx + 1] : null;
+ return (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: "0.5rem" }}>
+              {temComparacao && (
+                <button onClick={() => anterior && verMomento(anterior)} disabled={!anterior}
+ style={{ background: "none", border: "none", color: anterior ? C.terra : `${C.terra}33`, fontSize: 20, cursor: anterior ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>‹</button>
+              )}
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, letterSpacing: "0.4em", textTransform: "uppercase", color: `rgba(28,26,23,.88)`, textAlign: "center" }}>
  Resultado · {momento}
-        </div>
+              </div>
+              {temComparacao && (
+                <button onClick={() => proximo && verMomento(proximo)} disabled={!proximo}
+ style={{ background: "none", border: "none", color: proximo ? C.terra : `${C.terra}33`, fontSize: 20, cursor: proximo ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
+              )}
+            </div>
+          );
+        })()}
         <div
  style={{
  fontSize: 64,
@@ -9878,6 +9890,43 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
       {legenda && <LegendaCores onFechar={() => setLegenda(false)} />}
       <Grain style={{ padding: "18px 18px 32px" }}>
 
+        {/* ── Trajetória semanal (seção 5.2) ── */}
+        <div style={{ padding: "4px 2px 8px", marginBottom: 6 }}>
+          <svg width="100%" viewBox="0 0 380 158" fill="none" style={{ display: "block", marginBottom: 6 }}>
+            <path d="M 35 126 C 110 142 272 46 350 38" stroke={`${C.ouro}55`} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+            <circle cx="350" cy="38" r="2.2" fill={`${C.ouro}88`} />
+            <circle cx={mx} cy={my} r="5" fill={C.ouro} />
+            <text x={mx} y={my - 12} textAnchor="middle" fontFamily="'Inter',sans-serif" fontWeight="400" fontSize="11" letterSpacing="2" fill={C.ouroDk}>
+ S{sem}
+            </text>
+          </svg>
+          {HABS_FIXOS.map((h) => (
+            <div key={h.id} style={{ marginBottom: 10 }}>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: C.terra, marginBottom: 5 }}>
+                {h.id === "tempo" ? "Tempo p/ Si" : h.nome}{sem < h.unlock ? ` · desbloqueia na S${h.unlock}` : ""}
+              </div>
+              <div style={{ display: "flex", gap: 5 }}>
+                {Array.from({ length: 12 }, (_, i) => {
+ const w = i + 1;
+ const stt = w < h.unlock ? "futura" : statusSemana(h.id, w);
+ const d = DOT[stt];
+ return <div key={w} style={{ flex: 1, aspectRatio: "1", maxWidth: 18, borderRadius: "50%", background: d.bg, border: d.bo }} title={`S${w}`} />;
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, lineHeight: 1.6 }}>
+ Mais claro = menos hábitos no dia<br />Mais escuro = mais hábitos no dia
+        </div>
+        <button onClick={() => setLegenda(true)}
+          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
+          {Ico.info(C.ouroDk)} O que as cores significam
+        </button>
+        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12, color: C.lt, marginTop: 14, textAlign: "center" }}>
+ Pequeno, repetido e infinito. Qualquer cor é uma vitória.
+        </div>
+
         {/* ── Calendário mensal — heatmap 0–3 (seção 5.1) ── */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
@@ -9916,43 +9965,6 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, ir
  Sexta é dia de Vitória da Semana
         </div>
 
-
-        {/* ── Trajetória semanal (seção 5.2) ── */}
-        <div style={{ padding: "4px 2px 8px", marginBottom: 6 }}>
-          <svg width="100%" viewBox="0 0 380 158" fill="none" style={{ display: "block", marginBottom: 6 }}>
-            <path d="M 35 126 C 110 142 272 46 350 38" stroke={`${C.ouro}55`} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-            <circle cx="350" cy="38" r="2.2" fill={`${C.ouro}88`} />
-            <circle cx={mx} cy={my} r="5" fill={C.ouro} />
-            <text x={mx} y={my - 12} textAnchor="middle" fontFamily="'Inter',sans-serif" fontWeight="400" fontSize="11" letterSpacing="2" fill={C.ouroDk}>
- S{sem}
-            </text>
-          </svg>
-          {HABS_FIXOS.map((h) => (
-            <div key={h.id} style={{ marginBottom: 10 }}>
-              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: C.terra, marginBottom: 5 }}>
-                {h.id === "tempo" ? "Tempo p/ Si" : h.nome}{sem < h.unlock ? ` · desbloqueia na S${h.unlock}` : ""}
-              </div>
-              <div style={{ display: "flex", gap: 5 }}>
-                {Array.from({ length: 12 }, (_, i) => {
- const w = i + 1;
- const stt = w < h.unlock ? "futura" : statusSemana(h.id, w);
- const d = DOT[stt];
- return <div key={w} style={{ flex: 1, aspectRatio: "1", maxWidth: 18, borderRadius: "50%", background: d.bg, border: d.bo }} title={`S${w}`} />;
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.terra, lineHeight: 1.6 }}>
- Mais claro = menos hábitos no dia<br />Mais escuro = mais hábitos no dia
-        </div>
-        <button onClick={() => setLegenda(true)}
-          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroDk, cursor: "pointer" }}>
-          {Ico.info(C.ouroDk)} O que as cores significam
-        </button>
-        <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 12, color: C.lt, marginTop: 14, textAlign: "center" }}>
- Pequeno, repetido e infinito. Qualquer cor é uma vitória.
-        </div>
 
         {/* detalhe do dia — sob demanda (seção 5.1) */}
         {diaSel && (
