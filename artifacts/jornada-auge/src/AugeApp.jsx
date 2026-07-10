@@ -1229,6 +1229,7 @@ export default function App() {
  const [guias, setGuias] = useState({}); // URLs dos guias HTML (Supabase Storage)
  const [desafioFeitos, setDesafioFeitos] = useState([]); // datas do mini check-in
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config)
+ const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
  const [minhaFoto, setMinhaFoto] = useState(null);
   // Nova versão do app disponível (service worker atualizado)
@@ -1599,7 +1600,8 @@ export default function App() {
  meusInteresses = p.radar_interesses || [];
  setMinhaFoto(p.avatar_url || null);
       // Conta admin mantém acesso ao Painel da Facilitadora
- setPerfil(p.plano === "admin" ? "admin" : FORCED_PLANO);
+ const _acesso = p.plano === "admin" ? "admin" : ["jornada", "comunidade"].includes(p.plano) ? FORCED_PLANO : "pendente";
+ setPerfil(_acesso);
  setUsuario({ nome: p.nome || "", email: p.email || "" });
  setLgpdOk(!!p.lgpd_aceito);
  setBussola(p.bussola || "");
@@ -1630,7 +1632,7 @@ export default function App() {
  loadedRef.current = true;
       // Cache local do perfil para evitar tela errada se Supabase falhar
  try {
- localStorage.setItem("auge_perfil_plano", p.plano === "admin" ? "admin" : FORCED_PLANO);
+ localStorage.setItem("auge_perfil_plano", _acesso);
  if (p.data_cadastro) localStorage.setItem("auge_perfil_datacad", p.data_cadastro);
       } catch {}
     } else {
@@ -1751,6 +1753,7 @@ export default function App() {
       });
  setDesafioTexto(cfg.desafio_texto || "");
  setJornadaInicio(cfg.jornada_inicio || null);
+ setContatoWhats(cfg.contato_whatsapp || "");
  const _pg = (id) => { try { const a = JSON.parse(cfg[`guias_${id}`] || "[]"); if (Array.isArray(a) && a.length) return a; } catch {} return cfg[`guia_${id}`] ? [{ nome: "", url: cfg[`guia_${id}`] }] : []; };
  setGuias({ movimento: _pg("movimento"), sono: _pg("sono"), tempo: _pg("tempo") });
     }
@@ -2375,6 +2378,17 @@ export default function App() {
       </Phone>
     );
 
+  // Conta aguardando liberação da mentora (controle de acesso)
+ if (perfil === "pendente")
+ return (
+      <Phone>
+        <Rolar>
+          <Aguardando contato={contatoWhats} onSair={logout} />
+        </Rolar>
+        <Estilos />
+      </Phone>
+    );
+
   // Diagnóstico de Sabotadores (primeiro acesso Jornada)
  // Diagnóstico desativado — nunca é exibido; qualquer acesso volta pra Hoje
  if (tela === S.DIAG) {
@@ -2722,6 +2736,32 @@ function LegendaCores({ onFechar }) {
 }
 
 // ─── SPLASH ───────────────────────────────────────────────────────────────────
+// ─── TELA DE ESPERA — conta aguardando liberação da mentora ───────────────────
+function Aguardando({ contato, onSair }) {
+ const fone = (contato || "").replace(/\D/g, "");
+ return (
+    <Grain style={{ minHeight: 760, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 30px", textAlign: "center", gap: 18 }}>
+      <Logo width={140} fundo="claro" />
+      <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 24, fontWeight: 400, color: C.ouroDk, lineHeight: 1.3, marginTop: 8 }}>
+ Sua conta está sendo ativada
+      </div>
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(28,26,23,.8)`, lineHeight: 1.6, maxWidth: 300 }}>
+ Que alegria ter você aqui. Assim que a sua inscrição for confirmada, o seu acesso é liberado e você entra na Jornada. É rapidinho.
+      </div>
+      {fone && (
+        <a href={`https://wa.me/55${fone}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", marginTop: 6 }}>
+          <div style={{ background: C.ouroLt, color: C.obs2, fontFamily: FB, fontWeight: 400, fontSize: 14, padding: "11px 24px", borderRadius: 50, letterSpacing: "0.04em" }}>
+ Falar no WhatsApp
+          </div>
+        </a>
+      )}
+      <button onClick={onSair} style={{ background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "9px 26px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroDk, cursor: "pointer", marginTop: 6 }}>
+ Sair
+      </button>
+    </Grain>
+  );
+}
+
 function Splash({ ir }) {
  const stars = Array.from({ length: 40 }, (_, i) => ({
  w: i % 5 === 0 ? 2.5 : i % 3 === 0 ? 1.5 : 1,
@@ -3336,7 +3376,7 @@ function TelaAuth({ onAuth }) {
  id: data.user.id,
  nome: nome.trim(),
  email: email.trim().toLowerCase(),
- plano: "jornada",
+ plano: "pendente", // aguarda liberação da mentora
  access_tier: "jornada", // addendum: único valor na v1; futuro: "clube"
  lgpd_aceito: true,
  lgpd_data: new Date().toISOString(),
@@ -11253,12 +11293,17 @@ function PainelMentora({ ir }) {
  const [salvandoV, setSalvandoV] = useState(false);
  const [mostrarForm, setMostrarForm] = useState(false);
   // ── estado mentoria ──
- const [ment, setMent] = useState({ data: "", semana: "", duracao: "75 min", zoom: "", desafio: "", inicio: "" });
+ const [ment, setMent] = useState({ data: "", semana: "", duracao: "75 min", zoom: "", desafio: "", inicio: "", whatsapp: "" });
  const [salvandoM, setSalvandoM] = useState(false);
  const [salvoM, setSalvoM] = useState(false);
   // ── estado alunas ──
  const [alunas, setAlunas] = useState([]);
  const [loadingA, setLoadingA] = useState(false);
+ const [pendentes, setPendentes] = useState([]);
+ const ativarAluna = async (id, plano) => {
+ const { error } = await supabase.rpc("set_aluna_plano", { p_user_id: id, p_plano: plano });
+ if (!error) setPendentes((ps) => ps.filter((x) => x.id !== id));
+  };
   // ── estado avisos (push da mentora) ──
  const [pushTit, setPushTit] = useState("Clube do Auge");
  const [pushMsg, setPushMsg] = useState("");
@@ -11315,10 +11360,12 @@ function PainelMentora({ ir }) {
  zoom: cfg.mentoria_zoom || "",
  desafio: cfg.desafio_texto || "",
  inicio: cfg.jornada_inicio || "",
+ whatsapp: cfg.contato_whatsapp || "",
         });
  const pg = (id) => { try { const a = JSON.parse(cfg[`guias_${id}`] || "[]"); if (Array.isArray(a) && a.length) return a; } catch {} return cfg[`guia_${id}`] ? [{ nome: "", url: cfg[`guia_${id}`] }] : []; };
  setGuiasList({ movimento: pg("movimento"), sono: pg("sono"), tempo: pg("tempo") });
       });
+ supabase.rpc("get_pendentes_admin").then(({ data }) => setPendentes(data || []));
   }, []);
 
   // Carregar alunas ao clicar na aba
@@ -11446,6 +11493,7 @@ function PainelMentora({ ir }) {
       { id: "mentoria_zoom", valor: ment.zoom },
       { id: "desafio_texto", valor: ment.desafio },
       { id: "jornada_inicio", valor: ment.inicio },
+      { id: "contato_whatsapp", valor: ment.whatsapp },
     ];
  await Promise.all(upserts.map((u) => supabase.from("config").upsert(u, { onConflict: "id" })));
  setSalvandoM(false);
@@ -11556,6 +11604,7 @@ function PainelMentora({ ir }) {
               ["Link do Zoom", "zoom", "https://zoom.us/j/..."],
               ["Desafio da Semana (turma)", "desafio", "Ex: ler 5 páginas por dia"],
               ["Início da Jornada (segunda-feira da S1)", "inicio", "AAAA-MM-DD, ex: 2026-07-06"],
+              ["Contato WhatsApp (tela de espera)", "whatsapp", "Ex: (48) 99999-0000"],
             ].map(([lb, field, ph]) => (
               <div key={field} style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
@@ -11667,6 +11716,23 @@ function PainelMentora({ ir }) {
         {aba === "alunas" && (
           <div>
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 300, color: `rgba(28,26,23,.95)`, marginBottom: 16 }}>Alunas ativas</div>
+            {pendentes.length > 0 && (
+              <div style={{ background: `${C.ouro}12`, border: `1px solid ${C.ouro}44`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 10.5, color: C.ouroDk, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>
+                  Aguardando liberação ({pendentes.length})
+                </div>
+                {pendentes.map((a) => (
+                  <div key={a.id} style={{ borderTop: `1px solid ${C.ouro}20`, paddingTop: 10, marginTop: 10 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.obs }}>{a.nome || "—"}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12, color: C.lt, marginBottom: 8 }}>{a.email || ""}</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => ativarAluna(a.id, "jornada")} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 500, fontSize: 12, color: C.branco, cursor: "pointer" }}>Liberar Jornada</button>
+                      <button onClick={() => ativarAluna(a.id, "comunidade")} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 400, fontSize: 12, color: C.ouroDk, cursor: "pointer" }}>Liberar Comunidade</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {loadingA ? (
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : alunas.length === 0 ? (
@@ -11700,7 +11766,7 @@ function PainelMentora({ ir }) {
                   </div>
                 )}
                 {/* Visão geral por aluna (seção 10) */}
-                {alunas.map((a) => {
+                {alunas.filter((a) => a.plano !== "pendente").map((a) => {
  const dias = diasSemCk(a.ultimoCk);
  const statusCor = dias === null ? `rgba(28,26,23,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
  const statusTxt = dias === null ? "Sem checkin" : dias === 0 ? "Checkin hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
