@@ -5290,6 +5290,43 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  const [det, setDet] = useState(null); // id do post aberto em detalhe
  const [confirmaExcluir, setConfirmaExcluir] = useState(null);
  const [confirmaComent, setConfirmaComent] = useState(null); // { postId, cid }
+ const [confirmaBloq, setConfirmaBloq] = useState(null); // { userId, nome } — bloqueio de autora
+ const [avisoMod, setAvisoMod] = useState(""); // toast de denúncia/bloqueio
+ const [bloqueados, setBloqueados] = useState(() => new Set()); // ids bloqueados por mim
+ useEffect(() => {
+ if (!authUserId) return;
+ supabase
+      .from("bloqueios")
+      .select("bloqueado_id")
+      .eq("bloqueador_id", authUserId)
+      .then(({ data }) => {
+ if (data) setBloqueados(new Set(data.map((b) => b.bloqueado_id)));
+      });
+  }, [authUserId]);
+ const denunciarPost = (post) => {
+ if (post?.dbId && authUserId) {
+ supabase
+        .from("denuncias")
+        .insert({ post_id: post.dbId, denunciante_id: authUserId, autor_id: post.userId })
+        .then(() => {});
+    }
+ setDet(null);
+ setAvisoMod("Denúncia enviada. Nossa equipe vai analisar.");
+ setTimeout(() => setAvisoMod(""), 3500);
+  };
+ const bloquearAutora = (userId, nome) => {
+ if (authUserId && userId) {
+ supabase
+        .from("bloqueios")
+        .insert({ bloqueador_id: authUserId, bloqueado_id: userId })
+        .then(() => {});
+    }
+ setBloqueados((b) => new Set([...b, userId]));
+ setDet(null);
+ setConfirmaBloq(null);
+ setAvisoMod(nome ? `Você não verá mais publicações de ${nome}.` : "Usuária bloqueada.");
+ setTimeout(() => setAvisoMod(""), 3500);
+  };
  const [resp, setResp] = useState(null); // respondendo: { cid, autor } — thread de 1 nível (seção 6.2)
  const curtir = (id) => {
  setFeed((f) =>
@@ -5382,6 +5419,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
   };
   // Feed: filtra por visibilidade e filtro ativo
  const visiveis = feed
+    .filter((p) => !bloqueados.has(p.userId))
     .filter((p) => p.publica || p.userId === authUserId || p.aut === "Você")
     .filter((p) =>
       filtro === "minhas" ? (p.userId === authUserId || p.aut === "Você")
@@ -5943,6 +5981,37 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  onNao={() => setConfirmaComent(null)}
         />
       )}
+      {confirmaBloq && (
+        <Confirma
+ titulo={`Bloquear ${confirmaBloq.nome || "esta usuária"}?`}
+ descricao="Você não verá mais as publicações dela no Mural."
+ textoSim="Bloquear"
+ onSim={() => bloquearAutora(confirmaBloq.userId, confirmaBloq.nome)}
+ onNao={() => setConfirmaBloq(null)}
+        />
+      )}
+      {avisoMod && (
+        <div
+ style={{
+ position: "fixed",
+ left: "50%",
+ bottom: 90,
+ transform: "translateX(-50%)",
+ zIndex: 200,
+ background: C.obs2 || "#1C1A17",
+ color: C.branco || "#fff",
+ fontFamily: FB,
+ fontSize: 14,
+ padding: "10px 18px",
+ borderRadius: 50,
+ maxWidth: "88%",
+ textAlign: "center",
+ boxShadow: "0 6px 20px rgba(0,0,0,.25)",
+          }}
+        >
+          {avisoMod}
+        </div>
+      )}
       {confirmaExcluir != null && (
         <Confirma
  titulo="Excluir esta publicação?"
@@ -6111,6 +6180,22 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       </span>
                     )}
                   </button>
+                {dp.userId !== authUserId && dp.aut !== "Você" && (
+                  <div style={{ display: "flex", gap: 18, borderTop: `1px solid ${C.ouro}12`, paddingTop: 9, marginTop: 4 }}>
+                    <button
+ onClick={() => denunciarPost(dp)}
+ style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontFamily: FB, fontWeight: 300, color: `rgba(28,26,23,.5)`, padding: "2px 0" }}
+                    >
+ Denunciar
+                    </button>
+                    <button
+ onClick={() => setConfirmaBloq({ userId: dp.userId, nome: dp.aut })}
+ style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontFamily: FB, fontWeight: 300, color: `rgba(28,26,23,.5)`, padding: "2px 0" }}
+                    >
+ Bloquear autora
+                    </button>
+                  </div>
+                )}
                 </div>
                 <div
  style={{
