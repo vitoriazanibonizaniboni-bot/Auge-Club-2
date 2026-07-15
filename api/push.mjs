@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     }
     const user = await uRes.json();
     const pRes = await fetch(
-      `${SUPA_URL}/rest/v1/profiles?user_id=eq.${user.id}&select=plano`,
+      `${SUPA_URL}/rest/v1/profiles?id=eq.${user.id}&select=plano`,
       { headers: { apikey: SUPA_ANON, Authorization: `Bearer ${token}` } }
     );
     const rows = pRes.ok ? await pRes.json() : [];
