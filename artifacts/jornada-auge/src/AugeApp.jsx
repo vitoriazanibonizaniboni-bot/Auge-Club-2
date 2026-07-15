@@ -735,6 +735,34 @@ function Grain({ children, style = {} }) {
 }
 
 function Phone({ children }) {
+ const [full, setFull] = useState(
+    typeof window === "undefined" ? true : window.innerWidth <= 500
+  );
+ useEffect(() => {
+ const onR = () => setFull(window.innerWidth <= 500);
+ onR();
+ window.addEventListener("resize", onR);
+ return () => window.removeEventListener("resize", onR);
+  }, []);
+ if (full) {
+    // Celular / app das lojas — ocupa a tela inteira, sem moldura
+ return (
+      <div
+ style={{
+ height: "100vh",
+ background: C.creme,
+ fontFamily: FB,
+ display: "flex",
+ flexDirection: "column",
+ position: "relative",
+ overflow: "hidden",
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+  // Desktop — mostra a moldura de celular
  return (
     <div
  style={{

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.clubedoauge.jornada',
-  appName: 'Jornada AUGE',
+  appName: 'Clube do Auge',
   webDir: 'dist/public',
   backgroundColor: '#1A1712',
   // O app nativo carrega o site ao vivo (Vercel): tudo funciona de imediato
