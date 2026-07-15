@@ -5009,8 +5009,12 @@ function Home({
  const r = await requestPermission();
  if (r === "granted") {
  setNotifStatus("granted");
+                  } else if (r === "unsupported") {
+ setNotifStatus("dismissed");
+ tk("No iPhone, adicione o app à Tela de Início para ativar os lembretes");
                   } else {
  setNotifStatus(r === "denied" ? "denied" : "dismissed");
+ if (r === "denied") tk("Permissão bloqueada nas configurações do navegador");
                   }
                 }}
  style={{
@@ -12334,7 +12338,9 @@ function Perfil({
  else {
  const r = await requestPermission();
  setNotifStatus(r === "granted" ? "granted" : r === "denied" ? "denied" : "dismissed");
- if (r === "granted") tk("Lembretes ativados ");
+ if (r === "granted") tk("Lembretes ativados");
+ else if (r === "unsupported") tk("No iPhone, adicione o app à Tela de Início para ativar os lembretes");
+ else if (r === "denied") tk("Permissão bloqueada nas configurações do navegador");
               }
             }}
  style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 11, color: notifStatus === "granted" ? C.obs2 : C.ouroDk, cursor: "pointer" }}
