@@ -78,24 +78,39 @@ export default async function handler(req, res) {
   };
   if (sendAt) payload.send_after = sendAt; // ISO 8601 (UTC) — agendamento
 
-  try {
-    const oRes = await fetch("https://onesignal.com/api/v1/notifications", {
+  // Aceita tanto a chave nova (Authorization: Key ...) quanto a legada (Basic ...)
+  const enviar = (scheme) =>
+    fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        Authorization: `Basic ${restKey}`,
+        Authorization: `${scheme} ${restKey}`,
       },
       body: JSON.stringify(payload),
     });
-    const od = await oRes.json().catch(() => ({}));
-    if (!oRes.ok || (od.errors && od.errors.length)) {
-      const msg = Array.isArray(od.errors)
-        ? od.errors[0]
-        : od.errors || "O OneSignal recusou o envio. Confira a chave.";
+  const falhouAuth = (r, d) =>
+    r.status === 400 || r.status === 401 || r.status === 403 ||
+    (Array.isArray(d.errors) && d.errors.length > 0 && !r.ok);
+  try {
+    let r = await enviar("Key");
+    let d = await r.json().catch(() => ({}));
+    if (falhouAuth(r, d)) {
+      const r2 = await enviar("Basic");
+      const d2 = await r2.json().catch(() => ({}));
+      if (r2.ok && !(Array.isArray(d2.errors) && d2.errors.length)) {
+        res.json({ ok: true, id: d2.id, recipients: d2.recipients ?? null });
+        return;
+      }
+      r = r2; d = d2;
+    }
+    if (!r.ok || (Array.isArray(d.errors) && d.errors.length)) {
+      const msg = Array.isArray(d.errors)
+        ? d.errors[0]
+        : d.errors || "O OneSignal recusou o envio. Confira a chave.";
       res.status(502).json({ error: String(msg) });
       return;
     }
-    res.json({ ok: true, id: od.id, recipients: od.recipients ?? null });
+    res.json({ ok: true, id: d.id, recipients: d.recipients ?? null });
   } catch {
     res.status(502).json({ error: "Erro ao contatar o OneSignal." });
   }
