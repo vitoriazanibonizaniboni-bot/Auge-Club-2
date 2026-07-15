@@ -2507,6 +2507,9 @@ function Estilos() {
  input{caret-color:#C4A882;}
  textarea{caret-color:#C4A882;}
  button:active{opacity:.75;}
+ body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+ input,textarea{-webkit-user-select:text;user-select:text;}
+ button,[role="button"]{-webkit-touch-callout:none;}
   `}</style>
   );
 }
