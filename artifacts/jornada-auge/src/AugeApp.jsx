@@ -4912,28 +4912,6 @@ function Home({
           </div>
         )}
 
-        {/* Banner boas-vindas para quem nunca fez checkin */}
-        {diasSemTreino === -1 && !ckOk && (
-          <div style={{
- background: `${C.ouro}10`,
- border: `1px solid ${C.ouro}28`,
- borderRadius: 12,
- padding: "16px 18px",
- marginBottom: 16,
- animation: "fadeUp .4s ease",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <Av ini="ISA" cor={C.ouroDk} sz={34} />
-              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 14, color: `rgba(28,26,23,.97)` }}>
- Dra. Isadora Zaniboni
-              </div>
-            </div>
-            <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.ouro, lineHeight: 1.6 }}>
- "Olá, {usuario?.nome?.split(" ")[0] || "bem-vinda"}! Que bom te ter aqui. Vamos começar pelo checkin?"
-            </div>
-          </div>
-        )}
-
         {/* Banner carta semana 12 */}
         {carta && sem >= 12 && (
           <div

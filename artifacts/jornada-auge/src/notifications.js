@@ -27,6 +27,17 @@ function nextDailyAt(hour, minute = 0) {
 
 // ─── Solicitar permissão ──────────────────────────────────────────────────────
 export async function requestPermission() {
+  // App nativo (Capacitor / lojas): quem pede a permissão é o OneSignal nativo
+  if (typeof window !== "undefined" && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    try {
+      const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
+      if (OS && OS.Notifications && typeof OS.Notifications.requestPermission === "function") {
+        const ok = await OS.Notifications.requestPermission(true);
+        return ok ? "granted" : "denied";
+      }
+    } catch (e) {}
+    return "unsupported";
+  }
   if (!("Notification" in window)) return "unsupported";
   let result = Notification.permission;
   if (result !== "granted" && result !== "denied") {
