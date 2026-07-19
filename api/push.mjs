@@ -70,47 +70,43 @@ export default async function handler(req, res) {
   // 2) Monta e dispara via OneSignal
   const titulo = (title && title.trim()) || "Clube do Auge";
   const corpo = message.trim();
-  const payload = {
+  const base = {
     app_id: ONESIGNAL_APP_ID,
-    included_segments: ["Subscribed Users"],
     headings: { en: titulo, pt: titulo },
     contents: { en: corpo, pt: corpo },
   };
-  if (sendAt) payload.send_after = sendAt; // ISO 8601 (UTC) — agendamento
+  if (sendAt) base.send_after = sendAt; // ISO 8601 (UTC) — agendamento
 
-  // Aceita tanto a chave nova (Authorization: Key ...) quanto a legada (Basic ...)
-  const enviar = (scheme) =>
+  // Tenta os nomes de segmento possiveis (contas novas usam "Total Subscriptions")
+  const SEGMENTOS = [["Total Subscriptions"], ["Subscribed Users"], ["Active Subscriptions"]];
+  // Aceita a chave nova (Authorization: Key ...) e a legada (Basic ...)
+  const enviar = (scheme, segs) =>
     fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         Authorization: `${scheme} ${restKey}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...base, included_segments: segs }),
     });
-  const falhouAuth = (r, d) =>
-    r.status === 400 || r.status === 401 || r.status === 403 ||
-    (Array.isArray(d.errors) && d.errors.length > 0 && !r.ok);
+
   try {
-    let r = await enviar("Key");
-    let d = await r.json().catch(() => ({}));
-    if (falhouAuth(r, d)) {
-      const r2 = await enviar("Basic");
-      const d2 = await r2.json().catch(() => ({}));
-      if (r2.ok && !(Array.isArray(d2.errors) && d2.errors.length)) {
-        res.json({ ok: true, id: d2.id, recipients: d2.recipients ?? null });
-        return;
+    let ultimoErro = "O OneSignal recusou o envio.";
+    for (const scheme of ["Key", "Basic"]) {
+      let authFalhou = false;
+      for (const segs of SEGMENTOS) {
+        const r = await enviar(scheme, segs);
+        const d = await r.json().catch(() => ({}));
+        if (r.status === 401 || r.status === 403) { authFalhou = true; break; }
+        if (r.ok && !(Array.isArray(d.errors) && d.errors.length)) {
+          res.json({ ok: true, id: d.id, recipients: d.recipients ?? null });
+          return;
+        }
+        if (Array.isArray(d.errors) && d.errors.length) ultimoErro = d.errors[0];
       }
-      r = r2; d = d2;
+      if (!authFalhou) break; // auth funcionou, mas nenhum segmento entregou
     }
-    if (!r.ok || (Array.isArray(d.errors) && d.errors.length)) {
-      const msg = Array.isArray(d.errors)
-        ? d.errors[0]
-        : d.errors || "O OneSignal recusou o envio. Confira a chave.";
-      res.status(502).json({ error: String(msg) });
-      return;
-    }
-    res.json({ ok: true, id: d.id, recipients: d.recipients ?? null });
+    res.status(502).json({ error: String(ultimoErro) });
   } catch {
     res.status(502).json({ error: "Erro ao contatar o OneSignal." });
   }
