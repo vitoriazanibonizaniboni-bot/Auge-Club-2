@@ -10886,6 +10886,7 @@ const VIDS = {
 function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  const [catSel, setCatSel] = useState("aulas");
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
+ const [guiaAberto, setGuiaAberto] = useState(null); // guia HTML aberto dentro do app
  const ytEmbed = (url) => {
  const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1];
  return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1` : null;
@@ -11038,7 +11039,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
             return lista.map((g, i) => (
               <div
                 key={`${h.id}-${i}`}
-                onClick={() => g.url && window.open(g.url, "_blank")}
+                onClick={() => g.url && setGuiaAberto(g.url)}
                 style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", cursor: "pointer" }}
               >
                 {IcoH[h.id](C.terra, 17)}
@@ -11205,6 +11206,15 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
         })}
 
         {/* Player interno — o vídeo toca dentro do app (sem ir ao YouTube) */}
+        {guiaAberto && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 600, background: C.creme, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${C.linho}`, background: C.creme, flexShrink: 0 }}>
+              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.ouroDk }}>Guia</div>
+              <button onClick={() => setGuiaAberto(null)} style={{ background: "none", border: `1px solid ${C.ouro}66`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroDk, cursor: "pointer" }}>Fechar ✕</button>
+            </div>
+            <iframe src={guiaAberto} title="Guia" style={{ flex: 1, width: "100%", border: "none", background: C.creme }} />
+          </div>
+        )}
         {videoAberto && (
           <div onClick={() => setVideoAberto(null)}
             style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px" }}>
