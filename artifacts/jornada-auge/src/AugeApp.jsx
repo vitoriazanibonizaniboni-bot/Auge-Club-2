@@ -1060,6 +1060,7 @@ const TODAY = localDateStr();
 
 export default function App() {
  const [authUser, setAuthUser] = useState(null);
+ const [recovery, setRecovery] = useState(false); // fluxo de redefinir senha (link do email)
  const [loadingAuth, setLoadingAuth] = useState(true);
  const [perfil, setPerfil] = useState(null);
  const [profileLoaded, setProfileLoaded] = useState(false);
@@ -2081,7 +2082,12 @@ export default function App() {
  const {
  data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
- if (event === "SIGNED_IN" && session?.user) {
+ if (event === "PASSWORD_RECOVERY") {
+ setAuthUser(session?.user || null);
+ setRecovery(true);
+ setLoadingAuth(false);
+      }
+ else if (event === "SIGNED_IN" && session?.user) {
  setAuthUser(session.user);
  loadUserData(session.user.id);
       }
@@ -2316,6 +2322,17 @@ export default function App() {
  await loadUserData(user.id);
             }}
           />
+        </Rolar>
+        <Estilos />
+      </Phone>
+    );
+
+  // Redefinição de senha (veio do link do email)
+ if (recovery)
+ return (
+      <Phone>
+        <Rolar>
+          <NovaSenha onDone={() => setRecovery(false)} tk={tk} />
         </Rolar>
         <Estilos />
       </Phone>
@@ -2711,6 +2728,35 @@ function Aguardando({ contato, onSair }) {
       )}
       <button onClick={onSair} style={{ background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "9px 26px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroDk, cursor: "pointer", marginTop: 6 }}>
  Sair
+      </button>
+    </Grain>
+  );
+}
+
+// ─── REDEFINIR SENHA (link do email) ─────────────────────────────────────────
+function NovaSenha({ onDone, tk }) {
+ const [senha, setSenha] = useState("");
+ const [msg, setMsg] = useState(null);
+ const [salvando, setSalvando] = useState(false);
+ const salvar = async () => {
+ if (senha.length < 6) { setMsg("A senha precisa ter pelo menos 6 caracteres."); return; }
+ setSalvando(true);
+ const { error } = await supabase.auth.updateUser({ password: senha });
+ setSalvando(false);
+ if (error) { setMsg("Não deu pra salvar. O link pode ter expirado — peça um novo."); return; }
+ if (tk) tk("Senha redefinida!");
+ onDone();
+  };
+ return (
+    <Grain style={{ minHeight: 760, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "40px 30px", gap: 16, textAlign: "center" }}>
+      <Logo width={130} fundo="claro" />
+      <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 24, fontWeight: 400, color: C.ouroDk, lineHeight: 1.3 }}>Defina sua nova senha</div>
+      <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: "rgba(28,26,23,.8)", maxWidth: 300 }}>Escolha uma senha nova pra sua conta. Depois é só continuar.</div>
+      <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Nova senha (mín. 6 caracteres)"
+        style={{ width: "100%", maxWidth: 320, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.3)`, color: C.obs, fontFamily: FB, fontWeight: 300, fontSize: 16, padding: "10px 0", textAlign: "center" }} />
+      {msg && <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.terra }}>{msg}</div>}
+      <button onClick={salvar} disabled={salvando} style={{ width: "100%", maxWidth: 320, background: C.ouro, border: "none", borderRadius: 50, padding: "13px", fontFamily: FB, fontWeight: 500, fontSize: 15, color: C.obs2, cursor: "pointer", opacity: salvando ? 0.6 : 1 }}>
+        {salvando ? "Salvando..." : "Salvar nova senha"}
       </button>
     </Grain>
   );
