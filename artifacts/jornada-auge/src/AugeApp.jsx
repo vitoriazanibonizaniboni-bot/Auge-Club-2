@@ -1885,8 +1885,8 @@ export default function App() {
       : "?";
  let imgUrl = null;
 
-    // Upload da imagem se post público e tem foto
- if (entry.publica !== false && entry.imgSrc && entry.imgFile) {
+    // Upload da imagem (público ou privado) quando há foto
+ if (entry.imgSrc && entry.imgFile) {
  const { data: { session } } = await supabase.auth.getSession();
  if (session?.user) {
  const f = entry.imgFile;
