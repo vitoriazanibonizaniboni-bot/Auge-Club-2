@@ -11323,6 +11323,7 @@ function PainelMentora({ ir }) {
  const [alunas, setAlunas] = useState([]);
  const [loadingA, setLoadingA] = useState(false);
  const [pendentes, setPendentes] = useState([]);
+ const [alunaSel, setAlunaSel] = useState(null);
  const ativarAluna = async (id, plano) => {
  const { error } = await supabase.rpc("set_aluna_plano", { p_user_id: id, p_plano: plano });
  if (!error) setPendentes((ps) => ps.filter((x) => x.id !== id));
@@ -11414,11 +11415,12 @@ function PainelMentora({ ir }) {
  if (!ultimoCk[ck.user_id]) ultimoCk[ck.user_id] = ck;
         }
         // Jornada v2: registros, usos do Kit, metas e progressão (seção 10)
- const [regsR, kitR, metasR, histR] = await Promise.all([
+ const [regsR, kitR, metasR, histR, rodaAdminR] = await Promise.all([
  supabase.rpc("get_registros_admin"),
  supabase.rpc("get_kit_usos_admin"),
  supabase.rpc("get_metas_admin"),
  supabase.rpc("get_metas_hist_admin"),
+ supabase.rpc("get_roda_admin"),
         ]);
  const regsPor = {}, kitPor = {}, metasPor = {}, histPor = {};
  for (const r of (regsR.data || [])) {
@@ -11431,6 +11433,8 @@ function PainelMentora({ ir }) {
  kitPor[k.user_id].push(k.data);
         }
  for (const m of (metasR.data || [])) metasPor[m.user_id] = m;
+ const rodaPor = {};
+ for (const r of (rodaAdminR.data || [])) { if (!rodaPor[r.user_id]) rodaPor[r.user_id] = []; rodaPor[r.user_id].push(r); }
  for (const h of (histR.data || [])) {
  if (!histPor[h.user_id]) histPor[h.user_id] = [];
  histPor[h.user_id].push(h);
@@ -11480,7 +11484,7 @@ function PainelMentora({ ir }) {
  progressoes: histPor[uid] || [],
           };
         };
- setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null, v2: analisa(p.id) })));
+ setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [] })));
  setLoadingA(false);
       });
   }, [aba]);
@@ -11749,6 +11753,49 @@ function PainelMentora({ ir }) {
         {/* ── ABA ALUNAS ── */}
         {aba === "alunas" && (
           <div>
+            {alunaSel && (() => {
+              const fmt = (v) => (v == null ? "—" : Number(v).toFixed(1));
+              const chaves = (alunaSel.perfil_auge || "").split(",").filter(Boolean);
+              const perfis = chaves.map((k) => PERFIS[k]?.nome).filter(Boolean);
+              const mv = alunaSel.metas || {};
+              const minimos = [["Movimento", "mov_minimo"], ["Sono", "sono_minimo"], ["Tempo para Si", "tsi_minimo"]].filter(([, c]) => mv[c]);
+              const ORDEM = ["S1", "S6", "S12"];
+              const rodas = ORDEM.map((mo) => (alunaSel.roda || []).find((r) => r.momento === mo)).filter(Boolean);
+              const tb = { fontFamily: FB, fontWeight: 400, fontSize: 10.5, letterSpacing: "0.25em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
+              const pt = { fontFamily: FS, fontSize: 15, color: `rgba(28,26,23,.85)`, lineHeight: 1.5 };
+              return (
+                <div onClick={() => setAlunaSel(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.55)", display: "flex", alignItems: "flex-end" }}>
+                  <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxHeight: "88%", overflowY: "auto", background: C.creme, borderRadius: "20px 20px 0 0", padding: "20px 20px 34px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 21, color: C.ouroDk }}>{alunaSel.nome || "Aluna"}</div>
+                      <button onClick={() => setAlunaSel(null)} style={{ background: "none", border: "none", fontSize: 22, color: C.lt, cursor: "pointer" }}>×</button>
+                    </div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt }}>{alunaSel.email || ""}</div>
+
+                    <div style={tb}>Perfil AUGE</div>
+                    <div style={pt}>{perfis.length ? perfis.join(" · ") : "Ainda não respondeu"}</div>
+
+                    <div style={tb}>Mínimos Viáveis</div>
+                    {minimos.length ? minimos.map(([nome, c]) => (
+                      <div key={c} style={{ marginBottom: 5 }}><span style={{ fontFamily: FB, fontSize: 12, color: C.terra }}>{nome}: </span><span style={{ fontFamily: FS, fontSize: 14, color: C.obs }}>{mv[c]}</span></div>
+                    )) : <div style={pt}>Ainda não definidos</div>}
+
+                    <div style={tb}>Roda AUGE</div>
+                    {rodas.length ? rodas.map((r) => (
+                      <div key={r.momento} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontFamily: FB, fontSize: 11, letterSpacing: "0.2em", color: C.ouroDk }}>{r.momento}</span>
+                          <span style={{ fontFamily: FS, fontSize: 16, color: C.ouro }}>Índice {fmt(r.indice_auge)}</span>
+                        </div>
+                        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11.5, color: C.obs2, lineHeight: 1.6 }}>
+                          Energia {fmt(r.nota_energia)} · Consciência {fmt(r.nota_consciencia)} · Organização {fmt(r.nota_organizacao)} · Autocuidado {fmt(r.nota_autocuidado)} · Protagonismo {fmt(r.nota_protagonismo)}
+                        </div>
+                      </div>
+                    )) : <div style={pt}>Ainda não respondeu</div>}
+                  </div>
+                </div>
+              );
+            })()}
             <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 10.5, color: C.ouroDk, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>WhatsApp de suporte</div>
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11.5, color: C.lt, marginBottom: 10, lineHeight: 1.5 }}>Aparece na tela de espera, para a aluna que ainda não foi liberada falar com você.</div>
@@ -11816,7 +11863,7 @@ function PainelMentora({ ir }) {
  const statusCor = dias === null ? `rgba(28,26,23,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
  const statusTxt = dias === null ? "Sem checkin" : dias === 0 ? "Checkin hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
  return (
-                    <div key={a.id} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
+                    <div key={a.id} onClick={() => setAlunaSel(a)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10, cursor: "pointer" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
                         <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: `rgba(28,26,23,.92)` }}>{a.nome || "—"}</div>
                         <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 10, color: statusCor }}>{statusTxt}</div>
