@@ -1265,7 +1265,7 @@ export default function App() {
   };
  const salvarMeta = async (habId, freq, desc) => {
  const antiga = metas?.[habId]?.freq ?? HABS_FIXOS.find((h) => h.id === habId).freqDef;
- setMetas((m) => ({ ...m, [habId]: { freq, desc } }));
+ setMetas((m) => ({ ...m, [habId]: { ...(m[habId] || {}), freq, desc } }));
  const { data: { session } } = await supabase.auth.getSession();
  if (!session?.user) return;
  const p = _colMeta[habId];
@@ -1278,6 +1278,16 @@ export default function App() {
         { user_id: session.user.id, habito: habId, freq_antiga: antiga, freq_nova: freq },
       ).then(() => {});
     }
+  };
+ const salvarMinimo = async (habId, minimo) => {
+ setMetas((m) => ({ ...m, [habId]: { ...(m[habId] || {}), minimo } }));
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return;
+ const p = _colMeta[habId];
+ supabase.from("habitos_metas").upsert(
+      { user_id: session.user.id, [`${p}_minimo`]: minimo, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" },
+    ).then(() => {});
   };
  const registrarKitUso = async (acao) => {
  setKitUsos((k) => [...k, { data: TODAY, acao }]);
@@ -1480,9 +1490,9 @@ export default function App() {
  if (metasRes?.data && !metasRes.error) {
  const m = metasRes.data;
  setMetas({
- movimento: { freq: m.mov_freq ?? 3, desc: m.mov_desc || "" },
- sono: { freq: m.sono_freq ?? 7, desc: m.sono_desc || "" },
- tempo: { freq: m.tsi_freq ?? 3, desc: m.tsi_desc || "" },
+ movimento: { freq: m.mov_freq ?? 3, desc: m.mov_desc || "", minimo: m.mov_minimo || "" },
+ sono: { freq: m.sono_freq ?? 7, desc: m.sono_desc || "", minimo: m.sono_minimo || "" },
+ tempo: { freq: m.tsi_freq ?? 3, desc: m.tsi_desc || "", minimo: m.tsi_minimo || "" },
       });
     } else {
       // Primeira vez na v2: aproveita os hábitos escolhidos no cadastro antigo
@@ -1495,9 +1505,9 @@ export default function App() {
  const sonoDesc = achar(["sono", "dormir", "tela", "celular", "deitar", "acordar", "noite"]);
  const tsiDesc = achar(["tempo", "ler", "leitura", "medita", "escrev", "hobby", "respir", "autocuidado", "diário", "diario", "só me", "so me"]);
  setMetas({
- movimento: { freq: 3, desc: movDesc },
- sono: { freq: 7, desc: sonoDesc },
- tempo: { freq: 3, desc: tsiDesc },
+ movimento: { freq: 3, desc: movDesc, minimo: "" },
+ sono: { freq: 7, desc: sonoDesc, minimo: "" },
+ tempo: { freq: 3, desc: tsiDesc, minimo: "" },
       });
  if (movDesc || sonoDesc || tsiDesc) {
  supabase.from("habitos_metas").upsert(
@@ -2263,6 +2273,7 @@ export default function App() {
  registrarHabito,
  desregistrarHabito,
  salvarMeta,
+ salvarMinimo,
  registrarKitUso,
  salvarKitPessoal,
  toggleDesafio,
@@ -8741,20 +8752,19 @@ function VitJornada({ ir, onLogin }) {
 
 // Menu principal da Jornada (alunas)
 // ─── ABA MEU MAPA (seção 7) — o que é pessoal e intransferível ───────────────
-function MinimosViaveis({ metas, habStats, salvarMeta, tk }) {
- const [editando, setEditando] = useState(null); // habId
- const [freqE, setFreqE] = useState(3);
- const [descE, setDescE] = useState("");
+function MinimosViaveis({ metas, salvarMinimo, tk }) {
+ const [editando, setEditando] = useState(null);
+ const [txt, setTxt] = useState("");
  return (
     <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
       <div style={{ fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs, marginBottom: 2 }}>
  Seus Mínimos Viáveis
       </div>
       <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: `rgba(28,26,23,.72)`, marginBottom: 10 }}>
- A meta específica de cada hábito — editável por você, a qualquer momento
+ O mínimo que ainda conta num dia difícil, bem menor que a meta cheia. Editável por você.
       </div>
       {HABS_FIXOS.map((h) => {
- const st = habStats[h.id];
+ const min = metas?.[h.id]?.minimo || "";
  const emEdicao = editando === h.id;
  return (
           <div key={h.id} style={{ borderTop: `1px solid ${C.ouro}18`, padding: "9px 0" }}>
@@ -8763,27 +8773,18 @@ function MinimosViaveis({ metas, habStats, salvarMeta, tk }) {
                 <span style={{ width: 10, height: 10, borderRadius: "50%", background: C.ouro, display: "inline-block", flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12, color: C.obs2 }}>{h.nome}</div>
-                  <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: C.terra }}>
-                    {st.meta}x por semana{st.descMeta ? ` · ${st.descMeta}` : ""}
-                  </div>
+                  <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 13, color: min ? C.terra : C.lt }}>{min || "Ainda não definido"}</div>
                 </div>
-                <button onClick={() => { setEditando(h.id); setFreqE(st.meta); setDescE(st.descMeta); }}
- style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>
- editar
-                </button>
+                <button onClick={() => { setEditando(h.id); setTxt(min); }}
+ style={{ background: "none", border: "none", fontFamily: FB, fontSize: 10.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
               </div>
             ) : (
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-                  <span style={{ fontFamily: FB, fontSize: 11, color: C.terra }}>{h.nome} — vezes por semana:</span>
-                  <button onClick={() => setFreqE((f) => Math.max(1, f - 1))} style={{ width: 24, height: 24, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroDk, cursor: "pointer" }}>−</button>
-                  <span style={{ fontFamily: FS, fontSize: 16, color: C.obs }}>{freqE}</span>
-                  <button onClick={() => setFreqE((f) => Math.min(7, f + 1))} style={{ width: 24, height: 24, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroDk, cursor: "pointer" }}>+</button>
-                </div>
-                <input value={descE} onChange={(e) => setDescE(e.target.value)} placeholder="descrição livre (ex: 20 minutos)"
+                <div style={{ fontFamily: FB, fontSize: 11, color: C.terra, marginBottom: 6 }}>{h.nome} — o mínimo num dia difícil:</div>
+                <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="ex: caminhar 10 minutos"
  style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FS, fontSize: 13, color: C.obs, marginBottom: 7 }} />
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => { salvarMeta(h.id, freqE, descE.trim()); setEditando(null); tk("Mínimo viável atualizado "); }}
+                  <button onClick={() => { salvarMinimo(h.id, txt.trim()); setEditando(null); tk("Mínimo viável atualizado"); }}
  style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 11, color: C.obs2, cursor: "pointer" }}>Salvar</button>
                   <button onClick={() => setEditando(null)}
  style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 11, color: C.terra, cursor: "pointer" }}>Cancelar</button>
@@ -9050,6 +9051,7 @@ function Jornada({
  metas,
  habStats,
  salvarMeta,
+ salvarMinimo,
  tk,
 }) {
  const hist = historico || {};
@@ -9147,7 +9149,7 @@ function Jornada({
           <div style={{ color: `rgba(28,26,23,.65)`, fontSize: 16 }}>›</div>
         </div>
         {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
-        <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
+        <MinimosViaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
 
         {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
         <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
@@ -10718,9 +10720,16 @@ function Emergencia({
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 11, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>
  Se não vai dar pra fazer tudo, vamos de mínimos possíveis.
           </div>
-          <div style={{ fontFamily: FS, fontSize: 15, color: C.obs, lineHeight: 1.6 }}>
-            {kitMin || "Seu mínimo de emergência ainda não foi definido — ajuste nas Configurações."}
-          </div>
+          {HABS_FIXOS.some((h) => metas?.[h.id]?.minimo) ? (
+            HABS_FIXOS.filter((h) => metas?.[h.id]?.minimo).map((h) => (
+              <div key={h.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.ouro, marginTop: 8, flexShrink: 0 }} />
+                <div><span style={{ fontFamily: FB, fontSize: 12, color: C.terra }}>{h.nome}: </span><span style={{ fontFamily: FS, fontSize: 15, color: C.obs }}>{metas[h.id].minimo}</span></div>
+              </div>
+            ))
+          ) : (
+            <div style={{ fontFamily: FS, fontSize: 15, color: C.lt, lineHeight: 1.6 }}>Defina seus mínimos em Meu Mapa → Seus Mínimos Viáveis.</div>
+          )}
           {usou === "minimos" ? (
             <div style={{ fontFamily: FB, fontSize: 11, color: C.ouroDk, marginTop: 10 }}>✓ Registrado — mínimo é suficiente.</div>
           ) : (
@@ -11862,6 +11871,7 @@ function Perfil({
  metas,
  habStats,
  salvarMeta,
+ salvarMinimo,
  kitPessoa,
  fraseFoco,
  salvarKitPessoal,
@@ -12292,7 +12302,7 @@ function Perfil({
         </div>
 
         {/* Objetivos dos hábitos (Mínimos Viáveis) — mesma fonte da Hoje e do Meu Mapa */}
-        <MinimosViaveis metas={metas} habStats={habStats} salvarMeta={salvarMeta} tk={tk} />
+        <MinimosViaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
 
         {/* Mínimo de emergência (Kit) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
