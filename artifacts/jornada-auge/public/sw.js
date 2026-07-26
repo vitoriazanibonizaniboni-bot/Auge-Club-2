@@ -1,4 +1,4 @@
-const CACHE = "auge-v2";
+const CACHE = "auge-v3";
 const STATIC = ["/"];
 
 // ─── INSTALL ─────────────────────────────────────────────────────────────────
@@ -22,6 +22,28 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
+
+  // HTML e manifest: rede primeiro (garante a versão mais nova do app)
+  const ehPagina =
+    e.request.mode === "navigate" ||
+    url.pathname === "/" ||
+    url.pathname.endsWith(".html") ||
+    url.pathname.endsWith(".webmanifest");
+  if (ehPagina) {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          if (res.ok) caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
+          return res;
+        })
+        .catch(() =>
+          caches.match(e.request).then((c) => c || caches.match("/"))
+        )
+    );
+    return;
+  }
+
+  // Demais arquivos (JS/CSS com hash, imagens): cache primeiro, atualiza em segundo plano
   e.respondWith(
     caches.open(CACHE).then(async (cache) => {
       const cached = await cache.match(e.request);
