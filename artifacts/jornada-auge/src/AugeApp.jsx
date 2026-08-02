@@ -10896,6 +10896,17 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  const [catSel, setCatSel] = useState("aulas");
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  const [guiaAberto, setGuiaAberto] = useState(null); // guia HTML aberto dentro do app
+  const [guiaHtml, setGuiaHtml] = useState(""); // conteudo HTML do guia/indicacao (renderizado via srcDoc)
+  useEffect(() => {
+    if (!guiaAberto) { setGuiaHtml(""); return; }
+    let vivo = true;
+    setGuiaHtml("");
+    fetch(guiaAberto)
+      .then((r) => r.text())
+      .then((t) => { if (vivo) setGuiaHtml(t || ""); })
+      .catch(() => { if (vivo) setGuiaHtml("<div style=\'font-family:Inter,sans-serif;padding:32px 20px;color:#5A4B43;line-height:1.6\'>Não foi possível abrir o conteúdo agora. Tente novamente em instantes.</div>"); });
+    return () => { vivo = false; };
+  }, [guiaAberto]);
  const ytThumb = (url) => {
  const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1];
  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
@@ -11153,7 +11164,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  return (
           <div
  key={v.id}
- onClick={() => !bloqVideo && v.url && ((catSel === "podcast" || catSel === "curadoria") ? window.open(v.url, "_blank", "noopener") : setVideoAberto(v))}
+ onClick={() => !bloqVideo && v.url && (catSel === "podcast" ? window.open(v.url, "_blank", "noopener") : catSel === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v))}
  style={{
  background: `rgba(28,26,23,.04)`,
  border: `1px solid ${C.ouro}12`,
@@ -11198,7 +11209,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
               <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.ouroDk }}>Guia</div>
               <button onClick={() => setGuiaAberto(null)} style={{ background: "none", border: `1px solid ${C.ouro}66`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.ouroDk, cursor: "pointer" }}>Fechar ✕</button>
             </div>
-            <iframe src={guiaAberto} title="Guia" style={{ flex: 1, width: "100%", border: "none", background: C.creme }} />
+            <iframe srcDoc={guiaHtml} title="Guia" style={{ flex: 1, width: "100%", border: "none", background: C.creme }} />
           </div>
         )}
         {videoAberto && (
