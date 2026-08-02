@@ -10896,6 +10896,10 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  const [catSel, setCatSel] = useState("aulas");
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  const [guiaAberto, setGuiaAberto] = useState(null); // guia HTML aberto dentro do app
+ const ytThumb = (url) => {
+ const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1];
+ return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+  };
  const ytEmbed = (url) => {
  const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1];
  return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1` : null;
@@ -11145,6 +11149,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
         {/* Lista de vídeos */}
         {videos.map((v) => {
  const bloqVideo = false; // demo: todos os vídeos desbloqueados
+ const thumb = catSel !== "podcast" ? ytThumb(v.url) : null;
  return (
           <div
  key={v.id}
@@ -11162,17 +11167,22 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
           >
             <div
  style={{
- width: 80,
+ width: 96,
  background: catAtual?.cor || "#1E252E",
+ backgroundImage: thumb ? `url(${thumb})` : undefined,
+ backgroundSize: "cover",
+ backgroundPosition: "center",
  flexShrink: 0,
  display: "flex",
  alignItems: "center",
  justifyContent: "center",
- fontSize: bloqVideo ? 18 : 22,
- color: `rgba(28,26,23,.82)`,
               }}
             >
-              {bloqVideo ? "" : (catSel === "podcast" ? "♪" : "▶")}
+              {bloqVideo ? null : (
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: "50%", background: "rgba(28,26,23,.55)", color: "#fff", fontSize: 15 }}>
+                  {catSel === "podcast" ? "♪" : "▶"}
+                </span>
+              )}
             </div>
             <div style={{ padding: "11px 13px", flex: 1 }}>
               <div
