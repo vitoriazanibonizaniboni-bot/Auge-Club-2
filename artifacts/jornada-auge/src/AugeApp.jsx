@@ -11160,11 +11160,49 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
         {/* Lista de vídeos */}
         {videos.map((v) => {
  const bloqVideo = false; // demo: todos os vídeos desbloqueados
- const thumb = catSel !== "podcast" ? ytThumb(v.url) : null;
- return (
+ const ehLink = catSel === "podcast" || catSel === "curadoria";
+ const thumb = ehLink ? null : ytThumb(v.url);
+ const abrir = () => !bloqVideo && v.url && (catSel === "podcast" ? window.open(v.url, "_blank", "noopener") : catSel === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
+
+          // Card compacto (Indicações e Podcast) — sem capa de vídeo
+          if (ehLink) return (
+            <div
+ key={v.id}
+ onClick={abrir}
+ style={{
+ display: "flex", alignItems: "center", gap: 14,
+ background: `rgba(28,26,23,.04)`,
+ border: `1px solid ${C.ouro}22`,
+ borderRadius: 14,
+ marginBottom: 12,
+ padding: "14px 16px",
+ cursor: "pointer",
+            }}
+          >
+            <div style={{ flexShrink: 0, width: 46, height: 46, borderRadius: 12, background: `${C.ouro}1F`, border: `1px solid ${C.ouro}40`, display: "flex", alignItems: "center", justifyContent: "center", color: C.ouroDk, fontSize: 20 }}>
+              {catSel === "podcast" ? "♪" : "❦"}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: FS, fontSize: 18, color: `rgba(28,26,23,.97)`, lineHeight: 1.25, marginBottom: v.sub ? 3 : 0 }}>
+                {v.titulo}
+              </div>
+              {v.sub && (
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.7)`, lineHeight: 1.45, marginBottom: 3 }}>
+                  {v.sub}
+                </div>
+              )}
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroDk }}>
+                {catSel === "podcast" ? "Ouvir ›" : "Ler ›"}
+              </div>
+            </div>
+          </div>
+          );
+
+          // Card de vídeo (Aulas, Meditações, Yoga) — capa 16:9
+          return (
           <div
  key={v.id}
- onClick={() => !bloqVideo && v.url && (catSel === "podcast" ? window.open(v.url, "_blank", "noopener") : catSel === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v))}
+ onClick={abrir}
  style={{
  background: `rgba(28,26,23,.04)`,
  border: `1px solid ${C.ouro}12`,
@@ -11182,7 +11220,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
               {!bloqVideo && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 48, height: 48, borderRadius: "50%", background: "rgba(28,26,23,.55)", color: "#fff", fontSize: 20 }}>
-                    {catSel === "podcast" ? "♪" : (catSel === "curadoria" ? "↗" : "▶")}
+                    ▶
                   </span>
                 </div>
               )}
@@ -11195,7 +11233,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
                 {v.sub}
               </div>
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: bloqCat ? C.ouro : `rgba(28,26,23,.85)` }}>
-                {bloqCat ? "Exclusivo Jornada AUGE" : (catSel === "podcast" ? "Ouvir ›" : (catSel === "curadoria" ? "Ver ›" : v.dur))}
+                {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
               </div>
             </div>
           </div>
