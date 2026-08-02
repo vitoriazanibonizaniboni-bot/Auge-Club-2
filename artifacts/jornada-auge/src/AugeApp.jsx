@@ -11303,6 +11303,7 @@ function PainelMentora({ ir }) {
  const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "aulas", duracao: "30 min", descricao: "" });
  const [salvandoV, setSalvandoV] = useState(false);
  const [mostrarForm, setMostrarForm] = useState(false);
+ const [upIndicMsg, setUpIndicMsg] = useState(""); // status do upload de HTML da indicacao
   // ── estado mentoria ──
  const [ment, setMent] = useState({ data: "", semana: "", duracao: "75 min", zoom: "", desafio: "", inicio: "", whatsapp: "" });
  const [salvandoM, setSalvandoM] = useState(false);
@@ -11477,6 +11478,17 @@ function PainelMentora({ ir }) {
       });
   }, [aba]);
 
+ const enviarIndicacaoHtml = async (file) => {
+ if (!file) return;
+ setUpIndicMsg("Enviando...");
+ const fname = `indic-${Date.now()}.html`;
+ const { error } = await supabase.storage.from("guias").upload(fname, file, { upsert: true, contentType: "text/html" });
+ if (error) { setUpIndicMsg("Erro ao enviar — confira se o bucket 'guias' existe."); return; }
+ const { data: urlData } = supabase.storage.from("guias").getPublicUrl(fname);
+ const url = `${urlData?.publicUrl}?v=${Date.now()}`;
+ setFormV((f) => ({ ...f, url, titulo: f.titulo || file.name.replace(/\.html?$/i, "").replace(/[-_]/g, " ") }));
+ setUpIndicMsg(`Arquivo pronto: ${file.name}`);
+  };
  const adicionarVideo = async () => {
  if (!formV.titulo.trim() || !formV.url.trim()) return;
  setSalvandoV(true);
@@ -11494,6 +11506,7 @@ function PainelMentora({ ir }) {
  if (!error && data) {
  setVideos((v) => [data, ...v]);
  setFormV({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "" });
+ setUpIndicMsg("");
  setMostrarForm(false);
     }
  setSalvandoV(false);
@@ -11560,11 +11573,16 @@ function PainelMentora({ ir }) {
             {mostrarForm && (
               <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
                 <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>{formV.categoria === "podcast" ? "Novo podcast" : formV.categoria === "curadoria" ? "Nova indicação" : "Novo vídeo"}</div>
-                {(["podcast", "curadoria"].includes(formV.categoria)
+                {(formV.categoria === "curadoria"
                   ? [
-                      ["Título", "titulo", formV.categoria === "curadoria" ? "Ex: O livro que mudou minha rotina" : "Ex: Episódio 12 - Longevidade feminina"],
+                      ["Título", "titulo", "Ex: Meus livros favoritos"],
+                      ["Descrição (opcional)", "descricao", "Uma linha sobre a indicação"],
+                    ]
+                  : formV.categoria === "podcast"
+                  ? [
+                      ["Título", "titulo", "Ex: Episódio 12 - Longevidade feminina"],
                       ["Link", "url", "https://..."],
-                      ["Descrição (opcional)", "descricao", formV.categoria === "curadoria" ? "Sobre a indicação" : "Sobre o que é o episódio"],
+                      ["Descrição (opcional)", "descricao", "Sobre o que é o episódio"],
                     ]
                   : [
                       ["Título", "titulo", "Ex: Yoga para mobilidade"],
@@ -11583,6 +11601,17 @@ function PainelMentora({ ir }) {
                     />
                   </div>
                 ))}
+                {formV.categoria === "curadoria" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: `rgba(28,26,23,.82)`, marginBottom: 6 }}>Arquivo da indicação (HTML)</div>
+                    <label style={{ display: "inline-block", background: `${C.ouro}18`, border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 300, fontSize: 14.5, color: C.ouroDk, cursor: "pointer" }}>
+                      {formV.url ? "Trocar arquivo" : "Escolher arquivo .html"}
+                      <input type="file" accept=".html,text/html" style={{ display: "none" }}
+                        onChange={(e) => { enviarIndicacaoHtml(e.target.files?.[0]); e.target.value = ""; }} />
+                    </label>
+                    {upIndicMsg && <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: upIndicMsg.startsWith("Erro") ? C.atencao : C.augeZ, marginTop: 8 }}>{upIndicMsg}</div>}
+                  </div>
+                )}
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>Categoria</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -11597,6 +11626,7 @@ function PainelMentora({ ir }) {
                 <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 16 }}>
                   {salvandoV ? "Salvando..." : (formV.categoria === "podcast" ? "Salvar podcast" : formV.categoria === "curadoria" ? "Salvar indicação" : "Salvar vídeo")}
                 </BtnPill>
+                {formV.categoria === "curadoria" && !formV.url && <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: `rgba(28,26,23,.55)`, marginTop: 8, textAlign: "center" }}>Escolha o arquivo .html acima para liberar o salvar.</div>}
               </div>
             )}
 
