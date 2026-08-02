@@ -11153,7 +11153,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  return (
           <div
  key={v.id}
- onClick={() => !bloqVideo && v.url && (catSel === "podcast" ? window.open(v.url, "_blank", "noopener") : setVideoAberto(v))}
+ onClick={() => !bloqVideo && v.url && ((catSel === "podcast" || catSel === "curadoria") ? window.open(v.url, "_blank", "noopener") : setVideoAberto(v))}
  style={{
  background: `rgba(28,26,23,.04)`,
  border: `1px solid ${C.ouro}12`,
@@ -11171,7 +11171,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
               {!bloqVideo && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 48, height: 48, borderRadius: "50%", background: "rgba(28,26,23,.55)", color: "#fff", fontSize: 20 }}>
-                    {catSel === "podcast" ? "♪" : "▶"}
+                    {catSel === "podcast" ? "♪" : (catSel === "curadoria" ? "↗" : "▶")}
                   </span>
                 </div>
               )}
@@ -11184,7 +11184,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
                 {v.sub}
               </div>
               <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: bloqCat ? C.ouro : `rgba(28,26,23,.85)` }}>
-                {bloqCat ? "Exclusivo Jornada AUGE" : (catSel === "podcast" ? "Ouvir ›" : v.dur)}
+                {bloqCat ? "Exclusivo Jornada AUGE" : (catSel === "podcast" ? "Ouvir ›" : (catSel === "curadoria" ? "Ver ›" : v.dur))}
               </div>
             </div>
           </div>
@@ -11548,12 +11548,12 @@ function PainelMentora({ ir }) {
             {/* Formulário de novo vídeo */}
             {mostrarForm && (
               <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
-                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>{formV.categoria === "podcast" ? "Novo podcast" : "Novo vídeo"}</div>
-                {(formV.categoria === "podcast"
+                <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.ouro, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>{formV.categoria === "podcast" ? "Novo podcast" : formV.categoria === "curadoria" ? "Nova indicação" : "Novo vídeo"}</div>
+                {(["podcast", "curadoria"].includes(formV.categoria)
                   ? [
-                      ["Título", "titulo", "Ex: Episódio 12 - Longevidade feminina"],
-                      ["Link do podcast", "url", "https://open.spotify.com/..."],
-                      ["Descrição (opcional)", "descricao", "Sobre o que é o episódio"],
+                      ["Título", "titulo", formV.categoria === "curadoria" ? "Ex: O livro que mudou minha rotina" : "Ex: Episódio 12 - Longevidade feminina"],
+                      ["Link", "url", "https://..."],
+                      ["Descrição (opcional)", "descricao", formV.categoria === "curadoria" ? "Sobre a indicação" : "Sobre o que é o episódio"],
                     ]
                   : [
                       ["Título", "titulo", "Ex: Yoga para mobilidade"],
@@ -11584,7 +11584,7 @@ function PainelMentora({ ir }) {
                   </div>
                 </div>
                 <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 16 }}>
-                  {salvandoV ? "Salvando..." : (formV.categoria === "podcast" ? "Salvar podcast" : "Salvar vídeo")}
+                  {salvandoV ? "Salvando..." : (formV.categoria === "podcast" ? "Salvar podcast" : formV.categoria === "curadoria" ? "Salvar indicação" : "Salvar vídeo")}
                 </BtnPill>
               </div>
             )}
