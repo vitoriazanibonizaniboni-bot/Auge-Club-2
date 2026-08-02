@@ -10765,7 +10765,7 @@ const CATS = [
   { id: "aulas", icon: "", label: "Aulas", lock: false, cor: "#252028" },
   { id: "meditacoes", icon: "", label: "Meditações", lock: false, cor: "#1E2E2A" },
   { id: "yoga", icon: "", label: "Aulas de yoga", lock: false, cor: "#1E2820" },
-  { id: "curadoria", icon: "", label: "Curadoria de livros, séries e filmes", lock: false, cor: "#1E252E" },
+  { id: "curadoria", icon: "", label: "Indicações", lock: false, cor: "#1E252E" },
   { id: "podcast", icon: "", label: "Podcast", lock: false, cor: "#241E28" },
 ];
 // vídeos antigos do banco continuam aparecendo: mapeamento de categorias legadas
@@ -11250,7 +11250,7 @@ const CATS_ADMIN = [
   { id: "aulas", label: "Aulas" },
   { id: "meditacoes", label: "Meditações" },
   { id: "yoga", label: "Aulas de yoga" },
-  { id: "curadoria", label: "Curadoria (livros, séries e filmes)" },
+  { id: "curadoria", label: "Indicações" },
   { id: "podcast", label: "Podcast (links)" },
 ];
 
