@@ -10770,7 +10770,7 @@ const CATS = [
 ];
 // vídeos antigos do banco continuam aparecendo: mapeamento de categorias legadas
 const CAT_LEGADO = {
- aulas: ["aulas", "nutri", "podcast", "convid", "jornada"],
+ aulas: ["aulas", "nutri", "convid", "jornada"],
  meditacoes: ["meditacoes", "meditacao"],
  yoga: ["yoga"],
  curadoria: ["curadoria"],
@@ -11162,7 +11162,12 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  const bloqVideo = false; // demo: todos os vídeos desbloqueados
  const ehLink = catSel === "podcast" || catSel === "curadoria";
  const thumb = ehLink ? null : ytThumb(v.url);
- const abrir = () => !bloqVideo && v.url && (catSel === "podcast" ? window.open(v.url, "_blank", "noopener") : catSel === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
+ const abrirExterno = (url) => {
+ const a = document.createElement("a");
+ a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+ document.body.appendChild(a); a.click(); a.remove();
+ };
+ const abrir = () => !bloqVideo && v.url && (catSel === "podcast" ? abrirExterno(v.url) : catSel === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
 
           // Card compacto (Indicações e Podcast) — sem capa de vídeo
           if (ehLink) return (
