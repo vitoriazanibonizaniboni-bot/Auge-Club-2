@@ -11157,66 +11157,33 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
  style={{
  background: `rgba(28,26,23,.04)`,
  border: `1px solid ${C.ouro}12`,
- borderRadius: 10,
- marginBottom: 9,
+ borderRadius: 12,
+ marginBottom: 12,
  overflow: "hidden",
- display: "flex",
  cursor: bloqVideo ? "default" : "pointer",
  opacity: bloqVideo ? 0.5 : 1,
             }}
           >
-            <div
- style={{
- width: 96,
- background: catAtual?.cor || "#1E252E",
- backgroundImage: thumb ? `url(${thumb})` : undefined,
- backgroundSize: "cover",
- backgroundPosition: "center",
- flexShrink: 0,
- display: "flex",
- alignItems: "center",
- justifyContent: "center",
-              }}
-            >
-              {bloqVideo ? null : (
-                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: "50%", background: "rgba(28,26,23,.55)", color: "#fff", fontSize: 15 }}>
-                  {catSel === "podcast" ? "♪" : "▶"}
-                </span>
+            <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: catAtual?.cor || "#1E252E" }}>
+              {thumb && (
+                <img src={thumb} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              )}
+              {!bloqVideo && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 48, height: 48, borderRadius: "50%", background: "rgba(28,26,23,.55)", color: "#fff", fontSize: 20 }}>
+                    {catSel === "podcast" ? "♪" : "▶"}
+                  </span>
+                </div>
               )}
             </div>
-            <div style={{ padding: "11px 13px", flex: 1 }}>
-              <div
- style={{
- fontFamily: FS,
- fontSize: 17,
- color: bloqCat
-                    ? `rgba(28,26,23,.92)`
-                    : `rgba(28,26,23,.97)`,
- marginBottom: 3,
- lineHeight: 1.3,
-                }}
-              >
+            <div style={{ padding: "12px 15px" }}>
+              <div style={{ fontFamily: FS, fontSize: 18, color: bloqCat ? `rgba(28,26,23,.92)` : `rgba(28,26,23,.97)`, marginBottom: 4, lineHeight: 1.3 }}>
                 {v.titulo}
               </div>
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 13.5,
- color: `rgba(28,26,23,.88)`,
- marginBottom: 2,
-                }}
-              >
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: `rgba(28,26,23,.88)`, marginBottom: 4, lineHeight: 1.5 }}>
                 {v.sub}
               </div>
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 13.5,
- color: bloqCat ? C.ouro : `rgba(28,26,23,.85)`,
-                }}
-              >
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: bloqCat ? C.ouro : `rgba(28,26,23,.85)` }}>
                 {bloqCat ? "Exclusivo Jornada AUGE" : (catSel === "podcast" ? "Ouvir ›" : v.dur)}
               </div>
             </div>
