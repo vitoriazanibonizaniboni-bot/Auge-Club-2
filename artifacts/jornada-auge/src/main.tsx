@@ -12,6 +12,13 @@ if ("serviceWorker" in navigator) {
   let recarregando = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!jaControlado || recarregando) return;
+    // Blindagem anti-loop: recarrega no máximo 1x por aba. Se o app já recarregou
+    // nesta sessão, não recarrega de novo (evita ciclo "carregando" infinito quando
+    // um Service Worker antigo fica reativando a cada load).
+    try {
+      if (sessionStorage.getItem("auge_sw_reloaded") === "1") return;
+      sessionStorage.setItem("auge_sw_reloaded", "1");
+    } catch {}
     recarregando = true;
     window.location.reload();
   });
