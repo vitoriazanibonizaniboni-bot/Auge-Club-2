@@ -2479,30 +2479,7 @@ export default function App() {
  return (
     <Phone>
       {toast && <Brinde msg={toast} />}
-      {novaVersao && (
-        <div
- onClick={() => window.location.reload()}
- style={{
- position: "absolute",
- top: 14,
- left: "50%",
- transform: "translateX(-50%)",
- zIndex: 300,
- background: C.obs2,
- border: `1px solid ${C.ouro}66`,
- borderRadius: 50,
- padding: "11px 18px",
- color: C.ouro,
- fontFamily: FB,
- fontSize: 15,
- cursor: "pointer",
- boxShadow: "0 8px 24px rgba(0,0,0,.5)",
- whiteSpace: "nowrap",
-          }}
-        >
- Nova versão disponível — toque para atualizar
-        </div>
-      )}
+      {/* Banner "nova versão" removido — atualização agora é silenciosa (auto-reload) */}
       <Rolar>{renderTela()}</Rolar>
       {!SEM_NAV.includes(tela) && (
         <NavBar
