@@ -4895,7 +4895,7 @@ function Home({
  letterSpacing: "0.04em",
                 }}
               >
- Entrar no Zoom
+ Entrar no Meet
               </a>
             )}
           </div>
@@ -5627,7 +5627,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
               <div
  onClick={() => setDet(p.id)}
  style={{
- height: 178,
+ minHeight: p.imgSrc ? 0 : 178,
  background: p.fundo,
  position: "relative",
  display: "flex",
@@ -5640,11 +5640,10 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  src={p.imgSrc}
  alt=""
  style={{
- position: "absolute",
- inset: 0,
+ position: "relative",
  width: "100%",
- height: "100%",
- objectFit: "cover",
+ height: "auto",
+ display: "block",
                     }}
                   />
                 )}
@@ -5775,7 +5774,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "5px 0",
                     }}
                   >
-                    {cu ? " Me identifico" : " Te entendo"}
+                    {cu ? "Curtido" : "Curtir"}
                     {p.cur.length > 0 && (
                       <span
  style={{
@@ -5784,7 +5783,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  marginLeft: 4,
                         }}
                       >
-                        {p.cur.length} se identificaram
+                        {p.cur.length} {p.cur.length === 1 ? "curtida" : "curtidas"}
                       </span>
                     )}
                   </button>
@@ -5805,6 +5804,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "5px 0",
                     }}
                   >
+                    {ICONS.comentario("rgba(28,26,23,.92)", 17)}
                     <span style={{ fontSize: 15 }}>{p.com.length}</span>
                   </button>
                   {(p.userId === authUserId || p.aut === "Você") && (
@@ -6149,12 +6149,12 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "4px 0",
                     }}
                   >
-                    {dcu ? " Me identifico" : " Te entendo"}
+                    {dcu ? "Curtido" : "Curtir"}
                     {dp.cur.length > 0 && (
                       <span
  style={{ fontSize: 14.5, color: `rgba(28,26,23,.82)` }}
                       >
-                        {dp.cur.length} se identificaram
+                        {dp.cur.length} {dp.cur.length === 1 ? "curtida" : "curtidas"}
                       </span>
                     )}
                   </button>
@@ -11679,7 +11679,7 @@ function PainelMentora({ ir }) {
               ["Data e horário", "data", "Ex: 15 de julho · 19h"],
               ["Semana da jornada", "semana", "Ex: Semana 3"],
               ["Duração", "duracao", "Ex: 75 min"],
-              ["Link do Zoom", "zoom", "https://zoom.us/j/..."],
+              ["Link do Meet", "zoom", "https://meet.google.com/..."],
               ["Desafio da Semana (turma)", "desafio", "Ex: ler 5 páginas por dia"],
               ["Início da Jornada (segunda-feira da S1)", "inicio", "AAAA-MM-DD, ex: 2026-07-06"],
             ].map(([lb, field, ph]) => (
