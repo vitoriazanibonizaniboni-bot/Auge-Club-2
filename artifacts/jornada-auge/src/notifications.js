@@ -135,3 +135,14 @@ export function initOneSignalNative() {
     }
   } catch (e) {}
 }
+
+// ─── Liga o OneSignal ao usuário (para notificações direcionadas) ─────────────
+export function setOneSignalUser(uid) {
+  if (!uid || typeof window === "undefined") return;
+  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    try { const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal; OS && OS.login && OS.login(String(uid)); } catch (e) {}
+    return;
+  }
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push((OneSignal) => { try { OneSignal.login(String(uid)); } catch (e) {} });
+}

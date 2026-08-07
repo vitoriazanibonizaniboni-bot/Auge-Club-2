@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { requestPermission, scheduleAll, clearAll, initOneSignalNative } from "./notifications.js";
+import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSignalUser } from "./notifications.js";
 import { supabase } from "./supabase.js";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
@@ -2091,6 +2091,7 @@ export default function App() {
  supabase.auth.getSession().then(({ data: { session } }) => {
  if (session?.user) {
  setAuthUser(session.user);
+ setOneSignalUser(session.user.id);
         // Timeout de segurança: nunca fica preso no carregando
  const loadTimeout = setTimeout(() => setLoadingAuth(false), 8000);
  loadUserData(session.user.id).finally(() => {
@@ -2111,6 +2112,7 @@ export default function App() {
       }
  else if (event === "SIGNED_IN" && session?.user) {
  setAuthUser(session.user);
+ setOneSignalUser(session.user.id);
  loadUserData(session.user.id);
       }
  else if (event === "SIGNED_OUT") {
@@ -5340,6 +5342,16 @@ function Home({
 // ═══════════════════════════════════════════════════════════════════
 // ABA: FEED — posts públicos e privados
 // ═══════════════════════════════════════════════════════════════════
+async function notificarInteracao(targetUserId, tipo, nome) {
+  if (!targetUserId) return;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+    await fetch("/api/notificar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, targetUserId, tipo, nome: nome || "Uma amiga" }) });
+  } catch {}
+}
+
 function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto }) {
  const totalNaoLidas = Object.values(naoLidas).reduce((a, b) => a + b, 0);
  const [open, setOpen] = useState(null);
@@ -5381,6 +5393,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  const userId = authUserId || "RF";
  const j = p.cur.includes(userId);
  const newCur = j ? p.cur.filter((x) => x !== userId) : [...p.cur, userId];
+ if (!j && p.userId && p.userId !== authUserId) notificarInteracao(p.userId, "curtida", usuario?.nome);
         // Salva curtida no Supabase se for post real (UUID)
  if (p.dbId) {
  supabase.from("feed").update({ curtidas: newCur }).eq("id", p.dbId).then(() => {});
@@ -5401,6 +5414,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
           ...p.com,
           { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, tmp, parent: parentCid, likes: [] },
         ];
+ if (p.userId && p.userId !== authUserId) notificarInteracao(p.userId, "comentario", usuario?.nome);
         // Persiste na tabela comentarios se for post real
  if (p.dbId && authUserId) {
  supabase
