@@ -1408,6 +1408,16 @@ export default function App() {
       }
     }
 
+    // esconde conteúdo de usuárias bloqueadas
+ try {
+ const { data: bloq } = await supabase.from("bloqueios").select("bloqueado_id").eq("user_id", userId);
+ const bloqIds = new Set((bloq || []).map((b) => b.bloqueado_id));
+ if (bloqIds.size) {
+ postsReais.forEach((pp) => { pp.com = (pp.com || []).filter((c) => !bloqIds.has(c.userId)); });
+ setFeed(postsReais.filter((pp) => !bloqIds.has(pp.userId)));
+ return;
+      }
+    } catch {}
  setFeed(postsReais);
   };
 
@@ -4775,6 +4785,9 @@ function Home({
 
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
+      {avisoAcao && (
+        <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 14, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
+      )}
       {/* Header com logo */}
       <div
  style={{
@@ -5338,6 +5351,23 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  const [confirmaExcluir, setConfirmaExcluir] = useState(null);
  const [confirmaComent, setConfirmaComent] = useState(null); // { postId, cid }
  const [resp, setResp] = useState(null); // respondendo: { cid, autor } — thread de 1 nível (seção 6.2)
+ const [menuPost, setMenuPost] = useState(null);
+ const [avisoAcao, setAvisoAcao] = useState("");
+ useEffect(() => { if (!avisoAcao) return; const t = setTimeout(() => setAvisoAcao(""), 3800); return () => clearTimeout(t); }, [avisoAcao]);
+ const denunciarPost = async (p) => {
+ try { await supabase.from("denuncias").insert({ user_id: authUserId, post_id: p.dbId || null, motivo: "post_inapropriado" }); } catch {}
+ setMenuPost(null); setAvisoAcao("Denúncia enviada. Nossa equipe revisa em até 24h.");
+ };
+ const bloquearAutor = async (p) => {
+ if (!p.userId) return;
+ try { await supabase.from("bloqueios").insert({ user_id: authUserId, bloqueado_id: p.userId }); } catch {}
+ setFeed((f) => f.filter((x) => x.userId !== p.userId));
+ setMenuPost(null); setAvisoAcao("Pronto. Você não verá mais o conteúdo dessa pessoa.");
+ };
+ const denunciarComentario = async (postId, cid) => {
+ try { await supabase.from("denuncias").insert({ user_id: authUserId, comentario_id: cid, motivo: "comentario_inapropriado" }); } catch {}
+ setAvisoAcao("Comentário denunciado. Vamos revisar.");
+ };
  const curtir = (id) => {
  setFeed((f) =>
  f.map((p) => {
@@ -5734,6 +5764,17 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   <span style={{ background: p.source === "comunidade" ? `${C.blush}45` : `${C.ouro}35`, borderRadius: 12, padding: "2px 9px", fontFamily: FB, fontWeight: 400, fontSize: 11.5, letterSpacing: "0.12em", textTransform: "uppercase", color: C.obs2 }}>
                     {p.source === "comunidade" ? "Comunidade" : "Jornada"}
                   </span>
+                  {(p.userId !== authUserId && p.aut !== "Você") && (
+                    <div style={{ marginLeft: "auto", position: "relative" }}>
+                      <button onClick={(e) => { e.stopPropagation(); setMenuPost(menuPost === p.id ? null : p.id); }} aria-label="Mais opções" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "rgba(28,26,23,.55)", padding: "0 4px", lineHeight: 1 }}>⋯</button>
+                      {menuPost === p.id && (
+                        <div style={{ position: "absolute", right: 0, top: 26, zIndex: 30, background: C.creme, border: `1px solid ${C.ouro}33`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.18)", overflow: "hidden", minWidth: 190 }}>
+                          <button onClick={() => denunciarPost(p)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "11px 14px", fontFamily: FB, fontSize: 14.5, color: C.obs2, cursor: "pointer" }}>Denunciar publicação</button>
+                          <button onClick={() => bloquearAutor(p)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C.ouro}18`, padding: "11px 14px", fontFamily: FB, fontSize: 14.5, color: C.atencao, cursor: "pointer" }}>Bloquear {p.aut ? p.aut.split(" ")[0] : "pessoa"}</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div
  onClick={() => setDet(p.id)}
@@ -5903,6 +5944,9 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                           >
  apagar
                           </button>
+                        )}
+                        {c.cid && c.userId !== authUserId && (
+                          <button onClick={() => denunciarComentario(p.id, c.cid)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(28,26,23,.5)", fontSize: 13, padding: "2px 4px", flexShrink: 0 }}>denunciar</button>
                         )}
                       </div>
                       {/* Thread simples — uma camada de resposta (seção 6.2) */}
