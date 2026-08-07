@@ -12201,16 +12201,6 @@ function Perfil({
           )}
 
         </div>
-
-        {/* Excluir conta (exigência da App Store / privacidade) */}
-        <div style={{ textAlign: "center", marginTop: 4, marginBottom: 8 }}>
-          <button
- onClick={() => { setDelMsg(""); setConfirmDel(true); }}
- style={{ background: "none", border: "none", fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: "rgba(28,26,23,.45)", textDecoration: "underline", cursor: "pointer" }}
-          >
- Excluir minha conta
-          </button>
-        </div>
       </div>
 
       {confirmDel && (
@@ -12539,6 +12529,14 @@ function Perfil({
           >
  Este app é um programa de desenvolvimento de hábitos e estilo de
  vida. Não substitui consulta médica ou acompanhamento clínico.
+          </div>
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <button
+ onClick={() => { setDelMsg(""); setConfirmDel(true); }}
+ style={{ background: "none", border: "none", fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: "rgba(28,26,23,.45)", textDecoration: "underline", cursor: "pointer" }}
+            >
+ Excluir minha conta
+            </button>
           </div>
         </div>
       </Grain>
