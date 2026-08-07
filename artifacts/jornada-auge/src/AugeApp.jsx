@@ -5664,7 +5664,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
           </div>
         )}
         {visiveis.map((p) => {
- const cu = p.cur.includes("RF");
+ const cu = p.cur.includes(authUserId || "RF");
  const ab = open === p.id;
  return (
             <div
