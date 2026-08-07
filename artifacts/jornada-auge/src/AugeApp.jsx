@@ -130,8 +130,8 @@ const IcoH = {
     </svg>
   ),
  comentario: (c, s = 17) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6">
-      <circle cx="12" cy="12" r="8.5" />
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.4 8.5 8.5 0 0 1-3.6-.8L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z" />
     </svg>
   ),
 };
@@ -5815,7 +5815,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "5px 0",
                     }}
                   >
-                    {cu ? "Curtido" : "Curtir"}
+                    {IcoH.coracao(cu ? C.ouro : "rgba(28,26,23,.92)", 16, cu ? C.ouro : "none")} {cu ? "Curtido" : "Curtir"}
                     {p.cur.length > 0 && (
                       <span
  style={{
@@ -6193,7 +6193,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "4px 0",
                     }}
                   >
-                    {dcu ? "Curtido" : "Curtir"}
+                    {IcoH.coracao(dcu ? C.ouro : "rgba(28,26,23,.92)", 16, dcu ? C.ouro : "none")} {dcu ? "Curtido" : "Curtir"}
                     {dp.cur.length > 0 && (
                       <span
  style={{ fontSize: 14.5, color: `rgba(28,26,23,.82)` }}
