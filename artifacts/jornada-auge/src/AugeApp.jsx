@@ -1588,7 +1588,8 @@ export default function App() {
  const cachedPlano = (() => { try { return localStorage.getItem("auge_perfil_plano"); } catch { return null; } })();
  const cachedDataCad = (() => { try { return localStorage.getItem("auge_perfil_datacad"); } catch { return null; } })();
  if (cachedPlano) {
- setPerfil(FORCED_PLANO);
+        // respeita o plano em cache (inclusive "admin") — não rebaixa a mentora
+ setPerfil(cachedPlano);
  if (cachedDataCad) setDataCadastro(new Date(cachedDataCad));
       } else {
  setPerfil(FORCED_PLANO);
