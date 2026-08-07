@@ -5845,7 +5845,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "5px 0",
                     }}
                   >
-                    {ICONS.comentario("rgba(28,26,23,.92)", 17)}
+                    {IcoH.comentario("rgba(28,26,23,.92)", 17)}
                     <span style={{ fontSize: 15 }}>{p.com.length}</span>
                   </button>
                   {(p.userId === authUserId || p.aut === "Você") && (
