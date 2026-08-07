@@ -10929,7 +10929,101 @@ const VIDS = {
   ],
 };
 
-function Conteudo({ perfil, videos: videosDB, sem, guias }) {
+function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
+  const [coms, setComs] = useState([]);
+  const [txt, setTxt] = useState("");
+  const [resp, setResp] = useState(null);
+  const [aviso, setAviso] = useState("");
+  const [confDel, setConfDel] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    supabase.from("comentarios")
+      .select("id, user_id, texto, autor_nome, autor_avatar, parent_id, curtidas, created_at")
+      .eq("video_id", videoId).order("created_at", { ascending: true })
+      .then(({ data }) => { if (vivo) setComs((data || []).map((c) => ({ cid: c.id, q: c.autor_nome || "Aluna", t: c.texto, userId: c.user_id, av: c.autor_avatar || null, parent: c.parent_id || null, likes: c.curtidas || [] }))); });
+    return () => { vivo = false; };
+  }, [videoId]);
+  useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(""), 3500); return () => clearTimeout(t); }, [aviso]);
+  const enviar = async () => {
+    if (!txt.trim()) return;
+    const texto = txt.trim(); const parentId = resp?.cid || null;
+    const { data } = await supabase.from("comentarios").insert({ video_id: videoId, user_id: authUserId, texto, autor_nome: usuario?.nome || "Aluna", autor_avatar: minhaFoto, parent_id: parentId }).select("id").single();
+    setComs((cs) => [...cs, { cid: data?.id, q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, parent: parentId, likes: [] }]);
+    setTxt(""); setResp(null);
+  };
+  const curtir = async (cid) => { if (!cid) return; try { const { data } = await supabase.rpc("toggle_comment_like", { cid }); setComs((cs) => cs.map((c) => c.cid === cid ? { ...c, likes: data || [] } : c)); } catch {} };
+  const denunciar = async (cid) => { try { await supabase.from("denuncias").insert({ user_id: authUserId, comentario_id: cid, motivo: "comentario_inapropriado" }); } catch {} setAviso("Comentário denunciado. Vamos revisar."); };
+  const apagar = async (cid) => { await supabase.from("comentarios").delete().eq("id", cid); setComs((cs) => cs.filter((c) => c.cid !== cid && c.parent !== cid)); setConfDel(null); };
+  const curtido = (c) => (c.likes || []).includes(authUserId);
+  return (
+    <div style={{ background: C.creme, borderRadius: 14, padding: "14px 14px 12px", marginTop: 12, maxHeight: "42vh", overflowY: "auto" }}>
+      <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.ouroDk, marginBottom: 10 }}>Comentários</div>
+      {aviso && <div style={{ fontFamily: FB, fontSize: 13, color: C.augeZ, marginBottom: 8 }}>{aviso}</div>}
+      {coms.filter((c) => !c.parent).length === 0 && (
+        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14, color: C.lt, marginBottom: 8 }}>Seja a primeira a comentar.</div>
+      )}
+      {coms.filter((c) => !c.parent).map((c, i) => (
+        <div key={c.cid || i} style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", gap: 7 }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: C.ouroDk, display: "flex", alignItems: "center", justifyContent: "center", color: C.creme, fontSize: 12.5, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
+              {c.av ? <img src={c.av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : c.q.slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, background: "rgba(28,26,23,.06)", borderRadius: 10, padding: "6px 10px" }}>
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 13.5, color: C.ouro, marginBottom: 2 }}>{c.q}</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 15, color: "rgba(28,26,23,.85)" }}>{c.t}</div>
+            </div>
+          </div>
+          <div style={{ paddingLeft: 33, display: "flex", alignItems: "center", gap: 12, marginTop: 3 }}>
+            {c.cid && (
+              <button onClick={() => curtir(c.cid)} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 13, color: curtido(c) ? C.ouro : C.lt, padding: "2px 0" }}>
+                {IcoH.coracao(curtido(c) ? C.ouro : C.lt, 14, curtido(c) ? C.ouro : "none")}{(c.likes || []).length > 0 ? (c.likes || []).length : ""}
+              </button>
+            )}
+            {c.cid && (
+              <button onClick={() => setResp(resp?.cid === c.cid ? null : { cid: c.cid, autor: c.q })} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", padding: "2px 0" }}>
+                {resp?.cid === c.cid ? "× cancelar" : "Responder"}
+              </button>
+            )}
+            {c.cid && c.userId === authUserId && (
+              <button onClick={() => setConfDel(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>apagar</button>
+            )}
+            {c.cid && c.userId !== authUserId && (
+              <button onClick={() => denunciar(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>denunciar</button>
+            )}
+          </div>
+          {coms.filter((r) => r.parent === c.cid).map((r, ri) => (
+            <div key={"r" + ri} style={{ display: "flex", gap: 6, marginTop: 5, paddingLeft: 33 }}>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", background: `${C.ouro}55`, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs2, fontSize: 11, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
+                {r.av ? <img src={r.av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : r.q.slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, background: "rgba(28,26,23,.04)", borderRadius: 10, padding: "5px 9px", fontFamily: FB, fontSize: 14, color: "rgba(28,26,23,.9)" }}>
+                <span style={{ fontWeight: 500, fontSize: 12.5, color: C.terra }}>{r.q} · </span>{r.t}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+      {resp && <div style={{ fontFamily: FB, fontSize: 12.5, color: C.terra, marginBottom: 4 }}>Respondendo a {resp.autor}</div>}
+      <div style={{ display: "flex", gap: 7, marginTop: 6 }}>
+        <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."} onKeyDown={(e) => { if (e.key === "Enter") enviar(); }} style={{ flex: 1, background: "rgba(28,26,23,.06)", border: "none", borderRadius: 20, padding: "9px 13px", fontSize: 15, fontFamily: FB, color: C.obs }} />
+        <button onClick={enviar} style={{ background: C.obs2, border: `1px solid ${C.ouro}33`, borderRadius: "50%", width: 38, height: 38, cursor: "pointer", color: C.ouro, fontSize: 17, flexShrink: 0 }}>→</button>
+      </div>
+      {confDel && (
+        <div onClick={() => setConfDel(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(28,26,23,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: C.creme, borderRadius: 16, padding: "20px", maxWidth: 320 }}>
+            <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 19, color: C.terra, marginBottom: 14 }}>Apagar este comentário?</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => apagar(confDel)} style={{ flex: 1, background: C.atencao, border: "none", borderRadius: 50, padding: "10px", color: "#fff", fontFamily: FB, fontSize: 14.5, cursor: "pointer" }}>Apagar</button>
+              <button onClick={() => setConfDel(null)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "10px", color: C.ouroDk, fontFamily: FB, fontSize: 14.5, cursor: "pointer" }}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [catSel, setCatSel] = useState("aulas");
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  const [guiaAberto, setGuiaAberto] = useState(null); // guia HTML aberto dentro do app
@@ -11295,7 +11389,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
         {videoAberto && (
           <div onClick={() => setVideoAberto(null)}
             style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px" }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "92vh", overflowY: "auto" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 17, color: C.creme, paddingRight: 10 }}>
                   {videoAberto.titulo}
@@ -11323,6 +11417,9 @@ function Conteudo({ perfil, videos: videosDB, sem, guias }) {
                 <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: `${C.creme}AA`, marginTop: 8 }}>
                   {videoAberto.dur}
                 </div>
+              )}
+              {videoAberto.id && (
+                <ComentariosVideo videoId={videoAberto.id} authUserId={authUserId} usuario={usuario} minhaFoto={minhaFoto} />
               )}
             </div>
           </div>
