@@ -1387,7 +1387,7 @@ export default function App() {
  if (postIds.length) {
  const { data: comData, error: comErr } = await supabase
         .from("comentarios")
-        .select("id, post_id, user_id, texto, autor_nome, autor_avatar, created_at, parent_id")
+        .select("id, post_id, user_id, texto, autor_nome, autor_avatar, created_at, parent_id, curtidas")
         .in("post_id", postIds)
         .order("created_at", { ascending: true });
  if (!comErr && comData?.length) {
@@ -1400,6 +1400,7 @@ export default function App() {
  av: c.autor_avatar || null,
  cid: c.id,
  parent: c.parent_id || null,
+ likes: c.curtidas || [],
           });
         });
  postsReais.forEach((p) => {
@@ -5365,6 +5366,14 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  try { await supabase.from("denuncias").insert({ user_id: authUserId, comentario_id: cid, motivo: "comentario_inapropriado" }); } catch {}
  setAvisoAcao("Comentário denunciado. Vamos revisar.");
  };
+ const curtirComentario = async (postId, cid) => {
+ if (!cid) return;
+ try {
+ const { data } = await supabase.rpc("toggle_comment_like", { cid });
+ const novo = data || [];
+ setFeed((f) => f.map((pp) => pp.id !== postId ? pp : { ...pp, com: pp.com.map((c) => c.cid === cid ? { ...c, likes: novo } : c) }));
+ } catch {}
+ };
  const curtir = (id) => {
  setFeed((f) =>
  f.map((p) => {
@@ -5390,7 +5399,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  if (p.id !== id) return p;
  const newCom = [
           ...p.com,
-          { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, tmp, parent: parentCid },
+          { q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, tmp, parent: parentCid, likes: [] },
         ];
         // Persiste na tabela comentarios se for post real
  if (p.dbId && authUserId) {
@@ -5950,7 +5959,13 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         )}
                       </div>
                       {/* Thread simples — uma camada de resposta (seção 6.2) */}
-                      <div style={{ paddingLeft: 33 }}>
+                      <div style={{ paddingLeft: 33, display: "flex", alignItems: "center", gap: 10 }}>
+                        {c.cid && (
+                          <button onClick={() => curtirComentario(p.id, c.cid)} style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 0", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 13, color: (c.likes || []).includes(authUserId) ? C.ouro : C.lt }}>
+                            {IcoH.coracao((c.likes || []).includes(authUserId) ? C.ouro : C.lt, 14, (c.likes || []).includes(authUserId) ? C.ouro : "none")}
+                            {(c.likes || []).length > 0 ? (c.likes || []).length : ""}
+                          </button>
+                        )}
                         {c.cid && (
                           <button
  onClick={() => setResp(resp?.cid === c.cid ? null : { cid: c.cid, autor: c.q })}
