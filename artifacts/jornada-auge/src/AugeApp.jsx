@@ -11979,6 +11979,16 @@ function Perfil({
  const [senhaNova, setSenhaNova] = useState("");
  const [senhaMsg, setSenhaMsg] = useState(null);
  const [salvandoSenha, setSalvandoSenha] = useState(false);
+ const [confirmDel, setConfirmDel] = useState(false);
+ const [delLoad, setDelLoad] = useState(false);
+ const [delMsg, setDelMsg] = useState("");
+ const excluirConta = async () => {
+ setDelLoad(true); setDelMsg("");
+ const { error } = await supabase.rpc("delete_my_account");
+ if (error) { setDelMsg("Não foi possível excluir agora. Tente novamente ou fale com o suporte."); setDelLoad(false); return; }
+ try { localStorage.clear(); } catch {}
+ await logout();
+ };
  const [editando, setEditando] = useState(false);
  const [nomeEdit, setNomeEdit] = useState(usuario?.nome || "");
  const [emailEdit, setEmailEdit] = useState(usuario?.email || "");
@@ -12191,7 +12201,37 @@ function Perfil({
           )}
 
         </div>
+
+        {/* Excluir conta (exigência da App Store / privacidade) */}
+        <div style={{ textAlign: "center", marginTop: 4, marginBottom: 8 }}>
+          <button
+ onClick={() => { setDelMsg(""); setConfirmDel(true); }}
+ style={{ background: "none", border: "none", fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: "rgba(28,26,23,.45)", textDecoration: "underline", cursor: "pointer" }}
+          >
+ Excluir minha conta
+          </button>
+        </div>
       </div>
+
+      {confirmDel && (
+        <div onClick={() => !delLoad && setConfirmDel(false)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(28,26,23,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: C.creme, borderRadius: 18, padding: "24px 22px", maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.4)" }}>
+            <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 22, color: C.terra, marginBottom: 10 }}>Excluir sua conta?</div>
+            <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 14.5, color: C.obs2, lineHeight: 1.55, marginBottom: 18 }}>
+ Esta ação é permanente. Todos os seus dados — check-ins, registros, Roda AUGE, textos e cadastro — serão apagados definitivamente e não há como recuperar.
+            </div>
+            {delMsg && <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.atencao, marginBottom: 14 }}>{delMsg}</div>}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button onClick={excluirConta} disabled={delLoad} style={{ background: C.atencao, border: "none", borderRadius: 50, padding: "12px 18px", fontFamily: FB, fontWeight: 400, fontSize: 15.5, color: "#fff", cursor: delLoad ? "default" : "pointer", opacity: delLoad ? 0.6 : 1 }}>
+                {delLoad ? "Excluindo..." : "Excluir definitivamente"}
+              </button>
+              <button onClick={() => setConfirmDel(false)} disabled={delLoad} style={{ background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "12px 18px", fontFamily: FB, fontWeight: 400, fontSize: 15.5, color: C.ouroDk, cursor: "pointer" }}>
+ Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Formulário de edição inline */}
       {editando && (
