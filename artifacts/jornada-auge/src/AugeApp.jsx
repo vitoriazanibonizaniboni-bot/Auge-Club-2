@@ -4785,9 +4785,6 @@ function Home({
 
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
-      {avisoAcao && (
-        <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 14, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
-      )}
       {/* Header com logo */}
       <div
  style={{
@@ -5467,6 +5464,9 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
       : true);
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
+      {avisoAcao && (
+        <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 14, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
+      )}
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", borderBottom: `1px solid ${C.ouro}20` }}>
         <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 21, fontWeight: 400, color: C.ouroDk }}>Mural do 1%</div>
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
