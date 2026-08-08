@@ -8015,8 +8015,8 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
 
 // ═══════════════════════════════════════════════════════════════════
 // ─── EDITOR DE CARTA ──────────────────────────────────────────────────────────
-function CartaEditor({ setCarta, tk }) {
- const [txt, setTxt] = useState("");
+function CartaEditor({ setCarta, tk, inicial = "", onSalvo, onCancelar }) {
+ const [txt, setTxt] = useState(inicial);
  const ok = txt.trim().length > 10;
  const salvar = () => {
  if (!ok) return;
@@ -8028,6 +8028,7 @@ function CartaEditor({ setCarta, tk }) {
  data_escrita: new Date().toISOString(),
     }, { onConflict: "user_id" });
  tk("Carta guardada. Ela espera por você na Semana 12. ");
+ if (onSalvo) onSalvo();
   };
  return (
     <div>
@@ -8055,6 +8056,11 @@ function CartaEditor({ setCarta, tk }) {
       <BtnPill onClick={salvar} style={{ opacity: ok ? 1 : 0.4 }}>
  Guardar minha carta
       </BtnPill>
+      {onCancelar && (
+        <button onClick={onCancelar} style={{ background: "none", border: "none", width: "100%", marginTop: 10, fontFamily: FB, fontWeight: 300, fontSize: 14, color: "rgba(28,26,23,.6)", cursor: "pointer" }}>
+ Cancelar
+        </button>
+      )}
     </div>
   );
 }
@@ -10168,6 +10174,7 @@ function Escritas({
  const [na, setNa] = useState(anc);
  const [editAnc, setEditAnc] = useState(!anc || anc === "Eu sou a mulher que volta.");
  const [editPq, setEditPq] = useState(false);
+ const [editandoCarta, setEditandoCarta] = useState(false);
  const [isaVit, setIsaVit] = useState(null);
  const [isaVitLoad, setIsaVitLoad] = useState(false);
  const salvarVit = async () => {
@@ -10531,7 +10538,7 @@ function Escritas({
                 </div>
               </div>
             </div>
-            {carta ? (
+            {carta && !editandoCarta ? (
               <div>
                 {(() => {
  const semAtual = dataCadastro
@@ -10649,22 +10656,39 @@ function Escritas({
                         </div>
                       )}
                       <button
- onClick={() => setCarta(null)}
+ onClick={() => setEditandoCarta(true)}
+ style={{
+ background: `${C.ouro}18`,
+ border: `1px solid ${C.ouro}44`,
+ borderRadius: 50,
+ padding: "11px",
+ width: "100%",
+ fontFamily: FB,
+ fontWeight: 400,
+ fontSize: 14.5,
+ color: C.ouroDk,
+ cursor: "pointer",
+ letterSpacing: "0.06em",
+                        }}
+                      >
+ Editar minha carta
+                      </button>
+                      <button
+ onClick={() => { if (confirm("Isso apaga o texto atual e começa uma carta em branco. Deseja continuar?")) setCarta(null); }}
  style={{
  background: "none",
- border: `1px solid ${C.ouro}15`,
- borderRadius: 50,
+ border: "none",
  padding: "10px",
  width: "100%",
  fontFamily: FB,
  fontWeight: 300,
- fontSize: 14.5,
- color: `rgba(28,26,23,.82)`,
+ fontSize: 13,
+ color: `rgba(28,26,23,.55)`,
  cursor: "pointer",
- letterSpacing: "0.1em",
+ marginTop: 4,
                         }}
                       >
- Reescrever minha carta
+ Reescrever do zero
                       </button>
                     </>
                   );
@@ -10686,7 +10710,7 @@ function Escritas({
  aviso especial vai aparecer na tela inicial convidando você a
  abrir.
                 </div>
-                <CartaEditor setCarta={setCarta} tk={tk} />
+                <CartaEditor setCarta={setCarta} tk={tk} inicial={editandoCarta && carta ? carta.texto : ""} onSalvo={() => setEditandoCarta(false)} onCancelar={editandoCarta ? () => setEditandoCarta(false) : undefined} />
               </div>
             )}
           </div>
