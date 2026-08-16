@@ -4445,7 +4445,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       </div>
 
       {/* sugestão de progressão / redução de meta (seção 4.8) — decisão sempre dela */}
-      {!progOculto && st.sugerirSubir && !st.sugerirReduzir && (
+      {!marcado && !progOculto && st.sugerirSubir && !st.sugerirReduzir && (
         <div style={{ background: `${C.ouro}18`, border: `1px solid ${C.ouro}40`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
  Você fechou as últimas 2 semanas em cheio no {h.nome}. Quer subir pra {st.meta + 1}x, ou prefere manter esse ritmo?
@@ -4456,7 +4456,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
           </div>
         </div>
       )}
-      {!progOculto && st.sugerirReduzir && (
+      {!marcado && !progOculto && st.sugerirReduzir && (
         <div style={{ background: `${C.blush}20`, border: `1px solid ${C.blush}66`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
  Esse hábito está pesado pra você nas últimas 2 semanas. Quer ajustar pra um nível mais leve, ou prefere manter?
