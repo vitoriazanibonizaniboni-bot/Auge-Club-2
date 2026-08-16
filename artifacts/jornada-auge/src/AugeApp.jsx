@@ -4492,6 +4492,8 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
               Noite de domingo — fechou a semana passada.
             </div>
           )}
+          {!regAlvo.dif ? (
+            <>
           <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.lt, margin: "10px 0 6px" }}>
             Como foi manter esse hábito hoje?
           </div>
@@ -4503,6 +4505,13 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
               </button>
             ))}
           </div>
+            </>
+          ) : (
+            <div style={{ marginTop: 10, textAlign: "center", background: `${C.ouro}12`, border: `1px solid ${C.ouro}33`, borderRadius: 10, padding: "11px 12px" }}>
+              <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 18, color: C.ouroDk }}>Parabéns, mais 1%!</div>
+              <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.lt, marginTop: 2 }}>Você cuidou de você hoje.</div>
+            </div>
+          )}
         </div>
       )}
     </div>
