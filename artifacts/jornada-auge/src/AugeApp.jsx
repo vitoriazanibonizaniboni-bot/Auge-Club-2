@@ -5677,10 +5677,11 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  overflow: "hidden",
               }}
             >
+              {p.imgSrc ? (
               <div
  onClick={() => setDet(p.id)}
  style={{
- minHeight: p.imgSrc ? 0 : 178,
+ minHeight: 0,
  background: p.fundo,
  position: "relative",
  display: "flex",
@@ -5688,8 +5689,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  cursor: "pointer",
                 }}
               >
-                {p.imgSrc && (
-                  <img
+                <img
  src={p.imgSrc}
  alt=""
  style={{
@@ -5699,7 +5699,6 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  display: "block",
                     }}
                   />
-                )}
                 <div
  style={{
  position: "absolute",
@@ -5709,61 +5708,28 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   }}
                 />
                 {!p.publica && (
-                  <div
- style={{
- position: "absolute",
- top: 10,
- right: 10,
- background: `rgba(0,0,0,.5)`,
- borderRadius: 20,
- padding: "3px 9px",
- display: "flex",
- alignItems: "center",
- gap: 4,
-                    }}
-                  >
-                    <span style={{ fontSize: 13.5 }}></span>
-                    <span
- style={{
- fontFamily: FB,
- fontSize: 13,
- color: `rgba(255,255,255,.92)`,
-                      }}
-                    >
- Só você
-                    </span>
+                  <div style={{ position: "absolute", top: 10, right: 10, background: `rgba(0,0,0,.5)`, borderRadius: 20, padding: "3px 9px" }}>
+                    <span style={{ fontFamily: FB, fontSize: 13, color: `rgba(255,255,255,.92)` }}>Só você</span>
                   </div>
                 )}
-                <div
- style={{
- position: "relative",
- padding: "0 14px 12px",
- width: "100%",
-                  }}
-                >
-                  <div
- style={{
- color: C.branco,
- fontFamily: FS,
- fontSize: 19,
- fontWeight: 300,
-                    }}
-                  >
-                    {p.tit}
-                  </div>
-                  <div
- style={{
- color: `rgba(255,255,255,.92)`,
- fontSize: 14.5,
- fontFamily: FB,
- fontWeight: 300,
- marginTop: 2,
-                    }}
-                  >
-                    {p.tempo}
-                  </div>
+                <div style={{ position: "relative", padding: "0 14px 12px", width: "100%" }}>
+                  <div style={{ color: C.branco, fontFamily: FS, fontSize: 19, fontWeight: 300 }}>{p.tit}</div>
+                  <div style={{ color: `rgba(255,255,255,.92)`, fontSize: 14.5, fontFamily: FB, fontWeight: 300, marginTop: 2 }}>{p.tempo}</div>
                 </div>
               </div>
+              ) : (
+              <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", padding: "16px 16px 2px" }}>
+                <div style={{ borderLeft: `3px solid ${C.ouro}`, background: `${C.ouro}12`, borderRadius: "0 10px 10px 0", padding: "12px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                  <div>
+                    <div style={{ fontFamily: FS, fontStyle: "italic", fontSize: 19, color: C.ouroDk, lineHeight: 1.2 }}>{p.tit}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
+                  </div>
+                  {!p.publica && (
+                    <span style={{ flexShrink: 0, background: `${C.ouro}22`, borderRadius: 20, padding: "3px 9px", fontFamily: FB, fontSize: 12, color: C.ouroDk, whiteSpace: "nowrap" }}>Só você</span>
+                  )}
+                </div>
+              </div>
+              )}
               <div style={{ padding: "12px 14px" }}>
                 <div
  style={{
