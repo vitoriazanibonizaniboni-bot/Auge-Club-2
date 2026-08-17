@@ -11511,7 +11511,8 @@ function PainelMentora({ ir }) {
  const mv = alunaSel.metas || {};
  setEdA({ ancora: "", p1: "", p2: "", p3: "",
  mov_desc: mv.mov_desc || "", sono_desc: mv.sono_desc || "", tsi_desc: mv.tsi_desc || "",
- mov_minimo: mv.mov_minimo || "", sono_minimo: mv.sono_minimo || "", tsi_minimo: mv.tsi_minimo || "" });
+ mov_minimo: mv.mov_minimo || "", sono_minimo: mv.sono_minimo || "", tsi_minimo: mv.tsi_minimo || "",
+ perfil: (alunaSel.perfil_auge || "").split(",").filter(Boolean) });
  setSalvoAluna(false);
  supabase.rpc("admin_get_ancora_porques", { target: alunaSel.id }).then(({ data }) => {
  if (data) setEdA((e) => e ? { ...e, ancora: data.ancora || "", p1: data.p1 || "", p2: data.p2 || "", p3: data.p3 || "" } : e);
@@ -11525,8 +11526,10 @@ function PainelMentora({ ir }) {
  await supabase.rpc("admin_set_ancora", { target: alunaSel.id, texto: edA.ancora || "" });
  await supabase.rpc("admin_set_porques", { target: alunaSel.id, p1: edA.p1 || "", p2: edA.p2 || "", p3: edA.p3 || "" });
  await supabase.rpc("admin_set_metas", { target: alunaSel.id, ...novaMetas });
- setAlunas((as) => as.map((a) => a.id === alunaSel.id ? { ...a, metas: { ...(a.metas || {}), ...novaMetas } } : a));
- setAlunaSel((a) => a ? { ...a, metas: { ...(a.metas || {}), ...novaMetas } } : a);
+ const novoPerfil = (edA.perfil || []).join(",");
+ await supabase.rpc("admin_set_perfil_auge", { target: alunaSel.id, perfil: novoPerfil });
+ setAlunas((as) => as.map((a) => a.id === alunaSel.id ? { ...a, metas: { ...(a.metas || {}), ...novaMetas }, perfil_auge: novoPerfil } : a));
+ setAlunaSel((a) => a ? { ...a, metas: { ...(a.metas || {}), ...novaMetas }, perfil_auge: novoPerfil } : a);
  setSalvoAluna(true); setTimeout(() => setSalvoAluna(false), 2500);
  } catch {}
  setSalvandoAluna(false);
@@ -12010,6 +12013,7 @@ function PainelMentora({ ir }) {
                     : <input value={edA[key]} onChange={(e) => setEdA((x) => ({ ...x, [key]: e.target.value }))} placeholder={ph} style={inp} />}
                 </div>
               );
+              const PERFIS_OPTS = Object.entries(PERFIS).map(([k, v]) => [k, v.nome]);
               return (
                 <div onClick={() => setAlunaSel(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.55)", display: "flex", alignItems: "flex-end" }}>
                   <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxHeight: "88%", overflowY: "auto", background: C.creme, borderRadius: "20px 20px 0 0", padding: "20px 20px 34px" }}>
@@ -12035,6 +12039,18 @@ function PainelMentora({ ir }) {
                         {campo("Movimento", "mov_minimo", "Ex: Caminhada de 10 min")}
                         {campo("Sono", "sono_minimo", "Ex: 30 min sem celular")}
                         {campo("Tempo para Si", "tsi_minimo", "Ex: Ler 1 página")}
+                        <div style={sub}>Perfil AUGE</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                          {PERFIS_OPTS.map(([k, nome]) => {
+                            const on = (edA.perfil || []).includes(k);
+                            return (
+                              <button key={k} onClick={() => setEdA((x) => ({ ...x, perfil: on ? x.perfil.filter((p) => p !== k) : [...(x.perfil || []), k] }))}
+                                style={{ background: on ? `${C.ouro}22` : "rgba(28,26,23,.04)", border: `1px solid ${on ? C.ouro + "66" : C.ouro + "20"}`, borderRadius: 50, padding: "7px 12px", fontFamily: FB, fontWeight: 300, fontSize: 13, color: on ? C.ouroDk : C.terra, cursor: "pointer" }}>
+                                {nome}
+                              </button>
+                            );
+                          })}
+                        </div>
                         <button onClick={salvarDadosAluna} disabled={salvandoAluna} style={{ width: "100%", marginTop: 6, background: C.ouro, border: "none", borderRadius: 50, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 15, color: C.branco, cursor: "pointer", opacity: salvandoAluna ? 0.6 : 1 }}>
                           {salvandoAluna ? "Salvando..." : salvoAluna ? "✓ Salvo para a aluna" : "Salvar para a aluna"}
                         </button>
