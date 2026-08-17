@@ -11625,13 +11625,16 @@ function PainelMentora({ ir }) {
  if (!ultimoCk[ck.user_id]) ultimoCk[ck.user_id] = ck;
         }
         // Jornada v2: registros, usos do Kit, metas e progressão (seção 10)
- const [regsR, kitR, metasR, histR, rodaAdminR] = await Promise.all([
+ const [regsR, kitR, metasR, histR, rodaAdminR, perfisAugeR] = await Promise.all([
  supabase.rpc("get_registros_admin"),
  supabase.rpc("get_kit_usos_admin"),
  supabase.rpc("get_metas_admin"),
  supabase.rpc("get_metas_hist_admin"),
  supabase.rpc("get_roda_admin"),
+ supabase.rpc("admin_get_perfis_auge"),
         ]);
+ const perfilPor = {};
+ for (const r of (perfisAugeR.data || [])) perfilPor[r.user_id] = r.perfil_auge || "";
  const regsPor = {}, kitPor = {}, metasPor = {}, histPor = {};
  for (const r of (regsR.data || [])) {
  if (!regsPor[r.user_id]) regsPor[r.user_id] = {};
@@ -11696,7 +11699,7 @@ function PainelMentora({ ir }) {
         };
  const ultimaAtivPor = {};
  for (const uid of Object.keys(regsPor)) { const ds = Object.keys(regsPor[uid]); if (ds.length) ultimaAtivPor[uid] = ds.reduce((x, y) => (x > y ? x : y)); }
- setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null, ultimaAtiv: [ultimaAtivPor[p.id], ultimoCk[p.id]?.data].filter(Boolean).sort().pop() || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [] })));
+ setAlunas(perfis.map((p) => ({ ...p, perfil_auge: perfilPor[p.id] || "", ultimoCk: ultimoCk[p.id] || null, ultimaAtiv: [ultimaAtivPor[p.id], ultimoCk[p.id]?.data].filter(Boolean).sort().pop() || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [] })));
  setLoadingA(false);
       });
   }, [aba]);
