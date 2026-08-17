@@ -11503,6 +11503,34 @@ function PainelMentora({ ir }) {
  const [loadingA, setLoadingA] = useState(false);
  const [pendentes, setPendentes] = useState([]);
  const [alunaSel, setAlunaSel] = useState(null);
+ const [edA, setEdA] = useState(null); // formulario: mentora preenche dados da aluna
+ const [salvandoAluna, setSalvandoAluna] = useState(false);
+ const [salvoAluna, setSalvoAluna] = useState(false);
+ useEffect(() => {
+ if (!alunaSel) { setEdA(null); return; }
+ const mv = alunaSel.metas || {};
+ setEdA({ ancora: "", p1: "", p2: "", p3: "",
+ mov_desc: mv.mov_desc || "", sono_desc: mv.sono_desc || "", tsi_desc: mv.tsi_desc || "",
+ mov_minimo: mv.mov_minimo || "", sono_minimo: mv.sono_minimo || "", tsi_minimo: mv.tsi_minimo || "" });
+ setSalvoAluna(false);
+ supabase.rpc("admin_get_ancora_porques", { target: alunaSel.id }).then(({ data }) => {
+ if (data) setEdA((e) => e ? { ...e, ancora: data.ancora || "", p1: data.p1 || "", p2: data.p2 || "", p3: data.p3 || "" } : e);
+ });
+ }, [alunaSel]);
+ const salvarDadosAluna = async () => {
+ if (!alunaSel || !edA) return;
+ setSalvandoAluna(true);
+ const novaMetas = { mov_desc: edA.mov_desc, sono_desc: edA.sono_desc, tsi_desc: edA.tsi_desc, mov_minimo: edA.mov_minimo, sono_minimo: edA.sono_minimo, tsi_minimo: edA.tsi_minimo };
+ try {
+ await supabase.rpc("admin_set_ancora", { target: alunaSel.id, texto: edA.ancora || "" });
+ await supabase.rpc("admin_set_porques", { target: alunaSel.id, p1: edA.p1 || "", p2: edA.p2 || "", p3: edA.p3 || "" });
+ await supabase.rpc("admin_set_metas", { target: alunaSel.id, ...novaMetas });
+ setAlunas((as) => as.map((a) => a.id === alunaSel.id ? { ...a, metas: { ...(a.metas || {}), ...novaMetas } } : a));
+ setAlunaSel((a) => a ? { ...a, metas: { ...(a.metas || {}), ...novaMetas } } : a);
+ setSalvoAluna(true); setTimeout(() => setSalvoAluna(false), 2500);
+ } catch {}
+ setSalvandoAluna(false);
+ };
  const ativarAluna = async (id, plano) => {
  const { error } = await supabase.rpc("set_aluna_plano", { p_user_id: id, p_plano: plano });
  if (!error) setPendentes((ps) => ps.filter((x) => x.id !== id));
@@ -11971,6 +11999,17 @@ function PainelMentora({ ir }) {
               const rodas = ORDEM.map((mo) => (alunaSel.roda || []).find((r) => r.momento === mo)).filter(Boolean);
               const tb = { fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.25em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
               const pt = { fontFamily: FS, fontSize: 16, color: `rgba(28,26,23,.85)`, lineHeight: 1.5 };
+              const inp = { width: "100%", background: "rgba(28,26,23,.04)", border: `1px solid ${C.ouro}22`, borderRadius: 8, padding: "9px 11px", fontFamily: FB, fontWeight: 300, fontSize: 15, color: C.obs, boxSizing: "border-box", marginBottom: 8 };
+              const lab = { fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.terra, marginBottom: 3 };
+              const sub = { fontFamily: FB, fontWeight: 500, fontSize: 12, color: C.ouroDk, letterSpacing: "0.1em", textTransform: "uppercase", margin: "12px 0 6px" };
+              const campo = (label, key, ph, multi) => (
+                <div key={key}>
+                  <div style={lab}>{label}</div>
+                  {multi
+                    ? <textarea value={edA[key]} onChange={(e) => setEdA((x) => ({ ...x, [key]: e.target.value }))} placeholder={ph} style={{ ...inp, height: 60, resize: "none", fontFamily: FS }} />
+                    : <input value={edA[key]} onChange={(e) => setEdA((x) => ({ ...x, [key]: e.target.value }))} placeholder={ph} style={inp} />}
+                </div>
+              );
               return (
                 <div onClick={() => setAlunaSel(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.55)", display: "flex", alignItems: "flex-end" }}>
                   <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxHeight: "88%", overflowY: "auto", background: C.creme, borderRadius: "20px 20px 0 0", padding: "20px 20px 34px" }}>
@@ -11979,6 +12018,28 @@ function PainelMentora({ ir }) {
                       <button onClick={() => setAlunaSel(null)} style={{ background: "none", border: "none", fontSize: 22, color: C.lt, cursor: "pointer" }}>×</button>
                     </div>
                     <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13, color: C.lt }}>{alunaSel.email || ""}</div>
+
+                    {edA && (
+                      <div style={{ marginTop: 14, background: `${C.ouro}0E`, border: `1px solid ${C.ouro}33`, borderRadius: 12, padding: "14px 14px" }}>
+                        <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 12.5, color: C.ouroDk, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>Preencher para a aluna</div>
+                        <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.lt, marginBottom: 12, lineHeight: 1.5 }}>Deixe pronto pra ela — ela pode ajustar depois no app.</div>
+                        {campo("Âncora de Identidade", "ancora", "Ex: Eu sou a mulher que volta.", true)}
+                        {campo("Porquê 1", "p1", "1ª razão dela")}
+                        {campo("Porquê 2", "p2", "2ª razão dela")}
+                        {campo("Porquê 3", "p3", "3ª razão dela")}
+                        <div style={sub}>Objetivos dos hábitos</div>
+                        {campo("Movimento", "mov_desc", "Ex: 60 min de pilates 3x")}
+                        {campo("Sono", "sono_desc", "Ex: dormir sem tela")}
+                        {campo("Tempo para Si", "tsi_desc", "Ex: 20 min de leitura")}
+                        <div style={sub}>Mínimos viáveis</div>
+                        {campo("Movimento", "mov_minimo", "Ex: Caminhada de 10 min")}
+                        {campo("Sono", "sono_minimo", "Ex: 30 min sem celular")}
+                        {campo("Tempo para Si", "tsi_minimo", "Ex: Ler 1 página")}
+                        <button onClick={salvarDadosAluna} disabled={salvandoAluna} style={{ width: "100%", marginTop: 6, background: C.ouro, border: "none", borderRadius: 50, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 15, color: C.branco, cursor: "pointer", opacity: salvandoAluna ? 0.6 : 1 }}>
+                          {salvandoAluna ? "Salvando..." : salvoAluna ? "✓ Salvo para a aluna" : "Salvar para a aluna"}
+                        </button>
+                      </div>
+                    )}
 
                     <div style={tb}>Perfil AUGE</div>
                     <div style={pt}>{perfis.length ? perfis.join(" · ") : "Ainda não respondeu"}</div>
