@@ -11694,7 +11694,9 @@ function PainelMentora({ ir }) {
  progressoes: histPor[uid] || [],
           };
         };
- setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [] })));
+ const ultimaAtivPor = {};
+ for (const uid of Object.keys(regsPor)) { const ds = Object.keys(regsPor[uid]); if (ds.length) ultimaAtivPor[uid] = ds.reduce((x, y) => (x > y ? x : y)); }
+ setAlunas(perfis.map((p) => ({ ...p, ultimoCk: ultimoCk[p.id] || null, ultimaAtiv: [ultimaAtivPor[p.id], ultimoCk[p.id]?.data].filter(Boolean).sort().pop() || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [] })));
  setLoadingA(false);
       });
   }, [aba]);
@@ -11755,9 +11757,9 @@ function PainelMentora({ ir }) {
  setTimeout(() => setSalvoM(false), 2500);
   };
 
- const diasSemCk = (ultimoCk) => {
- if (!ultimoCk) return null;
- const diff = Date.now() - new Date(ultimoCk.data).getTime();
+ const diasSemCk = (dataStr) => {
+ if (!dataStr) return null;
+ const diff = Date.now() - new Date(dataStr + "T12:00:00").getTime();
  return Math.floor(diff / 86400000);
   };
 
@@ -12144,9 +12146,9 @@ function PainelMentora({ ir }) {
                 )}
                 {/* Visão geral por aluna (seção 10) */}
                 {alunas.filter((a) => a.plano !== "pendente").map((a) => {
- const dias = diasSemCk(a.ultimoCk);
+ const dias = diasSemCk(a.ultimaAtiv);
  const statusCor = dias === null ? `rgba(28,26,23,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
- const statusTxt = dias === null ? "Sem checkin" : dias === 0 ? "Checkin hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
+ const statusTxt = dias === null ? "Sem atividade" : dias === 0 ? "Ativa hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
  return (
                     <div key={a.id} onClick={() => setAlunaSel(a)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10, cursor: "pointer" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
