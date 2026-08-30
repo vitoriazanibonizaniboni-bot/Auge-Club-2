@@ -5690,11 +5690,12 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
               <div
  onClick={() => setDet(p.id)}
  style={{
- minHeight: 0,
  background: p.fundo,
  position: "relative",
- display: "flex",
- alignItems: "flex-end",
+ display: "block",
+ aspectRatio: "4 / 5",
+ overflow: "hidden",
+ lineHeight: 0,
  cursor: "pointer",
                 }}
               >
@@ -5702,29 +5703,18 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  src={p.imgSrc}
  alt=""
  style={{
- position: "relative",
  width: "100%",
- height: "auto",
+ height: "100%",
+ objectFit: "cover",
+ objectPosition: "center",
  display: "block",
                     }}
                   />
-                <div
- style={{
- position: "absolute",
- inset: 0,
- background:
- "linear-gradient(to top,rgba(0,0,0,.65),transparent 55%)",
-                  }}
-                />
                 {!p.publica && (
                   <div style={{ position: "absolute", top: 10, right: 10, background: `rgba(0,0,0,.5)`, borderRadius: 20, padding: "3px 9px" }}>
                     <span style={{ fontFamily: FB, fontSize: 13, color: `rgba(255,255,255,.92)` }}>Só você</span>
                   </div>
                 )}
-                <div style={{ position: "relative", padding: "0 14px 12px", width: "100%" }}>
-                  <div style={{ color: C.branco, fontFamily: FS, fontSize: 19, fontWeight: 300 }}>{p.tit}</div>
-                  <div style={{ color: `rgba(255,255,255,.92)`, fontSize: 14.5, fontFamily: FB, fontWeight: 300, marginTop: 2 }}>{p.tempo}</div>
-                </div>
               </div>
               ) : (
               <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", padding: "16px 16px 2px" }}>
@@ -5774,6 +5764,13 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     </div>
                   )}
                 </div>
+                {p.imgSrc && (
+                  <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", marginBottom: p.desc ? 8 : 10 }}>
+                    <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: `rgba(28,26,23,.95)`, lineHeight: 1.3 }}>{p.tit}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 300, fontSize: 13.5, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
+                  </div>
+                )}
+                {p.desc && (
                 <div
  onClick={() => setDet(p.id)}
  style={{
@@ -5788,6 +5785,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 >
                   {p.desc}
                 </div>
+                )}
                 <div
  style={{
  display: "flex",
