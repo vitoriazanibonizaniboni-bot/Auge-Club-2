@@ -2,7 +2,9 @@
 
 ## O que é este projeto
 
-PWA mobile-first de bem-estar e longevidade para mulheres 40+, criado para **Dra. Isadora Zaniboni** (médica geriatra, Florianópolis). Desenvolvido por **Vitória Zaniboni** sem experiência prévia em programação, usando Replit + Claude via Cowork.
+App mobile de bem-estar e longevidade para mulheres 40+, criado para **Dra. Isadora Zaniboni** (médica geriatra, Florianópolis). Desenvolvido por **Vitória Zaniboni** sem experiência prévia em programação, com apoio do Claude.
+
+Publicado no **Android**, em processo de envio para o **iOS**.
 
 ---
 
@@ -10,65 +12,87 @@ PWA mobile-first de bem-estar e longevidade para mulheres 40+, criado para **Dra
 
 | O quê | Onde |
 |---|---|
-| App ao vivo | https://auge-club--vitoriazaniboni.replit.app/ |
-| Repositório | https://github.com/vitoriazanibonizaniboni-bot/Auge-Club |
+| App ao vivo | https://auge-club-2.vercel.app |
+| Repositório | https://github.com/vitoriazanibonizaniboni-bot/Auge-Club-2 |
+| Vercel | time `clubedoauge`, projeto `auge-club-2` |
 | Supabase | projeto `clube-do-auge` |
-| Arquivo principal | `artifacts/clube-do-auge/src/AugeApp.jsx` |
+| Arquivo principal | `artifacts/jornada-auge/src/AugeApp.jsx` (~13.000 linhas) |
 
 ---
 
 ## Stack técnica
 
-- **Frontend:** React/JSX, Vite, Tailwind CSS
-- **Backend/Auth/Dados:** Supabase (auth + PostgreSQL)
-- **Deploy:** Replit (conta bot: vitoriazanibonizaniboni-bot)
-- **IA (ISA):** Anthropic API — modelo `claude-haiku-4-5-20251001`
-- **Tipo:** PWA instalável no celular
+- **Frontend:** React/JSX, Vite 7, Tailwind CSS, componentes shadcn/ui
+- **Backend/Auth/Dados:** Supabase (auth + PostgreSQL + Storage)
+- **Deploy:** Vercel, conectado ao GitHub — todo push no `main` publica automaticamente
+- **App nativo:** Capacitor 8 — `appId: com.clubedoauge.jornada`, nome "Clube do Auge"
+- **Push:** OneSignal (SDK web no navegador + plugin Cordova no app nativo)
+- **ISA:** Anthropic API, modelo `claude-haiku-4-5-20251001`, via `api/isa.mjs`
+- **Pacotes:** pnpm workspace
+
+> **Não é mais Replit.** O projeto migrou para GitHub + Vercel. `.replit`, `.replitignore` e `replit.md` são resíduo da fase antiga e não afetam o deploy — `replit.md` inclusive ainda está com o texto de exemplo em branco.
 
 ---
 
-## Como fazer mudanças no código
+## Estrutura do repositório
 
-1. Clonar o repo: `git clone https://TOKEN@github.com/vitoriazanibonizaniboni-bot/Auge-Club.git`
-2. Editar `artifacts/clube-do-auge/src/AugeApp.jsx`
-3. Commit + push com o Personal Access Token da Vitória
-4. No Replit: botão **↻** (fetch) → **Pull** → **Republish**
+```
+artifacts/jornada-auge/    ← APP ATIVO (APP_MODE = "jornada"). É o que a Vercel publica.
+artifacts/clube-do-auge/   ← app irmão (APP_MODE = "clube"). NÃO está sendo publicado.
+artifacts/api-server/      ← servidor Express (não usado no deploy atual)
+api/                       ← funções serverless da Vercel: isa.mjs, notificar.mjs, push.mjs
+```
 
-> **Importante:** Vitória não é desenvolvedora. Ela faz o Pull e Republish no Replit manualmente. Sempre instruí-la ao final de cada push.
+O `vercel.json` da raiz builda **apenas** `@workspace/jornada-auge` e serve `artifacts/jornada-auge/dist/public`. Editar o `clube-do-auge` não muda nada no ar.
 
 ---
 
-## Estrutura de planos
+## Modelo de dois apps
 
-| Funcionalidade | Comunidade | Jornada AUGE |
-|---|---|---|
-| Check-in diário | simplificado | completo (hábitos + emoção + microdiário) |
-| Mural do 1% | ✓ | ✓ |
-| Biblioteca de conteúdo | ✓ | ✓ |
-| Radar de Amigas | ✓ | ✓ |
-| Trilha 12 semanas | 🔒 | ✓ liberada cronologicamente |
-| Roda AUGE | básica | completa com comparativo S1/S6/S12 |
-| Protocolo de Retomada | tela explicativa | ✓ completo |
-| ISA | ✓ | ✓ com contexto completo |
+`AugeApp.jsx` tem uma constante `APP_MODE` no topo:
 
-**Fluxo de ativação:** cadastro → `plano: 'pendente'` → Dra. Isadora ativa manualmente no Supabase (Table Editor → profiles → coluna `plano`).
+- `"jornada"` → Jornada AUGE, programa de 12 semanas, tudo liberado, **sem** aba "encontrar amigas"
+- `"clube"` → Clube do Auge, conteúdo semanal, **com** aba "Amigas", Jornada como vitrine trancada
+
+`FORCED_PLANO` deriva daí: **o nível de acesso é definido pelo app instalado, não pelo Supabase.**
+
+O campo `profiles.plano` ainda controla a **entrada**: `admin` vira mentora; `jornada` ou `comunidade` liberam o app; qualquer outro valor cai na tela "Aguardando liberação". A Dra. Isadora libera as alunas manualmente no Supabase (ou pelo Painel da Mentora, seção "Aguardando liberação").
+
+---
+
+## Como fazer mudanças
+
+1. Editar `artifacts/jornada-auge/src/AugeApp.jsx`
+2. **Rodar o build antes de publicar:**
+   `PORT=3000 BASE_PATH=/ pnpm --filter @workspace/jornada-auge build`
+   (as duas variáveis são exigidas pelo `vite.config.ts` e o build falha sem elas)
+3. Commit + push no `main`
+4. A Vercel builda e publica sozinha (~1 minuto)
+5. **O app do Android e do iOS pega a mudança na hora** — o `capacitor.config.ts` usa `server.url` apontando para a Vercel, então o app nativo carrega o site ao vivo
+
+**Só exigem novo build e reenvio às lojas:** ícone, splash, permissões e plugins nativos.
+
+### Publicando a partir de uma sessão do Claude na nuvem
+
+O ambiente na nuvem do Claude **não consegue** dar push neste repositório — um filtro só autoriza repositórios registrados na sessão, e ele descarta qualquer token antes de usá-lo. O caminho que funciona é pelo **MacBook da Vitória**, conectado à sessão:
+
+1. Clonar o repositório numa área temporária da máquina dela (`device_bash`)
+2. Aplicar a alteração lá e conferir o checksum contra a versão testada
+3. Push com token do GitHub de escopo fino, com **`Contents: Read and write`** e o repositório `Auge-Club-2` selecionado
+4. Conferir o deploy pela ferramenta da Vercel
+5. Pedir para a Vitória revogar o token depois
+
+> Token sem `Contents: Read and write` falha com 403 mesmo pertencendo à dona do repositório. A resposta do GitHub traz o cabeçalho `x-accepted-github-permissions` dizendo o que faltou.
 
 ---
 
 ## Tabelas no Supabase
 
-| Tabela | Campos principais |
-|---|---|
-| `profiles` | `id, nome, plano, habito_1, habito_2, habito_3, email, lgpd_aceito, data_cadastro, avatar_url, radar_cidade, radar_interesses` |
-| `checkins` | `id, user_id, data, hab_feitos, hab_nao_feitos, total_feitos, total, percentual, chips, nota, retomada` |
-| `feed` | `id, user_id, autor_nome, autor_ini, autor_cor, titulo, descricao, img_url, publica, curtidas, comentarios, created_at` |
-| `porques` | `user_id, p1, p2, p3, updated_at` |
-| `vitorias` | `id, user_id, texto, created_at` |
-| `cartas` | `id, user_id, texto, data_abertura, created_at` |
-| `ancora` | `user_id, texto` |
-| `kit_emergencia` | `user_id, min_viavel, onde_apoio` |
-| `videos` | `id, titulo, descricao, url_youtube, categoria, plano_minimo, duracao, ativo, ordem` |
-| `config` | `id, valor` (chaves: `mentoria_data`, `mentoria_semana`, `mentoria_duracao`, `mentoria_zoom`) |
+`profiles` · `checkins` · `registros` · `feed` · `comentarios` · `posts` · `porques` · `vitorias` · `cartas` / `carta_futuro` · `ancora` · `kit_emergencia` · `kit_usos` · `videos` · `guias` · `config` · `conexoes` · `mensagens` · `denuncias` · `bloqueios` · `habitos_angulares` · `habitos_metas` · `metas_historico` · `roda_auge` · `diagnostico` · `desafio_registros` · `avatars`
+
+Migrações em `artifacts/jornada-auge/migrations/`.
+
+Boa parte das leituras e escritas administrativas passa por **funções RPC** (`get_profiles_admin`, `get_pendentes_admin`, `admin_set_ancora`, `admin_set_porques`, `admin_set_metas`, `admin_set_perfil_auge`, `set_aluna_plano`, `toggle_comment_like`, `delete_my_account`, entre outras), não por SELECT direto — as políticas de segurança dependem disso. Ao mexer em algo administrativo, verificar se já existe RPC antes de criar consulta nova.
 
 > **Hábitos angulares** ficam em `profiles.habito_1/2/3` — NÃO em tabela separada.
 
@@ -77,8 +101,8 @@ PWA mobile-first de bem-estar e longevidade para mulheres 40+, criado para **Dra
 ## Check-in diário (ordem obrigatória)
 
 1. **Hábitos angulares** — 3 hábitos personalizados definidos pela aluna
-2. **Chips emocionais** — até 2 de 5 opções: Cansada 😮‍💨 · Ansiosa 🌀 · Energizada 🔋 · Forte ⚡ · Progredindo 📈
-3. **Microdiário** — texto livre opcional (botão "Pular" sem culpa)
+2. **Chips emocionais** — até 2 de 5: Cansada 😮‍💨 · Ansiosa 🌀 · Energizada 🔋 · Forte ⚡ · Progredindo 📈
+3. **Microdiário** — texto livre opcional, botão "Pular" sem culpa
 4. **Fechamento** — percentual em itálico dourado + pontos + resposta da ISA
 
 ---
@@ -92,31 +116,42 @@ PWA mobile-first de bem-estar e longevidade para mulheres 40+, criado para **Dra
 | usuária | aluna |
 | hábitos | hábitos angulares |
 
+A ISA é baseada no método da Dra. Isadora e **não a impersona**. Aparece após o check-in, no Protocolo de Retomada e no Kit de Emergência.
+
 ---
 
 ## Design
 
-- **Paleta:** tons escuros, dourado `#C4A882`, blush `#E2B9A8`, fundo `#1C1A17`
+- **Paleta:** fundo `#1C1A17`, creme `#FAF6EE`, dourado `#C4A882`, dourado escuro `#A8865A`, blush `#E2B9A8`
+- **Dourado de texto:** `C.ouroTxt` (`#7E6038`) é a ÚNICA cor dourada permitida para texto sobre fundo claro — 5,39:1 no creme e 4,86:1 nas pastilhas douradas. `C.ouro` e `C.ouroDk` ficam para bordas, ícones e fundos; como texto dão 2,10:1 e 3,13:1, abaixo do mínimo de 4,5:1
+- **Botão de fundo dourado leva texto escuro** (`C.obs`), nunca branco ou creme
+- **Legibilidade (público 40+):** peso mínimo 400 em texto de até 19px; sem itálico em texto corrido (a única exceção é o percentual de 56px do fechamento do check-in); Cormorant Garamond só em título — texto corrido é sempre Inter
 - **Tipografia:** Cormorant Garamond (títulos), Inter (corpo)
-- **Tom:** acolhedor, nunca punitivo, nunca usa linguagem de culpa
-- **Calendário:** dourado = check-in completo · dourado claro = parcial · blush = recuperação · nunca vermelho
+- **Tom:** acolhedor, nunca punitivo, nunca linguagem de culpa
+- **Calendário:** dourado = completo · dourado claro = parcial · blush = recuperação · **nunca vermelho**
+- **Navegação:** 5 abas fixas — Início · Mural · Jornada · Conteúdo · Perfil
+- **Mural:** a reação é **"Curtir"** com coração. O antigo "💛 Te entendo" foi removido do código.
+- **Mural, card do feed:** a foto usa proporção fixa 4:5 com `object-fit: cover`; título e tempo ficam **abaixo** da foto, em texto escuro sobre o creme do card. Não voltar a sobrepor texto branco na imagem — o container em `display:flex` empurrava a legenda para fora do card e ela sumia.
 
 ---
 
 ## Regras para o assistente (Claude)
 
 1. **Nunca reescrever o que já funciona** sem ser solicitado
-2. **Testar uma correção por vez** — não mudar várias coisas ao mesmo tempo
-3. **Qualquer mudança no Supabase** deve vir acompanhada do SQL correspondente
-4. **Para demos:** remover bloqueios de plano temporariamente (cadeados, paywall, tela de pendente)
-5. **Commits** devem ter mensagem clara em português descrevendo o que foi corrigido e por quê
+2. **Testar antes de implementar** — reproduzir o problema, validar a correção isoladamente e rodar o build. Já houve um caso de mudança não testada que quebrou o app
+3. **Uma correção por vez** — não empilhar mudanças no mesmo commit
+4. **Pedir autorização antes do push** — o `main` publica direto para as alunas
+5. **Qualquer mudança no Supabase** vem acompanhada do SQL correspondente
+6. **Commits em português**, descrevendo o que foi corrigido e por quê
+7. **Vitória não é desenvolvedora** — explicar em linguagem simples, sem jargão, e dizer onde a mudança vai aparecer
+8. **Cuidado com o `pnpm install`:** ele altera `pnpm-lock.yaml` e `pnpm-workspace.yaml` sozinho. Reverter esses arquivos antes do commit
+9. **Para demos:** remover bloqueios de plano temporariamente
 
 ---
 
-## Estado atual (atualizado em 2026-06-07)
+## Gotchas
 
-- Bloqueios de plano **removidos temporariamente** para demo
-- Diagnóstico de Sabotadores comentado (não bloqueia entrada)
-- Hábitos salvos em `profiles.habito_1/2/3`
-- Posts privados agora são salvos no banco e visíveis para a própria aluna
-- Botão "Como foi?" no Mural é **opcional**
+- O build falha sem `PORT` e `BASE_PATH` definidos
+- `pnpm --filter ... build` pode abortar por causa dos build scripts do esbuild; rodar o binário do vite direto contorna
+- A indentação do `AugeApp.jsx` é irregular (props com um espaço só). Ao editar por substituição de texto, casar a string exatamente
+- O app tem service worker (`public/sw.js`): depois de publicar, fechar e reabrir o app para ver a mudança
