@@ -154,4 +154,5 @@ A ISA é baseada no método da Dra. Isadora e **não a impersona**. Aparece apó
 - O build falha sem `PORT` e `BASE_PATH` definidos
 - `pnpm --filter ... build` pode abortar por causa dos build scripts do esbuild; rodar o binário do vite direto contorna
 - A indentação do `AugeApp.jsx` é irregular (props com um espaço só). Ao editar por substituição de texto, casar a string exatamente
+- **Cores em condicional escondem problemas de contraste.** Muitos estados ativos são escritos como `color: ativo ? C.ouro : ...` e `background: feito ? C.ouro : ...`. Uma busca por `color: C.ouro` não encontra nenhum deles, e uma auditoria que só lê o primeiro valor também não. Ao mexer em cor, verificar os DOIS ramos de cada condicional
 - O app tem service worker (`public/sw.js`): depois de publicar, fechar e reabrir o app para ver a mudança

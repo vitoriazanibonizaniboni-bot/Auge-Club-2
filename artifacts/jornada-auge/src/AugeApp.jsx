@@ -2632,7 +2632,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  fontSize: 11,
  letterSpacing: "0.05em",
  textTransform: "uppercase",
- color: aba === t.id ? C.ouroDk : C.lt,
+ color: aba === t.id ? C.ouroTxt : C.lt,
  transition: "color .2s",
  whiteSpace: "nowrap",
               }}
@@ -4498,7 +4498,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
           <div style={{ display: "flex", gap: 4 }}>
             {DIF_OPTS.map((d) => (
               <button key={d.v} onClick={() => registrarHabito(h.id, dataAlvo, d.v)}
-                style={{ flex: 1, background: regAlvo.dif === d.v ? C.ouroDk : C.branco, border: `1px solid ${regAlvo.dif === d.v ? C.ouroDk : C.linho}`, borderRadius: 6, padding: "7px 2px", fontFamily: FB, fontWeight: regAlvo.dif === d.v ? 500 : 300, fontSize: 11, color: regAlvo.dif === d.v ? C.branco : C.terra, cursor: "pointer", lineHeight: 1.3 }}>
+                style={{ flex: 1, background: regAlvo.dif === d.v ? C.ouroDk : C.branco, border: `1px solid ${regAlvo.dif === d.v ? C.ouroDk : C.linho}`, borderRadius: 6, padding: "7px 2px", fontFamily: FB, fontWeight: regAlvo.dif === d.v ? 500 : 300, fontSize: 11, color: regAlvo.dif === d.v ? C.obs : C.terra, cursor: "pointer", lineHeight: 1.3 }}>
                 {d.l}
               </button>
             ))}
@@ -4542,7 +4542,7 @@ function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, 
  return (
                   <button key={h.id}
  onClick={() => (feito ? desregistrarHabito(h.id, ds) : registrarHabito(h.id, ds, null))}
- style={{ flex: 1, background: feito ? `${C.ouro}30` : "transparent", border: `1px solid ${feito ? C.ouro : C.ouro + "40"}`, borderRadius: 8, padding: "8px 4px", fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: feito ? C.ouroDk : C.lt, cursor: "pointer" }}>
+ style={{ flex: 1, background: feito ? `${C.ouro}30` : "transparent", border: `1px solid ${feito ? C.ouro : C.ouro + "40"}`, borderRadius: 8, padding: "8px 4px", fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: feito ? C.ouroTxt : C.lt, cursor: "pointer" }}>
                     {feito ? "✓ " : ""}{h.nome}
                   </button>
                 );
@@ -4572,7 +4572,7 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
         ))}
       </div>
       <button onClick={toggleDesafio}
-        style={{ width: "100%", background: feitoHoje ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 13.5, color: feitoHoje ? C.branco : C.ouroDk, cursor: "pointer" }}>
+        style={{ width: "100%", background: feitoHoje ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 13.5, color: feitoHoje ? C.obs : C.ouroTxt, cursor: "pointer" }}>
         {feitoHoje ? "Feito hoje ✓" : "Feito hoje"}
       </button>
     </div>
@@ -5205,7 +5205,7 @@ function Home({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: s ? C.ouro : `rgba(28,26,23,.85)`,
+ color: s ? C.ouroTxt : `rgba(28,26,23,.85)`,
                       }}
                     >
                       {c.l}
@@ -5506,7 +5506,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
       {/* Filtro Todas / Minhas */}
       <div style={{ background: C.creme, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["jornada", "Jornada"], ["comunidade", "Comunidade"], ["minhas", "Minhas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: filtro === id ? C.ouro : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: filtro === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
             {label}
           </button>
         ))}
@@ -5798,7 +5798,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  fontSize: 15,
- color: cu ? C.ouro : `rgba(28,26,23,.92)`,
+ color: cu ? C.ouroTxt : `rgba(28,26,23,.92)`,
  fontFamily: FB,
  fontWeight: 400,
  display: "flex",
@@ -5945,7 +5945,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       {/* Thread simples — uma camada de resposta (seção 6.2) */}
                       <div style={{ paddingLeft: 33, display: "flex", alignItems: "center", gap: 10 }}>
                         {c.cid && (
-                          <button onClick={() => curtirComentario(p.id, c.cid)} style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 0", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 13, color: (c.likes || []).includes(authUserId) ? C.ouro : C.lt }}>
+                          <button onClick={() => curtirComentario(p.id, c.cid)} style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 0", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 13, color: (c.likes || []).includes(authUserId) ? C.ouroTxt : C.lt }}>
                             {IcoH.coracao((c.likes || []).includes(authUserId) ? C.ouro : C.lt, 14, (c.likes || []).includes(authUserId) ? C.ouro : "none")}
                             {(c.likes || []).length > 0 ? (c.likes || []).length : ""}
                           </button>
@@ -6183,7 +6183,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  fontSize: 16,
- color: dcu ? C.ouro : `rgba(28,26,23,.88)`,
+ color: dcu ? C.ouroTxt : `rgba(28,26,23,.88)`,
  fontFamily: FB,
  fontWeight: 400,
  display: "flex",
@@ -6531,7 +6531,7 @@ function Novo({ back, postTreino }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: publica ? C.ouro : `rgba(28,26,23,.92)`,
+ color: publica ? C.ouroTxt : `rgba(28,26,23,.92)`,
                 }}
               >
  Público
@@ -6566,7 +6566,7 @@ function Novo({ back, postTreino }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: !publica ? C.ouro : `rgba(28,26,23,.92)`,
+ color: !publica ? C.ouroTxt : `rgba(28,26,23,.92)`,
                 }}
               >
  Só para mim
@@ -6977,7 +6977,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: publica ? C.ouro : `rgba(28,26,23,.88)`,
+ color: publica ? C.ouroTxt : `rgba(28,26,23,.88)`,
                   }}
                 >
  Público
@@ -7002,7 +7002,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: !publica ? C.ouro : `rgba(28,26,23,.88)`,
+ color: !publica ? C.ouroTxt : `rgba(28,26,23,.88)`,
                   }}
                 >
  Só para mim
@@ -7855,7 +7855,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: eu ? C.ouroLt : `rgba(28,26,23,.82)`,
+ color: `rgba(28,26,23,.88)`,
  lineHeight: 1.6,
                   }}
                 >
@@ -8499,7 +8499,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: i === 0 ? C.ouro : `rgba(28,26,23,.18)`,
+ color: i === 0 ? C.ouroTxt : `rgba(28,26,23,.18)`,
  textAlign: "center",
  borderBottom: `2px solid ${i === 0 ? C.ouro : "transparent"}`,
                     }}
@@ -9948,7 +9948,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  border: isHoje ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
  display: "flex", alignItems: "center", justifyContent: "center",
  fontSize: 12.5, fontFamily: FS, fontWeight: 400,
- color: isRet || n >= 3 ? C.creme : C.obs2,
+ color: C.obs,
  cursor: clic ? "pointer" : "default",
               }}>
                 {dia}
@@ -9987,7 +9987,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
                   <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${C.ouro}18` }}>
                     <span style={{ fontSize: 17 }}>{h.ic}</span>
                     <span style={{ flex: 1, fontFamily: FS, fontSize: 16, color: r ? C.obs : C.lt }}>{h.nome}</span>
-                    <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: r ? C.ouroDk : C.lt }}>
+                    <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: r ? C.ouroTxt : C.lt }}>
                       {r ? `✓ feito${r.dif ? ` · ${difLabel(r.dif)}` : ""}` : "—"}
                     </span>
                   </div>
@@ -10178,7 +10178,7 @@ function Escritas({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: escT === id ? C.ouro : `rgba(28,26,23,.88)`,
+ color: escT === id ? C.ouroTxt : `rgba(28,26,23,.88)`,
  cursor: "pointer",
  transition: "all .2s",
               }}
@@ -10966,7 +10966,7 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
           </div>
           <div style={{ paddingLeft: 33, display: "flex", alignItems: "center", gap: 12, marginTop: 3 }}>
             {c.cid && (
-              <button onClick={() => curtir(c.cid)} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 13, color: curtido(c) ? C.ouro : C.lt, padding: "2px 0" }}>
+              <button onClick={() => curtir(c.cid)} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 13, color: curtido(c) ? C.ouroTxt : C.lt, padding: "2px 0" }}>
                 {IcoH.coracao(curtido(c) ? C.ouro : C.lt, 14, curtido(c) ? C.ouro : "none")}{(c.likes || []).length > 0 ? (c.likes || []).length : ""}
               </button>
             )}
@@ -11359,7 +11359,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.88)`, marginBottom: 4, lineHeight: 1.5 }}>
                 {v.sub}
               </div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: bloqCat ? C.ouro : `rgba(28,26,23,.85)` }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: bloqCat ? C.ouroTxt : `rgba(28,26,23,.85)` }}>
                 {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
               </div>
             </div>
@@ -11755,7 +11755,7 @@ function PainelMentora({ ir }) {
       {/* Abas */}
       <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.creme }}>
         {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["avisos", "Avisos"], ["alunas", "Alunas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 400, fontSize: 15, color: aba === id ? C.ouro : `rgba(28,26,23,.85)`, cursor: "pointer", transition: "all .2s" }}>
+          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 400, fontSize: 15, color: aba === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer", transition: "all .2s" }}>
             {label}
           </button>
         ))}
@@ -11821,7 +11821,7 @@ function PainelMentora({ ir }) {
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {CATS_ADMIN.map((cat) => (
                       <button key={cat.id} onClick={() => setFormV((f) => ({ ...f, categoria: cat.id }))}
- style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: formV.categoria === cat.id ? C.ouro : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+ style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: formV.categoria === cat.id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
                         {cat.label}
                       </button>
                     ))}
@@ -11909,7 +11909,7 @@ function PainelMentora({ ir }) {
                     </label>
                   </div>
                   {guiaMsg[h.id] && (
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: guiaMsg[h.id].startsWith("Erro") ? "#A32D2D" : C.ouroDk, marginTop: 5 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: guiaMsg[h.id].startsWith("Erro") ? "#A32D2D" : C.ouroTxt, marginTop: 5 }}>
                       {guiaMsg[h.id]}
                     </div>
                   )}
@@ -11945,7 +11945,7 @@ function PainelMentora({ ir }) {
               <div style={{ display: "flex", gap: 8 }}>
                 {[["agora", "Enviar agora"], ["agendar", "Agendar"]].map(([id, lb]) => (
                   <button key={id} onClick={() => setPushModo(id)}
-                    style={{ flex: 1, background: pushModo === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${pushModo === id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "9px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: pushModo === id ? C.ouro : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+                    style={{ flex: 1, background: pushModo === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${pushModo === id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "9px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: pushModo === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
                     {lb}
                   </button>
                 ))}
@@ -12028,7 +12028,7 @@ function PainelMentora({ ir }) {
                             const on = (edA.perfil || []).includes(k);
                             return (
                               <button key={k} onClick={() => setEdA((x) => ({ ...x, perfil: on ? x.perfil.filter((p) => p !== k) : [...(x.perfil || []), k] }))}
-                                style={{ background: on ? `${C.ouro}22` : "rgba(28,26,23,.04)", border: `1px solid ${on ? C.ouro + "66" : C.ouro + "20"}`, borderRadius: 50, padding: "7px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: on ? C.ouroDk : C.terra, cursor: "pointer" }}>
+                                style={{ background: on ? `${C.ouro}22` : "rgba(28,26,23,.04)", border: `1px solid ${on ? C.ouro + "66" : C.ouro + "20"}`, borderRadius: 50, padding: "7px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: on ? C.ouroTxt : C.terra, cursor: "pointer" }}>
                                 {nome}
                               </button>
                             );
@@ -12554,7 +12554,7 @@ function Perfil({
  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : "rgba(28,26,23,.85)"}`, color: C.obs, fontFamily: FS, fontSize: 17, fontWeight: 400, padding: "6px 0", marginBottom: 12 }}
             />
             {senhaMsg && (
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: senhaMsg.ok ? C.ouroDk : "#A32D2D", marginBottom: 10 }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: senhaMsg.ok ? C.ouroTxt : "#A32D2D", marginBottom: 10 }}>
                 {senhaMsg.txt}
               </div>
             )}
@@ -12730,7 +12730,7 @@ function Perfil({
  else if (r === "denied") tk("Permissão bloqueada nas configurações do navegador");
               }
             }}
- style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 13, color: notifStatus === "granted" ? C.obs2 : C.ouroDk, cursor: "pointer" }}
+ style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 13, color: notifStatus === "granted" ? C.obs2 : C.ouroTxt, cursor: "pointer" }}
           >
             {notifStatus === "granted" ? "Desligar" : "Ligar"}
           </button>
@@ -12854,7 +12854,7 @@ function PrefRadar({ authUserId }) {
             {INTERESSES.map((i) => {
  const s = sels.includes(i);
  return (
-                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: s ? C.ouro : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: s ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
                   {i}
                 </button>
               );
