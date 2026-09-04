@@ -9773,7 +9773,9 @@ function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario
  const [isaLoad, setIsaLoad] = useState(false);
  const registrar = async () => {
  setRet((r) => r + 1);
- const hoje = new Date().toISOString().split("T")[0];
+    // Data de Brasilia, nao UTC: toISOString() joga a retomada clicada
+    // depois das 21h para o dia seguinte
+ const hoje = localDateStr();
  syncDB("checkins", { data: hoje, total_feitos: 0, total: 0, percentual: 0, retomada: true, chips: [] }, { onConflict: "user_id,data" });
  tk("Retomada registrada. +20 pontos AUGE");
  setRegistrado(true);
