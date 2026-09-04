@@ -1057,6 +1057,13 @@ function Cab({ titulo, voltar, acao, destino }) {
 function localDateStr(d = new Date()) {
  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
+// Exibe uma data do banco (YYYY-MM-DD) no formato brasileiro.
+// Aceita tambem os valores antigos, gravados como texto solto.
+function dataBR(d) {
+ if (!d) return "";
+ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d));
+ return m ? `${m[3]}/${m[2]}/${m[1]}` : String(d);
+}
 const TODAY = localDateStr();
 
 export default function App() {
@@ -4595,7 +4602,7 @@ function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }
     .filter(Boolean)
     .join(" ") || "Essa semana ainda está sendo escrita — e você está aqui.";
  const salvar = (compartilhar) => {
- const vitData = new Date().toLocaleDateString("pt-BR");
+ const vitData = localDateStr(); // ISO — a coluna e do tipo date
  syncInsert("vitorias", { sem, texto: resp.trim() || resumo, data: vitData, resumo });
  try { localStorage.setItem(`auge_vitsem_${segundaAtual}`, "1"); } catch {}
  if (compartilhar) {
@@ -10137,7 +10144,7 @@ function Escritas({
  const salvarVit = async () => {
  if (!nv.trim()) return;
  const d = new Date();
- const vitData = `${d.getDate()}/${d.getMonth() + 1}`;
+ const vitData = localDateStr(); // ISO — a coluna e do tipo date
  setVit((v) => [...v, { sem: 3, texto: nv.trim(), data: vitData }]);
  syncInsert("vitorias", { sem: 3, texto: nv.trim(), data: vitData });
  tk("Vitória registrada! ");
@@ -10308,7 +10315,7 @@ function Escritas({
  marginBottom: 3,
                   }}
                 >
- Semana {v.sem} · {v.data}
+ Semana {v.sem} · {dataBR(v.data)}
                 </div>
                 <div
  style={{
