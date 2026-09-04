@@ -81,7 +81,13 @@ async function enviarOneSignal(restKey, payload) {
   return { ok: false, erro: ultimo };
 }
 
-// Quem está há 2+ dias sem check-in (e tem a Jornada liberada)
+// Quem sumiu ha 2+ dias (e tem o app liberado).
+//
+// "Apareceu" nao e so fechar o check-in completo: marcar um habito angular
+// tambem conta. Sao tabelas diferentes — o check-in grava em `checkins` e o
+// botao do habito grava em `registros` — e olhar so a primeira faria o app
+// cobrar quem entrou e marcou os habitos. O Painel da Mentora ja trata as
+// duas como atividade; aqui passa a tratar tambem.
 async function alunasSemCheckin(supaUrl, serviceKey) {
   const h = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
@@ -95,12 +101,17 @@ async function alunasSemCheckin(supaUrl, serviceKey) {
 
   const hoje = hojeBR();
   const limite = menosDias(hoje, 1); // apareceu ontem ou hoje = não incomoda
-  const cRes = await fetch(
-    `${supaUrl}/rest/v1/checkins?select=user_id&data=gte.${limite}`,
-    { headers: h }
-  );
+
+  const [cRes, rRes] = await Promise.all([
+    fetch(`${supaUrl}/rest/v1/checkins?select=user_id&data=gte.${limite}`, { headers: h }),
+    fetch(`${supaUrl}/rest/v1/registros?select=user_id&data=gte.${limite}`, { headers: h }),
+  ]);
   if (!cRes.ok) throw new Error("Falha ao ler checkins");
-  const recentes = new Set((await cRes.json()).map((c) => c.user_id));
+  if (!rRes.ok) throw new Error("Falha ao ler registros");
+
+  const recentes = new Set();
+  for (const linha of await cRes.json()) recentes.add(linha.user_id);
+  for (const linha of await rRes.json()) recentes.add(linha.user_id);
 
   return alunas.map((a) => a.id).filter((id) => !recentes.has(id));
 }
