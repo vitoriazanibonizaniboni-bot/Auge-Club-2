@@ -1691,7 +1691,7 @@ export default function App() {
 
  if (vitRes.data?.length) {
  setVit(
- vitRes.data.map((v) => ({ sem: v.sem, texto: v.texto, data: v.data })),
+ vitRes.data.map((v) => ({ sem: v.sem, texto: v.texto, data: v.data, criado: v.created_at })),
       );
     }
 
@@ -4708,6 +4708,16 @@ function Home({
  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
  const feitosHoje = habsAtivos.filter((h) => regDoDia(h)).length;
  const ehSexta = new Date(TODAY + "T12:00:00").getDay() === 5;
+  // Ja existe vitoria registrada NESTA semana? Antes isso era checado pelo numero
+  // da semana (v.sem), que trava em 12 — bastava uma vitoria na semana 12 para o
+  // banner sumir para sempre. Agora vale a data em que a vitoria foi registrada.
+ const fimDaSemana = addDaysStr(segundaAtual, 6);
+ const vitDestaSemana = (vit || []).some((v) => {
+ const iso = v.criado
+      ? localDateStr(new Date(v.criado))
+      : (/^\d{4}-\d{2}-\d{2}$/.test(String(v.data || "")) ? String(v.data) : null);
+ return iso ? iso >= segundaAtual && iso <= fimDaSemana : false;
+  });
  const [vitSemOk, setVitSemOk] = useState(() => {
  try { return localStorage.getItem(`auge_vitsem_${segundaAtual}`) === "1"; } catch { return false; }
   });
@@ -5088,7 +5098,7 @@ function Home({
 
 
         {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
-        {passo === 0 && ehSexta && !vitSemOk && !(vit || []).some((v) => v.sem === sem) && (
+        {passo === 0 && ehSexta && !vitSemOk && !vitDestaSemana && (
           <VitoriaSemana
  habStats={habStats}
  sem={sem}
@@ -10145,7 +10155,7 @@ function Escritas({
  if (!nv.trim()) return;
  const d = new Date();
  const vitData = localDateStr(); // ISO — a coluna e do tipo date
- setVit((v) => [...v, { sem: 3, texto: nv.trim(), data: vitData }]);
+ setVit((v) => [...v, { sem: 3, texto: nv.trim(), data: vitData, criado: new Date().toISOString() }]);
  syncInsert("vitorias", { sem: 3, texto: nv.trim(), data: vitData });
  tk("Vitória registrada! ");
  setIsaVitLoad(true);
