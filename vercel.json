@@ -15,5 +15,10 @@
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
+  ],
+  "crons": [
+    { "path": "/api/lembretes?g=sexta", "schedule": "0 20 * * 5" },
+    { "path": "/api/lembretes?g=domingo", "schedule": "0 22 * * 0" },
+    { "path": "/api/lembretes?g=dois-dias", "schedule": "0 23 * * *" }
   ]
 }
