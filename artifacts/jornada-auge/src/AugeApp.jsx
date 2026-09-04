@@ -4699,14 +4699,12 @@ function Home({
  toggleDesafio,
  postTreino,
 }) {
- const [passo, setPasso] = useState(0); // 0=cards 2=chips 3=nota 4=fechamento
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
  const ONTEM = addDaysStr(TODAY, -1);
  const habsAtivos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
- const feitosHoje = habsAtivos.filter((h) => regDoDia(h)).length;
  const ehSexta = new Date(TODAY + "T12:00:00").getDay() === 5;
   // Ja existe vitoria registrada NESTA semana? Antes isso era checado pelo numero
   // da semana (v.sem), que trava em 12 — bastava uma vitoria na semana 12 para o
@@ -4721,76 +4719,8 @@ function Home({
  const [vitSemOk, setVitSemOk] = useState(() => {
  try { return localStorage.getItem(`auge_vitsem_${segundaAtual}`) === "1"; } catch { return false; }
   });
- const CHIPS = [
-    { id: "cansada", e: "", l: "Cansada" },
-    { id: "ansiosa", e: "", l: "Ansiosa" },
-    { id: "energizada", e: "", l: "Energizada" },
-    { id: "forte", e: "", l: "Forte" },
-    { id: "progredindo", e: "", l: "Progredindo" },
-  ];
- const total = habsAtivos.length;
- const pct = total ? Math.round((feitosHoje / total) * 100) : 0;
- const toggle = (id) =>
- setChips((c) =>
- c.includes(id) ? c.filter((x) => x !== id) : [...c.slice(-1), id],
-    );
 
- const [isaRes, setIsaRes] = useState(null);
- const [isaLoad, setIsaLoad] = useState(false);
 
- const salvar = async () => {
- const hoje = TODAY;
- setHist((h) => ({ ...h, [hoje]: { feitos: feitosHoje, total, retomada: false } }));
- setCkOk(true);
- tk(
- pct === 100
-        ? "Dia completo. Você apareceu por inteiro."
-        : "Checkin salvo. Você apareceu hoje.",
-    );
- syncDB(
- "checkins",
-      {
- data: hoje,
- hab_feitos: habsAtivos.filter((h) => regDoDia(h)).map((h) => h.nome),
- hab_nao_feitos: habsAtivos.filter((h) => !regDoDia(h)).map((h) => h.nome),
- total_feitos: feitosHoje,
- total,
- percentual: pct,
- chips,
- nota: notas.trim() || null,
- retomada: false,
-      },
-      { onConflict: "user_id,data" },
-    );
- setPasso(4);
- setIsaLoad(true);
- const habNomes = habsAtivos.filter((h) => regDoDia(h)).map((h) => h.nome);
- const naoFezNomes = habsAtivos.filter((h) => !regDoDia(h)).map((h) => h.nome);
- const chipsTxt =
- chips.length > 0 ? chips.join(", ") : "não registrou estado emocional";
- const notaTxt = notas.trim()
-      ? `"${notas.trim()}"`
-      : "não registrou nota hoje";
- const hora = new Date().getHours();
- const periodo = hora >= 5 && hora < 12 ? "manhã" : hora >= 12 && hora < 18 ? "tarde" : "noite";
- const nomeAluna = usuario?.nome ? usuario.nome.split(" ")[0] : null;
- const porques = [pq1, pq2, pq3].filter(Boolean);
- const msg = [
-      `A aluna acabou de completar o check-in do dia (período: ${periodo}).`,
- nomeAluna ? `Nome dela: ${nomeAluna}.` : null,
-      `Hábitos feitos: ${habNomes.length > 0 ? habNomes.join(", ") : "nenhum"}.`,
-      `Hábitos não feitos: ${naoFezNomes.length > 0 ? naoFezNomes.join(", ") : "nenhum"}.`,
-      `Total: ${feitosHoje} de ${total} hábitos (${pct}%).`,
-      `Como ela se sentiu: ${chipsTxt}.`,
-      `Nota/microdiário: ${notaTxt}.`,
- streakAtual > 1 ? `Sequência atual: ${streakAtual} dias seguidos.` : null,
- porques.length > 0 ? `Os porquês dela (por que quer mudar): ${porques.join(" / ")}.` : null,
-      `Personalize sua resposta considerando TUDO isso. Se ela escreveu algo no microdiário, mencione diretamente. Se marcou Cansada mas fez os hábitos, celebre a coragem. Se fez parcial, acolha sem dramatizar. Se tiver porquês, conecte a resposta a eles quando fizer sentido. OBRIGATÓRIO: use a saudação correta para o período '${periodo}' — se for noite diga 'boa noite', se for tarde diga 'boa tarde', se for manhã diga 'bom dia'. Nunca use saudação errada para o horário.`,
-    ].filter(Boolean).join("\n");
- const resp = await callISA(msg);
- setIsaRes(resp);
- setIsaLoad(false);
-  };
 
   // Calendário mensal
  const dias = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -5086,7 +5016,7 @@ function Home({
           )}
 
         {/* Aviso agrupado de zonas (seção 4.6) — um único aviso, nunca separado */}
-        {passo === 0 && habsAlerta.length > 0 && (
+        {habsAlerta.length > 0 && (
           <div style={{ background: `${C.blush}22`, border: `1px solid ${C.blush}88`, borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.terra, lineHeight: 1.55 }}>
               {habsAlerta.length === 1
@@ -5098,7 +5028,7 @@ function Home({
 
 
         {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
-        {passo === 0 && ehSexta && !vitSemOk && !vitDestaSemana && (
+        {ehSexta && !vitSemOk && !vitDestaSemana && (
           <VitoriaSemana
  habStats={habStats}
  sem={sem}
@@ -5110,7 +5040,6 @@ function Home({
         )}
 
         {/* Cards dos 3 hábitos angulares (seção 4.2) */}
-        {passo === 0 && (
           <div>
             <div
  style={{
@@ -5164,199 +5093,7 @@ function Home({
               </button>
             </div>
           </div>
-        )}
 
-        {/* Passo 2 — chips emocionais (horizontal) */}
-        {passo === 2 && (
-          <div>
-            <div
- style={{
- fontFamily: FS,
- fontSize: 22,
- fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
- marginBottom: 6,
-              }}
-            >
- Como você chegou hoje?
-            </div>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: `rgba(28,26,23,.92)`,
- marginBottom: 20,
-              }}
-            >
- Selecione até 2
-            </div>
-            <div
- style={{
- display: "flex",
- gap: 8,
- flexWrap: "wrap",
- marginBottom: 24,
-              }}
-            >
-              {CHIPS.map((c) => {
- const s = chips.includes(c.id);
- return (
-                  <button
- key={c.id}
- onClick={() => toggle(c.id)}
- style={{
- background: s ? `${C.ouro}22` : `rgba(28,26,23,.05)`,
- border: `1px solid ${s ? C.ouro + "55" : C.ouro + "15"}`,
- borderRadius: 50,
- padding: "8px 12px",
- cursor: "pointer",
- display: "flex",
- alignItems: "center",
- gap: 5,
-                    }}
-                  >
-                    <span style={{ fontSize: 17 }}>{c.e}</span>
-                    <span
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: s ? C.ouroTxt : `rgba(28,26,23,.85)`,
-                      }}
-                    >
-                      {c.l}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <BtnPill
- onClick={() => chips.length > 0 && setPasso(3)}
- style={{ opacity: chips.length > 0 ? 1 : 0.4 }}
-            >
- Continuar
-            </BtnPill>
-          </div>
-        )}
-
-        {/* Passo 3 — nota */}
-        {passo === 3 && (
-          <div>
-            <div
- style={{
- fontFamily: FS,
- fontSize: 22,
- fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
- marginBottom: 6,
-              }}
-            >
- Quer registrar algo?
-            </div>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: `rgba(28,26,23,.92)`,
- marginBottom: 18,
-              }}
-            >
- Sempre opcional
-            </div>
-            <textarea
- value={notas}
- onChange={(e) => setNotas(e.target.value)}
- placeholder="O que você quer lembrar desse dia?"
- style={{
- width: "100%",
- background: `rgba(28,26,23,.04)`,
- border: `1px solid ${C.ouro}18`,
- borderRadius: 10,
- padding: "13px",
- fontSize: 17,
- fontFamily: FS,
- color: `rgba(28,26,23,.88)`,
- resize: "none",
- height: 120,
- lineHeight: 1.7,
-              }}
-            />
-            <BtnPill onClick={salvar} style={{ marginTop: 16 }}>
- Salvar checkin
-            </BtnPill>
-            <button
- onClick={salvar}
- style={{
- width: "100%",
- background: "none",
- border: "none",
- color: `rgba(28,26,23,.82)`,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- cursor: "pointer",
- marginTop: 10,
-              }}
-            >
- Pular e salvar
-            </button>
-          </div>
-        )}
-
-        {/* Passo 4 — fechamento */}
-        {passo === 4 && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ textAlign: "center" }}>
-              <div
- style={{
- fontFamily: FS,
- fontStyle: "italic",
- fontSize: 56,
- color: C.ouroTxt,
- marginBottom: 10,
-                }}
-              >
-                {pct}%
-              </div>
-              <div
- style={{
- fontFamily: FS,
- fontSize: 18,
- fontWeight: 400,
- color: `rgba(28,26,23,.92)`,
- lineHeight: 1.4,
- marginBottom: 8,
-                }}
-              >
-                {pct === 100
-                  ? "Dia completo."
-                  : pct >= 50
-                    ? "Mais da metade. Isso conta."
-                    : "Qualquer passo é progresso."}
-              </div>
-                          </div>
-            <IsaCard text={isaRes} loading={isaLoad} />
-            <button
- onClick={() => setPasso(0)}
- style={{
- background: "none",
- border: "none",
- color: `rgba(28,26,23,.88)`,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- cursor: "pointer",
- marginTop: 14,
- display: "block",
- width: "100%",
-              }}
-            >
-              ← Voltar ao início
-            </button>
-          </div>
-        )}
 
       </Grain>
     </div>
