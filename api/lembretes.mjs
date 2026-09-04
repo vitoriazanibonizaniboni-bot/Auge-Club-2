@@ -5,10 +5,17 @@
 // a lista de horários ficava só na memória e o celular apagava esse processo
 // quando o app saía de uso, então os lembretes nunca chegavam.
 //
-// Chamada pelas tarefas agendadas declaradas em vercel.json:
-//   /api/lembretes?g=sexta      — sexta 17h (Brasília)
-//   /api/lembretes?g=domingo    — domingo 19h
-//   /api/lembretes?g=dois-dias  — todo dia 20h, só para quem está há 2+ dias sem check-in
+// As três tarefas agendadas em vercel.json apontam para ESTE MESMO endereço.
+// A Vercel nao aceita diferencia-las por "?g=..." no caminho — ela ignora a
+// parte depois do "?" e registra uma tarefa so. O jeito suportado e declarar
+// o mesmo caminho tres vezes, com horarios diferentes, e descobrir aqui dentro
+// qual delas chamou lendo o cabecalho x-vercel-cron-schedule.
+//
+//   0 20 * * 5  -> sexta 17h (Brasília)
+//   0 22 * * 0  -> domingo 19h
+//   0 23 * * *  -> todo dia 20h, só para quem está há 2+ dias sem check-in
+//
+// O "?g=..." continua valendo para disparo manual, em teste.
 //
 // Variáveis necessárias na Vercel:
 //   ONESIGNAL_REST_API_KEY   (já usada por /api/push e /api/notificar)
@@ -19,6 +26,13 @@
 const ONESIGNAL_APP_ID =
   process.env.ONESIGNAL_APP_ID || "c0ce93ea-ba72-44c1-abfe-367a510aed39";
 const APP_URL = "https://auge-club-2.vercel.app";
+
+// Qual lembrete cada horario de vercel.json representa
+const AGENDAS = {
+  "0 20 * * 5": "sexta",
+  "0 22 * * 0": "domingo",
+  "0 23 * * *": "dois-dias",
+};
 
 const TEXTOS = {
   sexta: {
@@ -105,7 +119,11 @@ export default async function handler(req, res) {
     return;
   }
 
-  const g = String(req.query?.g || "");
+  // Nas tarefas agendadas o gatilho vem pelo horario; no disparo manual, por ?g=
+  const agenda = String(req.headers?.["x-vercel-cron-schedule"] || "")
+    .trim()
+    .replace(/\s+/g, " ");
+  const g = String(req.query?.g || AGENDAS[agenda] || "");
 
   // ── Sexta e domingo: mensagem igual para todas ──────────────────────────────
   if (g === "sexta" || g === "domingo") {
