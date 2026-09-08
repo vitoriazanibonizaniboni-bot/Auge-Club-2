@@ -11067,80 +11067,30 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
         <div style={{ width: 40 }} />
       </div>
 
-      {/* Grid de categorias 3x2 */}
-      <div
- style={{
- background: C.creme,
- padding: "14px 16px 0",
- borderBottom: `1px solid ${C.ouro}10`,
-        }}
-      >
-        <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: `rgba(28,26,23,.88)`,
- letterSpacing: "0.18em",
- textTransform: "uppercase",
- marginBottom: 10,
-          }}
-        >
- Categorias
-        </div>
-        <div
- style={{
- display: "grid",
- gridTemplateColumns: "repeat(2,1fr)",
- gap: 8,
- paddingBottom: 14,
-          }}
-        >
+      {/* Categorias — todas visiveis, sem rolagem lateral */}
+      <div style={{ background: C.creme, padding: "12px 16px 13px", borderBottom: `1px solid ${C.ouro}12` }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {CATS.map((cat) => {
- const bloq = false; // demo: categorias desbloqueadas
- const ativa = catSel === cat.id;
- return (
+            const ativa = catSel === cat.id;
+            return (
               <button
- key={cat.id}
- onClick={() => setCatSel(cat.id)}
- style={{
- background: ativa ? `${C.ouro}20` : `rgba(28,26,23,.04)`,
- border: `1px solid ${ativa ? C.ouro + "44" : C.ouro + "12"}`,
- borderRadius: 10,
- padding: "12px 6px",
- cursor: "pointer",
- textAlign: "center",
- position: "relative",
+                key={cat.id}
+                onClick={() => setCatSel(cat.id)}
+                style={{
+                  flexShrink: 0,
+                  background: ativa ? C.ouroDk : "transparent",
+                  border: `1px solid ${ativa ? C.ouroDk : C.ouro + "66"}`,
+                  borderRadius: 50,
+                  padding: "9px 16px",
+                  fontFamily: FB,
+                  fontWeight: ativa ? 600 : 400,
+                  fontSize: 16,
+                  color: ativa ? C.obs : C.lt,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {bloq && (
-                  <div
- style={{
- position: "absolute",
- top: 5,
- right: 6,
- fontSize: 16,
-                    }}
-                  >
-                    
-                  </div>
-                )}
-                <div style={{ fontSize: 18, marginBottom: 4 }}>{cat.icon}</div>
-                <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: ativa
-                      ? C.ouro
-                      : bloq
-                        ? `rgba(28,26,23,.85)`
-                        : `rgba(28,26,23,.85)`,
- lineHeight: 1.3,
-                  }}
-                >
-                  {cat.label}
-                </div>
+                {cat.label}
               </button>
             );
           })}
@@ -11187,44 +11137,6 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
               </div>
             ));
           })}
-        </div>
-
-        {/* Título da categoria selecionada */}
-        <div
- style={{
- display: "flex",
- alignItems: "center",
- gap: 8,
- marginBottom: 14,
-          }}
-        >
-          <div style={{ fontSize: 18 }}>{catAtual?.icon}</div>
-          <div
- style={{
- fontFamily: FB,
- fontSize: 18,
- fontWeight: 400,
- color: `rgba(28,26,23,.97)`,
-            }}
-          >
-            {catAtual?.label}
-          </div>
-          {bloqCat && (
-            <div
- style={{
- background: `${C.ouro}15`,
- border: `1px solid ${C.ouro}30`,
- borderRadius: 20,
- padding: "2px 10px",
- fontFamily: FB,
- fontSize: 16,
- color: C.ouroTxt,
- letterSpacing: "0.1em",
-              }}
-            >
- Jornada AUGE
-            </div>
-          )}
         </div>
 
         {/* Aviso de bloqueio */}
@@ -11282,79 +11194,73 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  };
  const abrir = () => !bloqVideo && v.url && (catSel === "podcast" ? abrirExterno(v.url) : catSel === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
 
-          // Card compacto (Indicações e Podcast) — sem capa de vídeo
-          if (ehLink) return (
-            <div
- key={v.id}
- onClick={abrir}
- style={{
- display: "flex", alignItems: "center", gap: 14,
- background: `rgba(28,26,23,.04)`,
- border: `1px solid ${C.ouro}22`,
- borderRadius: 14,
- marginBottom: 12,
- padding: "14px 16px",
- cursor: "pointer",
-            }}
-          >
-            <div style={{ flexShrink: 0, width: 46, height: 46, borderRadius: 12, background: `${C.ouro}1F`, border: `1px solid ${C.ouro}40`, display: "flex", alignItems: "center", justifyContent: "center", color: C.ouroTxt, fontSize: 20 }}>
-              {catSel === "podcast" ? "♪" : "❦"}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: FB, fontSize: 17, color: `rgba(28,26,23,.97)`, lineHeight: 1.25, marginBottom: v.sub ? 3 : 0 }}>
-                {v.titulo}
-              </div>
-              {v.sub && (
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.7)`, lineHeight: 1.45, marginBottom: 3 }}>
-                  {v.sub}
-                </div>
-              )}
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt }}>
-                {catSel === "podcast" ? "Ouvir ›" : "Ler ›"}
-              </div>
-            </div>
-          </div>
-          );
-
-          // Card de vídeo (Aulas, Meditações, Yoga) — capa 16:9
+          // Um formato so para toda a aba: capa a esquerda, tipo, titulo e formato
+          const rotuloCat = { aulas: "Aula", meditacoes: "Meditação", yoga: "Yoga", curadoria: "Indicação", podcast: "Podcast" }[catSel] || "Conteúdo";
+          const glifo = catSel === "podcast" ? "♪" : "❦";
+          const formato = catSel === "podcast" ? "Ouvir" : catSel === "curadoria" ? "Ler" : "Vídeo";
           return (
-          <div
- key={v.id}
- onClick={abrir}
- style={{
- background: `rgba(28,26,23,.04)`,
- border: `1px solid ${C.ouro}12`,
- borderRadius: 12,
- marginBottom: 12,
- overflow: "hidden",
- cursor: bloqVideo ? "default" : "pointer",
- opacity: bloqVideo ? 0.5 : 1,
-            }}
-          >
-            <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: catAtual?.cor || "#1E252E" }}>
-              {thumb && (
-                <img src={thumb} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              )}
-              {!bloqVideo && (
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 48, height: 48, borderRadius: "50%", background: "rgba(28,26,23,.55)", color: "#fff", fontSize: 20 }}>
-                    ▶
+            <div
+              key={v.id}
+              onClick={abrir}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 13,
+                background: C.branco,
+                border: `1px solid ${C.linho}`,
+                borderRadius: 14,
+                padding: 11,
+                marginBottom: 10,
+                cursor: "pointer",
+              }}
+            >
+              <div
+                style={{
+                  flexShrink: 0,
+                  width: 96,
+                  height: 66,
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  position: "relative",
+                  background: thumb ? "#000" : `${C.ouro}1F`,
+                  border: `1px solid ${C.ouro}33`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {thumb ? (
+                  <img
+                    src={thumb}
+                    alt=""
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 24, color: C.ouroTxt }}>{glifo}</span>
+                )}
+                {thumb && (
+                  <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", background: "rgba(28,26,23,.62)", color: "#fff", fontSize: 14 }}>
+                      ▶
+                    </span>
                   </span>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: C.ouroTxt, marginBottom: 4 }}>
+                  {rotuloCat}
                 </div>
-              )}
+                <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs, lineHeight: 1.3, marginBottom: 5 }}>
+                  {v.titulo}
+                </div>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt }}>
+                  {formato}
+                  {catSel !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
+                </div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 20, color: C.ouroTxt, paddingRight: 2 }}>›</span>
             </div>
-            <div style={{ padding: "12px 15px" }}>
-              <div style={{ fontFamily: FB, fontSize: 17, color: bloqCat ? `rgba(28,26,23,.92)` : `rgba(28,26,23,.97)`, marginBottom: 4, lineHeight: 1.3 }}>
-                {v.titulo}
-              </div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.88)`, marginBottom: 4, lineHeight: 1.5 }}>
-                {v.sub}
-              </div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: bloqCat ? C.ouroTxt : `rgba(28,26,23,.85)` }}>
-                {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
-              </div>
-            </div>
-          </div>
           );
         })}
 
@@ -11369,18 +11275,16 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
           </div>
         )}
         {videoAberto && (
-          <div onClick={() => setVideoAberto(null)}
-            style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px" }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "92vh", overflowY: "auto" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.creme, paddingRight: 10 }}>
-                  {videoAberto.titulo}
-                </div>
-                <button onClick={() => setVideoAberto(null)}
-                  style={{ background: "none", border: `1px solid ${C.creme}66`, borderRadius: "50%", width: 34, height: 34, color: C.creme, fontSize: 17, cursor: "pointer", flexShrink: 0 }}>
-                  ✕
-                </button>
-              </div>
+          <div style={{ position: "fixed", inset: 0, zIndex: 500, background: C.creme, overflowY: "auto" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 2, background: C.creme, padding: "12px 16px 10px" }}>
+              <button
+                onClick={() => setVideoAberto(null)}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt }}
+              >
+                <span style={{ fontSize: 22, lineHeight: 1 }}>‹</span> Voltar
+              </button>
+            </div>
+            <div style={{ padding: "0 16px 40px" }}>
               <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", borderRadius: 14, overflow: "hidden" }}>
                 {ytEmbed(videoAberto.url) ? (
                   <iframe
@@ -11395,13 +11299,19 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                     style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
                 )}
               </div>
-              {videoAberto.dur && (
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.creme, marginTop: 8 }}>
-                  {videoAberto.dur}
+              <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 20, color: C.obs, lineHeight: 1.32, marginTop: 16 }}>
+                {videoAberto.dur ? `${videoAberto.dur} | ${videoAberto.titulo}` : videoAberto.titulo}
+              </div>
+              {videoAberto.sub && (
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.6, marginTop: 10 }}>
+                  {videoAberto.sub}
                 </div>
               )}
               {videoAberto.id && (
-                <ComentariosVideo videoId={videoAberto.id} authUserId={authUserId} usuario={usuario} minhaFoto={minhaFoto} />
+                <>
+                  <div style={{ height: 1, background: `${C.ouro}22`, margin: "20px 0 0" }} />
+                  <ComentariosVideo videoId={videoAberto.id} authUserId={authUserId} usuario={usuario} minhaFoto={minhaFoto} />
+                </>
               )}
             </div>
           </div>
