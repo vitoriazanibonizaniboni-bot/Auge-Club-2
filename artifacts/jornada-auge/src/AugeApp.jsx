@@ -17,6 +17,7 @@ const C = {
  ouroLt: "#EAD8B8",
  oliva: "#626442",   // estado "feito": pontinhos e check do habito. Texto CREME por cima (5,69:1)
  blushDk: "#874E3B", // cor de acao do Kit de Emergencia. Texto CREME por cima (6,12:1)
+ ouroAcao: "#7A6140", // dourado de BOTAO cheio. Texto CREME por cima (5,39:1)
  blush: "#E2B9A8",
  terra: "#7E5344",
  atencao: "#A32D2D",
@@ -4577,11 +4578,11 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
       <div style={{ fontFamily: FB, fontSize: 16.5, fontWeight: 400, color: C.terra, lineHeight: 1.45, marginBottom: 12 }}>{texto}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         {diasDaSemana.map((d) => (
-          <div key={d} style={{ width: 10, height: 10, borderRadius: "50%", background: desafioFeitos.includes(d) ? C.ouro : "transparent", border: `1px solid ${C.linho}` }} />
+          <div key={d} style={{ width: 10, height: 10, borderRadius: "50%", background: desafioFeitos.includes(d) ? C.oliva : "transparent", border: `1px solid ${desafioFeitos.includes(d) ? C.oliva : C.linho}` }} />
         ))}
       </div>
       <button onClick={toggleDesafio}
-        style={{ width: "100%", background: feitoHoje ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 16, color: feitoHoje ? C.obs : C.ouroTxt, cursor: "pointer" }}>
+        style={{ width: "100%", background: feitoHoje ? C.oliva : "transparent", border: `1px solid ${feitoHoje ? C.oliva : C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 17, color: feitoHoje ? C.creme : C.ouroTxt, cursor: "pointer" }}>
         {feitoHoje ? "Feito hoje ✓" : "Feito hoje"}
       </button>
     </div>
@@ -5091,7 +5092,7 @@ function Home({
               <button onClick={() => ir(S.EM)} style={{ flex: 1, background: C.blushDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.creme, letterSpacing: "0.04em", lineHeight: 1.3 }}>
  Kit de Emergência
               </button>
-              <button onClick={() => ir(S.RET)} style={{ flex: 1, background: C.ouroDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs, letterSpacing: "0.04em", lineHeight: 1.3 }}>
+              <button onClick={() => ir(S.RET)} style={{ flex: 1, background: C.ouroAcao, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.creme, letterSpacing: "0.04em", lineHeight: 1.3 }}>
  Protocolo de Retomada
               </button>
             </div>
@@ -8530,10 +8531,10 @@ function MinimosInegociaveis({ metas, salvarMinimo, tk }) {
  const [txt, setTxt] = useState("");
  return (
     <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-      <div style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.obs, marginBottom: 2 }}>
+      <div style={{ fontFamily: FB, fontSize: 16.5, fontWeight: 600, color: C.obs, marginBottom: 2 }}>
  Seus Mínimos Inegociáveis
       </div>
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.87)`, marginBottom: 10 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginBottom: 10 }}>
  O mínimo que ainda conta num dia difícil, bem menor que a meta cheia. Editável por você.
       </div>
       {HABS_FIXOS.map((h) => {
@@ -8545,22 +8546,22 @@ function MinimosInegociaveis({ metas, salvarMinimo, tk }) {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 10, height: 10, borderRadius: "50%", background: C.ouro, display: "inline-block", flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2 }}>{h.nome}</div>
-                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: min ? C.terra : C.lt }}>{min || "Ainda não definido"}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>{h.nome}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: min ? C.terra : C.lt }}>{min || "Ainda não definido"}</div>
                 </div>
                 <button onClick={() => { setEditando(h.id); setTxt(min); }}
- style={{ background: "none", border: "none", fontFamily: FB, fontSize: 12.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
+ style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontSize: 13, color: C.terra, marginBottom: 6 }}>{h.nome} — o mínimo num dia difícil:</div>
+                <div style={{ fontFamily: FB, fontSize: 16, color: C.terra, marginBottom: 6 }}>{h.nome} — o mínimo num dia difícil:</div>
                 <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="ex: caminhar 10 minutos"
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FS, fontSize: 14.5, color: C.obs, marginBottom: 7 }} />
+ style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 7 }} />
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => { salvarMinimo(h.id, txt.trim()); setEditando(null); tk("Mínimo inegociável atualizado"); }}
- style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+ style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 17, color: C.obs2, cursor: "pointer" }}>Salvar</button>
                   <button onClick={() => setEditando(null)}
- style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 13, color: C.terra, cursor: "pointer" }}>Cancelar</button>
+ style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 17, color: C.terra, cursor: "pointer" }}>Cancelar</button>
                 </div>
               </div>
             )}
@@ -8843,8 +8844,8 @@ function Jornada({
       >
         <div
  style={{
- fontFamily: FS,
- fontSize: 18,
+ fontFamily: FB,
+ fontSize: 17,
  fontWeight: 400,
  letterSpacing: "0.1em",
  color: C.obs,
@@ -8856,7 +8857,7 @@ function Jornada({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: C.ouroTxt,
  letterSpacing: "0.2em",
           }}
@@ -8886,7 +8887,7 @@ function Jornada({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 11.5,
+ fontSize: 13,
  color: C.ouroTxt,
  letterSpacing: "0.3em",
  textTransform: "uppercase",
@@ -8899,24 +8900,24 @@ function Jornada({
         {/* Roda AUGE */}
         <div onClick={() => ir(S.RODA)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.obs }}>Roda AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>5 dimensões · 25 perguntas · aplicada na S1, S6 e S12</div>
+            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Roda AUGE</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3, lineHeight: 1.45 }}>5 dimensões · 25 perguntas<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicada na semana 1, 6 e 12</span></div>
           </div>
           <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
         </div>
         <RodaResumo rodaResultados={rodaResultados} />
         {retomadas > 0 && (
           <div style={{ background: `${C.ouroDk}12`, border: `1px solid ${C.ouroDk}33`, borderRadius: 14, padding: "14px 16px", marginBottom: 12, textAlign: "center" }}>
-            <div style={{ fontFamily: FS, fontSize: 22, fontWeight: 300, color: C.ouroTxt }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.terra, marginTop: 3 }}>Isso é motivo pra comemorar. Cada volta conta como resiliência, nunca como falha.</div>
+            <div style={{ fontFamily: FB, fontSize: 21, fontWeight: 300, color: C.ouroTxt }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginTop: 3 }}>Isso é motivo pra comemorar. Cada volta conta como resiliência, nunca como falha.</div>
           </div>
         )}
 
         {/* Questionário de Perfil AUGE */}
         <div onClick={() => ir(S.PAUGE)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.obs }}>Questionário de Perfil AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>{perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : "Descubra seu perfil, refeito em S1, S6 e S12"}</div>
+            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Questionário de Perfil AUGE</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>{perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : <>Descubra seu perfil<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicado na semana 1, 6 e 12</span></>}</div>
           </div>
           <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
         </div>
@@ -8926,16 +8927,16 @@ function Jornada({
         {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
         <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.obs }}>Espaços de escrita</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>Âncora, Porquês e Carta para o Futuro</div>
+            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Espaços de escrita</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>Âncora, Porquês e Carta para o Futuro</div>
           </div>
           <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
         </div>
         {/* Configurações — dados pessoais, notificações, sair (seção 9) */}
         <div onClick={() => ir(S.PF)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.obs }}>Perfil e Configurações</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>Meus dados, objetivos, notificações, sair da conta</div>
+            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Perfil e Configurações</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3, lineHeight: 1.45 }}>Meus dados e objetivos<br /><span style={{ display: "inline-block", marginTop: 4 }}>notificações, sair da conta</span></div>
           </div>
           <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
         </div>
