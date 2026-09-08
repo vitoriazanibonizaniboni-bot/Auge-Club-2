@@ -117,6 +117,12 @@ const IcoH = {
       <path d="M12 3.5l2.4 5.4 5.9.6-4.4 4 1.2 5.8L12 16.4 6.9 19.3l1.2-5.8-4.4-4 5.9-.6z" />
     </svg>
   ),
+ camera: (c, s = 18) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8.5h3.4l1.5-2.2h8.2l1.5 2.2H21v10.5H3z" />
+      <circle cx="12" cy="13.5" r="3.4" />
+    </svg>
+  ),
  kit: (c, s = 18) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="7.5" width="18" height="12.5" rx="2.5" />
@@ -1197,6 +1203,8 @@ export default function App() {
  const [guias, setGuias] = useState({}); // URLs dos guias HTML (Supabase Storage)
  const [desafioFeitos, setDesafioFeitos] = useState([]); // datas do mini check-in
  const [habsPessoais, setHabsPessoais] = useState([]); // hábitos criados pela aluna
+ // Convite pro Mural depois de marcar um hábito: leva foto e hábito ao compositor
+ const [postPrefill, setPostPrefill] = useState(null);
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config)
  const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
@@ -1423,13 +1431,13 @@ export default function App() {
  const [feedPublicoRes, feedPrivadoRes] = await Promise.all([
  supabase
         .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id, source")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id, source, habito")
         .eq("publica", true)
         .order("created_at", { ascending: false })
         .limit(50),
  supabase
         .from("feed")
-        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id, source")
+        .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id, source, habito")
         .eq("user_id", userId)
         .eq("publica", false)
         .order("created_at", { ascending: false })
@@ -1446,6 +1454,7 @@ export default function App() {
  fundo: "#1E252E",
  tit: p.titulo,
  desc: p.descricao,
+ habito: p.habito || null,
  imgSrc: p.img_url || null,
  tempo: formatTempo(p.created_at),
  publica: p.publica,
@@ -2037,6 +2046,7 @@ export default function App() {
  autor_cor: C.ouroDk,
  titulo: entry.tit || "",
  descricao: entry.desc || "",
+ habito: entry.habito || null,
  publica: entry.publica !== false,
  img_url: imgUrl,
  autor_avatar: minhaFoto,
@@ -2355,6 +2365,8 @@ export default function App() {
  regs,
  habStats,
  habsPessoais,
+ postPrefill,
+ setPostPrefill,
  habsPessStats,
  criarHabPessoal,
  salvarMetaPessoal,
@@ -4444,7 +4456,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
 // ═══════════════════════════════════════════════════════════════════
 
 // Card de um hábito angular
-function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onRemover }) {
+function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onRemover, convidarMural }) {
  const [editando, setEditando] = useState(false);
  const [freqEdit, setFreqEdit] = useState(st.meta);
  const [descEdit, setDescEdit] = useState(st.descMeta);
@@ -4454,6 +4466,19 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
  try { return localStorage.getItem(progKey) === "1"; } catch { return false; }
   });
  const marcado = !!regAlvo;
+  // Convite pro Mural: aparece uma vez por check-in (hábito + dia) e nao volta
+ const convKey = `auge_conv_${h.id}_${dataAlvo}`;
+ const [convite, setConvite] = useState(false);
+ const fecharConvite = () => {
+ try { localStorage.setItem(convKey, "1"); } catch {}
+ setConvite(false);
+  };
+ const marcar = () => {
+ registrarHabito(h.id, dataAlvo, null);
+ let jaViu = false;
+ try { jaViu = localStorage.getItem(convKey) === "1"; } catch {}
+ if (!jaViu && convidarMural) setConvite(true);
+  };
   // Fronteira de semana do Sono (seção 4.3): na segunda de manhã, o registro
   // é da noite de domingo e fecha a SEMANA PASSADA — não os pontos desta.
  const contaSemanaPassada = h.id === "sono" && dataAlvo < segundaAtual;
@@ -4485,7 +4510,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         {(IcoH[h.id] || IcoH.meu)(C.terra)}
         <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>{h.nome}</div>
         <button
- onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : registrarHabito(h.id, dataAlvo, null))}
+ onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
  aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
  style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", background: marcado ? C.oliva : "transparent", border: `2px solid ${marcado ? C.oliva : C.ouro}`, color: C.creme, fontSize: 17, lineHeight: 1, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {marcado ? "✓" : ""}
@@ -4569,6 +4594,29 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
           {marcado
             ? "Noite de domingo — fechou a semana passada."
             : "Hoje é segunda: a noite de ontem fecha a semana que terminou. Os pontos desta semana começam amanhã."}
+        </div>
+      )}
+
+      {/* convite pro Mural — logo depois de marcar, uma vez por check-in */}
+      {marcado && convite && (
+        <div style={{ border: `1.5px solid ${C.ouro}`, borderRadius: 14, background: C.creme, padding: "14px 15px", marginTop: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ color: C.oliva, fontSize: 17, lineHeight: 1 }}>✓</span>
+            <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Registrado!</span>
+          </div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "4px 0 12px" }}>
+ Quer postar no Mural do 1%?
+          </div>
+          <div style={{ display: "flex", gap: 9 }}>
+            <button onClick={() => { fecharConvite(); convidarMural(h.nome); }}
+ style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              {IcoH.camera(C.obs)} Postar
+            </button>
+            <button onClick={fecharConvite}
+ style={{ flex: 1, background: "none", border: `1.5px solid ${C.blush}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.terra, cursor: "pointer" }}>
+ Agora não
+            </button>
+          </div>
         </div>
       )}
 
@@ -4797,6 +4845,7 @@ function Home({
  regs,
  habStats,
  habsPessoais,
+ setPostPrefill,
  habsPessStats,
  criarHabPessoal,
  salvarMetaPessoal,
@@ -4815,6 +4864,30 @@ function Home({
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
  const [criandoHab, setCriandoHab] = useState(false);
+  // Convite pro Mural: "Postar" abre a camera/galeria e leva a foto ao compositor
+ const fotoConviteRef = useRef(null);
+ const habConvite = useRef(null);
+ const convidarMural = (nomeHabito) => {
+ habConvite.current = nomeHabito;
+ fotoConviteRef.current?.click();
+  };
+ const fotoConviteEscolhida = (e) => {
+ const f = e.target.files?.[0];
+ e.target.value = "";
+ if (!f) {
+      // Fechou a galeria sem escolher: vai pro compositor mesmo assim,
+      // onde o seletor de foto ja existe. A foto continua obrigatoria pra publicar.
+ setPostPrefill({ habito: habConvite.current, imgSrc: null, imgFile: null });
+ ir(S.NOVO);
+ return;
+    }
+ const r = new FileReader();
+ r.onload = (ev) => {
+ setPostPrefill({ habito: habConvite.current, imgSrc: ev.target.result, imgFile: f });
+ ir(S.NOVO);
+    };
+ r.readAsDataURL(f);
+  };
  const ONTEM = addDaysStr(TODAY, -1);
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
@@ -5168,6 +5241,7 @@ function Home({
  regs={regs}
  diasDaSemana={diasDaSemana}
  irProgresso={() => ir(S.TRAJ)}
+ convidarMural={convidarMural}
               />
             ))}
 
@@ -5193,6 +5267,7 @@ function Home({
  diasDaSemana={diasDaSemana}
  irProgresso={() => ir(S.TRAJ)}
  onRemover={() => removerHabPessoal(hp.id)}
+ convidarMural={convidarMural}
               />
             ))}
             {criandoHab ? (
@@ -5231,6 +5306,8 @@ function Home({
 
 
       </Grain>
+
+      <input ref={fotoConviteRef} type="file" accept="image/*" style={{ display: "none" }} onChange={fotoConviteEscolhida} />
 
       {/* Kit de Emergência — pastilha fixa; o Protocolo de Retomada agora mora dentro dele */}
       <button
@@ -5659,6 +5736,11 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 </div>
                 {p.imgSrc && (
                   <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", marginBottom: p.desc ? 8 : 10 }}>
+                    {p.habito && (
+                      <div style={{ display: "inline-block", background: `${C.oliva}1F`, border: `1px solid ${C.oliva}59`, borderRadius: 50, padding: "3px 11px", fontFamily: FB, fontWeight: 500, fontSize: 13, color: C.oliva, marginBottom: 6 }}>
+                        {p.habito}
+                      </div>
+                    )}
                     <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: `rgba(28,26,23,.95)`, lineHeight: 1.3 }}>{p.tit}</div>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
                   </div>
@@ -6223,11 +6305,15 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
 }
 
 // Novo post — micro-ação comportamental ou de mentalidade
-function Novo({ back, postTreino }) {
+function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  const [tit, setTit] = useState("");
  const [cap, setCap] = useState("");
- const [foto, setFoto] = useState(null);
- const [fotoFile, setFotoFile] = useState(null);
+  // Veio do convite que aparece depois de marcar o hábito: foto e hábito já vêm juntos
+ const [foto, setFoto] = useState(postPrefill?.imgSrc || null);
+ const [fotoFile, setFotoFile] = useState(postPrefill?.imgFile || null);
+ const habitoDoPost = postPrefill?.habito || null;
+  // O prefill é de uso único: limpa ao montar para não vazar pro próximo post
+ useEffect(() => () => setPostPrefill && setPostPrefill(null), []);
  const [publica, setPublica] = useState(true);
  const [enviando, setEnviando] = useState(false);
  const ref = useRef();
@@ -6238,6 +6324,12 @@ function Novo({ back, postTreino }) {
     <div style={{ animation: "fadeUp .4s ease" }}>
       <Cab titulo="Compartilhar no Mural" voltar={back} destino="Mural" />
       <Grain style={{ padding: "20px 20px 36px" }}>
+        {habitoDoPost && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: `${C.oliva}14`, border: `1px solid ${C.oliva}45`, borderRadius: 10, padding: "10px 12px", marginBottom: 14 }}>
+            <span style={{ fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.oliva }}>{habitoDoPost}</span>
+            <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>· {dataLonga(TODAY)}</span>
+          </div>
+        )}
         <div
  style={{
  fontFamily: FB,
@@ -6493,6 +6585,7 @@ function Novo({ back, postTreino }) {
  publica,
  imgSrc: foto,
  imgFile: fotoFile,
+ habito: habitoDoPost,
               });
             } finally {
  setEnviando(false);
