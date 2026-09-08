@@ -9937,7 +9937,7 @@ function Escritas({
  borderBottom: `2px solid ${escT === id ? C.ouro : "transparent"}`,
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13.5,
+ fontSize: 16,
  color: escT === id ? C.ouroTxt : `rgba(28,26,23,.88)`,
  cursor: "pointer",
  transition: "all .2s",
@@ -9953,7 +9953,7 @@ function Escritas({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.92)`,
  marginBottom: 10,
               }}
@@ -9971,7 +9971,7 @@ function Escritas({
  borderRadius: 10,
  padding: "13px",
  fontSize: 17,
- fontFamily: FS,
+ fontFamily: FB,
  color: `rgba(28,26,23,.88)`,
  resize: "none",
  height: 110,
@@ -10037,8 +10037,7 @@ function Escritas({
 
               <p
  style={{
- fontFamily: FS,
- fontStyle: 'italic',
+ fontFamily: FB,
  fontSize: 16,
  color: C.ouroTxt,
  lineHeight: 1.6,
@@ -10101,7 +10100,7 @@ function Escritas({
                   <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>
  Minha âncora
                   </div>
-                  <div style={{ fontFamily: FS, fontWeight: 500, fontSize: 20, color: C.ouroTxt, lineHeight: 1.5 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 19, color: C.ouroTxt, lineHeight: 1.5 }}>
  "{anc}"
                   </div>
                 </div>
@@ -10111,7 +10110,7 @@ function Escritas({
  width: "100%", background: "none",
  border: `1px solid ${C.ouro}20`, borderRadius: 50,
  padding: "12px", fontFamily: FB, fontWeight: 400,
- fontSize: 15, color: `rgba(28,26,23,.88)`,
+ fontSize: 17, color: `rgba(28,26,23,.88)`,
  cursor: "pointer", letterSpacing: "0.1em",
                   }}
                 >
@@ -10120,7 +10119,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: `rgba(28,26,23,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
  Escreva a frase que vai te trazer de volta nos dias difíceis.
                 </div>
                 <textarea
@@ -10155,7 +10154,7 @@ function Escritas({
           <div>
             {pq1 && pq2 && pq3 && !editPq ? (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
  Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -10165,7 +10164,7 @@ function Escritas({
                 ].map(([q, v], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: `rgba(28,26,23,.8)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
-                    <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FS, fontSize: 17, color: `rgba(28,26,23,.92)`, lineHeight: 1.6 }}>
+                    <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FB, fontSize: 17, color: `rgba(28,26,23,.92)`, lineHeight: 1.6 }}>
                       {v}
                     </div>
                   </div>
@@ -10176,7 +10175,7 @@ function Escritas({
  width: "100%", background: "none",
  border: `1px solid ${C.ouro}20`, borderRadius: 50,
  padding: "12px", fontFamily: FB, fontWeight: 400,
- fontSize: 15, color: `rgba(28,26,23,.88)`,
+ fontSize: 17, color: `rgba(28,26,23,.88)`,
  cursor: "pointer", letterSpacing: "0.1em", marginTop: 4,
                   }}
                 >
@@ -10185,7 +10184,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: `rgba(28,26,23,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
  Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -10199,7 +10198,7 @@ function Escritas({
  value={v}
  onChange={(e) => s(e.target.value)}
  placeholder="Escreva com honestidade..."
- style={{ width: "100%", background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 17, fontFamily: FS, color: `rgba(28,26,23,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
+ style={{ width: "100%", background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 17, fontFamily: FB, color: `rgba(28,26,23,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
                     />
                   </div>
                 ))}
@@ -10232,7 +10231,7 @@ function Escritas({
               <div>
                 <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 18,
  fontWeight: 400,
  color: `rgba(28,26,23,.95)`,
@@ -10244,7 +10243,7 @@ function Escritas({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.88)`,
  marginTop: 2,
                   }}
@@ -10295,7 +10294,7 @@ function Escritas({
                       >
                         <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 17,
  color: `rgba(28,26,23,.82)`,
  lineHeight: 1.8,
@@ -10357,7 +10356,7 @@ function Escritas({
                             <div
  style={{
  fontFamily: FB, fontWeight: 400,
- fontSize: 15,
+ fontSize: 17,
  color: C.ouroTxt,
  letterSpacing: "0.04em",
                               }}
@@ -10378,7 +10377,7 @@ function Escritas({
  width: "100%",
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: C.ouroTxt,
  cursor: "pointer",
  letterSpacing: "0.06em",
@@ -10395,8 +10394,8 @@ function Escritas({
  width: "100%",
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
- color: `rgba(28,26,23,.55)`,
+ fontSize: 16,
+ color: C.lt,
  cursor: "pointer",
  marginTop: 4,
                         }}
@@ -10413,7 +10412,7 @@ function Escritas({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 15,
+ fontSize: 16,
  color: `rgba(28,26,23,.88)`,
  lineHeight: 1.7,
  marginBottom: 16,
