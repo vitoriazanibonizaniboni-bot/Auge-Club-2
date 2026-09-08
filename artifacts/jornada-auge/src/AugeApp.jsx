@@ -10847,7 +10847,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
+ fontSize: 16,
  color: `rgba(28,26,23,.88)`,
  letterSpacing: "0.18em",
  textTransform: "uppercase",
@@ -10887,7 +10887,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  position: "absolute",
  top: 5,
  right: 6,
- fontSize: 13,
+ fontSize: 16,
                     }}
                   >
                     
@@ -10898,7 +10898,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13.5,
+ fontSize: 16,
  color: ativa
                       ? C.ouro
                       : bloq
@@ -10921,7 +10921,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
           <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs, marginBottom: 2 }}>
             Guia dos Hábitos Angulares
           </div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 8 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 8 }}>
             Material de apoio de cada hábito
           </div>
           {HABS_FIXOS.map((h) => {
@@ -10933,10 +10933,10 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                   style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", opacity: 0.55 }}
                 >
                   {IcoH[h.id](C.terra, 17)}
-                  <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs2 }}>
+                  <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>
                     Guia de {h.nome}
                   </div>
-                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FB, fontSize: 12.5, color: C.ouroTxt }}>{IcoH.cadeado(C.ouroDk, 13)} Semana {h.unlock}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FB, fontSize: 13, color: C.ouroTxt }}>{IcoH.cadeado(C.ouroDk, 13)} Semana {h.unlock}</span>
                 </div>
               );
             }
@@ -10948,10 +10948,10 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                 style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", cursor: "pointer" }}
               >
                 {IcoH[h.id](C.terra, 17)}
-                <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs2 }}>
+                <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>
                   {g.nome ? `Guia de ${h.nome} · ${g.nome}` : `Guia de ${h.nome}`}
                 </div>
-                <span style={{ fontFamily: FB, fontSize: 13.5, color: C.ouroTxt }}>abrir ›</span>
+                <span style={{ fontFamily: FB, fontSize: 16, color: C.ouroTxt }}>abrir ›</span>
               </div>
             ));
           })}
@@ -10969,7 +10969,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
           <div style={{ fontSize: 18 }}>{catAtual?.icon}</div>
           <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 18,
  fontWeight: 400,
  color: `rgba(28,26,23,.97)`,
@@ -10985,7 +10985,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  borderRadius: 20,
  padding: "2px 10px",
  fontFamily: FB,
- fontSize: 13,
+ fontSize: 16,
  color: C.ouroTxt,
  letterSpacing: "0.1em",
               }}
@@ -11032,7 +11032,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
         {videos.length === 0 && !bloqCat && (
           <div style={{ border: `1.5px dashed ${C.ouro}40`, borderRadius: 12, padding: "26px 16px", textAlign: "center" }}>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.terra }}>Em breve</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 5, lineHeight: 1.5 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 5, lineHeight: 1.5 }}>
  Esta categoria vai crescendo ao longo da Jornada.
             </div>
           </div>
@@ -11069,15 +11069,15 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
               {catSel === "podcast" ? "♪" : "❦"}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: FS, fontSize: 18, color: `rgba(28,26,23,.97)`, lineHeight: 1.25, marginBottom: v.sub ? 3 : 0 }}>
+              <div style={{ fontFamily: FB, fontSize: 17, color: `rgba(28,26,23,.97)`, lineHeight: 1.25, marginBottom: v.sub ? 3 : 0 }}>
                 {v.titulo}
               </div>
               {v.sub && (
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.7)`, lineHeight: 1.45, marginBottom: 3 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.7)`, lineHeight: 1.45, marginBottom: 3 }}>
                   {v.sub}
                 </div>
               )}
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt }}>
                 {catSel === "podcast" ? "Ouvir ›" : "Ler ›"}
               </div>
             </div>
@@ -11112,13 +11112,13 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
               )}
             </div>
             <div style={{ padding: "12px 15px" }}>
-              <div style={{ fontFamily: FS, fontSize: 18, color: bloqCat ? `rgba(28,26,23,.92)` : `rgba(28,26,23,.97)`, marginBottom: 4, lineHeight: 1.3 }}>
+              <div style={{ fontFamily: FB, fontSize: 17, color: bloqCat ? `rgba(28,26,23,.92)` : `rgba(28,26,23,.97)`, marginBottom: 4, lineHeight: 1.3 }}>
                 {v.titulo}
               </div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.88)`, marginBottom: 4, lineHeight: 1.5 }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.88)`, marginBottom: 4, lineHeight: 1.5 }}>
                 {v.sub}
               </div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: bloqCat ? C.ouroTxt : `rgba(28,26,23,.85)` }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: bloqCat ? C.ouroTxt : `rgba(28,26,23,.85)` }}>
                 {bloqCat ? "Exclusivo Jornada AUGE" : v.dur}
               </div>
             </div>
@@ -11131,7 +11131,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
           <div style={{ position: "fixed", inset: 0, zIndex: 600, background: C.creme, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${C.linho}`, background: C.creme, flexShrink: 0 }}>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt }}>Guia</div>
-              <button onClick={() => setGuiaAberto(null)} style={{ background: "none", border: `1px solid ${C.ouro}66`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.ouroTxt, cursor: "pointer" }}>Fechar ✕</button>
+              <button onClick={() => setGuiaAberto(null)} style={{ background: "none", border: `1px solid ${C.ouro}66`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, cursor: "pointer" }}>Fechar ✕</button>
             </div>
             <iframe srcDoc={guiaHtml} title="Guia" style={{ flex: 1, width: "100%", border: "none", background: C.creme }} />
           </div>
@@ -11164,7 +11164,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                 )}
               </div>
               {videoAberto.dur && (
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `${C.creme}AA`, marginTop: 8 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.creme, marginTop: 8 }}>
                   {videoAberto.dur}
                 </div>
               )}
