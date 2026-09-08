@@ -15,6 +15,8 @@ const C = {
  ouroDk: "#A8865A",
  ouroTxt: "#7E6038", // dourado para TEXTO sobre fundo claro — 5,39:1 no creme, 4,86:1 nas pastilhas douradas (WCAG AA)
  ouroLt: "#EAD8B8",
+ oliva: "#626442",   // estado "feito": pontinhos e check do habito. Texto CREME por cima (5,69:1)
+ blushDk: "#874E3B", // cor de acao do Kit de Emergencia. Texto CREME por cima (6,12:1)
  blush: "#E2B9A8",
  terra: "#7E5344",
  atencao: "#A32D2D",
@@ -4442,7 +4444,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {/* progresso semanal — um ponto por repetição da meta */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
         {Array.from({ length: st.meta }, (_, i) => (
-          <div key={i} style={{ width: 11, height: 11, borderRadius: "50%", background: i < st.feitas ? C.ouro : "transparent", border: `1.5px solid ${i < st.feitas ? C.ouro : C.ouro + "55"}` }} />
+          <div key={i} style={{ width: 11, height: 11, borderRadius: "50%", background: i < st.feitas ? C.oliva : "transparent", border: `1.5px solid ${i < st.feitas ? C.oliva : C.ouro + "55"}` }} />
         ))}
         <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginLeft: 4 }}>
           {st.feitas} de {st.meta} essa semana{st.predom ? ` · Essa semana: ${difLabel(st.predom)}` : ""}
@@ -4489,7 +4491,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       ) : (
         <div>
           <button onClick={() => desregistrarHabito(h.id, dataAlvo)}
-            style={{ width: "100%", background: C.ouro, border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 500, fontSize: 17, letterSpacing: "0.03em", color: C.obs, cursor: "pointer" }}>
+            style={{ width: "100%", background: C.oliva, border: `1px solid ${C.oliva}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 500, fontSize: 17, letterSpacing: "0.03em", color: C.creme, cursor: "pointer" }}>
             {h.id === "sono" ? "Cumpri ontem à noite ✓" : "Marquei hoje ✓"}
           </button>
           {contaSemanaPassada && (
@@ -5085,8 +5087,8 @@ function Home({
             />
 
             {/* Kit de Emergência (Blush) + Protocolo de Retomada (Ouro Escuro) — só o nome (spec) */}
-            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              <button onClick={() => ir(S.EM)} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: "#5C3A2E", letterSpacing: "0.04em", lineHeight: 1.3 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+              <button onClick={() => ir(S.EM)} style={{ flex: 1, background: C.blushDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.creme, letterSpacing: "0.04em", lineHeight: 1.3 }}>
  Kit de Emergência
               </button>
               <button onClick={() => ir(S.RET)} style={{ flex: 1, background: C.ouroDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs, letterSpacing: "0.04em", lineHeight: 1.3 }}>
@@ -9615,7 +9617,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  return "vazia";
   };
  const DOT = {
- meta: { bg: C.ouro, bo: "none" },
+ meta: { bg: C.oliva, bo: "none" },
  parcial: { bg: `${C.terra}66`, bo: "none" },
  kit: { bg: `${C.blush}55`, bo: `1.5px solid ${C.blush}` },
  futura: { bg: "transparent", bo: `1px solid ${C.ouro}40` },
