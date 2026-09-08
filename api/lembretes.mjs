@@ -374,7 +374,7 @@ export default async function handler(req, res) {
       include_aliases: { external_id: ids.map(String) },
       headings: { en: "Clube do Auge", pt: "Clube do Auge" },
       contents: { en: corpo, pt: corpo },
-      url: `${APP_URL}/?open=retomada`,
+      url: `${APP_URL}/?open=kit`,
     });
     if (r.ok) { res.json({ ok: true, gatilho: g, alvos: ids.length, ...r }); return; }
     res.status(502).json({ error: "OneSignal recusou o envio.", info: r.erro });

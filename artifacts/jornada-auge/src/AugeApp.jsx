@@ -47,7 +47,6 @@ const S = {
  CHAT: "chat",
   // Subpáginas Jornada
  RODA: "roda",
- RET: "ret",
  CAL: "cal", // legado — redireciona para TRAJ
  TRAJ: "traj", // aba Trajetória (calendário mensal + trajetória semanal)
  ESC: "esc",
@@ -85,7 +84,6 @@ const ABA_ORIGEM = {
   [S.CHAT]: S.CX,
   [S.JOR]: S.JOR,
   [S.RODA]: S.JOR,
-  [S.RET]: S.JOR,
   [S.CAL]: S.TRAJ,
   [S.TRAJ]: S.TRAJ,
   [S.ESC]: S.JOR,
@@ -2161,8 +2159,11 @@ export default function App() {
     // Limpa o param da URL sem recarregar
  const clean = window.location.pathname;
  window.history.replaceState({}, "", clean);
- if (param === "retomada") {
- ir(S.RET);
+    // A Regra dos 2 Dias leva para o KIT, nao mais para a tela separada do
+    // Protocolo de Retomada. O nome do parametro continua "retomada" porque
+    // notificacoes ja enviadas, no celular das alunas, ainda apontam para ele.
+ if (param === "retomada" || param === "kit") {
+ ir(S.EM);
     }
  if (param === "mural" || param === "escritas-vitorias") {
  ir(S.FEED);
@@ -2569,8 +2570,6 @@ export default function App() {
  return <Jornada {...ctx} />;
  case S.RODA:
  return <Roda {...ctx} />;
- case S.RET:
- return <Retomada {...ctx} />;
  case S.CAL:
  case S.TRAJ:
  return <Trajetoria {...ctx} />;
@@ -9748,83 +9747,6 @@ function Roda({
 }
 
 // ─── RETOMADA ─────────────────────────────────────────────────────────────────
-function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario }) {
- const [registrado, setRegistrado] = useState(false);
- const [isaMsg, setIsaMsg] = useState(null);
- const [isaLoad, setIsaLoad] = useState(false);
- const registrar = async () => {
- setRet((r) => r + 1);
-    // Data de Brasilia, nao UTC: toISOString() joga a retomada clicada
-    // depois das 21h para o dia seguinte
- const hoje = localDateStr();
- syncDB("checkins", { data: hoje, total_feitos: 0, total: 0, percentual: 0, retomada: true, chips: [] }, { onConflict: "user_id,data" });
- tk("Retomada registrada. +20 pontos AUGE");
- setRegistrado(true);
- setIsaLoad(true);
- const nomeRet = usuario?.nome ? usuario.nome.split(" ")[0] : null;
- const porquesRet = [pq1, pq2, pq3].filter(Boolean);
- const resp = await callISA([
-      `A aluna acabou de clicar em "Retomei!" no Protocolo de Retomada (ela ficou um dia sem o hábito e está voltando).`,
- nomeRet ? `Nome dela: ${nomeRet}.` : null,
- anc ? `Âncora de identidade dela: "${anc}".` : null,
- porquesRet.length ? `Os porquês dela: ${porquesRet.join(" / ")}.` : null,
-      `Acolha sem dramatizar, celebre a volta, sem cobrança nem culpa. Convoque ao movimento com metade da intensidade. Termine com a frase da marca se fizer sentido: "O auge não é o que você foi. É o que você está construindo."`,
-    ].filter(Boolean).join("\n"));
- setIsaMsg(resp);
- setIsaLoad(false);
-  };
- return (
-    <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Protocolo de Retomada" voltar={back} destino="Jornada" />
-      <Grain style={{ padding: "20px 20px 36px" }}>
-        <div style={{ fontFamily: FB, fontSize: 21, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.35, marginBottom: 14 }}>
- Você ficou um dia sem fazer. É agora que se decide se isso vira exceção ou vira rotina.
-        </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, lineHeight: 1.6, marginBottom: 20 }}>
- Não rolou dessa vez. Tudo bem. Isso não apaga nada do que você já construiu.
-        </div>
-        <div style={{ background: `${C.ouroDk}0F`, border: `1px solid ${C.ouroDk}30`, borderRadius: 12, padding: "16px", marginBottom: 18 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 12 }}>As regras da retomada</div>
-          {[
- "Falhou uma vez, volta na próxima. Sem esperar segunda-feira, sem esperar a semana que vem.",
- "Metade da intensidade. Não pensa em dar o seu melhor, pensa em continuar em movimento.",
- "Nunca compensar. Não dobra pra recuperar o tempo perdido.",
- "Continua de onde parou, não do início.",
-          ].map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 9 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.ouroDk, marginTop: 7, flexShrink: 0 }} />
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.82)", lineHeight: 1.5 }}>{r}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: "rgba(28,26,23,.9)", lineHeight: 1.6, marginBottom: 20, textAlign: "center" }}>
- É mais fácil continuar em movimento do que começar tudo de novo. Só vai.
-        </div>
-        {!registrado && (
-          <button onClick={registrar} style={{ width: "100%", background: C.ouroDk, border: "none", borderRadius: 50, padding: "15px", fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs, cursor: "pointer", letterSpacing: "0.04em" }}>
- Retomei!
-          </button>
-        )}
-        {(isaLoad || isaMsg) && <div style={{ marginTop: 16 }}><IsaCard text={isaMsg} loading={isaLoad} /></div>}
-        {registrado && (
-          <div style={{ marginTop: 18, background: `${C.ouroDk}12`, border: `1px solid ${C.ouroDk}33`, borderRadius: 12, padding: "16px", textAlign: "center" }}>
-            <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 300, color: C.ouroTxt }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginTop: 4 }}>Isso é motivo pra comemorar. Cada volta é prova de que você não desiste.</div>
-          </div>
-        )}
-        {registrado && !isaLoad && (
-          <BtnPill onClick={back} style={{ marginTop: 16 }}>Concluir</BtnPill>
-        )}
-      </Grain>
-    </div>
-  );
-}
-
-// ─── CALENDÁRIO ───────────────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════
-// ABA TRAJETÓRIA (seção 5) — calendário mensal + trajetória semanal
-// ═══════════════════════════════════════════════════════════════════
-// Painel de um hábito só (seção 8) — âncora, números e o calendário dele
 function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
  const hojeReal = new Date();
  const [offset, setOffset] = useState(0);
@@ -10723,6 +10645,7 @@ function Emergencia({
  pq2,
  pq3,
  ir,
+ setRet,
 }) {
   // Kit de Emergencia (secao 10) — leitura guiada de cima a baixo, com UM
   // ponto de acao no fim. Nao ha mais um botao embaixo de cada bloco: a
@@ -10826,7 +10749,15 @@ function Emergencia({
 
         {/* 8 · acao principal */}
         <button
- onClick={() => { registrarKitUso("minimos"); tk("Hoje vale o mínimo. E conta inteiro"); ir(S.HOME); }}
+ onClick={() => {
+ registrarKitUso("minimos");
+              // O Kit virou a propria retomada: o que a tela do Protocolo
+              // registrava passa a ser registrado aqui.
+ setRet((r) => r + 1);
+ syncDB("checkins", { data: localDateStr(), total_feitos: 0, total: 0, percentual: 0, retomada: true, chips: [] }, { onConflict: "user_id,data" });
+ tk("Hoje vale o mínimo. E conta inteiro");
+ ir(S.HOME);
+            }}
  style={{ width: "100%", background: C.blushDk, border: "none", borderRadius: 14, padding: "15px", fontFamily: FB, fontWeight: 600, fontSize: 18, color: C.creme, cursor: "pointer" }}>
  Tô indo!
         </button>
