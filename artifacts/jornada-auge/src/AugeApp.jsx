@@ -8522,13 +8522,13 @@ function VitJornada({ ir, onLogin }) {
 
 // Menu principal da Jornada (alunas)
 // ─── ABA MEU MAPA (seção 7) — o que é pessoal e intransferível ───────────────
-function MinimosViaveis({ metas, salvarMinimo, tk }) {
+function MinimosInegociaveis({ metas, salvarMinimo, tk }) {
  const [editando, setEditando] = useState(null);
  const [txt, setTxt] = useState("");
  return (
     <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
       <div style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.obs, marginBottom: 2 }}>
- Seus Mínimos Viáveis
+ Seus Mínimos Inegociáveis
       </div>
       <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.87)`, marginBottom: 10 }}>
  O mínimo que ainda conta num dia difícil, bem menor que a meta cheia. Editável por você.
@@ -8554,7 +8554,7 @@ function MinimosViaveis({ metas, salvarMinimo, tk }) {
                 <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="ex: caminhar 10 minutos"
  style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FS, fontSize: 14.5, color: C.obs, marginBottom: 7 }} />
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => { salvarMinimo(h.id, txt.trim()); setEditando(null); tk("Mínimo viável atualizado"); }}
+                  <button onClick={() => { salvarMinimo(h.id, txt.trim()); setEditando(null); tk("Mínimo inegociável atualizado"); }}
  style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Salvar</button>
                   <button onClick={() => setEditando(null)}
  style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 13, color: C.terra, cursor: "pointer" }}>Cancelar</button>
@@ -8917,8 +8917,8 @@ function Jornada({
           </div>
           <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
         </div>
-        {/* Mínimos Viáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
-        <MinimosViaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
+        {/* Mínimos Inegociáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
+        <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
 
         {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
         <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
@@ -10499,8 +10499,8 @@ function Emergencia({
           )}
         </Sec>
 
-        {/* 2 · Mínimos Viáveis — versão ainda menor que a meta (seção 4.9) */}
-        <Sec label="Seus Mínimos Viáveis">
+        {/* 2 · Mínimos Inegociáveis — versão ainda menor que a meta (seção 4.9) */}
+        <Sec label="Seus Mínimos Inegociáveis">
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>
  Se não vai dar pra fazer tudo, vamos de mínimos possíveis.
           </div>
@@ -10512,7 +10512,7 @@ function Emergencia({
               </div>
             ))
           ) : (
-            <div style={{ fontFamily: FS, fontSize: 16, color: C.lt, lineHeight: 1.6 }}>Defina seus mínimos em Meu Mapa → Seus Mínimos Viáveis.</div>
+            <div style={{ fontFamily: FS, fontSize: 16, color: C.lt, lineHeight: 1.6 }}>Defina seus mínimos em Meu Mapa → Seus Mínimos Inegociáveis.</div>
           )}
           {usou === "minimos" ? (
             <div style={{ fontFamily: FB, fontSize: 13, color: C.ouroTxt, marginTop: 10 }}>✓ Registrado — mínimo é suficiente.</div>
@@ -11774,7 +11774,7 @@ function PainelMentora({ ir }) {
                         {campo("Movimento", "mov_desc", "Ex: 60 min de pilates 3x")}
                         {campo("Sono", "sono_desc", "Ex: dormir sem tela")}
                         {campo("Tempo para Si", "tsi_desc", "Ex: 20 min de leitura")}
-                        <div style={sub}>Mínimos viáveis</div>
+                        <div style={sub}>Mínimos inegociáveis</div>
                         {campo("Movimento", "mov_minimo", "Ex: Caminhada de 10 min")}
                         {campo("Sono", "sono_minimo", "Ex: 30 min sem celular")}
                         {campo("Tempo para Si", "tsi_minimo", "Ex: Ler 1 página")}
@@ -11799,7 +11799,7 @@ function PainelMentora({ ir }) {
                     <div style={tb}>Perfil AUGE</div>
                     <div style={pt}>{perfis.length ? perfis.join(" · ") : "Ainda não respondeu"}</div>
 
-                    <div style={tb}>Mínimos Viáveis</div>
+                    <div style={tb}>Mínimos Inegociáveis</div>
                     {minimos.length ? minimos.map(([nome, c]) => (
                       <div key={c} style={{ marginBottom: 5 }}><span style={{ fontFamily: FB, fontSize: 13.5, color: C.terra }}>{nome}: </span><span style={{ fontFamily: FS, fontSize: 15, color: C.obs }}>{mv[c]}</span></div>
                     )) : <div style={pt}>Ainda não definidos</div>}
@@ -12402,12 +12402,12 @@ function Perfil({
           )}
         </div>
 
-        {/* Objetivos dos hábitos (Mínimos Viáveis) — mesma fonte da Hoje e do Meu Mapa */}
-        <MinimosViaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
+        {/* Objetivos dos hábitos (Mínimos Inegociáveis) — mesma fonte da Hoje e do Meu Mapa */}
+        <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
 
         {/* Mínimo de emergência (Kit) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, marginBottom: 6 }}>Mínimos Viáveis do Kit de Emergência</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, marginBottom: 6 }}>Mínimos Inegociáveis do Kit de Emergência</div>
           {!editMinC ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ flex: 1, fontFamily: FS, fontSize: 15, color: kitMin ? C.obs : C.lt, lineHeight: 1.5 }}>
