@@ -177,7 +177,7 @@ function weekDays(mondayStr) {
 
 // ─── ZONAS (seção 4.6) ────────────────────────────────────────────────────────
 // faltam = meta_semanal − feitas_essa_semana
-// faltam < dias_restantes → Tranquila · == → Ajuste · > → Atenção
+// faltam < dias_restantes → Tranquila · == → Em movimento · > → Atenção
 function zonaDe(meta, feitas, diasRestantes) {
  const faltam = meta - feitas;
  if (faltam < diasRestantes) return "tranquila";
@@ -186,7 +186,7 @@ function zonaDe(meta, feitas, diasRestantes) {
 }
 const ZONAS = {
  tranquila: { cor: "#C4A882", bg: "#EAD8B8", fg: "#7E5344", label: "Tranquila" },
- ajuste: { cor: "#A8865A", bg: "#A8865A", fg: "#FFFFFF", label: "Ajuste" },
+ ajuste: { cor: "#A8865A", bg: "#A8865A", fg: "#FFFFFF", label: "Em movimento" },
  atencao: { cor: "#E2B9A8", bg: "#E2B9A8", fg: "#5A3A2E", label: "Atenção" },
 };
 
@@ -2685,7 +2685,7 @@ function LegendaCores({ onFechar }) {
 
         <Titulo t="Nos seus hábitos, hoje" />
         <Linha cor={ZONAS.tranquila.cor} txt="Tranquila — segue tranquila" />
-        <Linha cor={ZONAS.ajuste.cor} txt="Ajuste — hoje ainda dá" />
+        <Linha cor={ZONAS.ajuste.cor} txt="Em movimento — hoje ainda dá" />
         <Linha cor={ZONAS.atencao.cor} txt="Atenção — essa semana está mais difícil" />
 
         <Titulo t="No seu calendário do mês" />
