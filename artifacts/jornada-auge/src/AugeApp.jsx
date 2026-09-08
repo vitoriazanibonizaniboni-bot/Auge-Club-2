@@ -178,6 +178,13 @@ function mondayOf(dateStr) {
  const dow = dt.getDay(); // 0=dom
  return addDaysStr(dateStr, dow === 0 ? -6 : 1 - dow);
 }
+// "2026-09-08" -> "Segunda, 8 de setembro" (sem o "-feira", que so alonga a linha)
+function dataLonga(dateStr) {
+ const d = new Date(dateStr + "T12:00:00");
+ const dia = d.toLocaleDateString("pt-BR", { weekday: "long" }).replace("-feira", "");
+ const resto = d.toLocaleDateString("pt-BR", { day: "numeric", month: "long" });
+ return `${dia.charAt(0).toUpperCase()}${dia.slice(1)}, ${resto}`;
+}
 function weekDays(mondayStr) {
  return Array.from({ length: 7 }, (_, i) => addDaysStr(mondayStr, i));
 }
@@ -4700,7 +4707,6 @@ function Home({
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
  const ONTEM = addDaysStr(TODAY, -1);
- const habsAtivos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
  const ehSexta = new Date(TODAY + "T12:00:00").getDay() === 5;
@@ -4744,38 +4750,24 @@ function Home({
       <div
  style={{
  background: C.creme,
- padding: "12px 18px 20px",
- display: "flex",
- flexDirection: "column",
- alignItems: "center",
- justifyContent: "center",
+ padding: "14px 18px 18px",
  borderBottom: `1px solid ${C.ouro}15`,
  position: "relative",
         }}
       >
-        {/* Semana da Jornada + Configurações + legenda (seções 4.1, 3.4 e 9) */}
+        {/* Configurações (seções 4.1, 3.4 e 9) */}
         <div
  onClick={() => ir(S.PF)}
- style={{ position: "absolute", top: 12, right: 12, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "2px 4px" }}
+ style={{ position: "absolute", top: 14, right: 12, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "2px 4px" }}
         >
           {Ico.gear(C.terra)}
           <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.12em", color: C.terra, textTransform: "uppercase" }}>Perfil</span>
         </div>
-        <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 400, color: C.ouroTxt, textTransform: "capitalize", marginTop: 6 }}>
-          {new Date(TODAY + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}
+        <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 600, color: C.obs, letterSpacing: "-0.01em" }}>
+ Hoje
         </div>
-        <div
- style={{
- marginTop: 6,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 13,
- color: C.lt,
- letterSpacing: "0.28em",
- textTransform: "uppercase",
-          }}
-        >
- Semana {sem} de 12 · {habsAtivos.length} hábito{habsAtivos.length !== 1 ? "s" : ""} hoje
+        <div style={{ marginTop: 4, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textTransform: "capitalize" }}>
+          {dataLonga(TODAY)} · <span style={{ textTransform: "none" }}>Semana {sem} de 12</span>
         </div>
       </div>
       {retroAberto && (
