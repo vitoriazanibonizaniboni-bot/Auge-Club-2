@@ -2658,11 +2658,11 @@ function LegendaCores({ onFechar }) {
  const Linha = ({ cor, borda, txt }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
       <div style={{ width: 15, height: 15, borderRadius: "50%", background: cor, border: borda || `1px solid ${C.ouro}40`, flexShrink: 0 }} />
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>{txt}</div>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>{txt}</div>
     </div>
   );
  const Titulo = ({ t }) => (
-    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.ouroTxt, letterSpacing: "0.28em", textTransform: "uppercase", margin: "16px 0 9px", borderTop: `1px solid ${C.ouro}25`, paddingTop: 14 }}>{t}</div>
+    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.28em", textTransform: "uppercase", margin: "16px 0 9px", borderTop: `1px solid ${C.ouro}25`, paddingTop: 14 }}>{t}</div>
   );
  return (
     <div
@@ -2674,7 +2674,7 @@ function LegendaCores({ onFechar }) {
  style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "24px 24px 36px", maxHeight: "80%", overflowY: "auto" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ flex: 1, fontFamily: FS, fontSize: 21, fontWeight: 500, color: C.terra, textAlign: "center" }}>
+          <div style={{ flex: 1, fontFamily: FB, fontSize: 20, fontWeight: 500, color: C.terra, textAlign: "center" }}>
  O que as cores significam
           </div>
           <button onClick={onFechar} style={{ background: "none", border: "none", fontSize: 22, color: C.lt, cursor: "pointer", padding: "0 0 0 8px" }}>×</button>
@@ -2686,7 +2686,7 @@ function LegendaCores({ onFechar }) {
         <Linha cor={ZONAS.atencao.cor} txt="Atenção — essa semana está mais difícil" />
 
         <Titulo t="No seu calendário do mês" />
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)`, lineHeight: 1.5, marginBottom: 10 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.5, marginBottom: 10 }}>
  Quanto mais forte a cor, mais hábitos você cumpriu naquele dia
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -2694,7 +2694,7 @@ function LegendaCores({ onFechar }) {
             <div key={i} style={{ width: 30, height: 30, borderRadius: 8, background: c, border: `1px solid ${C.ouro}40` }} />
           ))}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", width: 144, fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 2 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", width: 144, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 2 }}>
           <span>0</span>
           <span>3 hábitos</span>
         </div>
@@ -2702,7 +2702,7 @@ function LegendaCores({ onFechar }) {
           <div style={{ width: 30, height: 30, borderRadius: 8, background: C.ouroDk, position: "relative", flexShrink: 0 }}>
             <span style={{ position: "absolute", top: 1, right: 3, fontSize: 12.5, color: C.creme, fontFamily: FB }}>↺</span>
           </div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>Dia em que você acionou o Protocolo de Retomada</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>Dia em que você acionou o Protocolo de Retomada</div>
         </div>
 
         <Titulo t="Na sua trajetória semanal" />
@@ -9638,10 +9638,10 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
-        <div style={{ fontFamily: FS, fontSize: 21, fontWeight: 400, color: C.ouroTxt }}>
+        <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 400, color: C.ouroTxt }}>
  Sua trajetória
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
  Semana {sem} de 12
         </div>
       </div>
@@ -9660,7 +9660,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
           </svg>
           {HABS_FIXOS.map((h) => (
             <div key={h.id} style={{ marginBottom: 10 }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.terra, marginBottom: 5 }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 5 }}>
                 {h.id === "tempo" ? "Tempo p/ Si" : h.nome}{sem < h.unlock ? ` · desbloqueia na S${h.unlock}` : ""}
               </div>
               <div style={{ display: "flex", gap: 5 }}>
@@ -9674,20 +9674,20 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
             </div>
           ))}
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.terra, lineHeight: 1.6 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, lineHeight: 1.6 }}>
  Mais claro = menos hábitos no dia<br />Mais escuro = mais hábitos no dia
         </div>
         {/* ── Calendário mensal — heatmap 0–3 (seção 5.1) ── */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11.5, color: C.ouroTxt, letterSpacing: "0.35em", textTransform: "uppercase" }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.35em", textTransform: "uppercase" }}>
             {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
           </div>
           <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 18 }}>
           {["S","T","Q","Q","S","S","D"].map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 11.5, color: C.lt, padding: "2px 0" }}>{d}</div>
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, padding: "2px 0" }}>{d}</div>
           ))}
           {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
           {Array.from({ length: diasNoMes }, (_, i) => {
@@ -9704,7 +9704,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  background: isRet ? C.ouroDk : HEAT_CORES[Math.min(3, n)],
  border: isHoje ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
  display: "flex", alignItems: "center", justifyContent: "center",
- fontSize: 12.5, fontFamily: FS, fontWeight: 400,
+ fontSize: 14, fontFamily: FB, fontWeight: 400,
  color: C.obs,
  cursor: clic ? "pointer" : "default",
               }}>
@@ -9716,10 +9716,10 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
         </div>
 
         <button onClick={() => setLegenda(true)}
-          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ouroTxt, cursor: "pointer" }}>
+          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, letterSpacing: "0.04em", textTransform: "uppercase", color: C.ouroTxt, cursor: "pointer" }}>
           {Ico.info(C.ouroDk)} O que as cores significam
         </button>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginTop: 14, textAlign: "center" }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 14, textAlign: "center" }}>
  Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
 
@@ -9733,7 +9733,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
           <div onClick={() => setDiaSel(null)} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.87)", display: "flex", alignItems: "flex-end" }}>
             <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 22px 34px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ fontFamily: FS, fontSize: 19, fontWeight: 400, color: C.obs, textTransform: "capitalize" }}>
+                <div style={{ fontFamily: FB, fontSize: 18, fontWeight: 400, color: C.obs, textTransform: "capitalize" }}>
                   {new Date(diaSel + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
                 </div>
                 <button onClick={() => setDiaSel(null)} style={{ background: "none", border: "none", fontSize: 20, color: C.lt, cursor: "pointer" }}>×</button>
@@ -9743,8 +9743,8 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  return (
                   <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${C.ouro}18` }}>
                     <span style={{ fontSize: 17 }}>{h.ic}</span>
-                    <span style={{ flex: 1, fontFamily: FS, fontSize: 16, color: r ? C.obs : C.lt }}>{h.nome}</span>
-                    <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: r ? C.ouroTxt : C.lt }}>
+                    <span style={{ flex: 1, fontFamily: FB, fontSize: 16, color: r ? C.obs : C.lt }}>{h.nome}</span>
+                    <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: r ? C.ouroTxt : C.lt }}>
                       {r ? `✓ feito${r.dif ? ` · ${difLabel(r.dif)}` : ""}` : "—"}
                     </span>
                   </div>
