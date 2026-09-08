@@ -1205,6 +1205,8 @@ export default function App() {
  const [habsPessoais, setHabsPessoais] = useState([]); // hábitos criados pela aluna
  // Convite pro Mural depois de marcar um hábito: leva foto e hábito ao compositor
  const [postPrefill, setPostPrefill] = useState(null);
+ // "ver progresso" na Hoje: abre a Trajetoria ja com o painel deste hábito
+ const [habProgresso, setHabProgresso] = useState(null);
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config)
  const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
@@ -2366,6 +2368,8 @@ export default function App() {
  habStats,
  habsPessoais,
  postPrefill,
+ habProgresso,
+ setHabProgresso,
  setPostPrefill,
  habsPessStats,
  criarHabPessoal,
@@ -4846,6 +4850,7 @@ function Home({
  habStats,
  habsPessoais,
  setPostPrefill,
+ setHabProgresso,
  habsPessStats,
  criarHabPessoal,
  salvarMetaPessoal,
@@ -5240,7 +5245,7 @@ function Home({
  tk={tk}
  regs={regs}
  diasDaSemana={diasDaSemana}
- irProgresso={() => ir(S.TRAJ)}
+ irProgresso={() => { setHabProgresso({ id: h.id, nome: h.nome, pessoal: false, unlock: h.unlock }); ir(S.TRAJ); }}
  convidarMural={convidarMural}
               />
             ))}
@@ -5265,7 +5270,7 @@ function Home({
  tk={tk}
  regs={regs}
  diasDaSemana={diasDaSemana}
- irProgresso={() => ir(S.TRAJ)}
+ irProgresso={() => { setHabProgresso({ id: hp.id, nome: hp.nome, pessoal: true, meta: hp.meta, metaTexto: hp.meta_texto }); ir(S.TRAJ); }}
  onRemover={() => removerHabPessoal(hp.id)}
  convidarMural={convidarMural}
               />
@@ -9816,7 +9821,7 @@ function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario
 // ABA TRAJETÓRIA (seção 5) — calendário mensal + trajetória semanal
 // ═══════════════════════════════════════════════════════════════════
 // Painel de um hábito só (seção 8) — âncora, números e o calendário dele
-function PainelHabito({ h, onFechar, regs, historico, anc, metaTexto }) {
+function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
  const hojeReal = new Date();
  const [offset, setOffset] = useState(0);
  const vizData = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + offset, 1);
@@ -9888,11 +9893,12 @@ function PainelHabito({ h, onFechar, regs, historico, anc, metaTexto }) {
  const dia = i + 1;
  const ds = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
  const feito = !!regs[ds]?.[h.id];
- const isRet = historico?.[ds]?.retomada;
+                // Só dois estados aqui: feito e não feito. O dia de Kit acionado
+                // não entra — o Kit é genérico e não diz a qual hábito se refere.
  return (
               <div key={dia} title={dataBR(ds)} style={{
  aspectRatio: "1", borderRadius: 8,
- background: feito ? C.oliva : isRet ? `${C.blush}55` : C.linho,
+ background: feito ? C.oliva : C.linho,
  border: ds === todayStr ? `1.5px solid ${C.ouroDk}` : "none",
               }} />
             );
@@ -9913,9 +9919,12 @@ function PainelHabito({ h, onFechar, regs, historico, anc, metaTexto }) {
   );
 }
 
-function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc }) {
+function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso }) {
  const hojeReal = new Date();
- const [habSel, setHabSel] = useState(null); // painel individual do hábito (seção 7)
+ const [habSel, setHabSel] = useState(habProgresso || null); // painel individual do hábito (seção 7)
+  // Chegou pelo "ver progresso" da Hoje: abre o painel e limpa, para o
+  // painel não reabrir sozinho na próxima vez que ela entrar na aba.
+ useEffect(() => { if (habProgresso && setHabProgresso) setHabProgresso(null); }, []);
   // Esta tela conta sempre o mês corrente; navegar entre meses é dentro do painel
  const ano = hojeReal.getFullYear();
  const mes = hojeReal.getMonth();
@@ -10017,7 +10026,6 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  h={habSel}
  onFechar={() => setHabSel(null)}
  regs={regs}
- historico={historico}
  anc={anc}
  metaTexto={metaDoHabito(habSel)}
           />
