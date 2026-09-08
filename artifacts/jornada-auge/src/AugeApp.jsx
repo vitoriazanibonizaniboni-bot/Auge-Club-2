@@ -4319,7 +4319,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.8)`,
  marginTop: 2,
           }}
@@ -4337,7 +4337,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
           }}
         >
           <div
- style={{ fontFamily: FS, fontSize: 22, color: cor, lineHeight: 1 }}
+ style={{ fontFamily: FB, fontSize: 22, color: cor, lineHeight: 1 }}
           >
             {streakAtual}
           </div>
@@ -4385,12 +4385,12 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "15px 17px", marginBottom: 13 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           {IcoH.cadeado(C.lt, 16)}
-          <div style={{ flex: 1, fontFamily: FB, fontSize: 15, fontWeight: 600, color: `rgba(28,26,23,.85)` }}>{h.nome}</div>
-          <div style={{ background: C.linho, borderRadius: 9, padding: "4px 10px", fontFamily: FB, fontWeight: 600, fontSize: 11.5, letterSpacing: "0.06em", textTransform: "uppercase", color: C.lt }}>
+          <div style={{ flex: 1, fontFamily: FB, fontSize: 16, fontWeight: 600, color: `rgba(28,26,23,.85)` }}>{h.nome}</div>
+          <div style={{ background: C.linho, borderRadius: 9, padding: "4px 10px", fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.06em", textTransform: "uppercase", color: C.lt }}>
             Bloqueado
           </div>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 7 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 7 }}>
           Libera na semana {h.unlock}
         </div>
       </div>
@@ -4410,7 +4410,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         {IcoH[h.id](C.terra)}
         <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 500, color: C.obs }}>{h.nome}</div>
-        <div style={{ background: metaBatida ? ZONAS.tranquila.bg : zona.bg, borderRadius: 9, padding: "4px 10px", fontFamily: FB, fontWeight: 600, fontSize: 11.5, letterSpacing: "0.06em", textTransform: "uppercase", color: metaBatida ? ZONAS.tranquila.fg : zona.fg }}>
+        <div style={{ background: metaBatida ? ZONAS.tranquila.bg : zona.bg, borderRadius: 9, padding: "4px 10px", fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.06em", textTransform: "uppercase", color: metaBatida ? ZONAS.tranquila.fg : zona.fg }}>
           {metaBatida ? "Meta ✓" : zona.label}
         </div>
       </div>
@@ -4418,23 +4418,23 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {/* objetivo personalizado — editável pela aluna (toque no texto) */}
       {!editando ? (
         <div onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
- style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.terra, marginBottom: 10, cursor: "pointer", lineHeight: 1.45 }}>
+ style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 10, cursor: "pointer", lineHeight: 1.45 }}>
           {st.meta}x por semana{st.descMeta ? ` · ${st.descMeta}` : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
         </div>
       ) : (
         <div style={{ background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <span style={{ fontFamily: FB, fontSize: 13, color: C.terra }}>Vezes por semana:</span>
-            <button onClick={() => setFreqEdit((f) => Math.max(1, f - 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 15 }}>−</button>
-            <span style={{ fontFamily: FS, fontSize: 18, color: C.obs, minWidth: 18, textAlign: "center" }}>{freqEdit}</span>
-            <button onClick={() => setFreqEdit((f) => Math.min(7, f + 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 15 }}>+</button>
+            <span style={{ fontFamily: FB, fontSize: 16, color: C.terra }}>Vezes por semana:</span>
+            <button onClick={() => setFreqEdit((f) => Math.max(1, f - 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 17 }}>−</button>
+            <span style={{ fontFamily: FB, fontSize: 18, color: C.obs, minWidth: 18, textAlign: "center" }}>{freqEdit}</span>
+            <button onClick={() => setFreqEdit((f) => Math.min(7, f + 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 17 }}>+</button>
           </div>
           <input value={descEdit} onChange={(e) => setDescEdit(e.target.value)}
  placeholder={h.id === "sono" ? "ex: sem tela 2h antes de dormir" : "ex: 20 minutos"}
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FS, fontSize: 14.5, color: C.obs, marginBottom: 8 }} />
+ style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 8 }} />
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={salvarEdicao} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Salvar</button>
-            <button onClick={() => setEditando(false)} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 13, color: C.terra, cursor: "pointer" }}>Cancelar</button>
+            <button onClick={salvarEdicao} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 17, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+            <button onClick={() => setEditando(false)} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 17, color: C.terra, cursor: "pointer" }}>Cancelar</button>
           </div>
         </div>
       )}
@@ -4444,7 +4444,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         {Array.from({ length: st.meta }, (_, i) => (
           <div key={i} style={{ width: 11, height: 11, borderRadius: "50%", background: i < st.feitas ? C.ouro : "transparent", border: `1.5px solid ${i < st.feitas ? C.ouro : C.ouro + "55"}` }} />
         ))}
-        <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, marginLeft: 4 }}>
+        <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginLeft: 4 }}>
           {st.feitas} de {st.meta} essa semana{st.predom ? ` · Essa semana: ${difLabel(st.predom)}` : ""}
         </span>
       </div>
@@ -4452,23 +4452,23 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {/* sugestão de progressão / redução de meta (seção 4.8) — decisão sempre dela */}
       {!marcado && !progOculto && st.sugerirSubir && !st.sugerirReduzir && (
         <div style={{ background: `${C.ouro}18`, border: `1px solid ${C.ouro}40`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
  Você fechou as últimas 2 semanas em cheio no {h.nome}. Quer subir pra {st.meta + 1}x, ou prefere manter esse ritmo?
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { salvarMeta(h.id, st.meta + 1, st.descMeta); tk(`Meta do ${h.nome}: ${st.meta + 1}x `); }} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Subir pra {st.meta + 1}x</button>
-            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 13, color: C.terra, cursor: "pointer" }}>Manter</button>
+            <button onClick={() => { salvarMeta(h.id, st.meta + 1, st.descMeta); tk(`Meta do ${h.nome}: ${st.meta + 1}x `); }} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Subir pra {st.meta + 1}x</button>
+            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>Manter</button>
           </div>
         </div>
       )}
       {!marcado && !progOculto && st.sugerirReduzir && (
         <div style={{ background: `${C.blush}20`, border: `1px solid ${C.blush}66`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
  Esse hábito está pesado pra você nas últimas 2 semanas. Quer ajustar pra um nível mais leve, ou prefere manter?
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { salvarMeta(h.id, Math.max(1, st.meta - 1), st.descMeta); tk("Meta ajustada. Leveza também é método "); }} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Ajustar pra {Math.max(1, st.meta - 1)}x</button>
-            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.blush}66`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 13, color: C.terra, cursor: "pointer" }}>Manter</button>
+            <button onClick={() => { salvarMeta(h.id, Math.max(1, st.meta - 1), st.descMeta); tk("Meta ajustada. Leveza também é método "); }} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Ajustar pra {Math.max(1, st.meta - 1)}x</button>
+            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.blush}66`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>Manter</button>
           </div>
         </div>
       )}
@@ -4477,11 +4477,11 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {!marcado ? (
         <div>
           <button onClick={() => registrarHabito(h.id, dataAlvo, null)}
-            style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 14, letterSpacing: "0.03em", color: C.ouroTxt, cursor: "pointer" }}>
+            style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 17, letterSpacing: "0.03em", color: C.ouroTxt, cursor: "pointer" }}>
             {h.id === "sono" ? "Cumpri ontem à noite" : "Marquei hoje"}
           </button>
           {contaSemanaPassada && (
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, textAlign: "center", marginTop: 6, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, textAlign: "center", marginTop: 6, lineHeight: 1.45 }}>
               Hoje é segunda: a noite de ontem fecha a semana que terminou. Os pontos desta semana começam amanhã.
             </div>
           )}
@@ -4489,23 +4489,23 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       ) : (
         <div>
           <button onClick={() => desregistrarHabito(h.id, dataAlvo)}
-            style={{ width: "100%", background: C.ouro, border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 500, fontSize: 14, letterSpacing: "0.03em", color: C.obs, cursor: "pointer" }}>
+            style={{ width: "100%", background: C.ouro, border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 500, fontSize: 17, letterSpacing: "0.03em", color: C.obs, cursor: "pointer" }}>
             {h.id === "sono" ? "Cumpri ontem à noite ✓" : "Marquei hoje ✓"}
           </button>
           {contaSemanaPassada && (
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, textAlign: "center", marginTop: 6, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, textAlign: "center", marginTop: 6, lineHeight: 1.45 }}>
               Noite de domingo — fechou a semana passada.
             </div>
           )}
           {!regAlvo.dif ? (
             <>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, margin: "10px 0 6px" }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "10px 0 6px" }}>
             Como foi manter esse hábito hoje?
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             {DIF_OPTS.map((d) => (
               <button key={d.v} onClick={() => registrarHabito(h.id, dataAlvo, d.v)}
-                style={{ flex: 1, background: regAlvo.dif === d.v ? C.ouroDk : C.branco, border: `1px solid ${regAlvo.dif === d.v ? C.ouroDk : C.linho}`, borderRadius: 6, padding: "7px 2px", fontFamily: FB, fontWeight: regAlvo.dif === d.v ? 500 : 300, fontSize: 11, color: regAlvo.dif === d.v ? C.obs : C.terra, cursor: "pointer", lineHeight: 1.3 }}>
+                style={{ flex: 1, background: regAlvo.dif === d.v ? C.ouroDk : C.branco, border: `1px solid ${regAlvo.dif === d.v ? C.ouroDk : C.linho}`, borderRadius: 6, padding: "7px 2px", fontFamily: FB, fontWeight: regAlvo.dif === d.v ? 500 : 300, fontSize: 13, color: regAlvo.dif === d.v ? C.obs : C.terra, cursor: "pointer", lineHeight: 1.3 }}>
                 {d.l}
               </button>
             ))}
@@ -4513,8 +4513,8 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
             </>
           ) : (
             <div style={{ marginTop: 10, textAlign: "center", background: `${C.ouro}12`, border: `1px solid ${C.ouro}33`, borderRadius: 10, padding: "11px 12px" }}>
-              <div style={{ fontFamily: FS, fontWeight: 500, fontSize: 18, color: C.ouroTxt }}>Parabéns, mais 1%!</div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, marginTop: 2 }}>Você cuidou de você hoje.</div>
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 18, color: C.ouroTxt }}>Parabéns, mais 1%!</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 2 }}>Você cuidou de você hoje.</div>
             </div>
           )}
         </div>
@@ -4534,22 +4534,22 @@ function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, 
     <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.87)", display: "flex", alignItems: "flex-end" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 20px 34px", maxHeight: "80%", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: C.obs }}>Registrar dias anteriores</div>
+          <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: C.obs }}>Registrar dias anteriores</div>
           <button onClick={onFechar} style={{ background: "none", border: "none", fontSize: 20, color: C.lt, cursor: "pointer" }}>×</button>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, lineHeight: 1.5, marginBottom: 14 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.5, marginBottom: 14 }}>
  Esqueceu de marcar? Sem culpa — dá pra preencher até 7 dias pra trás. Tudo recalcula sozinho.
         </div>
         {dias.map((ds) => (
           <div key={ds} style={{ background: C.linho, borderRadius: 10, padding: "11px 13px", marginBottom: 9 }}>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, textTransform: "capitalize", marginBottom: 8 }}>{fmt(ds)}</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, textTransform: "capitalize", marginBottom: 8 }}>{fmt(ds)}</div>
             <div style={{ display: "flex", gap: 7 }}>
               {HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado).map((h) => {
  const feito = !!regs[ds]?.[h.id];
  return (
                   <button key={h.id}
  onClick={() => (feito ? desregistrarHabito(h.id, ds) : registrarHabito(h.id, ds, null))}
- style={{ flex: 1, background: feito ? `${C.ouro}30` : "transparent", border: `1px solid ${feito ? C.ouro : C.ouro + "40"}`, borderRadius: 8, padding: "8px 4px", fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: feito ? C.ouroTxt : C.lt, cursor: "pointer" }}>
+ style={{ flex: 1, background: feito ? `${C.ouro}30` : "transparent", border: `1px solid ${feito ? C.ouro : C.ouro + "40"}`, borderRadius: 8, padding: "8px 4px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: feito ? C.ouroTxt : C.lt, cursor: "pointer" }}>
                     {feito ? "✓ " : ""}{h.nome}
                   </button>
                 );
@@ -4579,7 +4579,7 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
         ))}
       </div>
       <button onClick={toggleDesafio}
-        style={{ width: "100%", background: feitoHoje ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 13.5, color: feitoHoje ? C.obs : C.ouroTxt, cursor: "pointer" }}>
+        style={{ width: "100%", background: feitoHoje ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 16, color: feitoHoje ? C.obs : C.ouroTxt, cursor: "pointer" }}>
         {feitoHoje ? "Feito hoje ✓" : "Feito hoje"}
       </button>
     </div>
@@ -4615,18 +4615,18 @@ function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }
   };
  return (
     <div style={{ background: `${C.ouro}15`, border: `1px solid ${C.ouro}55`, borderRadius: 12, padding: "16px 16px 14px", marginBottom: 16 }}>
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11.5, color: C.ouroTxt, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 6 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 6 }}>
  Sexta-feira · Vitória da Semana
       </div>
       {passo === 1 ? (
         <div>
-          <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 10 }}>
+          <div style={{ fontFamily: FB, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 10 }}>
  Como foi essa semana pra você?
           </div>
           <textarea value={resp} onChange={(e) => setResp(e.target.value)}
  placeholder="No geral, além de cada hábito..."
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 10, padding: "11px", fontSize: 15, fontFamily: FS, color: C.obs, resize: "none", height: 84, lineHeight: 1.6, marginBottom: 10 }} />
-          <button onClick={() => setPasso(2)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 14, color: C.obs2, cursor: "pointer" }}>
+ style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 10, padding: "11px", fontSize: 16, fontFamily: FB, color: C.obs, resize: "none", height: 84, lineHeight: 1.6, marginBottom: 10 }} />
+          <button onClick={() => setPasso(2)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>
  Continuar
           </button>
         </div>
@@ -4635,10 +4635,10 @@ function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, lineHeight: 1.6, marginBottom: 12 }}>
             {resumo}
           </div>
-          <button onClick={() => salvar(true)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 14, color: C.obs2, cursor: "pointer", marginBottom: 8 }}>
+          <button onClick={() => salvar(true)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer", marginBottom: 8 }}>
  Compartilhar no Mural do 1%
           </button>
-          <button onClick={() => salvar(false)} style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 13.5, color: C.terra, cursor: "pointer" }}>
+          <button onClick={() => salvar(false)} style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>
  Só registrar pra mim
           </button>
         </div>
@@ -4761,9 +4761,9 @@ function Home({
  style={{ position: "absolute", top: 12, right: 12, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "2px 4px" }}
         >
           {Ico.gear(C.terra)}
-          <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 10, letterSpacing: "0.12em", color: C.terra, textTransform: "uppercase" }}>Perfil</span>
+          <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.12em", color: C.terra, textTransform: "uppercase" }}>Perfil</span>
         </div>
-        <div style={{ fontFamily: FS, fontSize: 21, fontWeight: 400, color: C.ouroTxt, textTransform: "capitalize", marginTop: 6 }}>
+        <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 400, color: C.ouroTxt, textTransform: "capitalize", marginTop: 6 }}>
           {new Date(TODAY + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}
         </div>
         <div
@@ -4821,8 +4821,8 @@ function Home({
             </div>
             <div
  style={{
- fontFamily: FS,
- fontSize: 20,
+ fontFamily: FB,
+ fontSize: 18,
  fontWeight: 300,
  color: `rgba(28,26,23,.97)`,
  lineHeight: 1.3,
@@ -4835,7 +4835,7 @@ function Home({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.82)`,
  marginTop: 4,
                 }}
@@ -4855,7 +4855,7 @@ function Home({
  color: C.obs2,
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 15,
+ fontSize: 17,
  textDecoration: "none",
  padding: "9px 20px",
  borderRadius: 50,
@@ -4894,7 +4894,7 @@ function Home({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.8)`,
  lineHeight: 1.5,
  marginBottom: 12,
@@ -4915,7 +4915,7 @@ function Home({
  width: "100%",
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 16,
+ fontSize: 17,
  color: C.obs2,
  cursor: "pointer",
  letterSpacing: "0.02em",
@@ -4950,7 +4950,7 @@ function Home({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 15,
+ fontSize: 16,
  color: C.ouroTxt,
                   }}
                 >
@@ -4975,7 +4975,7 @@ function Home({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 15,
+ fontSize: 16,
  color: `rgba(28,26,23,.8)`,
  lineHeight: 1.6,
  marginBottom: 10,
@@ -5004,7 +5004,7 @@ function Home({
  width: "100%",
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 15,
+ fontSize: 17,
  color: C.obs2,
  cursor: "pointer",
  letterSpacing: "0.02em",
@@ -5018,7 +5018,7 @@ function Home({
         {/* Aviso agrupado de zonas (seção 4.6) — um único aviso, nunca separado */}
         {habsAlerta.length > 0 && (
           <div style={{ background: `${C.blush}22`, border: `1px solid ${C.blush}88`, borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.terra, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, lineHeight: 1.55 }}>
               {habsAlerta.length === 1
                 ? `${habsAlerta[0].nome} precisa de atenção hoje. ${habStats[habsAlerta[0].id].zona === "ajuste" ? "Opa, ainda dá! Vamos lá." : "Sem cobrança — o Kit está aqui se precisar."}`
                 : `${habsAlerta.length} dos seus hábitos precisam de atenção hoje.`}
@@ -5045,7 +5045,7 @@ function Home({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 11.5,
+ fontSize: 13,
  color: C.ouroTxt,
  letterSpacing: "0.35em",
  textTransform: "uppercase",
@@ -5070,9 +5070,10 @@ function Home({
             ))}
             <button
  onClick={() => setRetroAberto(true)}
- style={{ width: "100%", background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, cursor: "pointer", textDecoration: "underline", marginBottom: 16 }}
+ style={{ width: "100%", background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, cursor: "pointer", marginBottom: 16, lineHeight: 1.5 }}
             >
- Esqueceu de registrar um dia? Preencher dias anteriores
+              <div>Esqueceu de um dia?</div>
+              <div style={{ marginTop: 6, textDecoration: "underline" }}>Preencha dias anteriores</div>
             </button>
 
             {/* Desafio da Semana (seção 4.10) — contido no card, sem zona nem alerta */}
@@ -5085,10 +5086,10 @@ function Home({
 
             {/* Kit de Emergência (Blush) + Protocolo de Retomada (Ouro Escuro) — só o nome (spec) */}
             <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              <button onClick={() => ir(S.EM)} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 13.5, color: "#5C3A2E", letterSpacing: "0.04em", lineHeight: 1.3 }}>
+              <button onClick={() => ir(S.EM)} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: "#5C3A2E", letterSpacing: "0.04em", lineHeight: 1.3 }}>
  Kit de Emergência
               </button>
-              <button onClick={() => ir(S.RET)} style={{ flex: 1, background: C.ouroDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 13.5, color: C.obs, letterSpacing: "0.04em", lineHeight: 1.3 }}>
+              <button onClick={() => ir(S.RET)} style={{ flex: 1, background: C.ouroDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs, letterSpacing: "0.04em", lineHeight: 1.3 }}>
  Protocolo de Retomada
               </button>
             </div>
