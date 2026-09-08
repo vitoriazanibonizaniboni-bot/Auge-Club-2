@@ -112,6 +112,13 @@ const IcoH = {
       <path d="M12 20.5s-7.5-4.8-9.3-9A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.3 5c-1.8 4.3-9.3 9-9.3 9.1z" />
     </svg>
   ),
+ kit: (c, s = 18) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="7.5" width="18" height="12.5" rx="2.5" />
+      <path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5" />
+      <path d="M12 11.5v5M9.5 14h5" />
+    </svg>
+  ),
  estrela: (c, s = 18) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill={c} stroke="none">
       <polygon points="12 2.5 14.9 9 22 9.6 16.7 14.3 18.3 21.5 12 17.7 5.7 21.5 7.3 14.3 2 9.6 9.1 9" />
@@ -5078,19 +5085,21 @@ function Home({
  diasDaSemana={diasDaSemana}
             />
 
-            {/* Kit de Emergência (Blush) + Protocolo de Retomada (Ouro Escuro) — só o nome (spec) */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
-              <button onClick={() => ir(S.EM)} style={{ flex: 1, background: C.blushDk, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.creme, letterSpacing: "0.04em", lineHeight: 1.3 }}>
- Kit de Emergência
-              </button>
-              <button onClick={() => ir(S.RET)} style={{ flex: 1, background: C.ouroAcao, border: "none", borderRadius: 18, padding: "15px 8px", cursor: "pointer", textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.creme, letterSpacing: "0.04em", lineHeight: 1.3 }}>
- Protocolo de Retomada
-              </button>
-            </div>
+            {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
+            <div style={{ height: 64 }} />
           </div>
 
 
       </Grain>
+
+      {/* Kit de Emergência — pastilha fixa; o Protocolo de Retomada agora mora dentro dele */}
+      <button
+ onClick={() => ir(S.EM)}
+ style={{ position: "absolute", right: 16, bottom: 82, zIndex: 60, background: C.blushDk, border: "none", borderRadius: 50, padding: "12px 20px", cursor: "pointer", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.creme, boxShadow: "0 6px 18px rgba(28,26,23,.28)", display: "flex", alignItems: "center", gap: 9 }}
+      >
+        {IcoH.kit(C.creme)}
+ bateu a preguiça?
+      </button>
     </div>
   );
 }
@@ -10435,6 +10444,7 @@ function Emergencia({
  salvarKitPessoal,
  registrarKitUso,
  metas,
+ ir,
 }) {
   // Kit de Emergência v2 (seção 4.9) — acionamento sempre manual:
   // só conta como usado quando a aluna ESCOLHE uma ação aqui dentro.
@@ -10529,6 +10539,14 @@ function Emergencia({
  Chamar no WhatsApp
             </button>
           )}
+        </Sec>
+
+        {/* 4 · Protocolo de Retomada — saiu da tela Hoje e passou a morar aqui */}
+        <Sec label="Ficou mais de um dia sem marcar?">
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.55 }}>
+ O Protocolo de Retomada é para voltar sem recomeçar do zero.
+          </div>
+          <BtnAcao onClick={() => ir(S.RET)}>Abrir o Protocolo de Retomada</BtnAcao>
         </Sec>
 
       </Grain>
