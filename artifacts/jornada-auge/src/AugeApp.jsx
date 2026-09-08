@@ -9815,24 +9815,100 @@ function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario
 // ═══════════════════════════════════════════════════════════════════
 // ABA TRAJETÓRIA (seção 5) — calendário mensal + trajetória semanal
 // ═══════════════════════════════════════════════════════════════════
-function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir }) {
+// Painel de um hábito só — calendário dele e as 12 semanas dele (seção 7 → 8)
+function PainelHabito({ h, onFechar, regs, historico, statusSemana, DOT, sem }) {
  const hojeReal = new Date();
  const [offset, setOffset] = useState(0);
- const [legenda, setLegenda] = useState(false);
- const [diaSel, setDiaSel] = useState(null); // detalhe sob demanda (seção 5.1)
  const vizData = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + offset, 1);
  const ano = vizData.getFullYear();
  const mes = vizData.getMonth();
  const nomeMes = vizData.toLocaleString("pt-BR", { month: "long", year: "numeric" });
- const primeiroDia = (new Date(ano, mes, 1).getDay() + 6) % 7; // semana começa na segunda
+ const primeiroDia = (new Date(ano, mes, 1).getDay() + 6) % 7;
  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+ const todayStr = localDateStr(hojeReal);
+ const feitosNoMes = Array.from({ length: diasNoMes }, (_, i) =>
+ `${ano}-${String(mes + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`
+  ).filter((ds) => regs[ds]?.[h.id]).length;
+
+ return (
+    <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.87)", display: "flex", alignItems: "flex-end" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "20px 20px 34px", maxHeight: "88%", overflowY: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
+          {(IcoH[h.id] || IcoH.meu)(C.terra)}
+          <div style={{ flex: 1, fontFamily: FB, fontSize: 20, fontWeight: 600, color: C.obs }}>{h.nome}</div>
+          <button onClick={onFechar} aria-label="Fechar" style={{ background: "none", border: "none", fontSize: 22, color: C.lt, cursor: "pointer", padding: "0 0 0 8px" }}>×</button>
+        </div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 16 }}>
+          {feitosNoMes} {feitosNoMes === 1 ? "dia" : "dias"} em {vizData.toLocaleString("pt-BR", { month: "long" })}
+        </div>
+
+        {/* calendário só deste hábito */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 20, cursor: "pointer", padding: "0 6px", lineHeight: 1 }}>‹</button>
+          <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase" }}>
+            {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
+          </div>
+          <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 20, cursor: offset < 0 ? "pointer" : "default", padding: "0 6px", lineHeight: 1 }}>›</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 16 }}>
+          {["S","T","Q","Q","S","S","D"].map((d, i) => (
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, padding: "2px 0" }}>{d}</div>
+          ))}
+          {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
+          {Array.from({ length: diasNoMes }, (_, i) => {
+ const dia = i + 1;
+ const ds = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+ const feito = !!regs[ds]?.[h.id];
+ const isRet = historico?.[ds]?.retomada;
+ return (
+              <div key={dia} style={{
+ aspectRatio: "1", borderRadius: 7,
+ background: feito ? C.oliva : isRet ? `${C.blush}55` : C.linho,
+ border: ds === todayStr ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
+ display: "flex", alignItems: "center", justifyContent: "center",
+ fontSize: 14, fontFamily: FB, fontWeight: 400,
+ color: feito ? C.creme : C.obs,
+              }}>
+                {dia}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* as 12 semanas deste hábito */}
+        {!h.pessoal && (
+          <>
+            <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 8 }}>
+ As 12 semanas
+            </div>
+            <div style={{ display: "flex", gap: 5, marginBottom: 6 }}>
+              {Array.from({ length: 12 }, (_, i) => {
+ const w = i + 1;
+ const stt = w < h.unlock ? "futura" : statusSemana(h.id, w);
+ const d = DOT[stt];
+ return <div key={w} style={{ flex: 1, aspectRatio: "1", maxWidth: 18, borderRadius: "50%", background: d.bg, border: d.bo }} title={`Semana ${w}`} />;
+              })}
+            </div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt }}>
+ Semana 1 à esquerda, semana 12 à direita. Você está na {sem}.
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [] }) {
+ const hojeReal = new Date();
+ const [habSel, setHabSel] = useState(null); // painel individual do hábito (seção 7)
+  // Esta tela conta sempre o mês corrente; navegar entre meses é dentro do painel
+ const ano = hojeReal.getFullYear();
+ const mes = hojeReal.getMonth();
  const todayStr = localDateStr(hojeReal);
 
  const iniJ = jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : todayStr);
  const segundaS1 = mondayOf(iniJ);
-
-  // quantos hábitos feitos num dia (0–3) — cor por intensidade (seção 3.2)
- const contaDia = (ds) => Object.keys(regs[ds] || {}).length;
 
   // status de um hábito numa semana (seção 3.3)
  const kitPorSemana = new Set(kitUsos.map((k) => mondayOf(k.data)));
@@ -9869,17 +9945,35 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
   };
  const [mx, my] = bez(tArc);
 
+  // ── Lista de hábitos (seção 7) ────────────────────────────────────────────
+  // Contagem do MÊS, de propósito: sequência de dias seguidos zera toda hora
+  // numa meta de 3x por semana, e um contador sempre em zero desanima.
+ const nomeMesCurto = new Date(ano, mes, 1).toLocaleString("pt-BR", { month: "long" });
+ const diasDoMesFeitos = (habId) =>
+ Object.keys(regs).filter((d) => d.startsWith(`${ano}-${String(mes + 1).padStart(2, "0")}`) && regs[d]?.[habId]).length;
+ const linhas = [
+    ...HABS_FIXOS.map((h) => ({
+ id: h.id, nome: h.nome, unlock: h.unlock, pessoal: false,
+ bloqueado: sem < h.unlock,
+ diasNoMes: diasDoMesFeitos(h.id),
+    })),
+    ...habsPessoais.map((hp) => ({
+ id: hp.id, nome: hp.nome, unlock: 1, pessoal: true,
+ bloqueado: false,
+ diasNoMes: diasDoMesFeitos(hp.id),
+    })),
+  ];
+
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
-      <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
-        <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 400, color: C.ouroTxt }}>
- Sua trajetória
+      <div style={{ background: C.creme, padding: "14px 18px 14px", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
+        <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 600, color: C.obs, letterSpacing: "-0.01em" }}>
+ Trajetória
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
- Semana {sem} de 12
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 4 }}>
+ Sua jornada até aqui
         </div>
       </div>
-      {legenda && <LegendaCores onFechar={() => setLegenda(false)} />}
       <Grain style={{ padding: "18px 18px 32px" }}>
 
         {/* ── Trajetória semanal (seção 5.2) ── */}
@@ -9892,101 +9986,47 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  S{sem}
             </text>
           </svg>
-          {HABS_FIXOS.map((h) => (
-            <div key={h.id} style={{ marginBottom: 10 }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 5 }}>
-                {h.id === "tempo" ? "Tempo p/ Si" : h.nome}{sem < h.unlock ? ` · desbloqueia na S${h.unlock}` : ""}
-              </div>
-              <div style={{ display: "flex", gap: 5 }}>
-                {Array.from({ length: 12 }, (_, i) => {
- const w = i + 1;
- const stt = w < h.unlock ? "futura" : statusSemana(h.id, w);
- const d = DOT[stt];
- return <div key={w} style={{ flex: 1, aspectRatio: "1", maxWidth: 18, borderRadius: "50%", background: d.bg, border: d.bo }} title={`S${w}`} />;
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, lineHeight: 1.6 }}>
- Mais claro = menos hábitos no dia<br />Mais escuro = mais hábitos no dia
-        </div>
-        {/* ── Calendário mensal — heatmap 0–3 (seção 5.1) ── */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <button onClick={() => setOffset((o) => o - 1)} style={{ background: "none", border: "none", color: C.terra, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.35em", textTransform: "uppercase" }}>
-            {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
-          </div>
-          <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 18 }}>
-          {["S","T","Q","Q","S","S","D"].map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, padding: "2px 0" }}>{d}</div>
-          ))}
-          {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
-          {Array.from({ length: diasNoMes }, (_, i) => {
- const dia = i + 1;
- const ds = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
- const n = contaDia(ds);
- const isHoje = ds === todayStr;
- const isRet = historico?.[ds]?.retomada;
- const clic = n > 0 || isRet;
- return (
-              <div key={dia} onClick={() => clic && setDiaSel(ds)} style={{
- position: "relative",
- aspectRatio: "1", borderRadius: 7,
- background: isRet ? C.ouroDk : HEAT_CORES[Math.min(3, n)],
- border: isHoje ? `2px solid ${C.ouroDk}` : `1px solid ${C.ouro}22`,
- display: "flex", alignItems: "center", justifyContent: "center",
- fontSize: 14, fontFamily: FB, fontWeight: 400,
- color: C.obs,
- cursor: clic ? "pointer" : "default",
-              }}>
-                {dia}
-                {isRet && <span style={{ position: "absolute", top: 0, right: 2, fontSize: 11, color: C.creme, fontFamily: FB }}>↺</span>}
-              </div>
-            );
-          })}
         </div>
 
-        <button onClick={() => setLegenda(true)}
-          style={{ display: "flex", alignItems: "center", gap: 7, margin: "12px auto 0", background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, letterSpacing: "0.04em", textTransform: "uppercase", color: C.ouroTxt, cursor: "pointer" }}>
-          {Ico.info(C.ouroDk)} O que as cores significam
-        </button>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 14, textAlign: "center" }}>
- Pequeno, repetido e infinito. Qualquer cor é uma vitória.
+        {/* ── Seus hábitos (seção 7) — contagem do mês, não sequência ── */}
+        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", margin: "6px 0 10px" }}>
+ Seus hábitos
+        </div>
+        {linhas.map((h) => (
+          <button
+ key={h.id}
+ onClick={() => !h.bloqueado && setHabSel(h)}
+ style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: h.bloqueado ? `${C.linho}8C` : C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: h.bloqueado ? "default" : "pointer", textAlign: "left" }}
+          >
+            {h.bloqueado ? IcoH.cadeado(C.lt, 16) : (IcoH[h.id] || IcoH.meu)(C.terra)}
+            <span style={{ flex: 1, fontFamily: FB, fontWeight: 600, fontSize: 17, color: h.bloqueado ? `rgba(78,65,57,.66)` : C.obs }}>{h.nome}</span>
+            <span style={{ fontFamily: FB, fontWeight: h.bloqueado ? 400 : 600, fontSize: 16, color: h.bloqueado ? `rgba(78,65,57,.66)` : C.ouroTxt }}>
+              {h.bloqueado ? `desbloqueia S${h.unlock}` : `${h.diasNoMes} ${h.diasNoMes === 1 ? "dia" : "dias"} em ${nomeMesCurto}`}
+            </span>
+            {!h.bloqueado && <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>}
+          </button>
+        ))}
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", margin: "14px 0 4px" }}>
+ toque num hábito para ver o calendário completo
         </div>
 
-        <div style={{ borderTop: `1px solid ${C.ouro}30`, margin: "6px 0 14px", paddingTop: 14, fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, textAlign: "center" }}>
+        <div style={{ borderTop: `1px solid ${C.ouro}30`, margin: "10px 0 14px", paddingTop: 14, fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, textAlign: "center" }}>
  Sexta é dia de Vitória da Semana
         </div>
 
-
-        {/* detalhe do dia — sob demanda (seção 5.1) */}
-        {diaSel && (
-          <div onClick={() => setDiaSel(null)} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.87)", display: "flex", alignItems: "flex-end" }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 22px 34px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ fontFamily: FB, fontSize: 18, fontWeight: 400, color: C.obs, textTransform: "capitalize" }}>
-                  {new Date(diaSel + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
-                </div>
-                <button onClick={() => setDiaSel(null)} style={{ background: "none", border: "none", fontSize: 20, color: C.lt, cursor: "pointer" }}>×</button>
-              </div>
-              {HABS_FIXOS.map((h) => {
- const r = regs[diaSel]?.[h.id];
- return (
-                  <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${C.ouro}18` }}>
-                    <span style={{ fontSize: 17 }}>{h.ic}</span>
-                    <span style={{ flex: 1, fontFamily: FB, fontSize: 16, color: r ? C.obs : C.lt }}>{h.nome}</span>
-                    <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: r ? C.ouroTxt : C.lt }}>
-                      {r ? `✓ feito${r.dif ? ` · ${difLabel(r.dif)}` : ""}` : "—"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {/* painel individual do hábito — calendário só dele e as 12 semanas dele */}
+        {habSel && (
+          <PainelHabito
+ h={habSel}
+ onFechar={() => setHabSel(null)}
+ regs={regs}
+ historico={historico}
+ statusSemana={statusSemana}
+ DOT={DOT}
+ sem={sem}
+          />
         )}
+
       </Grain>
     </div>
   );
