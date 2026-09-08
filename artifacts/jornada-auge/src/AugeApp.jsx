@@ -2669,7 +2669,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  background: C.creme,
  borderTop: `1px solid ${C.ouro}15`,
  display: "flex",
- padding: "10px 0 16px",
+ padding: "13px 0 20px",
       }}
     >
       {tabs.map((t) => (
@@ -2726,7 +2726,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  display: "flex",
  flexDirection: "column",
  alignItems: "center",
- gap: 4,
+ gap: 6,
             }}
           >
             {t.icon(aba === t.id ? C.ouroDk : C.lt)}
@@ -2734,9 +2734,11 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  style={{
  fontFamily: FB,
  fontWeight: aba === t.id ? 600 : 400,
- fontSize: 11,
- letterSpacing: "0.05em",
- textTransform: "uppercase",
+                // Caixa normal, nao maiuscula: medido, MAIUSCULA nao cabe nas 5
+                // abas em nenhum tamanho — em 11px ja encavalava num celular de
+                // 320px. Em caixa normal, 13px cabe ate no mais estreito.
+ fontSize: 13,
+ letterSpacing: "0",
  color: aba === t.id ? C.ouroTxt : C.lt,
  transition: "color .2s",
  whiteSpace: "nowrap",
@@ -5488,7 +5490,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
         </div>
       </div>
       {/* Filtro Todas / Minhas */}
-      <div style={{ background: C.creme, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
+      <div style={{ background: C.creme, padding: "14px 16px 14px", display: "flex", gap: 10, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
           <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: filtro === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
             {label}
