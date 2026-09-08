@@ -5505,9 +5505,6 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   >
                     {p.aut}
                   </div>
-                  <span style={{ background: p.source === "comunidade" ? `${C.blush}45` : `${C.ouro}35`, borderRadius: 12, padding: "2px 9px", fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: C.obs2 }}>
-                    {p.source === "comunidade" ? "Comunidade" : "Jornada"}
-                  </span>
                   {(p.userId !== authUserId && p.aut !== "Você") && (
                     <div style={{ marginLeft: "auto", position: "relative" }}>
                       <button onClick={(e) => { e.stopPropagation(); setMenuPost(menuPost === p.id ? null : p.id); }} aria-label="Mais opções" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "rgba(28,26,23,.55)", padding: "0 4px", lineHeight: 1 }}>⋯</button>
