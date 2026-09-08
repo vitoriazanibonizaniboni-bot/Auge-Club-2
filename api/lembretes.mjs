@@ -45,31 +45,32 @@ const AGENDAS = {
 // Os 3 habitos angulares, na ordem em que aparecem no app.
 //   unlock  — semana da Jornada em que o habito libera
 //   ontem   — o Sono e registrado referente a NOITE ANTERIOR
-//   so      — texto quando esse e o unico habito faltando
-//   emenda  — texto quando ele vem depois de outro na mesma mensagem
+// O texto nao e fixo por habito: sai do template em textoLembrete(), com o
+// nome e a sequencia da aluna. Os tres nomes sao masculinos, entao "Seu" serve
+// para todos. Habito criado pela aluna nao usa artigo, porque o nome e livre
+// e nao da para saber o genero de "Agua" ou "Alongamento" sem chutar.
 const HABITOS = [
-  {
-    id: "movimento",
-    unlock: 1,
-    ontem: false,
-    so: "Como está o movimento hoje? Ainda dá tempo de se movimentar.",
-    emenda: "E o movimento, ainda dá tempo hoje.",
-  },
-  {
-    id: "sono",
-    unlock: 5,
-    ontem: true,
-    so: "Como foi o sono ontem? Dá para registrar agora.",
-    emenda: "E o sono, como foi a noite de ontem?",
-  },
-  {
-    id: "tempo",
-    unlock: 9,
-    ontem: false,
-    so: "Conseguiu um tempo para si hoje?",
-    emenda: "E o tempo para si, conseguiu um pouco hoje?",
-  },
+  { id: "movimento", nome: "Movimento", unlock: 1, ontem: false },
+  { id: "sono", nome: "Sono", unlock: 5, ontem: true },
+  { id: "tempo", nome: "Tempo para Si", unlock: 9, ontem: false },
 ];
+
+// Quantos dias seguidos ja contam como sequencia digna de comemorar.
+const SEQ_MINIMA = 3;
+
+// Template do lembrete (secao 9). Nunca fala em perder sequencia nem em
+// quebrar progresso: o publico ja vive o ciclo comecar-parar-culpa, e ameaca
+// de perda reforca exatamente esse padrao. So convite ou celebracao.
+function textoLembrete({ nome, pessoal, seq }) {
+  if (seq >= SEQ_MINIMA) {
+    return `${seq} dias seguidos de ${nome}. Hoje pode ser mais um.`;
+  }
+  if (pessoal) {
+    // Sem artigo e sem particípio: "marcar" serve para qualquer nome.
+    return `Ainda dá tempo de marcar ${nome} hoje.`;
+  }
+  return `Seu ${nome} ainda não foi hoje. Ainda dá tempo, mesmo que seja o mínimo.`;
+}
 
 const TEXTOS = {
   sexta: {
@@ -175,15 +176,24 @@ async function alunasSemCheckin(supaUrl, serviceKey) {
 // Lembrete das 19h — quem esta presente mas ainda nao marcou algum habito.
 // Devolve uma lista de { texto, ids }: alunas que tem o mesmo texto vao no
 // mesmo envio, porque o OneSignal manda um conteudo por chamada.
+//
+// Cobre os 3 angulares E os habitos que a aluna criou (habitos_pessoais).
+// Manda UM lembrete por aluna, sobre UM habito, mesmo que varios estejam
+// pendentes: notificacao com lista vira bloco de texto que o celular corta.
+// A escolha do habito prioriza quem tem sequencia ativa — celebrar o que ja
+// existe convida melhor do que apontar o que falta.
 async function lembretesDoDia(supaUrl, serviceKey) {
   const h = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
   const hoje = hojeBR();
   const ontem = menosDias(hoje, 1);
+  // 60 dias bastam para qualquer sequencia que valha a pena comemorar
+  const desde = menosDias(hoje, 60);
 
-  const [pRes, cRes, rRes] = await Promise.all([
+  const [pRes, cRes, rRes, hpRes] = await Promise.all([
     fetch(`${supaUrl}/rest/v1/profiles?select=id,plano,data_cadastro&plano=in.(jornada,comunidade,admin)`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/config?select=id,valor&id=eq.jornada_inicio`, { headers: h }),
-    fetch(`${supaUrl}/rest/v1/registros?select=user_id,habito,data&data=gte.${ontem}`, { headers: h }),
+    fetch(`${supaUrl}/rest/v1/registros?select=user_id,habito,data&data=gte.${desde}`, { headers: h }),
+    fetch(`${supaUrl}/rest/v1/habitos_pessoais?select=id,user_id,nome,ativo&ativo=is.true`, { headers: h }),
   ]);
   if (!pRes.ok) throw new Error("Falha ao ler profiles");
   if (!rRes.ok) throw new Error("Falha ao ler registros");
@@ -192,6 +202,8 @@ async function lembretesDoDia(supaUrl, serviceKey) {
   const cfg = cRes.ok ? await cRes.json() : [];
   const inicioTurma = cfg[0]?.valor || null;
   const registros = await rRes.json();
+  // A tabela pode nao existir ainda num ambiente antigo: sem ela, so os 3 fixos
+  const pessoais = hpRes.ok ? await hpRes.json() : [];
 
   // Indice: user_id -> Set("habito|data")
   const marcou = new Map();
@@ -199,28 +211,55 @@ async function lembretesDoDia(supaUrl, serviceKey) {
     if (!marcou.has(r.user_id)) marcou.set(r.user_id, new Set());
     marcou.get(r.user_id).add(`${r.habito}|${String(r.data).slice(0, 10)}`);
   }
+  // Habitos pessoais por aluna
+  const pessoaisDe = new Map();
+  for (const hp of pessoais) {
+    if (!pessoaisDe.has(hp.user_id)) pessoaisDe.set(hp.user_id, []);
+    pessoaisDe.get(hp.user_id).push(hp);
+  }
+
+  // Dias seguidos de um habito, contando para tras a partir do dia anterior ao
+  // que esta em aberto. Como o lembrete so existe quando o dia ainda nao foi
+  // marcado, a sequencia e a que ela ja tem "ate ontem".
+  const sequencia = (marcas, habId, diaAlvo) => {
+    if (!marcas) return 0;
+    let n = 0;
+    let d = menosDias(diaAlvo, 1);
+    while (marcas.has(`${habId}|${d}`)) { n++; d = menosDias(d, 1); }
+    return n;
+  };
 
   const porTexto = new Map();
   for (const a of alunas) {
     const marcas = marcou.get(a.id);
     // So fala com quem esta presente: apareceu ontem ou hoje. Quem sumiu ha
     // 2+ dias recebe o Protocolo de Retomada as 20h, com outro tom.
-    if (!marcas || marcas.size === 0) continue;
+    const presente =
+      marcas && [...marcas].some((k) => {
+        const dia = k.split("|")[1];
+        return dia === hoje || dia === ontem;
+      });
+    if (!presente) continue;
 
     const sem = semanaDaJornada(hoje, inicioTurma || a.data_cadastro);
-    const faltando = HABITOS.filter((hb) => {
-      if (sem < hb.unlock) return false; // habito ainda bloqueado para ela
-      return !marcas.has(`${hb.id}|${hb.ontem ? ontem : hoje}`);
-    });
-    if (!faltando.length) continue; // fez tudo que estava liberado
 
-    // Faltando mais de um, nomear cada um daria uma notificacao longa demais —
-    // o celular corta e a aluna ve um bloco de texto. So o caso de UM habito
-    // pendente ganha mensagem propria; a partir de dois vai a versao curta.
-    const texto =
-      faltando.length === 1
-        ? faltando[0].so
-        : "Como foi o seu dia? Marque seu hábito aqui.";
+    const candidatos = [];
+    for (const hb of HABITOS) {
+      if (sem < hb.unlock) continue; // habito ainda bloqueado para ela
+      const alvo = hb.ontem ? ontem : hoje;
+      if (marcas.has(`${hb.id}|${alvo}`)) continue;
+      candidatos.push({ nome: hb.nome, pessoal: false, seq: sequencia(marcas, hb.id, alvo) });
+    }
+    for (const hp of pessoaisDe.get(a.id) || []) {
+      if (marcas.has(`${hp.id}|${hoje}`)) continue;
+      candidatos.push({ nome: hp.nome, pessoal: true, seq: sequencia(marcas, hp.id, hoje) });
+    }
+    if (!candidatos.length) continue; // fez tudo que estava liberado
+
+    // Maior sequencia primeiro; empatando, a ordem em que aparecem no app
+    candidatos.sort((x, y) => y.seq - x.seq);
+    const texto = textoLembrete(candidatos[0]);
+
     if (!porTexto.has(texto)) porTexto.set(texto, []);
     porTexto.get(texto).push(a.id);
   }
