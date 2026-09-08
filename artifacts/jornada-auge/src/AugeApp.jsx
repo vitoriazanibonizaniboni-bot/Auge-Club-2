@@ -5121,7 +5121,10 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  const totalNaoLidas = Object.values(naoLidas).reduce((a, b) => a + b, 0);
  const [open, setOpen] = useState(null);
  const [txt, setTxt] = useState("");
- const [filtro, setFiltro] = useState("todas"); // "todas" | "jornada" | "comunidade" | "minhas"
+ const [filtro, setFiltro] = useState("todas"); // "todas" | "minhas"
+  // Jornada e Comunidade sairam: cada app tem o seu proprio Mural, entao filtrar
+  // por origem nao separava nada — dentro de uma build, toda publicacao tem a
+  // mesma origem.
  const [det, setDet] = useState(null); // id do post aberto em detalhe
  const [confirmaExcluir, setConfirmaExcluir] = useState(null);
  const [confirmaComent, setConfirmaComent] = useState(null); // { postId, cid }
@@ -5247,8 +5250,6 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
     .filter((p) => p.publica || p.userId === authUserId || p.aut === "Você")
     .filter((p) =>
       filtro === "minhas" ? (p.userId === authUserId || p.aut === "Você")
-      : filtro === "jornada" ? (p.source || "jornada") === "jornada"
-      : filtro === "comunidade" ? p.source === "comunidade"
       : true);
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
@@ -5263,7 +5264,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
       </div>
       {/* Filtro Todas / Minhas */}
       <div style={{ background: C.creme, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
-        {[["todas", "Todas"], ["jornada", "Jornada"], ["comunidade", "Comunidade"], ["minhas", "Minhas"]].map(([id, label]) => (
+        {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
           <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: filtro === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
             {label}
           </button>
