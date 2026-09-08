@@ -117,6 +117,12 @@ const IcoH = {
       <path d="M12 3.5l2.4 5.4 5.9.6-4.4 4 1.2 5.8L12 16.4 6.9 19.3l1.2-5.8-4.4-4 5.9-.6z" />
     </svg>
   ),
+ whats: (c, s = 18) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.6-4.3A8.5 8.5 0 1 1 20.5 11.6z" />
+      <path d="M9 9.3c0 3 2.4 5.4 5.4 5.4l.9-1.4-1.9-.9-.8.8a4 4 0 0 1-2.1-2.1l.8-.8-.9-1.9z" />
+    </svg>
+  ),
  camera: (c, s = 18) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 8.5h3.4l1.5-2.2h8.2l1.5 2.2H21v10.5H3z" />
@@ -1196,7 +1202,6 @@ export default function App() {
  const [regs, setRegs] = useState({}); // { "2026-07-06": { movimento: {dif:2} } }
  const [kitUsos, setKitUsos] = useState([]); // [{data, acao}]
  const [kitPessoa, setKitPessoa] = useState({ nome: "", fone: "" }); // Pessoa de Referência
- const [fraseFoco, setFraseFoco] = useState(""); // Frase de Retorno ao Foco
  const [bussola, setBussola] = useState(""); // somente leitura (Encontro Individual 1)
  const [perfilAuge, setPerfilAuge] = useState(""); // selo do Questionário de Perfil
  const [desafioTexto, setDesafioTexto] = useState(""); // Desafio da Semana (admin)
@@ -1389,7 +1394,6 @@ export default function App() {
  const salvarKitPessoal = async (campos) => {
  if ("pessoa_nome" in campos || "pessoa_fone" in campos)
  setKitPessoa((k) => ({ nome: campos.pessoa_nome ?? k.nome, fone: campos.pessoa_fone ?? k.fone }));
- if ("frase_foco" in campos) setFraseFoco(campos.frase_foco);
  syncDB("kit_emergencia", campos, { onConflict: "user_id" });
   };
  const toggleDesafio = async () => {
@@ -1769,7 +1773,6 @@ export default function App() {
  setKitMin(kitRes.data.min_viavel || "");
  setKitApoio(kitRes.data.onde_apoio || "");
  setKitPessoa({ nome: kitRes.data.pessoa_nome || "", fone: kitRes.data.pessoa_fone || "" });
- setFraseFoco(kitRes.data.frase_foco || "");
     }
 
  if (ancRes.data && !ancRes.error && ancRes.data.texto) {
@@ -2381,7 +2384,6 @@ export default function App() {
  diasRestantes,
  kitUsos,
  kitPessoa,
- fraseFoco,
  bussola,
  perfilAuge,
  setPerfilAuge,
@@ -10712,121 +10714,136 @@ function Escritas({
 // ─── KIT DE EMERGÊNCIA ────────────────────────────────────────────────────────
 function Emergencia({
  anc,
- kitMin,
- setKitMin,
- kitApoio,
- setKitApoio,
  back,
  tk,
  kitPessoa,
- fraseFoco,
- salvarKitPessoal,
  registrarKitUso,
  metas,
+ pq1,
+ pq2,
+ pq3,
  ir,
 }) {
-  // Kit de Emergência v2 (seção 4.9) — acionamento sempre manual:
-  // só conta como usado quando a aluna ESCOLHE uma ação aqui dentro.
- const [usou, setUsou] = useState(null); // ação escolhida hoje
+  // Kit de Emergencia (secao 10) — leitura guiada de cima a baixo, com UM
+  // ponto de acao no fim. Nao ha mais um botao embaixo de cada bloco: a
+  // aluna le a sequencia inteira e sai por "To indo!" ou pela Pessoa de
+  // Referencia. O acionamento continua manual e so conta quando ela escolhe.
+ const foneLimpo = (kitPessoa?.fone || "").replace(/\D/g, "");
+ const waLink = foneLimpo ? `https://wa.me/${foneLimpo.length <= 11 ? "55" + foneLimpo : foneLimpo}` : null;
+ const porques = [pq1, pq2, pq3].filter(Boolean);
 
- const usar = (acao, msg) => {
- registrarKitUso(acao);
- setUsou(acao);
- tk(msg);
-  };
-
- const Sec = ({ label, children }) => (
-    <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "17px 17px 15px", marginBottom: 13 }}>
-      <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs, marginBottom: 8 }}>{label}</div>
+  // Bloco de conteudo: borda lateral em Blush Escuro
+ const Bloco = ({ titulo, children }) => (
+    <div style={{ borderLeft: `3px solid ${C.blushDk}`, paddingLeft: 14, marginBottom: 22 }}>
+      <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.16em", textTransform: "uppercase", color: C.blushDk, marginBottom: 8 }}>
+        {titulo}
+      </div>
       {children}
     </div>
   );
- const BtnAcao = ({ onClick, children }) => (
-    <button onClick={onClick} style={{ width: "100%", background: "transparent", border: `1.5px solid ${C.blushDk}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.blushDk, cursor: "pointer", marginTop: 12 }}>
-      {children}
-    </button>
-  );
-
- const foneLimpo = (kitPessoa?.fone || "").replace(/\D/g, "");
- const waLink = foneLimpo ? `https://wa.me/${foneLimpo.length <= 11 ? "55" + foneLimpo : foneLimpo}` : null;
 
  return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <div style={{ background: C.creme, padding: "16px 20px 16px", textAlign: "center", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
-        <button onClick={back} style={{ position: "absolute", left: 14, top: 18, background: "none", border: "none", color: C.terra, fontFamily: FB, fontWeight: 400, fontSize: 16, cursor: "pointer" }}>
+      <div style={{ background: C.creme, padding: "14px 18px 12px", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
+        <button onClick={back} style={{ background: "none", border: "none", padding: 0, color: C.terra, fontFamily: FB, fontWeight: 400, fontSize: 16, cursor: "pointer" }}>
           ← Hoje
         </button>
-        <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 500, color: C.blushDk }}>
- Kit de Emergência
-        </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
- Tá difícil agora? Vamos com calma
-        </div>
       </div>
-      <Grain style={{ padding: "18px 20px 36px" }}>
 
-        {/* 1 · Âncora de Identidade — prompt fixo (seção 4.9) */}
-        <Sec label="Sua Âncora de Identidade">
-          <div style={{ display: "inline-block", background: `${C.ouro}45`, borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, marginBottom: 10 }}>
- O que essa mulher faria?
+      <Grain style={{ padding: "18px 20px 40px" }}>
+
+        {/* 1 · frase da marca — igual para todas, nao editavel */}
+        <div style={{ background: C.blush, borderRadius: 14, padding: "20px 18px", marginBottom: 16 }}>
+          <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 21, color: C.obs, lineHeight: 1.35 }}>
+ Motivação se esgota, método não.
           </div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs, lineHeight: 1.5 }}>
- "{anc}"
+        </div>
+
+        {/* 2 · reforco */}
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs2, lineHeight: 1.6, marginBottom: 24 }}>
+ Não negocia com você mesma, vai e pronto. Quando acabar, você vai ver que valeu a pena e se sentir orgulhosa de si mesma.
+        </div>
+
+        {/* 3 · quem voce quer ser */}
+        <Bloco titulo="Quem você quer ser">
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 18, color: C.obs, lineHeight: 1.5 }}>
+            {anc ? `"${anc}"` : "Sua Âncora de Identidade ainda não foi escrita — dá para definir em Perfil e Configurações."}
           </div>
-          {usou === "ancora" ? (
-            <div style={{ fontFamily: FB, fontSize: 16, color: C.ouroTxt, marginTop: 10 }}>✓ Registrado — você agiu.</div>
-          ) : (
-            <BtnAcao onClick={() => usar("ancora", "Você usou sua Âncora ")}>É isso que ela faria — vou fazer</BtnAcao>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontStyle: "italic", fontSize: 17, color: C.lt, marginTop: 10 }}>
+ O que essa mulher faria agora?
+          </div>
+        </Bloco>
+
+        {/* 4 · por que voce comecou — os Porques entram no Kit pela 1a vez */}
+        <Bloco titulo="Por que você começou">
+          {porques.length ? porques.map((t, i) => (
+            <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start", marginBottom: 7 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.blushDk, marginTop: 9, flexShrink: 0 }} />
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs, lineHeight: 1.5 }}>{t}</div>
+            </div>
+          )) : (
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.lt, lineHeight: 1.5 }}>
+ Seus porquês ainda não foram escritos — eles ficam em Meu Mapa, nos Espaços de Escrita.
+            </div>
           )}
-        </Sec>
+        </Bloco>
 
-        {/* 2 · Mínimos Inegociáveis — versão ainda menor que a meta (seção 4.9) */}
-        <Sec label="Seus Mínimos Inegociáveis">
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>
- Se não vai dar pra fazer tudo, vamos de mínimos possíveis.
-          </div>
-          {HABS_FIXOS.some((h) => metas?.[h.id]?.minimo) ? (
-            HABS_FIXOS.filter((h) => metas?.[h.id]?.minimo).map((h) => (
-              <div key={h.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.ouro, marginTop: 8, flexShrink: 0 }} />
-                <div><span style={{ fontFamily: FB, fontSize: 16, color: C.terra }}>{h.nome}: </span><span style={{ fontFamily: FB, fontSize: 16, color: C.obs }}>{metas[h.id].minimo}</span></div>
+        {/* 5 · os 3 minimos, sempre os 3 */}
+        <Bloco titulo="Seus mínimos inegociáveis">
+          {HABS_FIXOS.map((h) => {
+ const col = h.id === "movimento" ? "mov_minimo" : h.id === "sono" ? "sono_minimo" : "tsi_minimo";
+ const txt = metas?.[h.id]?.minimo || "";
+ return (
+              <div key={h.id} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 11 }}>
+                <span style={{ marginTop: 1, flexShrink: 0 }}>{IcoH[h.id](C.terra, 19)}</span>
+                <div>
+                  <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.obs }}>{h.nome}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: txt ? C.obs2 : C.lt, lineHeight: 1.45 }}>
+                    {txt || "ainda não definido"}
+                  </div>
+                </div>
               </div>
-            ))
-          ) : (
-            <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.6 }}>Defina seus mínimos em Meu Mapa → Seus Mínimos Inegociáveis.</div>
-          )}
-          {usou === "minimos" ? (
-            <div style={{ fontFamily: FB, fontSize: 16, color: C.ouroTxt, marginTop: 10 }}>✓ Registrado — mínimo é suficiente.</div>
-          ) : (
-            <BtnAcao onClick={() => usar("minimos", "Hoje vale o mínimo. E conta inteiro ")}>Fiz o mínimo</BtnAcao>
-          )}
-        </Sec>
+            );
+          })}
+        </Bloco>
 
-        {/* 3 · Pessoa de Referência — rede pessoal, via WhatsApp (seção 4.9) */}
-        <Sec label="Sua Pessoa de Referência">
-          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-            <div style={{ width: 38, height: 38, borderRadius: "50%", background: `${C.ouro}45`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs2, flexShrink: 0 }}>
-              {(kitPessoa?.nome || "?").slice(0, 1).toUpperCase()}
-            </div>
-            <div style={{ flex: 1, fontFamily: FB, fontSize: 17, color: C.obs }}>
-              {kitPessoa?.nome || "Ninguém cadastrada ainda — ajuste nas Configurações"}
-            </div>
+        {/* 6 · reforco com pontinhos ilustrativos */}
+        <div style={{ background: C.linho, borderRadius: 14, padding: "16px 17px", marginBottom: 22 }}>
+          <div style={{ display: "flex", gap: 7, marginBottom: 10 }}>
+            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} style={{ width: 13, height: 13, borderRadius: "50%", background: i < 4 ? C.oliva : "transparent", border: `1.5px solid ${i < 4 ? C.oliva : C.ouro + "8C"}` }} />
+            ))}
           </div>
-          {waLink && (
-            <button onClick={() => { usar("pessoa", "Falar ajuda. Sempre."); window.open(waLink, "_blank"); }}
- style={{ width: "100%", background: C.blushDk, border: "none", borderRadius: 10, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.creme, cursor: "pointer", marginTop: 12 }}>
- Chamar no WhatsApp
-            </button>
-          )}
-        </Sec>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs2, lineHeight: 1.5 }}>
+ Cada mínimo que você faz é mais um dia marcado. É assim que a confiança cresce.
+          </div>
+        </div>
 
-        {/* 4 · Protocolo de Retomada — saiu da tela Hoje e passou a morar aqui */}
-        <Sec label="Ficou mais de um dia sem marcar?">
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.55 }}>
- O Protocolo de Retomada é para voltar sem recomeçar do zero.
+        {/* 7 · pico emocional — unico texto em caixa alta do app, de proposito */}
+        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 26, letterSpacing: "0.06em", color: C.blushDk, textAlign: "center", margin: "6px 0 20px" }}>
+ VAI, MULHER.
+        </div>
+
+        {/* 8 · acao principal */}
+        <button
+ onClick={() => { registrarKitUso("minimos"); tk("Hoje vale o mínimo. E conta inteiro"); ir(S.HOME); }}
+ style={{ width: "100%", background: C.blushDk, border: "none", borderRadius: 14, padding: "15px", fontFamily: FB, fontWeight: 600, fontSize: 18, color: C.creme, cursor: "pointer" }}>
+ Tô indo!
+        </button>
+
+        {/* 9 · pessoa de referencia — direto no WhatsApp, sem passar pela mentora */}
+        {waLink ? (
+          <button
+ onClick={() => { registrarKitUso("pessoa"); window.open(waLink, "_blank"); }}
+ style={{ width: "100%", marginTop: 10, background: "transparent", border: `1.5px solid ${C.blushDk}`, borderRadius: 14, padding: "14px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.blushDk, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
+            {IcoH.whats(C.blushDk)}
+ Chamar {(kitPessoa?.nome || "").split(" ")[0] || "sua pessoa"}
+          </button>
+        ) : (
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
+ Cadastre sua Pessoa de Referência em Perfil e Configurações para chamá-la daqui.
           </div>
-          <BtnAcao onClick={() => ir(S.RET)}>Abrir o Protocolo de Retomada</BtnAcao>
-        </Sec>
+        )}
 
       </Grain>
     </div>
@@ -12307,7 +12324,6 @@ function Perfil({
  salvarMeta,
  salvarMinimo,
  kitPessoa,
- fraseFoco,
  salvarKitPessoal,
  notifStatus,
  setNotifStatus,
@@ -12323,8 +12339,6 @@ function Perfil({
  const [editPessoaC, setEditPessoaC] = useState(false);
  const [pnC, setPnC] = useState(kitPessoa?.nome || "");
  const [pfC, setPfC] = useState(kitPessoa?.fone || "");
- const [editFraseC, setEditFraseC] = useState(false);
- const [ffC, setFfC] = useState(fraseFoco || "");
  const [senhaNova, setSenhaNova] = useState("");
  const [senhaMsg, setSenhaMsg] = useState(null);
  const [salvandoSenha, setSalvandoSenha] = useState(false);
@@ -12806,26 +12820,6 @@ function Perfil({
               <input value={pfC} onChange={(e) => setPfC(e.target.value)} placeholder="WhatsApp com DDD"
  style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 7 }} />
               <button onClick={() => { salvarKitPessoal({ pessoa_nome: pnC.trim(), pessoa_fone: pfC.trim() }); setEditPessoaC(false); tk("Pessoa de Referência salva "); }}
- style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
-            </div>
-          )}
-        </div>
-
-        {/* Frase de Retorno ao Foco (Kit de Emergência) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 6 }}> Frase de Retorno ao Foco (Kit de Emergência)</div>
-          {!editFraseC ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: fraseFoco ? C.obs : C.lt, lineHeight: 1.5 }}>
-                {fraseFoco ? `"${fraseFoco}"` : "Ainda não definida"}
-              </div>
-              <button onClick={() => { setFfC(fraseFoco || ""); setEditFraseC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
-            </div>
-          ) : (
-            <div>
-              <textarea value={ffC} onChange={(e) => setFfC(e.target.value)}
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, resize: "none", height: 60, marginBottom: 7 }} />
-              <button onClick={() => { salvarKitPessoal({ frase_foco: ffC.trim() }); setEditFraseC(false); tk("Frase salva "); }}
  style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             </div>
           )}
