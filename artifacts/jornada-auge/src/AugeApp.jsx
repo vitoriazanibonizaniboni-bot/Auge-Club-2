@@ -11526,10 +11526,12 @@ function PainelMentora({ ir }) {
  const [loadingA, setLoadingA] = useState(false);
  const [pendentes, setPendentes] = useState([]);
  const [alunaSel, setAlunaSel] = useState(null);
+ const [habAlunaSel, setHabAlunaSel] = useState(null); // painel de um habito da aluna (secao 11)
  const [edA, setEdA] = useState(null); // formulario: mentora preenche dados da aluna
  const [salvandoAluna, setSalvandoAluna] = useState(false);
  const [salvoAluna, setSalvoAluna] = useState(false);
  useEffect(() => {
+ setHabAlunaSel(null);
  if (!alunaSel) { setEdA(null); return; }
  const mv = alunaSel.metas || {};
  setEdA({ ancora: "", p1: "", p2: "", p3: "",
@@ -11648,16 +11650,24 @@ function PainelMentora({ ir }) {
  if (!ultimoCk[ck.user_id]) ultimoCk[ck.user_id] = ck;
         }
         // Jornada v2: registros, usos do Kit, metas e progressão (seção 10)
- const [regsR, kitR, metasR, histR, rodaAdminR, perfisAugeR] = await Promise.all([
+ const [regsR, kitR, metasR, histR, rodaAdminR, perfisAugeR, pessoaisR] = await Promise.all([
  supabase.rpc("get_registros_admin"),
  supabase.rpc("get_kit_usos_admin"),
  supabase.rpc("get_metas_admin"),
  supabase.rpc("get_metas_hist_admin"),
  supabase.rpc("get_roda_admin"),
  supabase.rpc("admin_get_perfis_auge"),
+ supabase.rpc("get_habitos_pessoais_admin"),
         ]);
  const perfilPor = {};
  for (const r of (perfisAugeR.data || [])) perfilPor[r.user_id] = r.perfil_auge || "";
+        // Habitos criados pelas alunas. Se a migracao 010 ainda nao foi rodada,
+        // a chamada falha e o painel segue mostrando so os 3 angulares.
+ const pessoaisPor = {};
+ for (const hp of (pessoaisR?.data || [])) {
+ if (!pessoaisPor[hp.user_id]) pessoaisPor[hp.user_id] = [];
+ pessoaisPor[hp.user_id].push(hp);
+        }
  const regsPor = {}, kitPor = {}, metasPor = {}, histPor = {};
  for (const r of (regsR.data || [])) {
  if (!regsPor[r.user_id]) regsPor[r.user_id] = {};
@@ -11722,7 +11732,7 @@ function PainelMentora({ ir }) {
         };
  const ultimaAtivPor = {};
  for (const uid of Object.keys(regsPor)) { const ds = Object.keys(regsPor[uid]); if (ds.length) ultimaAtivPor[uid] = ds.reduce((x, y) => (x > y ? x : y)); }
- setAlunas(perfis.map((p) => ({ ...p, perfil_auge: perfilPor[p.id] || "", ultimoCk: ultimoCk[p.id] || null, ultimaAtiv: [ultimaAtivPor[p.id], ultimoCk[p.id]?.data].filter(Boolean).sort().pop() || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [] })));
+ setAlunas(perfis.map((p) => ({ ...p, perfil_auge: perfilPor[p.id] || "", ultimoCk: ultimoCk[p.id] || null, ultimaAtiv: [ultimaAtivPor[p.id], ultimoCk[p.id]?.data].filter(Boolean).sort().pop() || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [], regs: regsPor[p.id] || {}, pessoais: pessoaisPor[p.id] || [] })));
  setLoadingA(false);
       });
   }, [aba]);
@@ -12044,6 +12054,29 @@ function PainelMentora({ ir }) {
               const PERFIS_OPTS = Object.entries(PERFIS).map(([k, v]) => [k, v.nome]);
               return (
                 <div onClick={() => setAlunaSel(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.55)", display: "flex", alignItems: "flex-end" }}>
+                  {/* painel de um habito da aluna — o MESMO componente que ela ve */}
+                  {habAlunaSel && (
+                    <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 520 }}>
+                      <PainelHabito
+ h={habAlunaSel}
+ onFechar={() => setHabAlunaSel(null)}
+ regs={alunaSel.regs || {}}
+ anc={edA?.ancora || ""}
+ metaTexto={
+ habAlunaSel.pessoal
+                            ? (habAlunaSel.metaTexto || `${habAlunaSel.meta || 3}x`)
+                            : (() => {
+ const mvv = alunaSel.metas || {};
+ const col = habAlunaSel.id === "movimento" ? ["mov_desc", "mov_freq", 3]
+                                : habAlunaSel.id === "sono" ? ["sono_desc", "sono_freq", 7]
+                                : ["tsi_desc", "tsi_freq", 3];
+ const freq = mvv[col[1]] ?? col[2];
+ return mvv[col[0]] ? `${mvv[col[0]]} ${freq}x` : `${freq}x`;
+                              })()
+                        }
+                      />
+                    </div>
+                  )}
                   <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxHeight: "88%", overflowY: "auto", background: C.creme, borderRadius: "20px 20px 0 0", padding: "20px 20px 34px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div style={{ fontFamily: FS, fontWeight: 500, fontSize: 21, color: C.ouroTxt }}>{alunaSel.nome || "Aluna"}</div>
@@ -12084,6 +12117,47 @@ function PainelMentora({ ir }) {
                         </button>
                       </div>
                     )}
+
+                    {/* Trajetoria da aluna (secao 11) — mesma leitura que ela ve, so leitura */}
+                    <div style={tb}>Trajetória</div>
+                    {(() => {
+ const hojeStr = localDateStr();
+ const [aa, mm] = hojeStr.split("-");
+ const prefixo = `${aa}-${mm}`;
+ const regsA = alunaSel.regs || {};
+ const nomeMes = new Date(hojeStr + "T12:00:00").toLocaleString("pt-BR", { month: "long" });
+ const diasFeitos = (hid) => Object.keys(regsA).filter((d) => d.startsWith(prefixo) && regsA[d]?.[hid]).length;
+                      // Semana da Jornada da aluna — mesma conta do app: semanas
+                      // inteiras entre a segunda de hoje e a segunda do inicio da
+                      // turma (ou, sem isso, a data de cadastro dela).
+ const iniA = ment.inicio || (alunaSel.data_cadastro ? localDateStr(alunaSel.data_cadastro) : null);
+ const semA = iniA
+                        ? Math.min(12, Math.max(1, Math.floor(
+                            (new Date(mondayOf(hojeStr)) - new Date(mondayOf(String(iniA).slice(0, 10)))) / (7 * 24 * 60 * 60 * 1000),
+                          ) + 1))
+                        : 1;
+ const linhasA = [
+                        ...HABS_FIXOS.map((h) => ({ id: h.id, nome: h.nome, unlock: h.unlock, pessoal: false, bloqueado: semA < h.unlock, dias: diasFeitos(h.id) })),
+                        ...(alunaSel.pessoais || []).map((hp) => ({ id: hp.id, nome: hp.nome, pessoal: true, bloqueado: false, meta: hp.meta, metaTexto: hp.meta_texto, dias: diasFeitos(hp.id) })),
+                      ];
+ return (
+                        <>
+                          {linhasA.map((h) => (
+                            <button key={h.id} onClick={() => !h.bloqueado && setHabAlunaSel(h)}
+ style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, background: "rgba(28,26,23,.04)", border: `1px solid ${C.ouro}20`, borderRadius: 10, padding: "11px 12px", marginBottom: 7, cursor: h.bloqueado ? "default" : "pointer", textAlign: "left" }}>
+                              <span style={{ flex: 1, fontFamily: FB, fontWeight: 500, fontSize: 14.5, color: h.bloqueado ? C.lt : C.obs }}>{h.nome}</span>
+                              <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: h.bloqueado ? C.lt : C.ouroTxt }}>
+                                {h.bloqueado ? `desbloqueia S${h.unlock}` : `${h.dias} ${h.dias === 1 ? "dia" : "dias"} em ${nomeMes}`}
+                              </span>
+                              {!h.bloqueado && <span style={{ fontFamily: FB, fontSize: 15, color: C.ouroDk }}>›</span>}
+                            </button>
+                          ))}
+                          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, marginTop: 2, lineHeight: 1.5 }}>
+ Toque num hábito para ver o calendário do mês dela. Só leitura — nada daqui muda o app da aluna.
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     <div style={tb}>Perfil AUGE</div>
                     <div style={pt}>{perfis.length ? perfis.join(" · ") : "Ainda não respondeu"}</div>
