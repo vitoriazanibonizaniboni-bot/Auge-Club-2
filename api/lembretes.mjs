@@ -66,8 +66,10 @@ function textoLembrete({ nome, pessoal, seq }) {
     return `${seq} dias seguidos de ${nome}. Hoje pode ser mais um.`;
   }
   if (pessoal) {
-    // Sem artigo e sem particípio: "marcar" serve para qualquer nome.
-    return `Ainda dá tempo de marcar ${nome} hoje.`;
+    // Nome na frente: a notificacao fechada corta o fim, e o nome e a unica
+    // parte que muda de aluna para aluna. Sem artigo e sem particípio, porque
+    // o nome e livre e "Sua Alongamento" ou "Agua marcado" sairiam errados.
+    return `${nome}: ainda dá tempo hoje.`;
   }
   return `Seu ${nome} ainda não foi hoje. Ainda dá tempo, mesmo que seja o mínimo.`;
 }

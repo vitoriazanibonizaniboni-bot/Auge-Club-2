@@ -4660,7 +4660,9 @@ function NovoHabito({ onCriar, onCancelar }) {
       <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 10 }}>Novo hábito meu</div>
 
       <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, marginBottom: 5 }}>Como você chama esse hábito?</div>
-      <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="ex: Água" maxLength={40} style={{ ...inputStyle, marginBottom: 12 }} />
+      {/* 25 caracteres: o nome entra no texto do lembrete das 19h, e nome
+          comprido faz a notificacao ser cortada pelo celular */}
+      <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="ex: Água" maxLength={25} style={{ ...inputStyle, marginBottom: 12 }} />
 
       <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, marginBottom: 5 }}>Qual é a meta? (opcional)</div>
       <input value={metaTexto} onChange={(e) => setMetaTexto(e.target.value)} placeholder="ex: 2 litros por dia" maxLength={60} style={{ ...inputStyle, marginBottom: 12 }} />
