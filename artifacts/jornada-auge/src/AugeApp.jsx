@@ -1163,7 +1163,6 @@ export default function App() {
  "auge_anc",
  "Eu sou a mulher que volta.",
   );
- const [kitMin, setKitMin] = useLocalStorage("auge_kitMin", "");
  const [kitApoio, setKitApoio] = useLocalStorage("auge_kitApoio", "");
  const [escT, setEscT] = useState("ancora");
  const [vit, setVit] = useLocalStorage("auge_vit", []);
@@ -1548,7 +1547,6 @@ export default function App() {
  setVit([]);
  setCarta(null);
  setAnc("Eu sou a mulher que volta.");
- setKitMin("");
  setKitApoio("");
  setHabAngulares([]);
  setPq1("");
@@ -1768,7 +1766,6 @@ export default function App() {
     }
 
  if (kitRes.data && !kitRes.error) {
- setKitMin(kitRes.data.min_viavel || "");
  setKitApoio(kitRes.data.onde_apoio || "");
  setKitPessoa({ nome: kitRes.data.pessoa_nome || "", fone: kitRes.data.pessoa_fone || "" });
     }
@@ -1960,7 +1957,6 @@ export default function App() {
  setVit([]);
  setCarta(null);
  setAnc("Eu sou a mulher que volta.");
- setKitMin("");
  setKitApoio("");
  setHabAngulares([]);
  setPq1("");
@@ -2323,8 +2319,6 @@ export default function App() {
  setSelM,
  anc,
  setAnc,
- kitMin,
- setKitMin,
  kitApoio,
  setKitApoio,
  escT,
@@ -4958,8 +4952,8 @@ function Home({
         <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 600, color: C.obs, letterSpacing: "-0.01em" }}>
  Hoje
         </div>
-        <div style={{ marginTop: 4, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textTransform: "capitalize" }}>
-          {dataLonga(TODAY)} · <span style={{ textTransform: "none" }}>Semana {sem} de 12</span>
+        <div style={{ marginTop: 4, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>
+          {dataLonga(TODAY)} · Semana {sem} de 12
         </div>
       </div>
       {retroAberto && (
@@ -12261,14 +12255,10 @@ function Perfil({
  notifStatus,
  setNotifStatus,
  tk,
- kitMin,
- setKitMin,
 }) {
   // ── Configurações (seção 9): fonte única de dados, múltiplos pontos de entrada ──
  const [editAnc, setEditAnc] = useState(false);
  const [ancE, setAncE] = useState(anc);
- const [editMinC, setEditMinC] = useState(false);
- const [tmC, setTmC] = useState("");
  const [editPessoaC, setEditPessoaC] = useState(false);
  const [pnC, setPnC] = useState(kitPessoa?.nome || "");
  const [pfC, setPfC] = useState(kitPessoa?.fone || "");
@@ -12714,27 +12704,6 @@ function Perfil({
 
         {/* Objetivos dos hábitos (Mínimos Inegociáveis) — mesma fonte da Hoje e do Meu Mapa */}
         <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
-
-        {/* Mínimo de emergência (Kit) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 6 }}>Mínimos Inegociáveis do Kit de Emergência</div>
-          {!editMinC ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, fontFamily: FB, fontSize: 16, color: kitMin ? C.obs : C.lt, lineHeight: 1.5 }}>
-                {kitMin || "Ainda não definido (ex: caminhar 10 minutos, não 30)"}
-              </div>
-              <button onClick={() => { setTmC(kitMin || ""); setEditMinC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: C.ouroTxt, cursor: "pointer" }}>Editar</button>
-            </div>
-          ) : (
-            <div>
-              <textarea value={tmC} onChange={(e) => setTmC(e.target.value)}
-                placeholder="ex: caminhar 10 minutos, não 30"
-                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
-              <button onClick={() => { setKitMin(tmC); syncDB("kit_emergencia", { min_viavel: tmC }, { onConflict: "user_id" }); setEditMinC(false); tk("Mínimo do Kit salvo"); }}
-                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
-            </div>
-          )}
-        </div>
 
         {/* Pessoa de Referência (Kit de Emergência) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
