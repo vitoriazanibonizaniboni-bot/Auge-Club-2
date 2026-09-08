@@ -112,6 +112,11 @@ const IcoH = {
       <path d="M12 20.5s-7.5-4.8-9.3-9A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.3 5c-1.8 4.3-9.3 9-9.3 9.1z" />
     </svg>
   ),
+ meu: (c, s = 20) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinejoin="round">
+      <path d="M12 3.5l2.4 5.4 5.9.6-4.4 4 1.2 5.8L12 16.4 6.9 19.3l1.2-5.8-4.4-4 5.9-.6z" />
+    </svg>
+  ),
  kit: (c, s = 18) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="7.5" width="18" height="12.5" rx="2.5" />
@@ -1191,6 +1196,7 @@ export default function App() {
  const [desafioTexto, setDesafioTexto] = useState(""); // Desafio da Semana (admin)
  const [guias, setGuias] = useState({}); // URLs dos guias HTML (Supabase Storage)
  const [desafioFeitos, setDesafioFeitos] = useState([]); // datas do mini check-in
+ const [habsPessoais, setHabsPessoais] = useState([]); // hábitos criados pela aluna
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config)
  const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
@@ -1260,6 +1266,23 @@ export default function App() {
  const sugerirReduzir = !bloqueado && s1.predom === 5 && s2.predom === 5;
  habStats[h.id] = { meta, descMeta, feitas, predom, zona, bloqueado, sugerirSubir, sugerirReduzir };
   }
+ // ── Meus hábitos (criados pela aluna) — mesma conta da semana ─────────────
+ const habsPessStats = {};
+ for (const hp of habsPessoais) {
+ const meta = hp.meta || 3;
+ const feitas = diasDaSemana.filter((d) => regs[d]?.[hp.id]).length;
+ habsPessStats[hp.id] = {
+ meta,
+ descMeta: hp.meta_texto || "",
+ feitas,
+ predom: null,
+ zona: zonaDe(meta, feitas, diasRestantes),
+ bloqueado: false,
+ sugerirSubir: false,
+ sugerirReduzir: false,
+    };
+  }
+
  const habsAlerta = HABS_FIXOS.filter(
     (h) => !habStats[h.id].bloqueado && habStats[h.id].feitas < habStats[h.id].meta &&
       (habStats[h.id].zona === "ajuste" || habStats[h.id].zona === "atencao"),
@@ -1288,6 +1311,39 @@ export default function App() {
       .eq("user_id", session.user.id).eq("habito", habId).eq("data", dataStr)
       .then(() => {});
   };
+ // ── Meus hábitos: criar, editar meta, remover ──────────────────────────────
+ const criarHabPessoal = async (nome, metaTexto, freq) => {
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return;
+ const { data, error } = await supabase.from("habitos_pessoais").insert({
+ user_id: session.user.id,
+ nome: nome.trim(),
+ meta: freq,
+ meta_texto: (metaTexto || "").trim() || null,
+ ordem: habsPessoais.length,
+    }).select().single();
+ if (error || !data) { tk("Não consegui salvar. Tente de novo."); return; }
+ setHabsPessoais((l) => [...l, data]);
+ tk("Hábito criado ");
+  };
+ const salvarMetaPessoal = async (habId, freq, metaTexto) => {
+ setHabsPessoais((l) => l.map((h) => (h.id === habId ? { ...h, meta: freq, meta_texto: metaTexto || null } : h)));
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return;
+ supabase.from("habitos_pessoais")
+      .update({ meta: freq, meta_texto: (metaTexto || "").trim() || null })
+      .eq("id", habId).eq("user_id", session.user.id).then(() => {});
+  };
+ const removerHabPessoal = async (habId) => {
+ setHabsPessoais((l) => l.filter((h) => h.id !== habId));
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return;
+    // ativo=false em vez de apagar: as marcações já feitas continuam valendo
+ supabase.from("habitos_pessoais").update({ ativo: false })
+      .eq("id", habId).eq("user_id", session.user.id).then(() => {});
+ tk("Hábito removido da lista");
+  };
+
  const salvarMeta = async (habId, freq, desc) => {
  const antiga = metas?.[habId]?.freq ?? HABS_FIXOS.find((h) => h.id === habId).freqDef;
  setMetas((m) => ({ ...m, [habId]: { ...(m[habId] || {}), freq, desc } }));
@@ -1501,6 +1557,7 @@ export default function App() {
  regsRes,
  kitUsosRes,
  desafioRes,
+ habsPessRes,
     ] = await Promise.all([
  supabase.from("profiles").select("*").eq("id", userId).single(),
  supabase.from("checkins").select("*").eq("user_id", userId),
@@ -1520,6 +1577,7 @@ export default function App() {
  supabase.from("registros").select("*").eq("user_id", userId),
  supabase.from("kit_usos").select("*").eq("user_id", userId),
  supabase.from("desafio_registros").select("*").eq("user_id", userId),
+ supabase.from("habitos_pessoais").select("*").eq("user_id", userId).eq("ativo", true).order("ordem"),
     ]);
 
     // ── Jornada v2: metas, registros, kit, desafio ──────────────────────────
@@ -1562,6 +1620,7 @@ export default function App() {
     } else setRegs({});
  setKitUsos(kitUsosRes?.data?.map((k) => ({ data: k.data, acao: k.acao })) || []);
  setDesafioFeitos(desafioRes?.data?.map((d) => d.data) || []);
+ setHabsPessoais(habsPessRes?.data || []);
 
     // habitos_angulares tem prioridade sobre profiles.habito_1/2/3
  if (habsAngRes?.data) {
@@ -2295,6 +2354,11 @@ export default function App() {
  metas,
  regs,
  habStats,
+ habsPessoais,
+ habsPessStats,
+ criarHabPessoal,
+ salvarMetaPessoal,
+ removerHabPessoal,
  habsAlerta,
  diasDaSemana,
  segundaAtual,
@@ -4380,7 +4444,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
 // ═══════════════════════════════════════════════════════════════════
 
 // Card de um hábito angular
-function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso }) {
+function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onRemover }) {
  const [editando, setEditando] = useState(false);
  const [freqEdit, setFreqEdit] = useState(st.meta);
  const [descEdit, setDescEdit] = useState(st.descMeta);
@@ -4418,7 +4482,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
     <div style={{ background: C.linho, borderRadius: 14, padding: "14px 15px 13px", marginBottom: 11 }}>
       {/* linha 1: ícone + nome + círculo de check (um toque marca, outro desmarca) */}
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        {IcoH[h.id](C.terra)}
+        {(IcoH[h.id] || IcoH.meu)(C.terra)}
         <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>{h.nome}</div>
         <button
  onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : registrarHabito(h.id, dataAlvo, null))}
@@ -4432,7 +4496,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {!editando ? (
         <div onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
  style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "5px 0 10px", cursor: "pointer", lineHeight: 1.45 }}>
-          Meta: {st.descMeta ? `${st.descMeta}, ` : ""}{st.meta}x na semana{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
+          Meta: {h.pessoal && st.descMeta ? st.descMeta : `${st.descMeta ? `${st.descMeta}, ` : ""}${st.meta}x na semana`}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
         </div>
       ) : (
         <div style={{ background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
@@ -4449,6 +4513,11 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
             <button onClick={salvarEdicao} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 17, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             <button onClick={() => setEditando(false)} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 17, color: C.terra, cursor: "pointer" }}>Cancelar</button>
           </div>
+          {onRemover && (
+            <button onClick={onRemover} style={{ width: "100%", background: "none", border: "none", marginTop: 10, padding: 0, fontFamily: FB, fontSize: 16, color: C.terra, textDecoration: "underline", cursor: "pointer" }}>
+ Tirar esse hábito da minha lista
+            </button>
+          )}
         </div>
       )}
 
@@ -4524,6 +4593,40 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 2 }}>Você cuidou de você hoje.</div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// "Meus hábitos" — formulário de criação, dentro da própria tela Hoje
+function NovoHabito({ onCriar, onCancelar }) {
+ const [nome, setNome] = useState("");
+ const [metaTexto, setMetaTexto] = useState("");
+ const [freq, setFreq] = useState(3);
+ const inputStyle = { width: "100%", background: C.creme, border: `1px solid ${C.ouro}59`, borderRadius: 8, padding: "10px 12px", fontFamily: FB, fontSize: 16, color: C.obs };
+ return (
+    <div style={{ background: C.linho, borderRadius: 14, padding: "15px 15px 14px", marginBottom: 11 }}>
+      <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 10 }}>Novo hábito meu</div>
+
+      <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, marginBottom: 5 }}>Como você chama esse hábito?</div>
+      <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="ex: Água" maxLength={40} style={{ ...inputStyle, marginBottom: 12 }} />
+
+      <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, marginBottom: 5 }}>Qual é a meta? (opcional)</div>
+      <input value={metaTexto} onChange={(e) => setMetaTexto(e.target.value)} placeholder="ex: 2 litros por dia" maxLength={60} style={{ ...inputStyle, marginBottom: 12 }} />
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ fontFamily: FB, fontSize: 16, color: C.lt }}>Quantos dias por semana:</span>
+        <button onClick={() => setFreq((f) => Math.max(1, f - 1))} style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 18 }}>−</button>
+        <span style={{ fontFamily: FB, fontSize: 18, color: C.obs, minWidth: 18, textAlign: "center" }}>{freq}</span>
+        <button onClick={() => setFreq((f) => Math.min(7, f + 1))} style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 18 }}>+</button>
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button disabled={!nome.trim()} onClick={() => onCriar(nome, metaTexto, freq)}
+ style={{ flex: 1, background: nome.trim() ? C.ouroAcao : `${C.ouro}55`, border: "none", borderRadius: 20, padding: "10px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.creme, cursor: nome.trim() ? "pointer" : "default" }}>
+ Criar hábito
+        </button>
+        <button onClick={onCancelar} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "10px", fontFamily: FB, fontSize: 17, color: C.terra, cursor: "pointer" }}>Cancelar</button>
+      </div>
     </div>
   );
 }
@@ -4693,6 +4796,11 @@ function Home({
   // ── Jornada v2 ──
  regs,
  habStats,
+ habsPessoais,
+ habsPessStats,
+ criarHabPessoal,
+ salvarMetaPessoal,
+ removerHabPessoal,
  habsAlerta,
  diasDaSemana,
  segundaAtual,
@@ -4706,6 +4814,7 @@ function Home({
 }) {
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
+ const [criandoHab, setCriandoHab] = useState(false);
  const ONTEM = addDaysStr(TODAY, -1);
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
@@ -5061,9 +5170,48 @@ function Home({
  irProgresso={() => ir(S.TRAJ)}
               />
             ))}
+
+            {/* Meus hábitos — criados pela aluna (seção 5) */}
+            <div
+ style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", margin: "20px 0 10px" }}
+            >
+ Meus hábitos
+            </div>
+            {habsPessoais.map((hp) => (
+              <HabCard
+ key={hp.id}
+ h={{ id: hp.id, nome: hp.nome, pessoal: true }}
+ st={habsPessStats[hp.id]}
+ regAlvo={regs[TODAY]?.[hp.id]}
+ dataAlvo={TODAY}
+ registrarHabito={registrarHabito}
+ desregistrarHabito={desregistrarHabito}
+ salvarMeta={(id, freq, desc) => salvarMetaPessoal(id, freq, desc)}
+ segundaAtual={segundaAtual}
+ tk={tk}
+ regs={regs}
+ diasDaSemana={diasDaSemana}
+ irProgresso={() => ir(S.TRAJ)}
+ onRemover={() => removerHabPessoal(hp.id)}
+              />
+            ))}
+            {criandoHab ? (
+              <NovoHabito
+ onCriar={(nome, metaTexto, freq) => { criarHabPessoal(nome, metaTexto, freq); setCriandoHab(false); }}
+ onCancelar={() => setCriandoHab(false)}
+              />
+            ) : (
+              <button
+ onClick={() => setCriandoHab(true)}
+ style={{ width: "100%", background: "none", border: `1.5px dashed ${C.ouro}B3`, borderRadius: 14, padding: "13px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, cursor: "pointer", marginBottom: 11 }}
+              >
+ + Criar um hábito meu
+              </button>
+            )}
+
             <button
  onClick={() => setRetroAberto(true)}
- style={{ width: "100%", background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, cursor: "pointer", marginBottom: 16, lineHeight: 1.5 }}
+ style={{ width: "100%", background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, cursor: "pointer", margin: "16px 0", lineHeight: 1.5 }}
             >
               <div>Esqueceu de um dia?</div>
               <div style={{ marginTop: 6, textDecoration: "underline" }}>Preencha dias anteriores</div>

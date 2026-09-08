@@ -16,7 +16,8 @@ create table if not exists habitos_pessoais (
   user_id uuid references auth.users on delete cascade not null,
   nome text not null,
   icone text,
-  meta int,                                  -- vezes por semana; null = sem meta
+  meta int default 3,                        -- vezes por semana; move os pontinhos e a zona
+  meta_texto text,                           -- meta escrita pela aluna, ex: "2 litros por dia"
   ordem int default 0,
   ativo boolean default true,
   created_at timestamptz default now()
@@ -37,3 +38,6 @@ begin
     execute 'create policy "own habitos_pessoais" on habitos_pessoais for all using (auth.uid()=user_id)';
   end if;
 end $$;
+
+-- Se a tabela ja foi criada sem a coluna de texto, esta linha a adiciona.
+alter table habitos_pessoais add column if not exists meta_texto text;
