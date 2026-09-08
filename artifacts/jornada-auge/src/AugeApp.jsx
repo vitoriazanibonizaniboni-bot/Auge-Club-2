@@ -5253,18 +5253,18 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       {avisoAcao && (
-        <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 14, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
+        <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 16, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
       )}
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", borderBottom: `1px solid ${C.ouro}20` }}>
-        <div style={{ fontFamily: FS, fontSize: 21, fontWeight: 400, color: C.ouroTxt }}>Mural do 1%</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
+        <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 400, color: C.ouroTxt }}>Mural do 1%</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
  Cada vitória pequena conta
         </div>
       </div>
       {/* Filtro Todas / Minhas */}
       <div style={{ background: C.creme, padding: "0 16px 12px", display: "flex", gap: 8, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["jornada", "Jornada"], ["comunidade", "Comunidade"], ["minhas", "Minhas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: filtro === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: filtro === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
             {label}
           </button>
         ))}
@@ -5347,7 +5347,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
           <div style={{ flex: 1 }}>
             <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 17,
  fontWeight: 400,
  color: `rgba(28,26,23,.97)`,
@@ -5359,7 +5359,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.92)`,
  marginTop: 3,
               }}
@@ -5376,7 +5376,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  borderRadius: 10,
  background: C.ouro,
  color: C.obs,
- fontSize: 14.5,
+ fontSize: 16,
  fontWeight: 500,
  fontFamily: FB,
  display: "flex",
@@ -5403,7 +5403,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
           >
             <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 20,
  fontWeight: 300,
  color: `rgba(28,26,23,.92)`,
@@ -5475,11 +5475,11 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
               <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", padding: "16px 16px 2px" }}>
                 <div style={{ borderLeft: `3px solid ${C.ouro}`, background: `${C.ouro}12`, borderRadius: "0 10px 10px 0", padding: "12px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
                   <div>
-                    <div style={{ fontFamily: FS, fontWeight: 500, fontSize: 19, color: C.ouroTxt, lineHeight: 1.2 }}>{p.tit}</div>
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 18, color: C.ouroTxt, lineHeight: 1.2 }}>{p.tit}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
                   </div>
                   {!p.publica && (
-                    <span style={{ flexShrink: 0, background: `${C.ouro}22`, borderRadius: 20, padding: "3px 9px", fontFamily: FB, fontSize: 12, color: C.ouroTxt, whiteSpace: "nowrap" }}>Só você</span>
+                    <span style={{ flexShrink: 0, background: `${C.ouro}22`, borderRadius: 20, padding: "3px 9px", fontFamily: FB, fontSize: 13, color: C.ouroTxt, whiteSpace: "nowrap" }}>Só você</span>
                   )}
                 </div>
               </div>
@@ -5504,7 +5504,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   >
                     {p.aut}
                   </div>
-                  <span style={{ background: p.source === "comunidade" ? `${C.blush}45` : `${C.ouro}35`, borderRadius: 12, padding: "2px 9px", fontFamily: FB, fontWeight: 400, fontSize: 11.5, letterSpacing: "0.12em", textTransform: "uppercase", color: C.obs2 }}>
+                  <span style={{ background: p.source === "comunidade" ? `${C.blush}45` : `${C.ouro}35`, borderRadius: 12, padding: "2px 9px", fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: C.obs2 }}>
                     {p.source === "comunidade" ? "Comunidade" : "Jornada"}
                   </span>
                   {(p.userId !== authUserId && p.aut !== "Você") && (
@@ -5512,8 +5512,8 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       <button onClick={(e) => { e.stopPropagation(); setMenuPost(menuPost === p.id ? null : p.id); }} aria-label="Mais opções" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "rgba(28,26,23,.55)", padding: "0 4px", lineHeight: 1 }}>⋯</button>
                       {menuPost === p.id && (
                         <div style={{ position: "absolute", right: 0, top: 26, zIndex: 30, background: C.creme, border: `1px solid ${C.ouro}33`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.18)", overflow: "hidden", minWidth: 190 }}>
-                          <button onClick={() => denunciarPost(p)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "11px 14px", fontFamily: FB, fontSize: 14.5, color: C.obs2, cursor: "pointer" }}>Denunciar publicação</button>
-                          <button onClick={() => bloquearAutor(p)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C.ouro}18`, padding: "11px 14px", fontFamily: FB, fontSize: 14.5, color: C.atencao, cursor: "pointer" }}>Bloquear {p.aut ? p.aut.split(" ")[0] : "pessoa"}</button>
+                          <button onClick={() => denunciarPost(p)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "11px 14px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Denunciar publicação</button>
+                          <button onClick={() => bloquearAutor(p)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C.ouro}18`, padding: "11px 14px", fontFamily: FB, fontSize: 16, color: C.atencao, cursor: "pointer" }}>Bloquear {p.aut ? p.aut.split(" ")[0] : "pessoa"}</button>
                         </div>
                       )}
                     </div>
@@ -5521,8 +5521,8 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 </div>
                 {p.imgSrc && (
                   <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", marginBottom: p.desc ? 8 : 10 }}>
-                    <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: `rgba(28,26,23,.95)`, lineHeight: 1.3 }}>{p.tit}</div>
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
+                    <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: `rgba(28,26,23,.95)`, lineHeight: 1.3 }}>{p.tit}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
                   </div>
                 )}
                 {p.desc && (
@@ -5555,7 +5555,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  background: "none",
  border: "none",
  cursor: "pointer",
- fontSize: 15,
+ fontSize: 16,
  color: cu ? C.ouroTxt : `rgba(28,26,23,.92)`,
  fontFamily: FB,
  fontWeight: 400,
@@ -5570,7 +5570,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     {p.cur.length > 0 && (
                       <span
  style={{
- fontSize: 13.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.9)`,
  marginLeft: 4,
                         }}
@@ -5597,7 +5597,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     }}
                   >
                     {IcoH.comentario("rgba(28,26,23,.92)", 17)}
-                    <span style={{ fontSize: 15 }}>{p.com.length}</span>
+                    <span style={{ fontSize: 16 }}>{p.com.length}</span>
                   </button>
                   {(p.userId === authUserId || p.aut === "Você") && (
                     <button
@@ -5641,7 +5641,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  alignItems: "center",
  justifyContent: "center",
  color: C.obs,
- fontSize: 13.5,
+ fontSize: 16,
  fontFamily: FB,
  flexShrink: 0,
                           }}
@@ -5669,7 +5669,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         >
                           <div
  style={{
- fontSize: 14.5,
+ fontSize: 16,
  fontWeight: 500,
  color: C.ouroTxt,
  marginBottom: 2,
@@ -5688,7 +5688,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  color: `rgba(28,26,23,.86)`,
- fontSize: 14.5,
+ fontSize: 16,
  padding: "2px 4px",
  flexShrink: 0,
                             }}
@@ -5711,7 +5711,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         {c.cid && (
                           <button
  onClick={() => setResp(resp?.cid === c.cid ? null : { cid: c.cid, autor: c.q })}
- style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", padding: "3px 0" }}
+ style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: C.lt, cursor: "pointer", padding: "3px 0" }}
                           >
                             {resp?.cid === c.cid ? "× cancelar resposta" : "Responder"}
                           </button>
@@ -5725,8 +5725,8 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  r.q.slice(0, 2).toUpperCase()
                               )}
                             </div>
-                            <div style={{ flex: 1, background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "5px 9px", fontSize: 14.5, fontFamily: FB, color: `rgba(28,26,23,.9)` }}>
-                              <span style={{ fontWeight: 500, fontSize: 13, color: C.terra }}>{r.q} · </span>{r.t}
+                            <div style={{ flex: 1, background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "5px 9px", fontSize: 16, fontFamily: FB, color: `rgba(28,26,23,.9)` }}>
+                              <span style={{ fontWeight: 500, fontSize: 16, color: C.terra }}>{r.q} · </span>{r.t}
                             </div>
                             {r.cid && r.userId === authUserId && (
                               <button onClick={() => setConfirmaComent({ postId: p.id, cid: r.cid })} style={{ background: "none", border: "none", cursor: "pointer", color: `rgba(28,26,23,.85)`, fontSize: 13, flexShrink: 0 }} aria-hidden="true">apagar</button>
@@ -5737,7 +5737,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       </div>
                     ))}
                     {resp && (
-                      <div style={{ fontFamily: FB, fontSize: 13, color: C.terra, marginBottom: 5 }}>
+                      <div style={{ fontFamily: FB, fontSize: 16, color: C.terra, marginBottom: 5 }}>
  Respondendo a {resp.autor}
                       </div>
                     )}
@@ -5861,7 +5861,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.82)`,
                       }}
                     >
@@ -5904,7 +5904,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
               <div style={{ padding: "14px 16px 18px" }}>
                 <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 20,
  fontWeight: 300,
  color: `rgba(28,26,23,.97)`,
@@ -5953,7 +5953,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     {IcoH.coracao(dcu ? C.ouro : "rgba(28,26,23,.92)", 16, dcu ? C.ouro : "none")} {dcu ? "Curtido" : "Curtir"}
                     {dp.cur.length > 0 && (
                       <span
- style={{ fontSize: 14.5, color: `rgba(28,26,23,.82)` }}
+ style={{ fontSize: 16, color: `rgba(28,26,23,.82)` }}
                       >
                         {dp.cur.length} {dp.cur.length === 1 ? "curtida" : "curtidas"}
                       </span>
@@ -5964,7 +5964,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: C.ouroTxt,
  letterSpacing: "0.2em",
  textTransform: "uppercase",
@@ -5985,7 +5985,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  alignItems: "center",
  justifyContent: "center",
  color: C.obs,
- fontSize: 13.5,
+ fontSize: 16,
  fontFamily: FB,
  flexShrink: 0,
                       }}
@@ -6013,7 +6013,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     >
                       <div
  style={{
- fontSize: 14.5,
+ fontSize: 16,
  fontWeight: 500,
  color: C.ouroTxt,
  marginBottom: 2,
@@ -6032,7 +6032,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  color: `rgba(28,26,23,.86)`,
- fontSize: 14.5,
+ fontSize: 16,
  padding: "2px 4px",
  flexShrink: 0,
                         }}
@@ -10708,63 +10708,63 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
   return (
     <div style={{ background: C.creme, borderRadius: 14, padding: "14px 14px 12px", marginTop: 12, maxHeight: "42vh", overflowY: "auto" }}>
       <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, marginBottom: 10 }}>Comentários</div>
-      {aviso && <div style={{ fontFamily: FB, fontSize: 13, color: C.augeZ, marginBottom: 8 }}>{aviso}</div>}
+      {aviso && <div style={{ fontFamily: FB, fontSize: 16, color: C.augeZ, marginBottom: 8 }}>{aviso}</div>}
       {coms.filter((c) => !c.parent).length === 0 && (
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, marginBottom: 8 }}>Seja a primeira a comentar.</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 8 }}>Seja a primeira a comentar.</div>
       )}
       {coms.filter((c) => !c.parent).map((c, i) => (
         <div key={c.cid || i} style={{ marginBottom: 10 }}>
           <div style={{ display: "flex", gap: 7 }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: C.ouroDk, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs, fontSize: 12.5, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: C.ouroDk, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs, fontSize: 13, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
               {c.av ? <img src={c.av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : c.q.slice(0, 2).toUpperCase()}
             </div>
             <div style={{ flex: 1, background: "rgba(28,26,23,.06)", borderRadius: 10, padding: "6px 10px" }}>
-              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 13.5, color: C.ouroTxt, marginBottom: 2 }}>{c.q}</div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: "rgba(28,26,23,.85)" }}>{c.t}</div>
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.ouroTxt, marginBottom: 2 }}>{c.q}</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.85)" }}>{c.t}</div>
             </div>
           </div>
           <div style={{ paddingLeft: 33, display: "flex", alignItems: "center", gap: 12, marginTop: 3 }}>
             {c.cid && (
-              <button onClick={() => curtir(c.cid)} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 13, color: curtido(c) ? C.ouroTxt : C.lt, padding: "2px 0" }}>
+              <button onClick={() => curtir(c.cid)} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: FB, fontSize: 16, color: curtido(c) ? C.ouroTxt : C.lt, padding: "2px 0" }}>
                 {IcoH.coracao(curtido(c) ? C.ouro : C.lt, 14, curtido(c) ? C.ouro : "none")}{(c.likes || []).length > 0 ? (c.likes || []).length : ""}
               </button>
             )}
             {c.cid && (
-              <button onClick={() => setResp(resp?.cid === c.cid ? null : { cid: c.cid, autor: c.q })} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", padding: "2px 0" }}>
+              <button onClick={() => setResp(resp?.cid === c.cid ? null : { cid: c.cid, autor: c.q })} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: C.lt, cursor: "pointer", padding: "2px 0" }}>
                 {resp?.cid === c.cid ? "× cancelar" : "Responder"}
               </button>
             )}
             {c.cid && c.userId === authUserId && (
-              <button onClick={() => setConfDel(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>apagar</button>
+              <button onClick={() => setConfDel(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>apagar</button>
             )}
             {c.cid && c.userId !== authUserId && (
-              <button onClick={() => denunciar(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>denunciar</button>
+              <button onClick={() => denunciar(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>denunciar</button>
             )}
           </div>
           {coms.filter((r) => r.parent === c.cid).map((r, ri) => (
             <div key={"r" + ri} style={{ display: "flex", gap: 6, marginTop: 5, paddingLeft: 33 }}>
-              <div style={{ width: 20, height: 20, borderRadius: "50%", background: `${C.ouro}55`, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs2, fontSize: 11, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", background: `${C.ouro}55`, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs2, fontSize: 13, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
                 {r.av ? <img src={r.av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : r.q.slice(0, 2).toUpperCase()}
               </div>
-              <div style={{ flex: 1, background: "rgba(28,26,23,.04)", borderRadius: 10, padding: "5px 9px", fontFamily: FB, fontSize: 14, color: "rgba(28,26,23,.9)" }}>
-                <span style={{ fontWeight: 500, fontSize: 12.5, color: C.terra }}>{r.q} · </span>{r.t}
+              <div style={{ flex: 1, background: "rgba(28,26,23,.04)", borderRadius: 10, padding: "5px 9px", fontFamily: FB, fontSize: 16, color: "rgba(28,26,23,.9)" }}>
+                <span style={{ fontWeight: 500, fontSize: 13, color: C.terra }}>{r.q} · </span>{r.t}
               </div>
             </div>
           ))}
         </div>
       ))}
-      {resp && <div style={{ fontFamily: FB, fontSize: 12.5, color: C.terra, marginBottom: 4 }}>Respondendo a {resp.autor}</div>}
+      {resp && <div style={{ fontFamily: FB, fontSize: 13, color: C.terra, marginBottom: 4 }}>Respondendo a {resp.autor}</div>}
       <div style={{ display: "flex", gap: 7, marginTop: 6 }}>
-        <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."} onKeyDown={(e) => { if (e.key === "Enter") enviar(); }} style={{ flex: 1, background: "rgba(28,26,23,.06)", border: "none", borderRadius: 20, padding: "9px 13px", fontSize: 15, fontFamily: FB, color: C.obs }} />
+        <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."} onKeyDown={(e) => { if (e.key === "Enter") enviar(); }} style={{ flex: 1, background: "rgba(28,26,23,.06)", border: "none", borderRadius: 20, padding: "9px 13px", fontSize: 16, fontFamily: FB, color: C.obs }} />
         <button onClick={enviar} style={{ background: C.obs2, border: `1px solid ${C.ouro}33`, borderRadius: "50%", width: 38, height: 38, cursor: "pointer", color: C.ouro, fontSize: 17, flexShrink: 0 }}>→</button>
       </div>
       {confDel && (
         <div onClick={() => setConfDel(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(28,26,23,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: C.creme, borderRadius: 16, padding: "20px", maxWidth: 320 }}>
-            <div style={{ fontFamily: FS, fontWeight: 500, fontSize: 19, color: C.terra, marginBottom: 14 }}>Apagar este comentário?</div>
+            <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 18, color: C.terra, marginBottom: 14 }}>Apagar este comentário?</div>
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => apagar(confDel)} style={{ flex: 1, background: C.atencao, border: "none", borderRadius: 50, padding: "10px", color: "#fff", fontFamily: FB, fontSize: 14.5, cursor: "pointer" }}>Apagar</button>
-              <button onClick={() => setConfDel(null)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "10px", color: C.ouroTxt, fontFamily: FB, fontSize: 14.5, cursor: "pointer" }}>Cancelar</button>
+              <button onClick={() => apagar(confDel)} style={{ flex: 1, background: C.atencao, border: "none", borderRadius: 50, padding: "10px", color: "#fff", fontFamily: FB, fontSize: 16, cursor: "pointer" }}>Apagar</button>
+              <button onClick={() => setConfDel(null)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "10px", color: C.ouroTxt, fontFamily: FB, fontSize: 16, cursor: "pointer" }}>Cancelar</button>
             </div>
           </div>
         </div>
