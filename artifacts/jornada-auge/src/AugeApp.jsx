@@ -731,8 +731,8 @@ const Ico = {
     </svg>
   ),
   // Configurações — engrenagem
- gear: (c) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+ gear: (c, s = 20) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
@@ -4941,14 +4941,16 @@ function Home({
  position: "relative",
         }}
       >
-        {/* Configurações (seções 4.1, 3.4 e 9) */}
-        <div
+        {/* Configuracoes (secoes 4.1, 3.4 e 9) — so o icone.
+            aria-label mantem o nome para quem usa leitor de tela, e a area
+            de toque continua com 44px, o minimo para o dedo. */}
+        <button
  onClick={() => ir(S.PF)}
- style={{ position: "absolute", top: 14, right: 12, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "2px 4px" }}
+ aria-label="Perfil e configurações"
+ style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          {Ico.gear(C.terra)}
-          <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.12em", color: C.terra, textTransform: "uppercase" }}>Perfil</span>
-        </div>
+          {Ico.gear(C.terra, 22)}
+        </button>
         <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 600, color: C.obs, letterSpacing: "-0.01em" }}>
  Hoje
         </div>
