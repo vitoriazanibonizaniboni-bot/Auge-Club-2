@@ -3942,7 +3942,7 @@ function Diagnostico({ onConcluir }) {
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
+ fontSize: 16,
  color: C.ouroTxt,
  letterSpacing: "0.4em",
  textTransform: "uppercase",
@@ -3955,7 +3955,7 @@ function Diagnostico({ onConcluir }) {
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
+ fontSize: 16,
  color: C.ouroTxt,
  letterSpacing: "0.35em",
  textTransform: "uppercase",
@@ -3988,7 +3988,7 @@ function Diagnostico({ onConcluir }) {
         </div>
         <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 19,
  fontWeight: 400,
  color: `rgba(28,26,23,.97)`,
@@ -4024,7 +4024,7 @@ function Diagnostico({ onConcluir }) {
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.8)`,
  textAlign: "center",
  marginTop: "1.5rem",
@@ -8603,11 +8603,11 @@ function RodaResumo({ rodaResultados = [] }) {
     <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "14px 16px 18px", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 2 }}>
         <button onClick={() => idx > 0 && setMSel(momsSalvos[idx - 1])} disabled={idx <= 0} style={{ background: "none", border: "none", color: idx > 0 ? C.terra : `${C.terra}33`, fontSize: 20, cursor: idx > 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>‹</button>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.3em", textTransform: "uppercase", color: C.ouroTxt }}>Roda AUGE · {mSel}</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.3em", textTransform: "uppercase", color: C.ouroTxt }}>Roda AUGE · {mSel}</div>
         <button onClick={() => idx < momsSalvos.length - 1 && setMSel(momsSalvos[idx + 1])} disabled={idx >= momsSalvos.length - 1} style={{ background: "none", border: "none", color: idx < momsSalvos.length - 1 ? C.terra : `${C.terra}33`, fontSize: 20, cursor: idx < momsSalvos.length - 1 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
       </div>
-      <div style={{ textAlign: "center", fontFamily: FS, fontSize: 40, fontWeight: 300, color: C.ouroTxt, lineHeight: 1.1 }}>{ind != null ? ind.toFixed(1) : "—"}</div>
-      {z && <div style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.3em", textTransform: "uppercase", color: z.c, marginBottom: 4 }}>{z.l}</div>}
+      <div style={{ textAlign: "center", fontFamily: FB, fontSize: 39, fontWeight: 300, color: C.ouroTxt, lineHeight: 1.1 }}>{ind != null ? ind.toFixed(1) : "—"}</div>
+      {z && <div style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.3em", textTransform: "uppercase", color: z.c, marginBottom: 4 }}>{z.l}</div>}
       <div style={{ display: "flex", justifyContent: "center" }}><canvas ref={canvasRef} width={220} height={220} /></div>
     </div>
   );
@@ -8726,7 +8726,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
       <Cab titulo="Perfil AUGE" voltar={back} destino="Jornada" />
       <div style={{ padding: "24px 22px 40px", textAlign: "center" }}>
         <Logo width={120} fundo="claro" />
-        <div style={{ fontFamily: FS, fontSize: 32, fontWeight: 300, letterSpacing: "0.1em", color: C.ouroTxt, marginTop: 12 }}>PERFIL</div>
+        <div style={{ fontFamily: FB, fontSize: 31, fontWeight: 300, letterSpacing: "0.1em", color: C.ouroTxt, marginTop: 12 }}>PERFIL</div>
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.35em", textTransform: "uppercase", color: "rgba(28,26,23,.88)", marginBottom: 26 }}>AUGE · 15 afirmações · 5 perfis</div>
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.85)", lineHeight: 1.7, textAlign: "left", marginBottom: 28 }}>{PA_INTRO}</div>
         <BtnPill onClick={iniciar}>Começar</BtnPill>
@@ -8743,13 +8743,13 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
           <div style={{ height: 2, background: "rgba(28,26,23,.08)", borderRadius: 100, marginBottom: "1.5rem", position: "relative" }}>
             <div style={{ position: "absolute", top: 0, left: 0, height: "100%", background: C.ouro, borderRadius: 100, width: `${((qi + 1) / 15) * 100}%`, transition: "width .3s" }} />
           </div>
-          <div style={{ fontFamily: FS, fontSize: 20, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.5, marginBottom: "2rem", minHeight: 96 }}>{q.t}</div>
+          <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.5, marginBottom: "2rem", minHeight: 96 }}>{q.t}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {OIDENT.map((op) => (
               <button key={op.v} onClick={() => responder(op.v)} style={{ background: "rgba(28,26,23,.05)", border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "14px 16px", cursor: "pointer", textAlign: "left", fontFamily: FB, fontSize: 17, color: "rgba(28,26,23,.88)" }}>{op.l}</button>
             ))}
           </div>
-          {qi > 0 && <button onClick={() => setQi(qi - 1)} style={{ background: "none", border: "none", color: "rgba(28,26,23,.82)", fontFamily: FB, fontSize: 14.5, marginTop: "1.1rem", cursor: "pointer" }}>‹ Voltar</button>}
+          {qi > 0 && <button onClick={() => setQi(qi - 1)} style={{ background: "none", border: "none", color: "rgba(28,26,23,.82)", fontFamily: FB, fontSize: 16, marginTop: "1.1rem", cursor: "pointer" }}>‹ Voltar</button>}
         </div>
       </Grain>
     );
@@ -8757,8 +8757,8 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
 
   const chaves = (perfilAuge || "").split(",").filter(Boolean);
   const perfis = chaves.map((k) => PERFIS[k]).filter(Boolean);
-  const tb = { fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
-  const pp = { fontFamily: FB, fontWeight: 300, fontSize: 15.5, color: "rgba(28,26,23,.85)", lineHeight: 1.65 };
+  const tb = { fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.28em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
+  const pp = { fontFamily: FB, fontWeight: 300, fontSize: 16, color: "rgba(28,26,23,.85)", lineHeight: 1.65 };
   const li = { display: "flex", gap: 9, marginBottom: 6 };
   const dot = { width: 5, height: 5, borderRadius: "50%", background: C.ouro, marginTop: 8, flexShrink: 0 };
   return (
@@ -8770,8 +8770,8 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
         )}
         {perfis.map((pf, idx) => (
           <div key={idx} style={{ marginBottom: 26 }}>
-            <div style={{ fontFamily: FS, fontSize: 30, fontWeight: 300, color: C.ouroTxt, textAlign: "center", lineHeight: 1.1 }}>{pf.nome}</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: C.lt, textAlign: "center", marginTop: 4 }}>{pf.base}</div>
+            <div style={{ fontFamily: FB, fontSize: 29, fontWeight: 300, color: C.ouroTxt, textAlign: "center", lineHeight: 1.1 }}>{pf.nome}</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.28em", textTransform: "uppercase", color: C.lt, textAlign: "center", marginTop: 4 }}>{pf.base}</div>
             <div style={{ background: `${C.ouro}12`, border: `1px solid ${C.ouro}25`, borderRadius: 12, padding: "13px 15px", margin: "14px 0" }}>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, lineHeight: 1.5, textAlign: "center" }}>"{pf.frase}"</div>
             </div>
@@ -8784,7 +8784,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
             <div style={tb}>Quando esse padrão aparece mais forte</div>
             <div style={pp}>{pf.quando}</div>
             <div style={{ borderLeft: `2px solid ${C.ouroDk}`, padding: "8px 0 8px 14px", margin: "14px 0" }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.2em", textTransform: "uppercase", color: C.ouroTxt, marginBottom: 4 }}>Âncora de enfrentamento</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.2em", textTransform: "uppercase", color: C.ouroTxt, marginBottom: 4 }}>Âncora de enfrentamento</div>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: "rgba(28,26,23,.9)", lineHeight: 1.5 }}>"{pf.ancora}"</div>
             </div>
             <div style={tb}>Plano de ação</div>
@@ -8792,7 +8792,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
           </div>
         ))}
         <div style={{ background: "rgba(28,26,23,.04)", border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ ...pp, fontSize: 15, color: C.terra }}>{PA_NOTA}</div>
+          <div style={{ ...pp, fontSize: 16, color: C.terra }}>{PA_NOTA}</div>
         </div>
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.88)", lineHeight: 1.65, marginBottom: 22 }}>{PA_FECHA}</div>
         <BtnOut onClick={iniciar}>Refazer o teste</BtnOut>
@@ -9043,7 +9043,7 @@ function Roda({
           <Logo width={130} fundo="claro" />
           <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 36,
  fontWeight: 300,
  letterSpacing: "0.12em",
@@ -9058,7 +9058,7 @@ function Roda({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
+ fontSize: 16,
  letterSpacing: "0.35em",
  textTransform: "uppercase",
  color: `rgba(28,26,23,.88)`,
@@ -9071,7 +9071,7 @@ function Roda({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
+ fontSize: 16,
  color: `rgba(28,26,23,.88)`,
  letterSpacing: "0.25em",
  textTransform: "uppercase",
@@ -9114,7 +9114,7 @@ function Roda({
                         ? C.ouro
                         : `rgba(28,26,23,.88)`,
  fontFamily: FB,
- fontSize: 15,
+ fontSize: 16,
  letterSpacing: "0.2em",
  position: "relative",
                   }}
@@ -9125,7 +9125,7 @@ function Roda({
  position: "absolute",
  top: 6,
  right: 8,
- fontSize: 13.5,
+ fontSize: 16,
                       }}
                     >
                       
@@ -9133,7 +9133,7 @@ function Roda({
                   )}
                   {m}
                   <br />
-                  <span style={{ fontSize: 13, opacity: 0.6 }}>{sub}</span>
+                  <span style={{ fontSize: 16, opacity: 0.6 }}>{sub}</span>
                 </button>
               );
             })}
@@ -9172,7 +9172,7 @@ function Roda({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
+ fontSize: 16,
  color: C.ouroTxt,
  letterSpacing: "0.35em",
  textTransform: "uppercase",
@@ -9211,7 +9211,7 @@ function Roda({
           </div>
           <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 20,
  fontWeight: 300,
  color: `rgba(28,26,23,.97)`,
@@ -9251,7 +9251,7 @@ function Roda({
  border: "none",
  color: `rgba(28,26,23,.82)`,
  fontFamily: FB,
- fontSize: 14.5,
+ fontSize: 16,
  letterSpacing: "0.15em",
  textTransform: "uppercase",
  padding: "0.7rem",
@@ -9318,7 +9318,7 @@ function Roda({
  color: C.ouroTxt,
  textAlign: "center",
  lineHeight: 1,
- fontFamily: FS,
+ fontFamily: FB,
           }}
         >
           {ind !== null ? ind.toFixed(1) : "—"}
@@ -9328,7 +9328,7 @@ function Roda({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13.5,
+ fontSize: 16,
  letterSpacing: "0.35em",
  textTransform: "uppercase",
  textAlign: "center",
@@ -9382,7 +9382,7 @@ function Roda({
                 <span
  style={{
  fontFamily: FB,
- fontSize: 14.5,
+ fontSize: 16,
  letterSpacing: "0.2em",
  textTransform: "uppercase",
  color: `rgba(28,26,23,.8)`,
@@ -9390,7 +9390,7 @@ function Roda({
                 >
                   {d}
                 </span>
-                <span style={{ fontFamily: FS, fontSize: 18, color: dc.c }}>
+                <span style={{ fontFamily: FB, fontSize: 17, color: dc.c }}>
                   {n === null ? "—" : n.toFixed(1)}
                 </span>
               </div>
@@ -9407,7 +9407,7 @@ function Roda({
  const fracas = dimsN.filter((d) => notas[d] === minN);
  const equilibrado = maxN - minN < 1.5;
  const zonaTxt = ind == null ? "" : ind <= 3.9 ? RODA_TXT.zona.atencao : ind <= 6.9 ? RODA_TXT.zona.dev : RODA_TXT.zona.auge;
- const pStyle = { fontFamily: FB, fontWeight: 300, fontSize: 15, color: "rgba(28,26,23,.85)", lineHeight: 1.7, marginBottom: 14 };
+ const pStyle = { fontFamily: FB, fontWeight: 300, fontSize: 16, color: "rgba(28,26,23,.85)", lineHeight: 1.7, marginBottom: 14 };
  const tStyle = (c) => ({ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.28em", textTransform: "uppercase", color: c, marginBottom: 6, marginTop: 4 });
  return (
             <div style={{ marginBottom: "1.2rem" }}>
@@ -12056,7 +12056,7 @@ function Perfil({
  display: "flex",
  alignItems: "center",
  justifyContent: "center",
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 28,
  color: C.ouroTxt,
  margin: "0 auto 4px",
@@ -12072,17 +12072,17 @@ function Perfil({
           )}
           <div style={{
  position: "absolute", bottom: 0, left: 0, right: 0,
- background: "rgba(0,0,0,.45)", fontSize: 13,
+ background: "rgba(0,0,0,.45)", fontSize: 16,
  fontFamily: FB, color: "rgba(255,255,255,.88)",
  padding: "3px 0", letterSpacing: "0.05em",
           }}>foto</div>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.8)`, marginBottom: 8 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, marginBottom: 8 }}>
  Toque para alterar foto
         </div>
         <div
  style={{
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 22,
  fontWeight: 300,
  color: `rgba(28,26,23,.97)`,
@@ -12094,7 +12094,7 @@ function Perfil({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.88)`,
  marginTop: 3,
           }}
@@ -12105,7 +12105,7 @@ function Perfil({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 15,
+ fontSize: 16,
  color: C.ouroTxt,
  marginTop: 4,
           }}
@@ -12140,7 +12140,7 @@ function Perfil({
  padding: "6px 16px",
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: C.ouroTxt,
  cursor: "pointer",
  letterSpacing: "0.1em",
@@ -12158,7 +12158,7 @@ function Perfil({
  padding: "6px 16px",
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: C.ouroTxt,
  cursor: "pointer",
  letterSpacing: "0.1em",
@@ -12177,7 +12177,7 @@ function Perfil({
  padding: "6px 16px",
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.88)`,
  cursor: "pointer",
  letterSpacing: "0.1em",
@@ -12193,16 +12193,16 @@ function Perfil({
       {confirmDel && (
         <div onClick={() => !delLoad && setConfirmDel(false)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(28,26,23,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: C.creme, borderRadius: 18, padding: "24px 22px", maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.4)" }}>
-            <div style={{ fontFamily: FS, fontWeight: 500, fontSize: 22, color: C.terra, marginBottom: 10 }}>Excluir sua conta?</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.obs2, lineHeight: 1.55, marginBottom: 18 }}>
+            <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 21, color: C.terra, marginBottom: 10 }}>Excluir sua conta?</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.55, marginBottom: 18 }}>
  Esta ação é permanente. Todos os seus dados — check-ins, registros, Roda AUGE, textos e cadastro — serão apagados definitivamente e não há como recuperar.
             </div>
-            {delMsg && <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.atencao, marginBottom: 14 }}>{delMsg}</div>}
+            {delMsg && <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.atencao, marginBottom: 14 }}>{delMsg}</div>}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button onClick={excluirConta} disabled={delLoad} style={{ background: C.atencao, border: "none", borderRadius: 50, padding: "12px 18px", fontFamily: FB, fontWeight: 400, fontSize: 15.5, color: "#fff", cursor: delLoad ? "default" : "pointer", opacity: delLoad ? 0.6 : 1 }}>
+              <button onClick={excluirConta} disabled={delLoad} style={{ background: C.atencao, border: "none", borderRadius: 50, padding: "12px 18px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: "#fff", cursor: delLoad ? "default" : "pointer", opacity: delLoad ? 0.6 : 1 }}>
                 {delLoad ? "Excluindo..." : "Excluir definitivamente"}
               </button>
-              <button onClick={() => setConfirmDel(false)} disabled={delLoad} style={{ background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "12px 18px", fontFamily: FB, fontWeight: 400, fontSize: 15.5, color: C.ouroTxt, cursor: "pointer" }}>
+              <button onClick={() => setConfirmDel(false)} disabled={delLoad} style={{ background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "12px 18px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, cursor: "pointer" }}>
  Cancelar
               </button>
             </div>
@@ -12224,7 +12224,7 @@ function Perfil({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13,
+ fontSize: 16,
  color: C.ouroTxt,
  letterSpacing: "0.18em",
  textTransform: "uppercase",
@@ -12238,7 +12238,7 @@ function Perfil({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.8)`,
  letterSpacing: "0.15em",
  textTransform: "uppercase",
@@ -12256,7 +12256,7 @@ function Perfil({
  border: "none",
  borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.85)"}`,
  color: C.obs,
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 17,
  fontWeight: 400,
  padding: "6px 0",
@@ -12268,7 +12268,7 @@ function Perfil({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.8)`,
  letterSpacing: "0.15em",
  textTransform: "uppercase",
@@ -12287,7 +12287,7 @@ function Perfil({
  border: "none",
  borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.85)"}`,
  color: C.obs,
- fontFamily: FS,
+ fontFamily: FB,
  fontSize: 17,
  fontWeight: 400,
  padding: "6px 0",
@@ -12308,10 +12308,10 @@ function Perfil({
  value={senhaNova}
  onChange={(e) => { setSenhaNova(e.target.value); setSenhaMsg(null); }}
  placeholder="Nova senha (mínimo 6 caracteres)"
- style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : "rgba(28,26,23,.85)"}`, color: C.obs, fontFamily: FS, fontSize: 17, fontWeight: 400, padding: "6px 0", marginBottom: 12 }}
+ style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : "rgba(28,26,23,.85)"}`, color: C.obs, fontFamily: FB, fontSize: 17, fontWeight: 400, padding: "6px 0", marginBottom: 12 }}
             />
             {senhaMsg && (
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: senhaMsg.ok ? C.ouroTxt : "#A32D2D", marginBottom: 10 }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: senhaMsg.ok ? C.ouroTxt : "#A32D2D", marginBottom: 10 }}>
                 {senhaMsg.txt}
               </div>
             )}
@@ -12328,7 +12328,7 @@ function Perfil({
  setSenhaMsg({ ok: true, txt: "Senha alterada com sucesso " });
                 }
               }}
- style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.ouroTxt, cursor: "pointer", opacity: salvandoSenha ? 0.5 : 1 }}
+ style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, cursor: "pointer", opacity: salvandoSenha ? 0.5 : 1 }}
             >
               {salvandoSenha ? "Alterando..." : "Alterar senha"}
             </button>
@@ -12362,14 +12362,14 @@ function Perfil({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 14.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.92)`,
  marginBottom: 4,
                 }}
               >
                 {ic} {l}
               </div>
-              <div style={{ fontFamily: FS, fontSize: 22, color: C.ouroTxt }}>
+              <div style={{ fontFamily: FB, fontSize: 21, color: C.ouroTxt }}>
                 {v}
               </div>
             </div>
@@ -12381,24 +12381,24 @@ function Perfil({
 
         {/* Preferências para o radar de amigas — só no Clube */}
         {/* ── Configurações (seção 9) ── */}
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 11.5, color: C.ouroTxt, letterSpacing: "0.3em", textTransform: "uppercase", margin: "18px 0 10px" }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.3em", textTransform: "uppercase", margin: "18px 0 10px" }}>
  Configurações
         </div>
 
         {/* Âncora de Identidade */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, marginBottom: 6 }}> Âncora de Identidade</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 6 }}> Âncora de Identidade</div>
           {!editAnc ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs, lineHeight: 1.5 }}>"{anc}"</div>
-              <button onClick={() => { setAncE(anc); setEditAnc(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 12.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
+              <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, lineHeight: 1.5 }}>"{anc}"</div>
+              <button onClick={() => { setAncE(anc); setEditAnc(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
             </div>
           ) : (
             <div>
               <textarea value={ancE} onChange={(e) => setAncE(e.target.value)}
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 15, color: C.obs, resize: "none", height: 60, marginBottom: 7 }} />
+ style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, resize: "none", height: 60, marginBottom: 7 }} />
               <button onClick={() => { const t = ancE.trim(); if (!t) return; setAnc(t); syncDB("ancora", { texto: t }, { onConflict: "user_id" }); setEditAnc(false); tk("Âncora atualizada "); }}
- style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+ style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             </div>
           )}
         </div>
@@ -12408,63 +12408,63 @@ function Perfil({
 
         {/* Mínimo de emergência (Kit) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, marginBottom: 6 }}>Mínimos Inegociáveis do Kit de Emergência</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 6 }}>Mínimos Inegociáveis do Kit de Emergência</div>
           {!editMinC ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, fontFamily: FS, fontSize: 15, color: kitMin ? C.obs : C.lt, lineHeight: 1.5 }}>
+              <div style={{ flex: 1, fontFamily: FB, fontSize: 16, color: kitMin ? C.obs : C.lt, lineHeight: 1.5 }}>
                 {kitMin || "Ainda não definido (ex: caminhar 10 minutos, não 30)"}
               </div>
-              <button onClick={() => { setTmC(kitMin || ""); setEditMinC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>Editar</button>
+              <button onClick={() => { setTmC(kitMin || ""); setEditMinC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: C.ouroTxt, cursor: "pointer" }}>Editar</button>
             </div>
           ) : (
             <div>
               <textarea value={tmC} onChange={(e) => setTmC(e.target.value)}
                 placeholder="ex: caminhar 10 minutos, não 30"
-                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 15, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
+                style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, resize: "none", height: 64, marginBottom: 8 }} />
               <button onClick={() => { setKitMin(tmC); syncDB("kit_emergencia", { min_viavel: tmC }, { onConflict: "user_id" }); setEditMinC(false); tk("Mínimo do Kit salvo"); }}
-                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+                style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             </div>
           )}
         </div>
 
         {/* Pessoa de Referência (Kit de Emergência) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, marginBottom: 6 }}> Pessoa de Referência (Kit de Emergência)</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 6 }}> Pessoa de Referência (Kit de Emergência)</div>
           {!editPessoaC ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.obs }}>
+              <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs }}>
                 {kitPessoa?.nome ? `${kitPessoa.nome}${kitPessoa.fone ? ` · ${kitPessoa.fone}` : ""}` : "Ninguém cadastrada ainda"}
               </div>
-              <button onClick={() => { setPnC(kitPessoa?.nome || ""); setPfC(kitPessoa?.fone || ""); setEditPessoaC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 12.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
+              <button onClick={() => { setPnC(kitPessoa?.nome || ""); setPfC(kitPessoa?.fone || ""); setEditPessoaC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
             </div>
           ) : (
             <div>
               <input value={pnC} onChange={(e) => setPnC(e.target.value)} placeholder="Nome"
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 14.5, color: C.obs, marginBottom: 7 }} />
+ style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 7 }} />
               <input value={pfC} onChange={(e) => setPfC(e.target.value)} placeholder="WhatsApp com DDD"
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 14.5, color: C.obs, marginBottom: 7 }} />
+ style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 7 }} />
               <button onClick={() => { salvarKitPessoal({ pessoa_nome: pnC.trim(), pessoa_fone: pfC.trim() }); setEditPessoaC(false); tk("Pessoa de Referência salva "); }}
- style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+ style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             </div>
           )}
         </div>
 
         {/* Frase de Retorno ao Foco (Kit de Emergência) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, marginBottom: 6 }}> Frase de Retorno ao Foco (Kit de Emergência)</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginBottom: 6 }}> Frase de Retorno ao Foco (Kit de Emergência)</div>
           {!editFraseC ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 15, color: fraseFoco ? C.obs : C.lt, lineHeight: 1.5 }}>
+              <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: fraseFoco ? C.obs : C.lt, lineHeight: 1.5 }}>
                 {fraseFoco ? `"${fraseFoco}"` : "Ainda não definida"}
               </div>
-              <button onClick={() => { setFfC(fraseFoco || ""); setEditFraseC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 12.5, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
+              <button onClick={() => { setFfC(fraseFoco || ""); setEditFraseC(true); }} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 13, color: C.lt, cursor: "pointer", textDecoration: "underline" }}>editar</button>
             </div>
           ) : (
             <div>
               <textarea value={ffC} onChange={(e) => setFfC(e.target.value)}
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FS, fontSize: 15, color: C.obs, resize: "none", height: 60, marginBottom: 7 }} />
+ style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "9px 10px", fontFamily: FB, fontSize: 16, color: C.obs, resize: "none", height: 60, marginBottom: 7 }} />
               <button onClick={() => { salvarKitPessoal({ frase_foco: ffC.trim() }); setEditFraseC(false); tk("Frase salva "); }}
- style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 13, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+ style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             </div>
           )}
         </div>
@@ -12472,8 +12472,8 @@ function Perfil({
         {/* Notificações e lembretes — ligar/desligar (seção 9) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra }}> Notificações e lembretes</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, marginTop: 3 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra }}> Notificações e lembretes</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 3 }}>
               {notifStatus === "granted" ? "Ativadas" : notifStatus === "denied" ? "Bloqueadas no navegador" : "Desativadas"}
             </div>
           </div>
@@ -12487,7 +12487,7 @@ function Perfil({
  else if (r === "denied") tk("Permissão bloqueada nas configurações do navegador");
               }
             }}
- style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 13, color: notifStatus === "granted" ? C.obs2 : C.ouroTxt, cursor: "pointer" }}
+ style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 16, color: notifStatus === "granted" ? C.obs2 : C.ouroTxt, cursor: "pointer" }}
           >
             {notifStatus === "granted" ? "Desligar" : "Ligar"}
           </button>
@@ -12509,7 +12509,7 @@ function Perfil({
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 13.5,
+ fontSize: 16,
  color: `rgba(28,26,23,.8)`,
  lineHeight: 1.6,
             }}
@@ -12520,7 +12520,7 @@ function Perfil({
           <div style={{ textAlign: "center", marginTop: 16 }}>
             <button
  onClick={() => { setDelMsg(""); setConfirmDel(true); }}
- style={{ background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: "rgba(28,26,23,.45)", textDecoration: "underline", cursor: "pointer" }}
+ style={{ background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.45)", textDecoration: "underline", cursor: "pointer" }}
             >
  Excluir minha conta
             </button>
