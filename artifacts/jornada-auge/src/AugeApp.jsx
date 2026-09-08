@@ -692,8 +692,8 @@ const Ico = {
     </svg>
   ),
   // Hoje — pequeno sol/alvo (seção 2.1)
- hoje: (c) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+ hoje: (c, s = 22) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="4.5" />
       <line x1="12" y1="2.5" x2="12" y2="5" /><line x1="12" y1="19" x2="12" y2="21.5" />
       <line x1="2.5" y1="12" x2="5" y2="12" /><line x1="19" y1="12" x2="21.5" y2="12" />
@@ -702,30 +702,30 @@ const Ico = {
     </svg>
   ),
   // Trajetória — o arco em S da logo, em miniatura (seção 2.1)
- traj: (c) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round">
+ traj: (c, s = 22) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round">
       <path d="M 3 19 C 8 20 16 6 21 5" />
       <circle cx="21" cy="5" r="1.4" fill={c} stroke="none" />
     </svg>
   ),
   // Mural do 1% — quadro com foto (seção 2.1)
- mural: (c) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+ mural: (c, s = 22) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="8.5" cy="8.5" r="1.5" />
       <path d="M21 15l-5-5L5 21" />
     </svg>
   ),
   // Meu Mapa — bússola (seção 2.1)
- mapa: (c) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+ mapa: (c, s = 22) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9.5" />
       <polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5 15.5 8.5" />
     </svg>
   ),
   // Conteúdo — livro aberto (seção 2.1)
- livro: (c) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+ livro: (c, s = 22) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 4.5C4.5 3.5 7.5 3.5 12 5.5c4.5-2 7.5-2 10-1v14c-2.5-1-5.5-1-10 1-4.5-2-7.5-2-10-1z" />
       <line x1="12" y1="5.5" x2="12" y2="19.5" />
     </svg>
@@ -2663,7 +2663,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  background: C.creme,
  borderTop: `1px solid ${C.ouro}15`,
  display: "flex",
- padding: "13px 0 20px",
+ padding: "16px 0 26px",
       }}
     >
       {tabs.map((t) => (
@@ -2720,10 +2720,10 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  display: "flex",
  flexDirection: "column",
  alignItems: "center",
- gap: 6,
+ gap: 7,
             }}
           >
-            {t.icon(aba === t.id ? C.ouroDk : C.lt)}
+            {t.icon(aba === t.id ? C.ouroDk : C.lt, 24)}
             <div
  style={{
  fontFamily: FB,
