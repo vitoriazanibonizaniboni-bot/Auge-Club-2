@@ -8827,7 +8827,7 @@ function RodaResumo({ rodaResultados = [] }) {
  chartRef.current = new window.Chart(ctx, {
  type: "radar",
  data: { labels: DIMS, datasets: [{ data: vals, backgroundColor: "rgba(196,168,130,0.12)", borderColor: "#C4A882", borderWidth: 1.5, pointBackgroundColor: "#C4A882", pointRadius: 3 }] },
- options: { responsive: false, scales: { r: { min: 0, max: 10, ticks: { display: false }, grid: { color: "rgba(90,75,67,0.3)" }, angleLines: { color: "rgba(90,75,67,0.3)" }, pointLabels: { color: "rgba(90,75,67,0.6)", font: { size: 9, family: "sans-serif" } } } }, plugins: { legend: { display: false } } },
+ options: { responsive: false, scales: { r: { min: 0, max: 10, ticks: { display: false }, grid: { color: "rgba(90,75,67,0.3)" }, angleLines: { color: "rgba(90,75,67,0.3)" }, pointLabels: { color: C.lt, font: { size: 13, family: "Inter, sans-serif" } } } }, plugins: { legend: { display: false } } },
       });
     };
  if (window.Chart) draw();
@@ -8842,12 +8842,12 @@ function RodaResumo({ rodaResultados = [] }) {
     <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "14px 16px 18px", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 2 }}>
         <button onClick={() => idx > 0 && setMSel(momsSalvos[idx - 1])} disabled={idx <= 0} style={{ background: "none", border: "none", color: idx > 0 ? C.terra : `${C.terra}33`, fontSize: 20, cursor: idx > 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>‹</button>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.3em", textTransform: "uppercase", color: C.ouroTxt }}>Roda AUGE · {mSel}</div>
+        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, letterSpacing: "0.04em", color: C.ouroTxt }}>Roda AUGE · {mSel}</div>
         <button onClick={() => idx < momsSalvos.length - 1 && setMSel(momsSalvos[idx + 1])} disabled={idx >= momsSalvos.length - 1} style={{ background: "none", border: "none", color: idx < momsSalvos.length - 1 ? C.terra : `${C.terra}33`, fontSize: 20, cursor: idx < momsSalvos.length - 1 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
       </div>
       <div style={{ textAlign: "center", fontFamily: FB, fontSize: 39, fontWeight: 300, color: C.ouroTxt, lineHeight: 1.1 }}>{ind != null ? ind.toFixed(1) : "—"}</div>
-      {z && <div style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.3em", textTransform: "uppercase", color: z.c, marginBottom: 4 }}>{z.l}</div>}
-      <div style={{ display: "flex", justifyContent: "center" }}><canvas ref={canvasRef} width={220} height={220} /></div>
+      {z && <div style={{ textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 16, letterSpacing: "0.04em", color: z.c, marginBottom: 6 }}>{z.l}</div>}
+      <div style={{ display: "flex", justifyContent: "center" }}><canvas ref={canvasRef} width={290} height={250} /></div>
     </div>
   );
 }
@@ -9248,8 +9248,8 @@ function Roda({
  grid: { color: "rgba(90,75,67,0.3)" },
  angleLines: { color: "rgba(90,75,67,0.3)" },
  pointLabels: {
- color: "rgba(90,75,67,0.6)",
- font: { size: 10, family: "sans-serif" },
+ color: C.lt,
+ font: { size: 13, family: "Inter, sans-serif" },
               },
             },
           },
@@ -9585,7 +9585,7 @@ function Roda({
  margin: "1.5rem 0",
           }}
         >
-          <canvas ref={canvasRef} width={260} height={260} />
+          <canvas ref={canvasRef} width={320} height={280} />
         </div>
         <div
  style={{
