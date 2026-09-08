@@ -9536,14 +9536,14 @@ function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario
     <div style={{ animation: "fadeUp .4s ease" }}>
       <Cab titulo="Protocolo de Retomada" voltar={back} destino="Jornada" />
       <Grain style={{ padding: "20px 20px 36px" }}>
-        <div style={{ fontFamily: FS, fontSize: 22, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.35, marginBottom: 14 }}>
+        <div style={{ fontFamily: FB, fontSize: 21, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.35, marginBottom: 14 }}>
  Você ficou um dia sem fazer. É agora que se decide se isso vira exceção ou vira rotina.
         </div>
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, lineHeight: 1.6, marginBottom: 20 }}>
  Não rolou dessa vez. Tudo bem. Isso não apaga nada do que você já construiu.
         </div>
         <div style={{ background: `${C.ouroDk}0F`, border: `1px solid ${C.ouroDk}30`, borderRadius: 12, padding: "16px", marginBottom: 18 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 12 }}>As regras da retomada</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 12 }}>As regras da retomada</div>
           {[
  "Falhou uma vez, volta na próxima. Sem esperar segunda-feira, sem esperar a semana que vem.",
  "Metade da intensidade. Não pensa em dar o seu melhor, pensa em continuar em movimento.",
@@ -9552,7 +9552,7 @@ function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario
           ].map((r, i) => (
             <div key={i} style={{ display: "flex", gap: 10, marginBottom: 9 }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.ouroDk, marginTop: 7, flexShrink: 0 }} />
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15.5, color: "rgba(28,26,23,.82)", lineHeight: 1.5 }}>{r}</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.82)", lineHeight: 1.5 }}>{r}</div>
             </div>
           ))}
         </div>
@@ -9567,8 +9567,8 @@ function Retomada({ anc, back, tk, setRet, retomadas = 0, pq1, pq2, pq3, usuario
         {(isaLoad || isaMsg) && <div style={{ marginTop: 16 }}><IsaCard text={isaMsg} loading={isaLoad} /></div>}
         {registrado && (
           <div style={{ marginTop: 18, background: `${C.ouroDk}12`, border: `1px solid ${C.ouroDk}33`, borderRadius: 12, padding: "16px", textAlign: "center" }}>
-            <div style={{ fontFamily: FS, fontSize: 26, fontWeight: 300, color: C.ouroTxt }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.terra, marginTop: 4 }}>Isso é motivo pra comemorar. Cada volta é prova de que você não desiste.</div>
+            <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 300, color: C.ouroTxt }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginTop: 4 }}>Isso é motivo pra comemorar. Cada volta é prova de que você não desiste.</div>
           </div>
         )}
         {registrado && !isaLoad && (
@@ -10464,7 +10464,7 @@ function Emergencia({
     </div>
   );
  const BtnAcao = ({ onClick, children }) => (
-    <button onClick={onClick} style={{ width: "100%", background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.ouroTxt, cursor: "pointer", marginTop: 12 }}>
+    <button onClick={onClick} style={{ width: "100%", background: "transparent", border: `1.5px solid ${C.blushDk}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.blushDk, cursor: "pointer", marginTop: 12 }}>
       {children}
     </button>
   );
@@ -10475,13 +10475,13 @@ function Emergencia({
  return (
     <div style={{ animation: "fadeUp .4s ease" }}>
       <div style={{ background: C.creme, padding: "16px 20px 16px", textAlign: "center", position: "relative", borderBottom: `1px solid ${C.ouro}20` }}>
-        <button onClick={back} style={{ position: "absolute", left: 14, top: 18, background: "none", border: "none", color: C.terra, fontFamily: FB, fontWeight: 400, fontSize: 14.5, cursor: "pointer" }}>
+        <button onClick={back} style={{ position: "absolute", left: 14, top: 18, background: "none", border: "none", color: C.terra, fontFamily: FB, fontWeight: 400, fontSize: 16, cursor: "pointer" }}>
           ← Hoje
         </button>
-        <div style={{ fontFamily: FS, fontSize: 21, fontWeight: 400, color: C.ouroTxt }}>
+        <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 500, color: C.blushDk }}>
  Kit de Emergência
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 6 }}>
  Tá difícil agora? Vamos com calma
         </div>
       </div>
@@ -10489,14 +10489,14 @@ function Emergencia({
 
         {/* 1 · Âncora de Identidade — prompt fixo (seção 4.9) */}
         <Sec label="Sua Âncora de Identidade">
-          <div style={{ display: "inline-block", background: `${C.ouro}45`, borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.obs2, marginBottom: 10 }}>
+          <div style={{ display: "inline-block", background: `${C.ouro}45`, borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, marginBottom: 10 }}>
  O que essa mulher faria?
           </div>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs, lineHeight: 1.5 }}>
  "{anc}"
           </div>
           {usou === "ancora" ? (
-            <div style={{ fontFamily: FB, fontSize: 13, color: C.ouroTxt, marginTop: 10 }}>✓ Registrado — você agiu.</div>
+            <div style={{ fontFamily: FB, fontSize: 16, color: C.ouroTxt, marginTop: 10 }}>✓ Registrado — você agiu.</div>
           ) : (
             <BtnAcao onClick={() => usar("ancora", "Você usou sua Âncora ")}>É isso que ela faria — vou fazer</BtnAcao>
           )}
@@ -10504,21 +10504,21 @@ function Emergencia({
 
         {/* 2 · Mínimos Inegociáveis — versão ainda menor que a meta (seção 4.9) */}
         <Sec label="Seus Mínimos Inegociáveis">
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>
  Se não vai dar pra fazer tudo, vamos de mínimos possíveis.
           </div>
           {HABS_FIXOS.some((h) => metas?.[h.id]?.minimo) ? (
             HABS_FIXOS.filter((h) => metas?.[h.id]?.minimo).map((h) => (
               <div key={h.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.ouro, marginTop: 8, flexShrink: 0 }} />
-                <div><span style={{ fontFamily: FB, fontSize: 13.5, color: C.terra }}>{h.nome}: </span><span style={{ fontFamily: FS, fontSize: 16, color: C.obs }}>{metas[h.id].minimo}</span></div>
+                <div><span style={{ fontFamily: FB, fontSize: 16, color: C.terra }}>{h.nome}: </span><span style={{ fontFamily: FB, fontSize: 16, color: C.obs }}>{metas[h.id].minimo}</span></div>
               </div>
             ))
           ) : (
-            <div style={{ fontFamily: FS, fontSize: 16, color: C.lt, lineHeight: 1.6 }}>Defina seus mínimos em Meu Mapa → Seus Mínimos Inegociáveis.</div>
+            <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.6 }}>Defina seus mínimos em Meu Mapa → Seus Mínimos Inegociáveis.</div>
           )}
           {usou === "minimos" ? (
-            <div style={{ fontFamily: FB, fontSize: 13, color: C.ouroTxt, marginTop: 10 }}>✓ Registrado — mínimo é suficiente.</div>
+            <div style={{ fontFamily: FB, fontSize: 16, color: C.ouroTxt, marginTop: 10 }}>✓ Registrado — mínimo é suficiente.</div>
           ) : (
             <BtnAcao onClick={() => usar("minimos", "Hoje vale o mínimo. E conta inteiro ")}>Fiz o mínimo</BtnAcao>
           )}
@@ -10530,13 +10530,13 @@ function Emergencia({
             <div style={{ width: 38, height: 38, borderRadius: "50%", background: `${C.ouro}45`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs2, flexShrink: 0 }}>
               {(kitPessoa?.nome || "?").slice(0, 1).toUpperCase()}
             </div>
-            <div style={{ flex: 1, fontFamily: FS, fontSize: 17, color: C.obs }}>
+            <div style={{ flex: 1, fontFamily: FB, fontSize: 17, color: C.obs }}>
               {kitPessoa?.nome || "Ninguém cadastrada ainda — ajuste nas Configurações"}
             </div>
           </div>
           {waLink && (
             <button onClick={() => { usar("pessoa", "Falar ajuda. Sempre."); window.open(waLink, "_blank"); }}
- style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 10, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 14, color: C.obs, cursor: "pointer", marginTop: 12 }}>
+ style={{ width: "100%", background: C.blushDk, border: "none", borderRadius: 10, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.creme, cursor: "pointer", marginTop: 12 }}>
  Chamar no WhatsApp
             </button>
           )}
