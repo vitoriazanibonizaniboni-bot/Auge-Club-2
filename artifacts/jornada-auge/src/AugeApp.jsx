@@ -139,6 +139,12 @@ const IcoH = {
       <polygon points="12 2.5 14.9 9 22 9.6 16.7 14.3 18.3 21.5 12 17.7 5.7 21.5 7.3 14.3 2 9.6 9.1 9" />
     </svg>
   ),
+ checkCirc: (c, s = 18, fill = "none") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill={fill} stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.3l2.7 2.7L16 9.5" />
+    </svg>
+  ),
  cadeado: (c, s = 15) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round">
       <rect x="5" y="11" width="14" height="9" rx="2" />
@@ -11010,6 +11016,26 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  const [guiaAberto, setGuiaAberto] = useState(null); // guia HTML aberto dentro do app
   const [guiaHtml, setGuiaHtml] = useState(""); // conteudo HTML do guia/indicacao (renderizado via srcDoc)
+  // ── "Assistido": ids dos videos que esta aluna ja marcou (tabela videos_assistidos) ──
+  const [assistidos, setAssistidos] = useState(() => new Set());
+  useEffect(() => {
+    if (!authUserId) return;
+    let vivo = true;
+    supabase.from("videos_assistidos").select("video_id").eq("user_id", authUserId)
+      .then(({ data }) => { if (vivo) setAssistidos(new Set((data || []).map((r) => String(r.video_id)))); });
+    return () => { vivo = false; };
+  }, [authUserId]);
+  const jaAssistiu = (id) => assistidos.has(String(id));
+  const marcarAssistido = async (id) => {
+    if (!id || !authUserId) return;
+    const chave = String(id);
+    const tinha = assistidos.has(chave);
+    setAssistidos((s) => { const n = new Set(s); if (tinha) n.delete(chave); else n.add(chave); return n; });
+    try {
+      if (tinha) await supabase.from("videos_assistidos").delete().eq("user_id", authUserId).eq("video_id", chave);
+      else await supabase.from("videos_assistidos").upsert({ user_id: authUserId, video_id: chave }, { onConflict: "user_id,video_id" });
+    } catch {}
+  };
   useEffect(() => {
     if (!guiaAberto) { setGuiaHtml(""); return; }
     let vivo = true;
@@ -11246,6 +11272,11 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                     </span>
                   </span>
                 )}
+                {jaAssistiu(v.id) && (
+                  <span style={{ position: "absolute", top: 5, right: 5, width: 22, height: 22, borderRadius: "50%", background: C.oliva, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {IcoH.checkCirc(C.creme, 14)}
+                  </span>
+                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: C.ouroTxt, marginBottom: 4 }}>
@@ -11254,9 +11285,16 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                 <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs, lineHeight: 1.3, marginBottom: 5 }}>
                   {v.titulo}
                 </div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt }}>
-                  {formato}
-                  {catSel !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span>
+                    {formato}
+                    {catSel !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
+                  </span>
+                  {jaAssistiu(v.id) && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: C.terra }}>
+                      · Assistido
+                    </span>
+                  )}
                 </div>
               </div>
               <span style={{ flexShrink: 0, fontSize: 20, color: C.ouroTxt, paddingRight: 2 }}>›</span>
@@ -11302,6 +11340,30 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
               <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 20, color: C.obs, lineHeight: 1.32, marginTop: 16 }}>
                 {videoAberto.dur ? `${videoAberto.dur} | ${videoAberto.titulo}` : videoAberto.titulo}
               </div>
+              {videoAberto.id && (
+                <button
+                  onClick={() => marcarAssistido(videoAberto.id)}
+                  aria-pressed={jaAssistiu(videoAberto.id)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginTop: 12,
+                    background: jaAssistiu(videoAberto.id) ? C.oliva : "transparent",
+                    border: `1.5px solid ${jaAssistiu(videoAberto.id) ? C.oliva : C.ouro + "88"}`,
+                    borderRadius: 50,
+                    padding: "9px 16px",
+                    fontFamily: FB,
+                    fontWeight: jaAssistiu(videoAberto.id) ? 600 : 400,
+                    fontSize: 16,
+                    color: jaAssistiu(videoAberto.id) ? C.creme : C.ouroTxt,
+                    cursor: "pointer",
+                  }}
+                >
+                  {IcoH.checkCirc(jaAssistiu(videoAberto.id) ? C.creme : C.ouroTxt, 18)}
+                  {jaAssistiu(videoAberto.id) ? "Assistido" : "Marcar como assistido"}
+                </button>
+              )}
               {videoAberto.sub && (
                 <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.6, marginTop: 10 }}>
                   {videoAberto.sub}
