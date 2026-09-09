@@ -11789,9 +11789,12 @@ function PainelMentora({ ir }) {
       { id: "mentoria_duracao", valor: ment.duracao },
       { id: "mentoria_zoom", valor: ment.zoom },
       { id: "desafio_texto", valor: ment.desafio },
-      { id: "jornada_inicio", valor: ment.inicio },
       { id: "contato_whatsapp", valor: ment.whatsapp },
     ];
+    // A data geral so e gravada quando tem valor. Salvar o formulario com esse
+    // campo vazio apagaria a rede de seguranca de quem esta sem turma, e a
+    // semana dessas alunas passaria a sair da data de cadastro delas.
+ if ((ment.inicio || "").trim()) upserts.push({ id: "jornada_inicio", valor: ment.inicio.trim() });
  await Promise.all(upserts.map((u) => supabase.from("config").upsert(u, { onConflict: "id" })));
  setSalvandoM(false);
  setSalvoM(true);
