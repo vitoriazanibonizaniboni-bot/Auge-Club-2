@@ -1215,7 +1215,8 @@ export default function App() {
  const [postPrefill, setPostPrefill] = useState(null);
  // "ver progresso" na Hoje: abre a Trajetoria ja com o painel deste hábito
  const [habProgresso, setHabProgresso] = useState(null);
- const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config)
+ const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config, ou da turma)
+ const [turma, setTurma] = useState(null); // turma da aluna: inicio, encontro, link do Meet e desafio
  const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
  const [minhaFoto, setMinhaFoto] = useState(null);
@@ -1815,6 +1816,26 @@ export default function App() {
  setContatoWhats(cfg.contato_whatsapp || "");
  const _pg = (id) => { try { const a = JSON.parse(cfg[`guias_${id}`] || "[]"); if (Array.isArray(a) && a.length) return a; } catch {} return cfg[`guia_${id}`] ? [{ nome: "", url: cfg[`guia_${id}`] }] : []; };
  setGuias({ movimento: _pg("movimento"), sono: _pg("sono"), tempo: _pg("tempo") });
+    }
+
+    // ── A turma da aluna ────────────────────────────────────────────────────
+    // Vem DEPOIS do config de proposito: a data de inicio, o encontro, o link
+    // do Meet e o desafio da turma valem mais que os valores gerais. Aluna sem
+    // turma continua no que esta no config, como sempre foi.
+ const _turmaId = perfilRes.data?.turma_id;
+ if (_turmaId) {
+ const { data: t } = await supabase.from("turmas").select("*").eq("id", _turmaId).single();
+ if (t) {
+ setTurma(t);
+ if (t.inicio) setJornadaInicio(t.inicio);
+ setMentoria((m) => ({
+ data: t.mentoria_data || m.data,
+ semana: m.semana,
+ duracao: t.mentoria_duracao || m.duracao,
+ zoom: t.zoom || m.zoom,
+        }));
+ if (t.desafio) setDesafioTexto(t.desafio);
+      }
     }
 
     // Carregar vídeos do Supabase
@@ -5014,7 +5035,7 @@ function Home({
             >
               {mentoria.data}
             </div>
-            {(mentoria.semana || mentoria.duracao) && (
+            {mentoria.duracao && (
               <div
  style={{
  fontFamily: FB,
@@ -5024,7 +5045,7 @@ function Home({
  marginTop: 4,
                 }}
               >
-                {[mentoria.semana, mentoria.duracao].filter(Boolean).join(" · ")}
+                {mentoria.duracao}
               </div>
             )}
             {mentoria.zoom && (
@@ -11728,7 +11749,6 @@ function PainelMentora({ ir }) {
  setSalvandoM(true);
  const upserts = [
       { id: "mentoria_data", valor: ment.data },
-      { id: "mentoria_semana", valor: ment.semana },
       { id: "mentoria_duracao", valor: ment.duracao },
       { id: "mentoria_zoom", valor: ment.zoom },
       { id: "desafio_texto", valor: ment.desafio },
@@ -11863,7 +11883,6 @@ function PainelMentora({ ir }) {
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: `rgba(28,26,23,.95)`, marginBottom: 20 }}>Próxima mentoria</div>
             {[
               ["Data e horário", "data", "Ex: 15 de julho · 19h"],
-              ["Semana da jornada", "semana", "Ex: Semana 3"],
               ["Duração", "duracao", "Ex: 75 min"],
               ["Link do Meet", "zoom", "https://meet.google.com/..."],
               ["Desafio da Semana (turma)", "desafio", "Ex: ler 5 páginas por dia"],
