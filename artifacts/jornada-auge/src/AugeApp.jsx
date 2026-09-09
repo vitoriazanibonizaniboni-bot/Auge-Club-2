@@ -11481,7 +11481,34 @@ function PainelMentora({ ir }) {
  };
  const ativarAluna = async (id, plano) => {
  const { error } = await supabase.rpc("set_aluna_plano", { p_user_id: id, p_plano: plano });
- if (!error) setPendentes((ps) => ps.filter((x) => x.id !== id));
+ if (error) return;
+    // A turma escolhida na hora de liberar: e dela que sai a semana da aluna.
+ const t = turmaPend[id];
+ if (t) { try { await supabase.rpc("admin_set_turma", { p_user_id: id, p_turma: t }); } catch {} }
+ setPendentes((ps) => ps.filter((x) => x.id !== id));
+  };
+  // ── turmas: cada uma com a sua data de inicio ──
+ const [turmas, setTurmas] = useState([]);
+ const [turmaPend, setTurmaPend] = useState({}); // turma escolhida para cada aluna pendente
+ const [salvandoT, setSalvandoT] = useState(false);
+ const [salvoT, setSalvoT] = useState(false);
+ const salvarTurmas = async () => {
+ setSalvandoT(true);
+ try {
+ for (const t of turmas) {
+ await supabase.rpc("admin_salvar_turma", {
+ p_id: t.id,
+ p_nome: (t.nome || "").trim(),
+ p_inicio: t.inicio || null,
+ p_mentoria_data: t.mentoria_data || null,
+ p_mentoria_duracao: t.mentoria_duracao || null,
+ p_zoom: t.zoom || null,
+ p_desafio: t.desafio || null,
+          });
+      }
+ setSalvoT(true); setTimeout(() => setSalvoT(false), 2500);
+ } catch {}
+ setSalvandoT(false);
   };
  const [whatsSalvo, setWhatsSalvo] = useState(false);
  const salvarWhats = async () => {
@@ -11550,6 +11577,7 @@ function PainelMentora({ ir }) {
  setGuiasList({ movimento: pg("movimento"), sono: pg("sono"), tempo: pg("tempo") });
       });
  supabase.rpc("get_pendentes_admin").then(({ data }) => setPendentes(data || []));
+ supabase.from("turmas").select("*").order("ordem").then(({ data }) => setTurmas(data || []));
   }, []);
 
   // Carregar alunas ao clicar na aba
@@ -11839,7 +11867,7 @@ function PainelMentora({ ir }) {
               ["Duração", "duracao", "Ex: 75 min"],
               ["Link do Meet", "zoom", "https://meet.google.com/..."],
               ["Desafio da Semana (turma)", "desafio", "Ex: ler 5 páginas por dia"],
-              ["Início da Jornada (segunda-feira da S1)", "inicio", "AAAA-MM-DD, ex: 2026-07-06"],
+              ["Início da Jornada (só para aluna sem turma)", "inicio", "AAAA-MM-DD, ex: 2026-07-06"],
             ].map(([lb, field, ph]) => (
               <div key={field} style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
@@ -11854,6 +11882,43 @@ function PainelMentora({ ir }) {
             <BtnPill onClick={salvarMentoria} style={{ fontSize: 16 }}>
               {salvoM ? "✓ Salvo!" : salvandoM ? "Salvando..." : "Salvar mentoria"}
             </BtnPill>
+
+            {/* Turmas — cada uma com a sua data de inicio */}
+            <div style={{ borderTop: `1px solid ${C.ouro}25`, margin: "26px 0 0", paddingTop: 18 }}>
+              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs, marginBottom: 4 }}>
+                Turmas
+              </div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 14, lineHeight: 1.5 }}>
+                Cada turma tem a sua data de início e o seu encontro. A data de início é a segunda-feira da Semana 1 daquela turma: é dela que sai a semana de cada aluna e o desbloqueio do Sono (S5) e do Tempo para Si (S9). Turma sem data ainda não começou.
+              </div>
+              {turmas.map((t, i) => {
+                const mudar = (campo, valor) => setTurmas((ts) => ts.map((x, xi) => xi === i ? { ...x, [campo]: valor } : x));
+                const campo = (lb, k, ph) => (
+                  <div key={k} style={{ marginBottom: 10 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt, marginBottom: 3 }}>{lb}</div>
+                    <input
+                      value={t[k] || ""}
+                      onChange={(e) => mudar(k, e.target.value)}
+                      placeholder={ph}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 15, padding: "5px 0" }}
+                    />
+                  </div>
+                );
+                return (
+                  <div key={t.id} style={{ background: `rgba(28,26,23,.03)`, border: `1px solid ${C.ouro}22`, borderRadius: 12, padding: "13px 14px", marginBottom: 12 }}>
+                    {campo("Nome da turma", "nome", "Ex: Turma 1")}
+                    {campo("Início — segunda-feira da S1", "inicio", "AAAA-MM-DD, ex: 2026-08-03")}
+                    {campo("Próximo encontro", "mentoria_data", "Ex: 15 de setembro · 19h")}
+                    {campo("Duração", "mentoria_duracao", "Ex: 75 min")}
+                    {campo("Link do Meet", "zoom", "https://meet.google.com/...")}
+                    {campo("Desafio da semana", "desafio", "Ex: ler 5 páginas por dia")}
+                  </div>
+                );
+              })}
+              <button onClick={salvarTurmas} style={{ background: C.ouro, border: "none", borderRadius: 50, padding: "9px 20px", fontFamily: FB, fontWeight: 500, fontSize: 14, color: C.obs, cursor: "pointer", marginTop: 6 }}>
+                {salvoT ? "✓ Salvo!" : salvandoT ? "Salvando..." : "Salvar turmas"}
+              </button>
+            </div>
 
             {/* Guias dos Hábitos Angulares — anexar HTML */}
             <div style={{ borderTop: `1px solid ${C.ouro}25`, margin: "26px 0 0", paddingTop: 18 }}>
@@ -12124,6 +12189,21 @@ function PainelMentora({ ir }) {
                   <div key={a.id} style={{ borderTop: `1px solid ${C.ouro}20`, paddingTop: 10, marginTop: 10 }}>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs }}>{a.nome || "—"}</div>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 8 }}>{a.email || ""}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, flexShrink: 0 }}>Turma:</span>
+                      <select
+                        value={turmaPend[a.id] || ""}
+                        onChange={(e) => setTurmaPend((t) => ({ ...t, [a.id]: e.target.value }))}
+                        style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 8, padding: "6px 8px", fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.obs, cursor: "pointer" }}
+                      >
+                        <option value="">Sem turma (usa a data geral)</option>
+                        {turmas.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.nome}{t.inicio ? ` · começa ${t.inicio}` : " · sem data"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={() => ativarAluna(a.id, "jornada")} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 500, fontSize: 13.5, color: C.obs, cursor: "pointer" }}>Liberar Jornada</button>
                       <button onClick={() => ativarAluna(a.id, "comunidade")} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>Liberar Comunidade</button>
