@@ -1436,12 +1436,14 @@ export default function App() {
   };
 
   // Busca os posts do Mural (usada no login e ao abrir a aba)
- const carregarFeed = async (userId, turmaId) => {
+ const carregarFeed = async (userId, turmaId, ehAdmin) => {
  if (!userId) return;
     // Cada aluna ve so o Mural da turma dela. Quem esta sem turma ve os
     // posts que tambem estao sem turma — nada vaza de uma turma para a outra.
+    // A mentora e a excecao: ela acompanha todas as turmas, entao ve tudo.
  const _t = turmaId !== undefined ? turmaId : turma?.id || null;
- const soDaMinhaTurma = (q) => (_t ? q.eq("turma_id", _t) : q.is("turma_id", null));
+ const _admin = ehAdmin !== undefined ? ehAdmin : perfil === "admin";
+ const soDaMinhaTurma = (q) => (_admin ? q : _t ? q.eq("turma_id", _t) : q.is("turma_id", null));
  const [feedPublicoRes, feedPrivadoRes] = await Promise.all([
  soDaMinhaTurma(supabase
         .from("feed")
@@ -1804,7 +1806,7 @@ export default function App() {
     }
 
  // A turma vem do perfil que acabou de ser lido: o estado ainda nao existe aqui.
- await carregarFeed(userId, perfilRes.data?.turma_id || null);
+ await carregarFeed(userId, perfilRes.data?.turma_id || null, perfilRes.data?.plano === "admin");
 
     // Carregar configurações (mentoria)
  const configRes = await supabase.from("config").select("*");
@@ -1854,7 +1856,9 @@ export default function App() {
  if (videosRes.data?.length) {
       // Video sem turma e de todas; video com turma so aparece para a turma dele.
       // Esquecer de marcar deixa o video visivel para todas, nunca invisivel.
- setVideos(videosRes.data.filter((v) => !v.turma_id || v.turma_id === _turmaId));
+      // A mentora ve tudo: ela acompanha as tres turmas.
+ const _admin = perfilRes.data?.plano === "admin";
+ setVideos(videosRes.data.filter((v) => _admin || !v.turma_id || v.turma_id === _turmaId));
     }
 
     // Carregar perfis do Radar de Amigas
