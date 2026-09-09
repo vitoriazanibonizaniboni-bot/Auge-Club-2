@@ -11749,6 +11749,24 @@ function PainelMentora({ ir }) {
  setSalvandoV(false);
   };
 
+ // Editar titulo e descricao sem precisar apagar e cadastrar de novo
+ const [editV, setEditV] = useState(null); // { id, titulo, descricao, duracao }
+ const [salvandoEdV, setSalvandoEdV] = useState(false);
+ const salvarEdicaoVideo = async () => {
+ if (!editV) return;
+ setSalvandoEdV(true);
+ const campos = {
+ titulo: (editV.titulo || "").trim(),
+ descricao: (editV.descricao || "").trim(),
+ duracao: (editV.duracao || "").trim() || "30 min",
+    };
+ const { error } = await supabase.from("videos").update(campos).eq("id", editV.id);
+ if (!error) {
+ setVideos((v) => v.map((x) => (x.id === editV.id ? { ...x, ...campos } : x)));
+ setEditV(null);
+    }
+ setSalvandoEdV(false);
+  };
  const trocarTurmaVideo = async (id, turmaId) => {
  const antes = videos;
  setVideos((v) => v.map((x) => (x.id === id ? { ...x, turma_id: turmaId || null } : x)));
@@ -11894,6 +11912,28 @@ function PainelMentora({ ir }) {
             ) : videos.length === 0 ? (
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
             ) : videos.map((v) => (
+ editV?.id === v.id ? (
+              <div key={v.id} style={{ background: `rgba(28,26,23,.05)`, border: `1px solid ${C.ouro}44`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
+                {[["Título", "titulo"], ["Descrição", "descricao"], ["Duração", "duracao"]].map(([lb, k]) => (
+                  <div key={k} style={{ marginBottom: 10 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 3 }}>{lb}</div>
+                    <input
+                      value={editV[k] || ""}
+                      onChange={(e) => setEditV((x) => ({ ...x, [k]: e.target.value }))}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 15, padding: "5px 0" }}
+                    />
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  <button onClick={salvarEdicaoVideo} style={{ background: C.ouro, border: "none", borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 500, fontSize: 14, color: C.obs, cursor: "pointer" }}>
+                    {salvandoEdV ? "Salvando..." : "Salvar"}
+                  </button>
+                  <button onClick={() => setEditV(null)} style={{ background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.ouroTxt, cursor: "pointer" }}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
               <div key={v.id} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
                 {v.youtube_id && (
                   <img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" style={{ width: 60, height: 45, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
@@ -11912,9 +11952,15 @@ function PainelMentora({ ir }) {
                     ))}
                   </select>
                 </div>
-                <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(28,26,23,.9)`, cursor: "pointer", fontSize: 17, flexShrink: 0 }}>✕</button>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+                  <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(28,26,23,.9)`, cursor: "pointer", fontSize: 17 }}>✕</button>
+                  <button onClick={() => setEditV({ id: v.id, titulo: v.titulo || "", descricao: v.descricao || "", duracao: v.duracao || "" })}
+                    style={{ background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "4px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>
+                    editar
+                  </button>
+                </div>
               </div>
-            ))}
+            )))}
           </div>
         )}
 
