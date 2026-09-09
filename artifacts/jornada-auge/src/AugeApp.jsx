@@ -11272,15 +11272,17 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                     </span>
                   </span>
                 )}
-                {jaAssistiu(v.id) && (
-                  <span style={{ position: "absolute", top: 5, right: 5, width: 22, height: 22, borderRadius: "50%", background: C.oliva, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {IcoH.checkCirc(C.creme, 14)}
-                  </span>
-                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: C.ouroTxt, marginBottom: 4 }}>
-                  {rotuloCat}
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                  <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: C.ouroTxt }}>
+                    {rotuloCat}
+                  </span>
+                  {jaAssistiu(v.id) && (
+                    <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: "50%", background: C.oliva, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {IcoH.checkCirc(C.creme, 13)}
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs, lineHeight: 1.3, marginBottom: 5 }}>
                   {v.titulo}
