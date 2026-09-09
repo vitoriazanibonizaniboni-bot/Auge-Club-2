@@ -1806,7 +1806,7 @@ export default function App() {
     }
 
  // A turma vem do perfil que acabou de ser lido: o estado ainda nao existe aqui.
- await carregarFeed(userId, perfilRes.data?.turma_id || null, perfilRes.data?.plano === "admin");
+ await carregarFeed(userId, profileRes.data?.turma_id || null, profileRes.data?.plano === "admin");
 
     // Carregar configurações (mentoria)
  const configRes = await supabase.from("config").select("*");
@@ -1829,7 +1829,7 @@ export default function App() {
     // Vem DEPOIS do config de proposito: a data de inicio, o encontro, o link
     // do Meet e o desafio da turma valem mais que os valores gerais. Aluna sem
     // turma continua no que esta no config, como sempre foi.
- const _turmaId = perfilRes.data?.turma_id;
+ const _turmaId = profileRes.data?.turma_id;
  if (_turmaId) {
  const { data: t } = await supabase.from("turmas").select("*").eq("id", _turmaId).single();
  if (t) {
@@ -1857,7 +1857,7 @@ export default function App() {
       // Video sem turma e de todas; video com turma so aparece para a turma dele.
       // Esquecer de marcar deixa o video visivel para todas, nunca invisivel.
       // A mentora ve tudo: ela acompanha as tres turmas.
- const _admin = perfilRes.data?.plano === "admin";
+ const _admin = profileRes.data?.plano === "admin";
  setVideos(videosRes.data.filter((v) => _admin || !v.turma_id || v.turma_id === _turmaId));
     }
 
