@@ -1436,13 +1436,17 @@ export default function App() {
   };
 
   // Busca os posts do Mural (usada no login e ao abrir a aba)
- const carregarFeed = async (userId) => {
+ const carregarFeed = async (userId, turmaId) => {
  if (!userId) return;
+    // Cada aluna ve so o Mural da turma dela. Quem esta sem turma ve os
+    // posts que tambem estao sem turma — nada vaza de uma turma para a outra.
+ const _t = turmaId !== undefined ? turmaId : turma?.id || null;
+ const soDaMinhaTurma = (q) => (_t ? q.eq("turma_id", _t) : q.is("turma_id", null));
  const [feedPublicoRes, feedPrivadoRes] = await Promise.all([
- supabase
+ soDaMinhaTurma(supabase
         .from("feed")
         .select("id, autor_nome, autor_ini, autor_cor, autor_avatar, titulo, descricao, img_url, publica, curtidas, comentarios, created_at, user_id, source, habito")
-        .eq("publica", true)
+        .eq("publica", true))
         .order("created_at", { ascending: false })
         .limit(50),
  supabase
@@ -1799,7 +1803,8 @@ export default function App() {
  setPq3(porquesRes.data.p3 || "");
     }
 
- await carregarFeed(userId);
+ // A turma vem do perfil que acabou de ser lido: o estado ainda nao existe aqui.
+ await carregarFeed(userId, perfilRes.data?.turma_id || null);
 
     // Carregar configurações (mentoria)
  const configRes = await supabase.from("config").select("*");
@@ -2073,6 +2078,7 @@ export default function App() {
  titulo: entry.tit || "",
  descricao: entry.desc || "",
  habito: entry.habito || null,
+ turma_id: turma?.id || null,
  publica: entry.publica !== false,
  img_url: imgUrl,
  autor_avatar: minhaFoto,
