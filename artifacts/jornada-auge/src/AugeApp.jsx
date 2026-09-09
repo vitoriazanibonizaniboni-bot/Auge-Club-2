@@ -5021,7 +5021,7 @@ function Home({
  textTransform: "uppercase",
                 }}
               >
- Proximo encontro
+ Próximo encontro
               </span>
             </div>
             <div
