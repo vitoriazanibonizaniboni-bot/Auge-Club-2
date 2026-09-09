@@ -191,11 +191,12 @@ async function lembretesDoDia(supaUrl, serviceKey) {
   // 60 dias bastam para qualquer sequencia que valha a pena comemorar
   const desde = menosDias(hoje, 60);
 
-  const [pRes, cRes, rRes, hpRes] = await Promise.all([
-    fetch(`${supaUrl}/rest/v1/profiles?select=id,plano,data_cadastro&plano=in.(jornada,comunidade,admin)`, { headers: h }),
+  const [pRes, cRes, rRes, hpRes, tRes] = await Promise.all([
+    fetch(`${supaUrl}/rest/v1/profiles?select=id,plano,data_cadastro,turma_id&plano=in.(jornada,comunidade,admin)`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/config?select=id,valor&id=eq.jornada_inicio`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/registros?select=user_id,habito,data&data=gte.${desde}`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/habitos_pessoais?select=id,user_id,nome,ativo&ativo=is.true`, { headers: h }),
+    fetch(`${supaUrl}/rest/v1/turmas?select=id,inicio`, { headers: h }),
   ]);
   if (!pRes.ok) throw new Error("Falha ao ler profiles");
   if (!rRes.ok) throw new Error("Falha ao ler registros");
@@ -206,6 +207,12 @@ async function lembretesDoDia(supaUrl, serviceKey) {
   const registros = await rRes.json();
   // A tabela pode nao existir ainda num ambiente antigo: sem ela, so os 3 fixos
   const pessoais = hpRes.ok ? await hpRes.json() : [];
+  // Cada turma tem a sua data de inicio, e e dela que sai a semana da aluna.
+  // Sem a tabela (ambiente antigo), todo mundo cai na data geral do config.
+  const inicioDaTurma = new Map();
+  if (tRes.ok) {
+    for (const t of await tRes.json()) if (t.inicio) inicioDaTurma.set(t.id, String(t.inicio).slice(0, 10));
+  }
 
   // Indice: user_id -> Set("habito|data")
   const marcou = new Map();
@@ -243,7 +250,9 @@ async function lembretesDoDia(supaUrl, serviceKey) {
       });
     if (!presente) continue;
 
-    const sem = semanaDaJornada(hoje, inicioTurma || a.data_cadastro);
+    // A semana sai da turma dela; sem turma, da data geral; sem nenhuma das
+    // duas, do dia em que ela se cadastrou — a mesma ordem que o app usa.
+    const sem = semanaDaJornada(hoje, inicioDaTurma.get(a.turma_id) || inicioTurma || a.data_cadastro);
 
     const candidatos = [];
     for (const hb of HABITOS) {
