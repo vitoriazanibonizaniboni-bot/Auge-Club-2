@@ -1852,7 +1852,9 @@ export default function App() {
       .order("created_at", { ascending: false });
 
  if (videosRes.data?.length) {
- setVideos(videosRes.data);
+      // Video sem turma e de todas; video com turma so aparece para a turma dele.
+      // Esquecer de marcar deixa o video visivel para todas, nunca invisivel.
+ setVideos(videosRes.data.filter((v) => !v.turma_id || v.turma_id === _turmaId));
     }
 
     // Carregar perfis do Radar de Amigas
@@ -11460,7 +11462,7 @@ function PainelMentora({ ir }) {
   // ── estado vídeos ──
  const [videos, setVideos] = useState([]);
  const [loadingV, setLoadingV] = useState(true);
- const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "aulas", duracao: "30 min", descricao: "" });
+ const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "aulas", duracao: "30 min", descricao: "", turma_id: "" });
  const [salvandoV, setSalvandoV] = useState(false);
  const [mostrarForm, setMostrarForm] = useState(false);
  const [upIndicMsg, setUpIndicMsg] = useState(""); // status do upload de HTML da indicacao
@@ -11733,19 +11735,26 @@ function PainelMentora({ ir }) {
  categoria: formV.categoria,
  duracao: formV.duracao.trim() || "30 min",
  descricao: formV.descricao.trim(),
+ turma_id: formV.turma_id || null,
  ativo: true,
  ordem: videos.length + 1,
  plano_minimo: "comunidade",
     }).select().single();
  if (!error && data) {
  setVideos((v) => [data, ...v]);
- setFormV({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "" });
+ setFormV({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "", turma_id: "" });
  setUpIndicMsg("");
  setMostrarForm(false);
     }
  setSalvandoV(false);
   };
 
+ const trocarTurmaVideo = async (id, turmaId) => {
+ const antes = videos;
+ setVideos((v) => v.map((x) => (x.id === id ? { ...x, turma_id: turmaId || null } : x)));
+ const { error } = await supabase.from("videos").update({ turma_id: turmaId || null }).eq("id", id);
+ if (error) setVideos(antes);
+  };
  const removerVideo = async (id) => {
  await supabase.from("videos").delete().eq("id", id);
  setVideos((v) => v.filter((x) => x.id !== id));
@@ -11856,6 +11865,22 @@ function PainelMentora({ ir }) {
                     ))}
                   </div>
                 </div>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>Turma</div>
+                  <select
+                    value={formV.turma_id}
+                    onChange={(e) => setFormV((f) => ({ ...f, turma_id: e.target.value }))}
+                    style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 8, padding: "7px 8px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs, cursor: "pointer" }}
+                  >
+                    <option value="">Todas as turmas</option>
+                    {turmas.map((t) => (
+                      <option key={t.id} value={t.id}>Só a {t.nome}</option>
+                    ))}
+                  </select>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 5, lineHeight: 1.45 }}>
+                    Gravação de encontro é de uma turma só. Meditação, yoga, indicação e podcast normalmente ficam em "Todas as turmas".
+                  </div>
+                </div>
                 <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 16 }}>
                   {salvandoV ? "Salvando..." : (formV.categoria === "podcast" ? "Salvar podcast" : formV.categoria === "curadoria" ? "Salvar indicação" : "Salvar vídeo")}
                 </BtnPill>
@@ -11875,7 +11900,17 @@ function PainelMentora({ ir }) {
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.92)`, marginBottom: 3 }}>{v.titulo}</div>
-                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)` }}>{v.categoria} · {v.duracao}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)`, marginBottom: 6 }}>{v.categoria} · {v.duracao}</div>
+                  <select
+                    value={v.turma_id || ""}
+                    onChange={(e) => trocarTurmaVideo(v.id, e.target.value)}
+                    style={{ background: "transparent", border: `1px solid ${C.ouro}44`, borderRadius: 7, padding: "4px 6px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2, cursor: "pointer", maxWidth: "100%" }}
+                  >
+                    <option value="">Todas as turmas</option>
+                    {turmas.map((t) => (
+                      <option key={t.id} value={t.id}>Só a {t.nome}</option>
+                    ))}
+                  </select>
                 </div>
                 <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(28,26,23,.9)`, cursor: "pointer", fontSize: 17, flexShrink: 0 }}>✕</button>
               </div>
