@@ -5276,6 +5276,14 @@ function Home({
               />
             ))}
 
+            {/* Desafio da Semana (seção 4.10) — contido no card, sem zona nem alerta */}
+            <DesafioCard
+ texto={desafioTexto}
+ desafioFeitos={desafioFeitos}
+ toggleDesafio={toggleDesafio}
+ diasDaSemana={diasDaSemana}
+            />
+
             {/* Meus hábitos — criados pela aluna (seção 5) */}
             <div
  style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", margin: "20px 0 10px" }}
@@ -5322,14 +5330,6 @@ function Home({
               <div>Esqueceu de um dia?</div>
               <div style={{ marginTop: 6, textDecoration: "underline" }}>Preencha dias anteriores</div>
             </button>
-
-            {/* Desafio da Semana (seção 4.10) — contido no card, sem zona nem alerta */}
-            <DesafioCard
- texto={desafioTexto}
- desafioFeitos={desafioFeitos}
- toggleDesafio={toggleDesafio}
- diasDaSemana={diasDaSemana}
-            />
 
             {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
             <div style={{ height: 64 }} />
