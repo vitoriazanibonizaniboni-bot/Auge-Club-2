@@ -4660,8 +4660,8 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         </div>
       )}
 
-      {/* confirmação de check-in — só depois de marcar */}
-      {marcado && (
+      {/* confirmação de check-in — só depois de marcar E fechar o convite do Mural */}
+      {marcado && !convite && (
         <div style={{ marginTop: 12, textAlign: "center", background: `${C.ouro}1F`, borderRadius: 10, padding: "10px 12px" }}>
           <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.ouroTxt }}>Parabéns, mais 1%!</div>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 2 }}>Você cuidou de você hoje.</div>
