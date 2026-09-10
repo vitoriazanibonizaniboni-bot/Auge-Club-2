@@ -20,6 +20,7 @@
     { "path": "/api/lembretes", "schedule": "0 20 * * 5" },
     { "path": "/api/lembretes", "schedule": "0 22 * * 0" },
     { "path": "/api/lembretes", "schedule": "0 22 * * 1-6" },
-    { "path": "/api/lembretes", "schedule": "0 23 * * *" }
+    { "path": "/api/lembretes", "schedule": "0 23 * * *" },
+    { "path": "/api/destaque-semanal", "schedule": "0 0 * * 1" }
   ]
 }

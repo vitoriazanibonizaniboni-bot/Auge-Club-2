@@ -5554,7 +5554,14 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
     .filter((p) => p.publica || p.userId === authUserId || p.aut === "Você")
     .filter((p) =>
       filtro === "minhas" ? (p.userId === authUserId || p.aut === "Você")
-      : true);
+      : true)
+    .sort((a, b) => {
+      // Destacados (destaque_semana) vêm primeiro
+      if (a.destaque_semana && !b.destaque_semana) return -1;
+      if (!a.destaque_semana && b.destaque_semana) return 1;
+      // Depois ordena por data (mais recentes primeiro)
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       {avisoAcao && (
@@ -5765,6 +5772,11 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  display: "block",
                     }}
                   />
+                {p.destaque_semana && (
+                  <div style={{ position: "absolute", top: 10, left: 10, background: `${C.ouro}`, borderRadius: 20, padding: "4px 11px" }}>
+                    <span style={{ fontFamily: FB, fontSize: 13, color: C.obs, fontWeight: 500 }}>✨ Destaque</span>
+                  </div>
+                )}
                 {!p.publica && (
                   <div style={{ position: "absolute", top: 10, right: 10, background: `rgba(0,0,0,.5)`, borderRadius: 20, padding: "3px 9px" }}>
                     <span style={{ fontFamily: FB, fontSize: 13, color: `rgba(255,255,255,.92)` }}>Só você</span>
