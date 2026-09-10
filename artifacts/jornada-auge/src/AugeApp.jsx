@@ -5745,7 +5745,6 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
             >
               {p.imgSrc ? (
               <div
- onClick={() => setDet(p.id)}
  style={{
  background: p.fundo,
  position: "relative",
@@ -5753,7 +5752,6 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  aspectRatio: "4 / 5",
  overflow: "hidden",
  lineHeight: 0,
- cursor: "pointer",
                 }}
               >
                 <img
@@ -5774,7 +5772,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 )}
               </div>
               ) : (
-              <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", padding: "16px 16px 2px" }}>
+              <div style={{ padding: "16px 16px 2px" }}>
                 <div style={{ borderLeft: `3px solid ${C.ouro}`, background: `${C.ouro}12`, borderRadius: "0 10px 10px 0", padding: "12px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
                   <div>
                     <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 18, color: C.ouroTxt, lineHeight: 1.2 }}>{p.tit}</div>
@@ -5819,7 +5817,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   )}
                 </div>
                 {p.imgSrc && (
-                  <div onClick={() => setDet(p.id)} style={{ cursor: "pointer", marginBottom: p.desc ? 8 : 10 }}>
+                  <div style={{ marginBottom: p.desc ? 8 : 10 }}>
                     {p.habito && (
                       <div style={{ display: "inline-block", background: `${C.oliva}1F`, border: `1px solid ${C.oliva}59`, borderRadius: 50, padding: "3px 11px", fontFamily: FB, fontWeight: 500, fontSize: 13, color: C.oliva, marginBottom: 6 }}>
                         {p.habito}
@@ -5831,7 +5829,6 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 )}
                 {p.desc && (
                 <div
- onClick={() => setDet(p.id)}
  style={{
  fontSize: 17,
  fontFamily: FB,
@@ -5839,7 +5836,6 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  color: `rgba(28,26,23,.82)`,
  lineHeight: 1.65,
  marginBottom: 10,
- cursor: "pointer",
                   }}
                 >
                   {p.desc}
@@ -5879,7 +5875,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  marginLeft: 4,
                         }}
                       >
-                        {p.cur.length} {p.cur.length === 1 ? "curtida" : "curtidas"}
+                        {p.cur.length}
                       </span>
                     )}
                   </button>
@@ -6259,7 +6255,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                       <span
  style={{ fontSize: 16, color: `rgba(28,26,23,.82)` }}
                       >
-                        {dp.cur.length} {dp.cur.length === 1 ? "curtida" : "curtidas"}
+                        {dp.cur.length}
                       </span>
                     )}
                   </button>
