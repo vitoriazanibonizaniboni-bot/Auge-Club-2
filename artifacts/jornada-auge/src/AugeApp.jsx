@@ -5004,11 +5004,12 @@ function Home({
    try {
     const { data, error } = await supabase.rpc("get_stats_hoje");
     if (error) throw error;
-    if (data) {
+    if (data && data.length > 0) {
+     const stats = data[0]; // RPC retorna array
      setStatsHoje({
-      feitos: data.feitos || 0,
-      falta: data.falta || 0,
-      semana: data.semana || 0,
+      feitos: stats.feitos || 0,
+      falta: stats.falta || 0,
+      semana: stats.semana || 0,
      });
     }
    } catch (err) {
@@ -5574,26 +5575,30 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
         ))}
       </div>
       <Grain style={{ padding: "14px 14px 8px" }}>
-        {/* Botão registrar */}
+        {/* Botão registrar - card style */}
         <div
  onClick={() => ir(S.NOVO)}
  style={{
- background: `rgba(28,26,23,.04)`,
- border: `1px solid ${C.ouro}15`,
+ background: `${C.ouro}08`,
+ border: `1px solid ${C.ouro}22`,
  borderRadius: 12,
- padding: "14px 16px",
+ padding: "16px",
  marginBottom: 10,
  cursor: "pointer",
  display: "flex",
- justifyContent: "space-between",
+ flexDirection: "column",
  alignItems: "center",
+ gap: 8,
+ textAlign: "center",
           }}
         >
+          <div style={{ fontSize: 24 }}>📸</div>
           <div
  style={{
- fontFamily: FB, fontWeight: 400,
- fontSize: 17,
- color: `rgba(28,26,23,.92)`,
+ fontFamily: FB,
+ fontWeight: 500,
+ fontSize: 16,
+ color: `rgba(28,26,23,.95)`,
             }}
           >
  O que você fez por você hoje?
@@ -5602,18 +5607,11 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  style={{
  fontFamily: FB,
  fontWeight: 400,
- fontSize: 16,
- color: C.ouroTxt,
- background: `${C.ouro}22`,
- border: `1px solid ${C.ouro}55`,
- borderRadius: 50,
- padding: "10px 18px",
- letterSpacing: "0.05em",
- flexShrink: 0,
- whiteSpace: "nowrap",
+ fontSize: 14,
+ color: `rgba(28,26,23,.75)`,
             }}
           >
-            + Postar
+ Inspire a turma e ganhe destaque
           </div>
         </div>
 
