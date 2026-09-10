@@ -4995,81 +4995,8 @@ function Home({
       )}
 
       <Grain style={{ padding: "18px 18px 24px" }}>
-        {/* Proximo encontro ao vivo (editavel no Painel da Mentora) */}
-        {mentoria?.data && (
-          <div
- style={{
- background: `${C.ouro}12`,
- border: `1px solid ${C.ouro}3a`,
- borderRadius: 12,
- padding: "16px 18px",
- marginBottom: 16,
- animation: "fadeUp .4s ease",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 16 }}></span>
-              <span
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 13,
- color: C.ouroTxt,
- letterSpacing: "0.3em",
- textTransform: "uppercase",
-                }}
-              >
- Próximo encontro
-              </span>
-            </div>
-            <div
- style={{
- fontFamily: FB,
- fontSize: 18,
- fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
- lineHeight: 1.3,
-              }}
-            >
-              {mentoria.data}
-            </div>
-            {mentoria.duracao && (
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: `rgba(28,26,23,.82)`,
- marginTop: 4,
-                }}
-              >
-                {mentoria.duracao}
-              </div>
-            )}
-            {mentoria.zoom && (
-              <a
- href={mentoria.zoom}
- target="_blank"
- rel="noopener noreferrer"
- style={{
- display: "inline-block",
- marginTop: 12,
- background: C.ouroLt,
- color: C.obs2,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 17,
- textDecoration: "none",
- padding: "9px 20px",
- borderRadius: 50,
- letterSpacing: "0.04em",
-                }}
-              >
- Entrar no Meet
-              </a>
-            )}
-          </div>
-        )}
+
+        {/* Próximo encontro foi removido — info será enviada por WhatsApp */}
 
         {/* Banner carta semana 12 */}
         {carta && sem >= 12 && (
@@ -12007,7 +11934,6 @@ function PainelMentora({ ir }) {
                   <div key={t.id} style={{ background: `rgba(28,26,23,.03)`, border: `1px solid ${C.ouro}22`, borderRadius: 12, padding: "13px 14px", marginBottom: 12 }}>
                     {campo("Nome da turma", "nome", "Ex: Turma 1")}
                     {campo("Início — segunda-feira da S1", "inicio", "AAAA-MM-DD, ex: 2026-08-03")}
-                    {campo("Próximo encontro", "mentoria_data", "Ex: 15 de setembro · 19h")}
                     {campo("Duração", "mentoria_duracao", "Ex: 75 min")}
                     {campo("Link do Meet", "zoom", "https://meet.google.com/...")}
                     {campo("Desafio da semana", "desafio", "Ex: ler 5 páginas por dia")}
