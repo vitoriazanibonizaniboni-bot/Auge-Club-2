@@ -4660,27 +4660,13 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         </div>
       )}
 
-      {/* dificuldade — só depois de marcar (seção 4.4) */}
-      {marcado && (!regAlvo.dif ? (
-        <>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "12px 0 6px" }}>
-            Como foi manter esse hábito?
-          </div>
-          <div style={{ display: "flex", gap: 4 }}>
-            {DIF_OPTS.map((d) => (
-              <button key={d.v} onClick={() => registrarHabito(h.id, dataAlvo, d.v)}
-                style={{ flex: 1, background: C.creme, border: `1px solid ${C.ouro}59`, borderRadius: 6, padding: "7px 2px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.terra, cursor: "pointer", lineHeight: 1.3 }}>
-                {d.l}
-              </button>
-            ))}
-          </div>
-        </>
-      ) : (
+      {/* confirmação de check-in — só depois de marcar */}
+      {marcado && (
         <div style={{ marginTop: 12, textAlign: "center", background: `${C.ouro}1F`, borderRadius: 10, padding: "10px 12px" }}>
           <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.ouroTxt }}>Parabéns, mais 1%!</div>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 2 }}>Você cuidou de você hoje.</div>
         </div>
-      ))}
+      )}
     </div>
   );
 }
