@@ -4492,6 +4492,109 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// STATS BAR — "Feitos | Falta | Semana" no topo da Hoje
+// ═══════════════════════════════════════════════════════════════════
+function StatsBarra({ feitos, falta, semana }) {
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: 10,
+      marginBottom: 16,
+    }}>
+      {/* Feitos */}
+      <div style={{
+        background: C.oliva,
+        borderRadius: 12,
+        padding: "12px 10px",
+        textAlign: "center",
+      }}>
+        <div style={{
+          fontFamily: FB,
+          fontSize: 28,
+          fontWeight: 600,
+          color: C.creme,
+          lineHeight: 1,
+          marginBottom: 4,
+        }}>
+          {feitos}
+        </div>
+        <div style={{
+          fontFamily: FB,
+          fontSize: 11,
+          fontWeight: 400,
+          color: C.creme,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        }}>
+          Feitos
+        </div>
+      </div>
+
+      {/* Falta */}
+      <div style={{
+        background: falta > 0 ? `${C.blush}44` : `${C.ouro}12`,
+        border: falta > 0 ? `1px solid ${C.blush}88` : `1px solid ${C.ouro}44`,
+        borderRadius: 12,
+        padding: "12px 10px",
+        textAlign: "center",
+      }}>
+        <div style={{
+          fontFamily: FB,
+          fontSize: 28,
+          fontWeight: 600,
+          color: falta > 0 ? C.terra : C.ouroTxt,
+          lineHeight: 1,
+          marginBottom: 4,
+        }}>
+          {falta}
+        </div>
+        <div style={{
+          fontFamily: FB,
+          fontSize: 11,
+          fontWeight: 400,
+          color: falta > 0 ? C.terra : C.ouroTxt,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        }}>
+          Falta
+        </div>
+      </div>
+
+      {/* Semana */}
+      <div style={{
+        background: `${C.ouro}12`,
+        border: `1px solid ${C.ouro}44`,
+        borderRadius: 12,
+        padding: "12px 10px",
+        textAlign: "center",
+      }}>
+        <div style={{
+          fontFamily: FB,
+          fontSize: 28,
+          fontWeight: 600,
+          color: C.ouroTxt,
+          lineHeight: 1,
+          marginBottom: 4,
+        }}>
+          {semana}
+        </div>
+        <div style={{
+          fontFamily: FB,
+          fontSize: 11,
+          fontWeight: 400,
+          color: C.ouroTxt,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        }}>
+          Semana
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // ABA HOJE v2 — componentes dos hábitos angulares (seções 4.2–4.11)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -4893,6 +4996,28 @@ function Home({
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
  const [criandoHab, setCriandoHab] = useState(false);
+ const [statsHoje, setStatsHoje] = useState({ feitos: 0, falta: 0, semana: 0 });
+
+ // Carregar stats do dia (RPC function get_stats_hoje)
+ useEffect(() => {
+  const carregarStats = async () => {
+   try {
+    const { data, error } = await supabase.rpc("get_stats_hoje");
+    if (error) throw error;
+    if (data) {
+     setStatsHoje({
+      feitos: data.feitos || 0,
+      falta: data.falta || 0,
+      semana: data.semana || 0,
+     });
+    }
+   } catch (err) {
+    console.error("Erro ao carregar stats:", err);
+   }
+  };
+  carregarStats();
+ }, [registrarHabito, desregistrarHabito]); // Recarrega quando marca/desmarca hábito
+
   // Convite pro Mural: "Postar" abre a camera/galeria e leva a foto ao compositor
  const fotoConviteRef = useRef(null);
  const habConvite = useRef(null);
@@ -4995,6 +5120,9 @@ function Home({
       )}
 
       <Grain style={{ padding: "18px 18px 24px" }}>
+
+        {/* Stats bar — Feitos | Falta | Semana */}
+        <StatsBarra feitos={statsHoje.feitos} falta={statsHoje.falta} semana={statsHoje.semana} />
 
         {/* Próximo encontro foi removido — info será enviada por WhatsApp */}
 
