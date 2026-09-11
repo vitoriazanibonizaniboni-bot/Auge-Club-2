@@ -1478,6 +1478,8 @@ export default function App() {
  com: p.comentarios || [],
  dbId: p.id,
  userId: p.user_id,
+ created_at: p.created_at,
+ destaque_semana: p.destaque_semana || false,
     });
 
  console.log('feedPublicoRes:', feedPublicoRes);
