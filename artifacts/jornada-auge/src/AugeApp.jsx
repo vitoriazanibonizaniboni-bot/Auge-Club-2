@@ -6496,10 +6496,10 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
         <div
  onClick={() => ref.current?.click()}
  style={{
- height: foto ? "auto" : 100,
- borderRadius: 10,
- border: `1.5px dashed ${C.ouro}25`,
- background: foto ? `rgba(0,0,0,.45)` : `rgba(28,26,23,.03)`,
+ aspectRatio: "4 / 5",
+ borderRadius: 0,
+ border: "none",
+ background: "transparent",
  overflow: "hidden",
  display: "flex",
  alignItems: "center",
@@ -6516,9 +6516,9 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  alt=""
  style={{
  width: "100%",
- height: "auto",
- maxHeight: 340,
- objectFit: "contain",
+ height: "100%",
+ objectFit: "cover",
+ objectPosition: "center",
  display: "block",
                 }}
               />
@@ -6553,7 +6553,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
               </button>
             </>
           ) : (
-            <div style={{ textAlign: "center" }}>
+            <div style={{ textAlign: "center", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.linho }}>
               <div style={{ fontFamily: FB, fontSize: 13, letterSpacing: "0.15em", textTransform: "uppercase", color: C.ouroTxt }}>Adicionar foto</div>
               <div
  style={{
