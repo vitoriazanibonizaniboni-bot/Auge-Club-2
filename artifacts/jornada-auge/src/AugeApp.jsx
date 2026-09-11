@@ -5750,7 +5750,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  key={p.id}
  style={{
  background: `rgba(28,26,23,.04)`,
- border: `1px solid ${C.ouro}15`,
+ border: !p.publica ? `2px solid ${C.blushDk}` : `1px solid ${C.ouro}15`,
  borderRadius: 12,
  marginBottom: 14,
  overflow: "hidden",
