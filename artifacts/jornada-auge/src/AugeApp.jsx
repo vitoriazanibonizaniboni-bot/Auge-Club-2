@@ -5784,8 +5784,8 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   </div>
                 )}
                 {!p.publica && (
-                  <div style={{ position: "absolute", top: 10, right: 10, background: `rgba(0,0,0,.5)`, borderRadius: 20, padding: "3px 9px" }}>
-                    <span style={{ fontFamily: FB, fontSize: 13, color: `rgba(255,255,255,.92)` }}>Só você</span>
+                  <div style={{ position: "absolute", top: 10, right: 10, background: C.blushDk, borderRadius: 20, padding: "4px 10px" }}>
+                    <span style={{ fontFamily: FB, fontSize: 13, color: C.creme, fontWeight: 500 }}>Só você</span>
                   </div>
                 )}
               </div>
@@ -5797,7 +5797,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
                   </div>
                   {!p.publica && (
-                    <span style={{ flexShrink: 0, background: `${C.ouro}22`, borderRadius: 20, padding: "3px 9px", fontFamily: FB, fontSize: 13, color: C.ouroTxt, whiteSpace: "nowrap" }}>Só você</span>
+                    <span style={{ flexShrink: 0, background: C.blushDk, borderRadius: 20, padding: "4px 10px", fontFamily: FB, fontSize: 13, color: C.creme, fontWeight: 500, whiteSpace: "nowrap" }}>Só você</span>
                   )}
                 </div>
               </div>
