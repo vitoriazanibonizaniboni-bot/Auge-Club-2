@@ -1480,8 +1480,12 @@ export default function App() {
  userId: p.user_id,
     });
 
+ console.log('feedPublicoRes:', feedPublicoRes);
+ console.log('feedPrivadoRes:', feedPrivadoRes);
  const postsPublicos = feedPublicoRes.data?.map(mapPost) || [];
  const postsPrivados = feedPrivadoRes.data?.map(mapPost) || [];
+ console.log('postsPublicos:', postsPublicos.length);
+ console.log('postsPrivados:', postsPrivados.length);
  const todosIds = new Set(postsPublicos.map((p) => p.id));
  const privadosUnicos = postsPrivados.filter((p) => !todosIds.has(p.id));
  const postsReais = [...postsPublicos, ...privadosUnicos].sort(
