@@ -1534,7 +1534,7 @@ export default function App() {
 
  const ir = (t) => {
     // Mural sempre atualizado ao abrir a aba
- if (t === S.FEED) carregarFeed(authUser?.id);
+ if (t === S.FEED) carregarFeed(authUser.id, turma?.id || null, perfil === "admin");
  setTela(t);
   };
  const tk = (m) => {
