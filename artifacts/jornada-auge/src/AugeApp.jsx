@@ -5557,9 +5557,9 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
   };
   // Feed: filtra por visibilidade e filtro ativo
  const visiveis = feed
-    .filter((p) => p.publica || p.userId === authUserId || p.aut === "Você")
+    .filter((p) => p.publica || p.userId === authUserId)
     .filter((p) =>
-      filtro === "minhas" ? (p.userId === authUserId || p.aut === "Você")
+      filtro === "minhas" ? (p.userId === authUserId)
       : true)
     .sort((a, b) => {
       // Destacados (destaque_semana) vêm primeiro
