@@ -1401,17 +1401,18 @@ export default function App() {
  setKitPessoa((k) => ({ nome: campos.pessoa_nome ?? k.nome, fone: campos.pessoa_fone ?? k.fone }));
  syncDB("kit_emergencia", campos, { onConflict: "user_id" });
   };
- const toggleDesafio = async () => {
- const feito = desafioFeitos.includes(TODAY);
- setDesafioFeitos((d) => (feito ? d.filter((x) => x !== TODAY) : [...d, TODAY]));
+ // Aceita uma data: hoje, no card da Hoje, ou um dia anterior, no retroativo.
+ const toggleDesafio = async (dia = TODAY) => {
+ const feito = desafioFeitos.includes(dia);
+ setDesafioFeitos((d) => (feito ? d.filter((x) => x !== dia) : [...d, dia]));
  const { data: { session } } = await supabase.auth.getSession();
  if (!session?.user) return;
  if (feito) {
  supabase.from("desafio_registros").delete()
-        .eq("user_id", session.user.id).eq("data", TODAY).then(() => {});
+        .eq("user_id", session.user.id).eq("data", dia).then(() => {});
     } else {
  supabase.from("desafio_registros").upsert(
-        { user_id: session.user.id, data: TODAY },
+        { user_id: session.user.id, data: dia },
         { onConflict: "user_id,data" },
       ).then(() => {});
     }
@@ -4832,11 +4833,19 @@ function NovoHabito({ onCriar, onCancelar }) {
 }
 
 // Registro retroativo — até 7 dias corridos (seção 4.5)
-function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, habStats }) {
+function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, habStats, desafiosSemana = {}, desafioFeitos = [], toggleDesafio, inicioJornada }) {
  const dias = Array.from({ length: 7 }, (_, i) => addDaysStr(TODAY, -(i + 1)));
  const fmt = (ds) => {
  const d = new Date(ds + "T12:00:00");
  return d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "short" });
+  };
+  // O desafio daquele dia e o da semana em que o dia cai — que pode ser a
+  // semana passada, ja que da para voltar sete dias.
+ const segundaS1 = inicioJornada ? mondayOf(String(inicioJornada).slice(0, 10)) : null;
+ const desafioDoDia = (ds) => {
+ if (!segundaS1) return "";
+ const n = Math.floor((new Date(mondayOf(ds)) - new Date(segundaS1)) / (7 * 24 * 60 * 60 * 1000)) + 1;
+ return n >= 1 && n <= 12 ? (desafiosSemana[n] || "").trim() : "";
   };
  return (
     <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.87)", display: "flex", alignItems: "flex-end" }}>
@@ -4863,6 +4872,19 @@ function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, 
                 );
               })}
             </div>
+            {/* O desafio entra so quando existe um naquela semana — dia sem
+                desafio nao ganha linha nenhuma, para nao poluir. */}
+            {desafioDoDia(ds) && toggleDesafio && (
+              <button
+ onClick={() => toggleDesafio(ds)}
+ style={{ width: "100%", display: "flex", alignItems: "center", gap: 7, marginTop: 7, background: desafioFeitos.includes(ds) ? `${C.oliva}22` : "transparent", border: `1px solid ${desafioFeitos.includes(ds) ? C.oliva : C.ouro + "40"}`, borderRadius: 8, padding: "7px 10px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: desafioFeitos.includes(ds) ? C.obs2 : C.lt, cursor: "pointer", textAlign: "left" }}
+              >
+                {IcoH.estrela(desafioFeitos.includes(ds) ? C.oliva : C.ouroDk, 13)}
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {desafioFeitos.includes(ds) ? "✓ " : ""}Desafio: {desafioDoDia(ds)}
+                </span>
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -4886,7 +4908,7 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
           <div key={d} style={{ width: 10, height: 10, borderRadius: "50%", background: desafioFeitos.includes(d) ? C.oliva : "transparent", border: `1px solid ${desafioFeitos.includes(d) ? C.oliva : C.linho}` }} />
         ))}
       </div>
-      <button onClick={toggleDesafio}
+      <button onClick={() => toggleDesafio(TODAY)}
         style={{ width: "100%", background: feitoHoje ? C.oliva : "transparent", border: `1px solid ${feitoHoje ? C.oliva : C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 17, color: feitoHoje ? C.creme : C.ouroTxt, cursor: "pointer" }}>
         {feitoHoje ? "Feito hoje ✓" : "Feito hoje"}
       </button>
@@ -5010,8 +5032,10 @@ function Home({
  desregistrarHabito,
  salvarMeta,
  desafioTexto,
+ desafiosSemana,
  desafioFeitos,
  toggleDesafio,
+ jornadaInicio,
  postTreino,
 }) {
  const [legenda, setLegenda] = useState(false);
@@ -5138,13 +5162,25 @@ function Home({
  registrarHabito={registrarHabito}
  desregistrarHabito={desregistrarHabito}
  habStats={habStats}
+ desafiosSemana={desafiosSemana}
+ desafioFeitos={desafioFeitos}
+ toggleDesafio={toggleDesafio}
+ inicioJornada={jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : null)}
         />
       )}
 
       <Grain style={{ padding: "18px 18px 24px" }}>
 
         {/* Stats bar — Feitos | Falta | Semana */}
-        <StatsBarra feitos={statsHoje.feitos} falta={statsHoje.falta} semana={statsHoje.semana} />
+        {/* O desafio entra na conta como mais um item do dia, quando a semana
+            tem um. A conta dos habitos continua vindo do banco; aqui so somamos
+            o desafio, que o banco ainda nao conhece — e assim o numero muda na
+            hora em que ela marca, sem esperar o proximo carregamento. */}
+        <StatsBarra
+ feitos={statsHoje.feitos + (desafioTexto && desafioFeitos.includes(TODAY) ? 1 : 0)}
+ falta={statsHoje.falta + (desafioTexto && !desafioFeitos.includes(TODAY) ? 1 : 0)}
+ semana={statsHoje.semana}
+        />
 
         {/* Próximo encontro foi removido — info será enviada por WhatsApp */}
 
