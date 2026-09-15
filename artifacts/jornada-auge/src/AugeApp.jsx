@@ -1210,6 +1210,7 @@ export default function App() {
  const [desafioTexto, setDesafioTexto] = useState(""); // Desafio da Semana (admin)
  const [guias, setGuias] = useState({}); // URLs dos guias HTML (Supabase Storage)
  const [desafioFeitos, setDesafioFeitos] = useState([]); // datas do mini check-in
+ const [desafiosSemana, setDesafiosSemana] = useState({}); // { 7: "texto" } — o desafio de cada semana da turma dela
  const [habsPessoais, setHabsPessoais] = useState([]); // hábitos criados pela aluna
  // Convite pro Mural depois de marcar um hábito: leva foto e hábito ao compositor
  const [postPrefill, setPostPrefill] = useState(null);
@@ -1851,6 +1852,14 @@ export default function App() {
         // desafio da turma, a aluna fica sem desafio, e nao com o valor antigo
         // que sobrou no config.
  setDesafioTexto(t.desafio || "");
+        // E o desafio de CADA semana, que alimenta a Trajetoria
+ const { data: ds } = await supabase
+          .from("desafios_semana")
+          .select("semana,texto")
+          .eq("turma_id", _turmaId);
+ const porSemana = {};
+ for (const d of ds || []) porSemana[d.semana] = d.texto || "";
+ setDesafiosSemana(porSemana);
       }
     }
 
@@ -2430,7 +2439,10 @@ export default function App() {
  bussola,
  perfilAuge,
  setPerfilAuge,
- desafioTexto,
+    // O desafio da semana em curso vem da tabela por semana; sem ele, cai no
+    // texto unico da turma, que e o que existia antes.
+ desafioTexto: desafiosSemana[sem] ?? desafioTexto,
+ desafiosSemana,
  desafioFeitos,
     guias,
  jornadaInicio,
@@ -9840,6 +9852,145 @@ function Roda({
 }
 
 // ─── RETOMADA ─────────────────────────────────────────────────────────────────
+// ─── PAINEL DO DESAFIO ────────────────────────────────────────────────────────
+// Mesmo formato do painel de habito — calendario do mes, navegavel — com uma
+// diferenca pedida pela Vitoria: acima de cada linha de semana vem escrito o
+// desafio daquela semana. Como a semana da Jornada comeca na segunda, cada
+// linha do calendario e exatamente uma semana da Jornada.
+function PainelDesafio({ onFechar, desafiosSemana = {}, desafioFeitos = [], inicio, anc }) {
+ const hojeReal = new Date();
+ const [offset, setOffset] = useState(0);
+ const vizData = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + offset, 1);
+ const ano = vizData.getFullYear();
+ const mes = vizData.getMonth();
+ const nomeMes = vizData.toLocaleString("pt-BR", { month: "long" });
+ const nomeMesCap = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
+ const primeiroDia = (new Date(ano, mes, 1).getDay() + 6) % 7; // semana comeca na segunda
+ const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+ const todayStr = localDateStr(hojeReal);
+ const feitos = new Set(desafioFeitos);
+
+ const feitosNoMes = Array.from({ length: diasNoMes }, (_, i) =>
+ `${ano}-${String(mes + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`
+  ).filter((ds) => feitos.has(ds)).length;
+
+  // Sequencia: dias seguidos ate hoje. Se hoje ainda nao foi cumprido, conta a
+  // partir de ontem — o dia em curso nao quebra a sequencia.
+ const sequencia = (() => {
+ let n = 0;
+ let d = feitos.has(todayStr) ? todayStr : addDaysStr(todayStr, -1);
+ while (feitos.has(d)) { n++; d = addDaysStr(d, -1); }
+ return n;
+  })();
+
+  // Em que semana da Jornada cai a segunda-feira daquela linha do calendario
+ const segundaS1 = inicio ? mondayOf(String(inicio).slice(0, 10)) : null;
+ const semanaDoDia = (ds) => {
+ if (!segundaS1) return null;
+ const n = Math.floor((new Date(mondayOf(ds)) - new Date(segundaS1)) / (7 * 24 * 60 * 60 * 1000)) + 1;
+ return n >= 1 && n <= 12 ? n : null;
+  };
+
+  // Monta as linhas do calendario: cada uma com sete casas, a primeira com os
+  // vazios do mes anterior.
+ const celulas = [
+    ...Array.from({ length: primeiroDia }, () => null),
+    ...Array.from({ length: diasNoMes }, (_, i) =>
+ `${ano}-${String(mes + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`),
+  ];
+ while (celulas.length % 7 !== 0) celulas.push(null);
+ const linhas = Array.from({ length: celulas.length / 7 }, (_, i) => celulas.slice(i * 7, i * 7 + 7));
+
+ const Tile = ({ rotulo, valor }) => (
+    <div style={{ flex: 1, background: C.linho, borderRadius: 12, padding: "11px 8px", textAlign: "center" }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 3 }}>{rotulo}</div>
+      <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 18, color: C.obs, lineHeight: 1.2 }}>{valor}</div>
+    </div>
+  );
+
+ return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 400, background: C.creme, overflowY: "auto" }}>
+      <div style={{ padding: "16px 18px 28px" }}>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
+          <button onClick={onFechar} aria-label="Voltar" style={{ background: "none", border: "none", padding: "0 4px 0 0", fontFamily: FB, fontSize: 24, lineHeight: 1, color: C.terra, cursor: "pointer" }}>‹</button>
+          {IcoH.estrela(C.terra)}
+          <div style={{ fontFamily: FB, fontSize: 22, fontWeight: 600, color: C.obs }}>Desafios</div>
+        </div>
+
+        {anc && (
+          <div style={{ fontFamily: FB, fontWeight: 400, fontStyle: "italic", fontSize: 17, color: C.lt, lineHeight: 1.45, marginBottom: 16 }}>
+ "{anc}"
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 9, marginBottom: 20 }}>
+          <Tile rotulo="Sequência" valor={sequencia} />
+          <Tile rotulo="Este mês" valor={`${feitosNoMes} ${feitosNoMes === 1 ? "dia" : "dias"}`} />
+          <Tile rotulo="Na Jornada" valor={`${desafioFeitos.length} ${desafioFeitos.length === 1 ? "dia" : "dias"}`} />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <button onClick={() => setOffset((o) => o - 1)} aria-label="Mês anterior" style={{ background: "none", border: "none", color: C.terra, fontSize: 22, cursor: "pointer", padding: "0 8px 0 0", lineHeight: 1 }}>‹</button>
+          <div style={{ flex: 1, fontFamily: FB, fontWeight: 600, fontSize: 18, color: C.obs }}>{nomeMesCap}</div>
+          <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} aria-label="Próximo mês" style={{ background: "none", border: "none", color: offset < 0 ? C.terra : `${C.terra}44`, fontSize: 22, cursor: offset < 0 ? "pointer" : "default", padding: "0 0 0 8px", lineHeight: 1 }}>›</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginBottom: 4 }}>
+          {["S","T","Q","Q","S","S","D"].map((d, i) => (
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, padding: "2px 0" }}>{d}</div>
+          ))}
+        </div>
+
+        {linhas.map((linha, li) => {
+ const primeiroDoDia = linha.find(Boolean);
+ const n = primeiroDoDia ? semanaDoDia(primeiroDoDia) : null;
+ const texto = n ? (desafiosSemana[n] || "").trim() : "";
+ const daSemanaAtual = linha.some((ds) => ds && mondayOf(ds) === mondayOf(todayStr));
+ return (
+            <div key={li} style={{ marginBottom: 10 }}>
+              {/* o desafio daquela semana, escrito acima da linha */}
+              <div style={{ display: "flex", alignItems: "baseline", gap: 7, margin: "0 2px 4px" }}>
+                {n && (
+                  <span style={{ flexShrink: 0, fontFamily: FB, fontWeight: 600, fontSize: 13, color: daSemanaAtual ? C.terra : C.ouroTxt }}>
+ S{n}
+                  </span>
+                )}
+                <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: texto ? C.obs2 : C.lt, lineHeight: 1.35 }}>
+                  {texto || (n ? "sem desafio" : "")}
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
+                {linha.map((ds, di) => {
+ if (!ds) return <div key={di} />;
+ const feito = feitos.has(ds);
+ return (
+                    <div key={di} title={dataBR(ds)} style={{
+ aspectRatio: "1", borderRadius: 8,
+ background: feito ? C.oliva : C.linho,
+ border: ds === todayStr ? `1.5px solid ${C.ouroDk}` : "none",
+                    }} />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>
+            <span style={{ width: 13, height: 13, borderRadius: 4, background: C.oliva }} /> feito
+          </span>
+          <span style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>
+            <span style={{ width: 13, height: 13, borderRadius: 4, background: C.linho }} /> não feito
+          </span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
  const hojeReal = new Date();
  const [offset, setOffset] = useState(0);
@@ -9938,9 +10089,10 @@ function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
   );
 }
 
-function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso }) {
+function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
  const hojeReal = new Date();
  const [habSel, setHabSel] = useState(habProgresso || null); // painel individual do hábito (seção 7)
+ const [verDesafio, setVerDesafio] = useState(false); // painel das 12 semanas do desafio
   // Chegou pelo "ver progresso" da Hoje: abre o painel e limpa, para o
   // painel não reabrir sozinho na próxima vez que ela entrar na aba.
  useEffect(() => { if (habProgresso && setHabProgresso) setHabProgresso(null); }, []);
@@ -9975,6 +10127,10 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  const freq = m?.freq ?? HABS_FIXOS.find((x) => x.id === h.id).freqDef;
  return m?.desc ? `${m.desc} ${freq}x` : `${freq}x`;
   };
+  // Dias do mes em que ela cumpriu o desafio — mesma contagem dos habitos
+ const desafioNoMes = desafioFeitos.filter((d) =>
+ d.startsWith(`${ano}-${String(mes + 1).padStart(2, "0")}`)
+  ).length;
  const linhas = [
     ...HABS_FIXOS.map((h) => ({
  id: h.id, nome: h.nome, unlock: h.unlock, pessoal: false,
@@ -10031,6 +10187,19 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
             {!h.bloqueado && <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>}
           </button>
         ))}
+        {/* Desafio da semana — mesma linha dos habitos, mas abre as 12 semanas */}
+        <button
+ onClick={() => setVerDesafio(true)}
+ style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: "pointer", textAlign: "left" }}
+        >
+          {IcoH.estrela(C.terra)}
+          <span style={{ flex: 1, fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Desafios</span>
+          <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.ouroTxt }}>
+            {desafioNoMes} {desafioNoMes === 1 ? "dia" : "dias"} em {nomeMesCurto}
+          </span>
+          <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>
+        </button>
+
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", margin: "14px 0 4px" }}>
  toque num hábito para ver o calendário completo
         </div>
@@ -10038,6 +10207,17 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
         <div style={{ borderTop: `1px solid ${C.ouro}30`, margin: "10px 0 14px", paddingTop: 14, fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, textAlign: "center" }}>
  Sexta é dia de Vitória da Semana
         </div>
+
+        {/* painel do desafio — as 12 semanas, com o texto de cada uma */}
+        {verDesafio && (
+          <PainelDesafio
+ onFechar={() => setVerDesafio(false)}
+ desafiosSemana={desafiosSemana}
+ desafioFeitos={desafioFeitos}
+ inicio={jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : null)}
+ anc={anc}
+          />
+        )}
 
         {/* painel individual do hábito — calendário só dele e as 12 semanas dele */}
         {habSel && (
