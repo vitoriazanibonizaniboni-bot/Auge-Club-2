@@ -1847,7 +1847,10 @@ export default function App() {
  duracao: t.mentoria_duracao || m.duracao,
  zoom: t.zoom || m.zoom,
         }));
- if (t.desafio) setDesafioTexto(t.desafio);
+ // A turma e a unica fonte para quem tem turma: se a mentora apagar o
+        // desafio da turma, a aluna fica sem desafio, e nao com o valor antigo
+        // que sobrou no config.
+ setDesafioTexto(t.desafio || "");
       }
     }
 
@@ -11525,8 +11528,6 @@ function PainelMentora({ ir }) {
  const [upIndicMsg, setUpIndicMsg] = useState(""); // status do upload de HTML da indicacao
   // ── estado mentoria ──
  const [ment, setMent] = useState({ data: "", semana: "", duracao: "75 min", zoom: "", desafio: "", inicio: "", whatsapp: "" });
- const [salvandoM, setSalvandoM] = useState(false);
- const [salvoM, setSalvoM] = useState(false);
   // ── estado alunas ──
  const [alunas, setAlunas] = useState([]);
  const [loadingA, setLoadingA] = useState(false);
@@ -11835,24 +11836,6 @@ function PainelMentora({ ir }) {
  setVideos((v) => v.filter((x) => x.id !== id));
   };
 
- const salvarMentoria = async () => {
- setSalvandoM(true);
- const upserts = [
-      { id: "mentoria_data", valor: ment.data },
-      { id: "mentoria_duracao", valor: ment.duracao },
-      { id: "mentoria_zoom", valor: ment.zoom },
-      { id: "desafio_texto", valor: ment.desafio },
-      { id: "contato_whatsapp", valor: ment.whatsapp },
-    ];
-    // A data geral so e gravada quando tem valor. Salvar o formulario com esse
-    // campo vazio apagaria a rede de seguranca de quem esta sem turma, e a
-    // semana dessas alunas passaria a sair da data de cadastro delas.
- if ((ment.inicio || "").trim()) upserts.push({ id: "jornada_inicio", valor: ment.inicio.trim() });
- await Promise.all(upserts.map((u) => supabase.from("config").upsert(u, { onConflict: "id" })));
- setSalvandoM(false);
- setSalvoM(true);
- setTimeout(() => setSalvoM(false), 2500);
-  };
 
  const diasSemCk = (dataStr) => {
  if (!dataStr) return null;
@@ -12027,35 +12010,13 @@ function PainelMentora({ ir }) {
         {/* ── ABA MENTORIA ── */}
         {aba === "mentoria" && (
           <div>
-            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: `rgba(28,26,23,.95)`, marginBottom: 20 }}>Próxima mentoria</div>
-            {[
-              ["Data e horário", "data", "Ex: 15 de julho · 19h"],
-              ["Duração", "duracao", "Ex: 75 min"],
-              ["Link do Meet", "zoom", "https://meet.google.com/..."],
-              ["Desafio da Semana (turma)", "desafio", "Ex: ler 5 páginas por dia"],
-              ["Início da Jornada (só para aluna sem turma)", "inicio", "AAAA-MM-DD, ex: 2026-07-06"],
-            ].map(([lb, field, ph]) => (
-              <div key={field} style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>{lb}</div>
-                <input
- value={ment[field]}
- onChange={(e) => setMent((m) => ({ ...m, [field]: e.target.value }))}
- placeholder={ph}
- style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "7px 0" }}
-                />
-              </div>
-            ))}
-            <BtnPill onClick={salvarMentoria} style={{ fontSize: 16 }}>
-              {salvoM ? "✓ Salvo!" : salvandoM ? "Salvando..." : "Salvar mentoria"}
-            </BtnPill>
-
             {/* Turmas — cada uma com a sua data de inicio */}
             <div style={{ borderTop: `1px solid ${C.ouro}25`, margin: "26px 0 0", paddingTop: 18 }}>
               <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs, marginBottom: 4 }}>
                 Turmas
               </div>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 14, lineHeight: 1.5 }}>
-                Cada turma tem a sua data de início e o seu encontro. A data de início é a segunda-feira da Semana 1 daquela turma: é dela que sai a semana de cada aluna e o desbloqueio do Sono (S5) e do Tempo para Si (S9). Turma sem data ainda não começou.
+                A data de início é a segunda-feira da Semana 1 daquela turma: é dela que sai a semana de cada aluna e o desbloqueio do Sono (S5) e do Tempo para Si (S9). Turma sem data ainda não começou. O desafio da semana também é por turma — é aqui, e só aqui, que ele se edita.
               </div>
               {turmas.map((t, i) => {
                 const mudar = (campo, valor) => setTurmas((ts) => ts.map((x, xi) => xi === i ? { ...x, [campo]: valor } : x));
@@ -12074,8 +12035,6 @@ function PainelMentora({ ir }) {
                   <div key={t.id} style={{ background: `rgba(28,26,23,.03)`, border: `1px solid ${C.ouro}22`, borderRadius: 12, padding: "13px 14px", marginBottom: 12 }}>
                     {campo("Nome da turma", "nome", "Ex: Turma 1")}
                     {campo("Início — segunda-feira da S1", "inicio", "AAAA-MM-DD, ex: 2026-08-03")}
-                    {campo("Duração", "mentoria_duracao", "Ex: 75 min")}
-                    {campo("Link do Meet", "zoom", "https://meet.google.com/...")}
                     {campo("Desafio da semana", "desafio", "Ex: ler 5 páginas por dia")}
                   </div>
                 );
