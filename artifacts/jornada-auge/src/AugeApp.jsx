@@ -11576,9 +11576,22 @@ function PainelMentora({ ir }) {
   };
   // ── turmas: cada uma com a sua data de inicio ──
  const [turmas, setTurmas] = useState([]);
+  // Um desafio por semana, por turma: { t1: { 7: "texto" } }. O snapshot serve
+  // para salvar so o que a mentora mexeu, em vez de reescrever 36 linhas.
+ const [desafios, setDesafios] = useState({});
+ const [desafiosIni, setDesafiosIni] = useState({});
+ const [turmaAberta, setTurmaAberta] = useState(null); // qual turma esta com os 12 abertos
  const [turmaPend, setTurmaPend] = useState({}); // turma escolhida para cada aluna pendente
  const [salvandoT, setSalvandoT] = useState(false);
  const [salvoT, setSalvoT] = useState(false);
+ // Em que semana da Jornada aquela turma esta hoje — a mesma conta do app.
+ const semanaDaTurma = (t) => {
+ if (!t?.inicio) return 0;
+ const ini = String(t.inicio).slice(0, 10);
+ return Math.min(12, Math.max(1, Math.floor(
+      (new Date(mondayOf(localDateStr())) - new Date(mondayOf(ini))) / (7 * 24 * 60 * 60 * 1000),
+    ) + 1));
+  };
  const salvarTurmas = async () => {
  setSalvandoT(true);
  try {
@@ -11592,7 +11605,15 @@ function PainelMentora({ ir }) {
  p_zoom: t.zoom || null,
  p_desafio: t.desafio || null,
           });
+        // So as semanas que a mentora mexeu
+ for (let w = 1; w <= 12; w++) {
+ const novo = (desafios[t.id]?.[w] ?? "").trim();
+ const antes = (desafiosIni[t.id]?.[w] ?? "").trim();
+ if (novo === antes) continue;
+ await supabase.rpc("admin_salvar_desafio_semana", { p_turma: t.id, p_semana: w, p_texto: novo });
+        }
       }
+ setDesafiosIni(JSON.parse(JSON.stringify(desafios)));
  setSalvoT(true); setTimeout(() => setSalvoT(false), 2500);
  } catch {}
  setSalvandoT(false);
@@ -11665,6 +11686,15 @@ function PainelMentora({ ir }) {
       });
  supabase.rpc("get_pendentes_admin").then(({ data }) => setPendentes(data || []));
  supabase.from("turmas").select("*").order("ordem").then(({ data }) => setTurmas(data || []));
+ supabase.from("desafios_semana").select("turma_id,semana,texto").then(({ data }) => {
+ const porTurma = {};
+ for (const d of data || []) {
+ if (!porTurma[d.turma_id]) porTurma[d.turma_id] = {};
+ porTurma[d.turma_id][d.semana] = d.texto || "";
+      }
+ setDesafios(porTurma);
+ setDesafiosIni(JSON.parse(JSON.stringify(porTurma)));
+    });
   }, []);
 
   // Carregar alunas ao clicar na aba
@@ -12035,7 +12065,38 @@ function PainelMentora({ ir }) {
                   <div key={t.id} style={{ background: `rgba(28,26,23,.03)`, border: `1px solid ${C.ouro}22`, borderRadius: 12, padding: "13px 14px", marginBottom: 12 }}>
                     {campo("Nome da turma", "nome", "Ex: Turma 1")}
                     {campo("Início — segunda-feira da S1", "inicio", "AAAA-MM-DD, ex: 2026-08-03")}
-                    {campo("Desafio da semana", "desafio", "Ex: ler 5 páginas por dia")}
+
+                    {/* Um desafio por semana: e o que deixa a Trajetoria mostrar
+                        qual era o desafio de cada semana, em vez de so o de agora. */}
+                    <button
+                      onClick={() => setTurmaAberta(turmaAberta === t.id ? null : t.id)}
+                      style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}44`, borderRadius: 8, padding: "8px 10px", fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.ouroTxt, cursor: "pointer", textAlign: "left", marginTop: 4 }}
+                    >
+                      Desafios das 12 semanas {turmaAberta === t.id ? "▾" : "›"}
+                    </button>
+                    {turmaAberta === t.id && (
+                      <div style={{ marginTop: 10 }}>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((w) => {
+                          const atual = w === semanaDaTurma(t);
+                          return (
+                            <div key={w} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, background: atual ? `${C.ouro}14` : "transparent", borderRadius: 6, padding: atual ? "4px 6px" : "0 6px" }}>
+                              <span style={{ flexShrink: 0, width: 58, fontFamily: FB, fontWeight: atual ? 600 : 400, fontSize: 13, color: atual ? C.ouroTxt : C.lt }}>
+                                S{w}{atual ? " •" : ""}
+                              </span>
+                              <input
+                                value={desafios[t.id]?.[w] ?? ""}
+                                onChange={(e) => setDesafios((ds) => ({ ...ds, [t.id]: { ...(ds[t.id] || {}), [w]: e.target.value } }))}
+                                placeholder={atual ? "desafio desta semana" : "—"}
+                                style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.18)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 14.5, padding: "4px 0" }}
+                              />
+                            </div>
+                          );
+                        })}
+                        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 6, lineHeight: 1.45 }}>
+                          Semana em branco = sem desafio naquela semana; o card não aparece para a aluna.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
