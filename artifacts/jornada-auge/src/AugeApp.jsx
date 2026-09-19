@@ -11239,10 +11239,23 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
   useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(""), 3500); return () => clearTimeout(t); }, [aviso]);
   const enviar = async () => {
     if (!txt.trim()) return;
-    const texto = txt.trim(); const parentId = resp?.cid || null;
-    const { data } = await supabase.from("comentarios").insert({ video_id: videoId, user_id: authUserId, texto, autor_nome: usuario?.nome || "Aluna", autor_avatar: minhaFoto, parent_id: parentId }).select("id").single();
-    setComs((cs) => [...cs, { cid: data?.id, q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, parent: parentId, likes: [] }]);
-    setTxt(""); setResp(null);
+    try {
+      const texto = txt.trim(); 
+      const parentId = resp?.cid || null;
+      console.log('Enviando comentário:', { videoId, authUserId, texto, parentId });
+      const { data, error } = await supabase.from("comentarios").insert({ video_id: videoId, user_id: authUserId, texto, autor_nome: usuario?.nome || "Aluna", autor_avatar: minhaFoto, parent_id: parentId }).select("id").single();
+      if (error) {
+        console.error('Erro ao comentar:', error);
+        setAviso("Erro ao enviar comentário. Tente novamente.");
+        return;
+      }
+      console.log('Comentário enviado:', data);
+      setComs((cs) => [...cs, { cid: data?.id, q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, parent: parentId, likes: [] }]);
+      setTxt(""); setResp(null);
+    } catch (err) {
+      console.error('Exceção ao comentar:', err);
+      setAviso("Erro ao enviar comentário.");
+    }
   };
   const curtir = async (cid) => { if (!cid) return; try { const { data } = await supabase.rpc("toggle_comment_like", { cid }); setComs((cs) => cs.map((c) => c.cid === cid ? { ...c, likes: data || [] } : c)); } catch {} };
   const denunciar = async (cid) => { try { await supabase.from("denuncias").insert({ user_id: authUserId, comentario_id: cid, motivo: "comentario_inapropriado" }); } catch {} setAviso("Comentário denunciado. Vamos revisar."); };
