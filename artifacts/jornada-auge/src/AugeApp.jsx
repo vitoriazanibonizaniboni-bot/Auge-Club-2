@@ -5331,16 +5331,7 @@ function Home({
             </div>
           )}
 
-        {/* Aviso agrupado de zonas (seção 4.6) — um único aviso, nunca separado */}
-        {habsAlerta.length > 0 && (
-          <div style={{ background: `${C.blush}22`, border: `1px solid ${C.blush}88`, borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, lineHeight: 1.55 }}>
-              {habsAlerta.length === 1
-                ? `${habsAlerta[0].nome} precisa de atenção hoje. ${habStats[habsAlerta[0].id].zona === "ajuste" ? "Opa, ainda dá! Vamos lá." : "Sem cobrança — o Kit está aqui se precisar."}`
-                : `${habsAlerta.length} dos seus hábitos precisam de atenção hoje.`}
-            </div>
-          </div>
-        )}
+
 
 
         {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
