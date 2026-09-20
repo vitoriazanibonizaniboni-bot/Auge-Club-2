@@ -5171,16 +5171,8 @@ function Home({
 
       <Grain style={{ padding: "18px 18px 24px" }}>
 
-        {/* Stats bar — Feitos | Falta | Semana */}
-        {/* O desafio entra na conta como mais um item do dia, quando a semana
-            tem um. A conta dos habitos continua vindo do banco; aqui so somamos
-            o desafio, que o banco ainda nao conhece — e assim o numero muda na
-            hora em que ela marca, sem esperar o proximo carregamento. */}
-        <StatsBarra
- feitos={statsHoje.feitos + (desafioTexto && desafioFeitos.includes(TODAY) ? 1 : 0)}
- falta={statsHoje.falta + (desafioTexto && !desafioFeitos.includes(TODAY) ? 1 : 0)}
- semana={statsHoje.semana}
-        />
+        {/* Stats bar removida — 20/09/2026 */}
+
 
         {/* Próximo encontro foi removido — info será enviada por WhatsApp */}
 
