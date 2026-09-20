@@ -11878,11 +11878,8 @@ function PainelMentora({ ir }) {
  setPushLoad(false);
   };
 
-  // Carregar vídeos ao montar
- useEffect(() => {
- supabase.from("videos").select("*").order("ordem", { ascending: true }).order("created_at", { ascending: false })
-      .then(({ data }) => { setVideos(data || []); setLoadingV(false); });
-  }, []);
+
+  // Vídeos são carregados em loadUserData com filtro de turma correto
 
   // Carregar mentoria ao montar
  useEffect(() => {
