@@ -11243,14 +11243,20 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
       const texto = txt.trim(); 
       const parentId = resp?.cid || null;
       console.log('Enviando comentário:', { videoId, authUserId, texto, parentId });
-      const { data, error } = await supabase.from("comentarios").insert({ video_id: videoId, user_id: authUserId, texto, autor_nome: usuario?.nome || "Aluna", autor_avatar: minhaFoto, parent_id: parentId }).select("id").single();
+      const { data, error } = await supabase.from("comentarios").insert({ video_id: videoId, user_id: authUserId, texto, autor_nome: usuario?.nome || "Aluna", autor_avatar: minhaFoto, parent_id: parentId }).select("id");
       if (error) {
         console.error('Erro ao comentar:', error);
         setAviso("Erro ao enviar comentário. Tente novamente.");
         return;
       }
       console.log('Comentário enviado:', data);
-      setComs((cs) => [...cs, { cid: data?.id, q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, parent: parentId, likes: [] }]);
+      const newId = data?.[0]?.id;
+      if (!newId) {
+        console.error('Sem ID retornado:', data);
+        setAviso("Erro ao enviar comentário.");
+        return;
+      }
+      setComs((cs) => [...cs, { cid: newId, q: usuario?.nome || "Você", t: texto, userId: authUserId, av: minhaFoto, parent: parentId, likes: [] }]);
       setTxt(""); setResp(null);
     } catch (err) {
       console.error('Exceção ao comentar:', err);
