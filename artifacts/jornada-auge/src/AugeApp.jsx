@@ -2996,6 +2996,13 @@ function Splash({ ir }) {
  "O auge não é o que você foi. É o que você está construindo."
         </div>
       </div>
+      <div style={{ marginBottom: 24 }}>
+            <p style={{ fontSize: 16, color: C.lt, margin: 0, fontWeight: 400 }}>
+              25 perguntas para saber aonde podemos melhorar
+            </p>
+          </div>
+
+          
       <BtnPill onClick={ir}>Entrar no app</BtnPill>
     </Grain>
   );
@@ -9405,59 +9412,36 @@ function Roda({
       <Grain style={{ minHeight: 760, animation: "fadeUp .4s ease" }}>
         <Cab titulo="Roda AUGE" voltar={back} destino="Jornada" />
         <div style={{ padding: "24px 20px 36px", textAlign: "center" }}>
-          <Logo width={130} fundo="claro" />
+
           <div
- style={{
- fontFamily: FB,
- fontSize: 36,
- fontWeight: 300,
- letterSpacing: "0.12em",
- color: C.ouroTxt,
- marginTop: 10,
- marginBottom: 4,
+            style={{
+              fontFamily: FB,
+              fontSize: 32,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: C.obs,
+              marginBottom: 8,
             }}
           >
- RODA
+            RODA
           </div>
           <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- letterSpacing: "0.35em",
- textTransform: "uppercase",
- color: `rgba(28,26,23,.88)`,
- marginBottom: 24,
+            style={{
+              fontFamily: FB,
+              fontSize: 20,
+              fontWeight: 400,
+              color: C.ouro,
+              marginBottom: 32,
             }}
           >
- AUGE · 25 perguntas · 5 dimensões
+            AUGE
           </div>
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: `rgba(28,26,23,.88)`,
- letterSpacing: "0.25em",
- textTransform: "uppercase",
- marginBottom: 10,
-            }}
-          >
- Selecione o momento
-          </div>
-          <div
- style={{
- display: "grid",
- gridTemplateColumns: "1fr 1fr 1fr",
- gap: 6,
- marginBottom: 28,
-            }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>
             {[
-              ["S1", "Início"],
-              ["S6", "Meio"],
-              ["S12", "Fim"],
-            ].map(([m, sub]) => {
+              { m: "S1", titulo: "Semana 1", label: "o início da sua jornada" },
+              { m: "S6", titulo: "Semana 6", label: "o meio do caminho" },
+              { m: "S12", titulo: "Semana 12", label: "o final da sua jornada" },
+            ].map(({ m, titulo, label }) => {
  const bloqMom = false; // demo: todas as semanas desbloqueadas
  return (
                 <button
@@ -9470,35 +9454,25 @@ function Roda({
                         ? `${C.ouro}22`
                         : `rgba(28,26,23,.04)`,
  border: `1px solid ${bloqMom ? C.ouro + "0A" : momento === m ? C.ouro + "55" : C.ouro + "15"}`,
- borderRadius: 10,
- padding: "14px 0",
+ borderRadius: 12,
+ padding: "24px 16px",
  cursor: bloqMom ? "default" : "pointer",
- color: bloqMom
-                      ? `rgba(28,26,23,.18)`
-                      : momento === m
-                        ? C.ouro
-                        : `rgba(28,26,23,.88)`,
+ transition: "all 0.2s",
+ background: bloqMom ? `rgba(28,26,23,.03)` : momento === m ? `${C.ouro}22` : C.creme,
+ border: `1px solid ${bloqMom ? C.ouro + "0A" : momento === m ? C.ouro + "55" : C.ouro + "15"}`,
  fontFamily: FB,
- fontSize: 16,
- letterSpacing: "0.2em",
- position: "relative",
                   }}
                 >
-                  {bloqMom && (
-                    <span
- style={{
- position: "absolute",
- top: 6,
- right: 8,
- fontSize: 16,
-                      }}
-                    >
-                      
-                    </span>
-                  )}
-                  {m}
+                  
+                  <div style={{ fontSize: 18, fontWeight: 600, color: C.obs, marginBottom: 8 }}>
+                    {titulo}
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 400, color: C.lt, lineHeight: 1.5 }}>
+                    Clique aqui para responder sobre
+                    <br />
+                    <span style={{ fontWeight: 600, color: C.obs }}>{label}</span>
+                  </div>
                   <br />
-                  <span style={{ fontSize: 16, opacity: 0.6 }}>{sub}</span>
                 </button>
               );
             })}
