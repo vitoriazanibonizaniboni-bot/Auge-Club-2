@@ -9129,6 +9129,8 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
 
   if (fase === "perguntas") {
     const q = PA_Q[qi];
+    const respondida = qi in resp;
+    const respostaSelecionada = resp[qi];
     return (
       <Grain style={{ minHeight: 760, animation: "fadeUp .3s ease" }}>
         <div style={{ padding: "1.5rem 1.25rem" }}>
@@ -9139,10 +9141,51 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
           <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.5, marginBottom: "2rem", minHeight: 96 }}>{q.t}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {OIDENT.map((op) => (
-              <button key={op.v} onClick={() => responder(op.v)} style={{ background: "rgba(28,26,23,.05)", border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "14px 16px", cursor: "pointer", textAlign: "left", fontFamily: FB, fontSize: 17, color: "rgba(28,26,23,.88)" }}>{op.l}</button>
+              <button 
+                key={op.v} 
+                onClick={() => setResp({ ...resp, [qi]: op.v })}
+                style={{ 
+                  background: respostaSelecionada === op.v ? C.oliva : "rgba(28,26,23,.05)", 
+                  border: `1px solid ${respostaSelecionada === op.v ? C.oliva : C.ouro + "15"}`, 
+                  borderRadius: 10, 
+                  padding: "14px 16px", 
+                  cursor: "pointer", 
+                  textAlign: "left", 
+                  fontFamily: FB, 
+                  fontSize: 17, 
+                  color: respostaSelecionada === op.v ? C.creme : "rgba(28,26,23,.88)",
+                  fontWeight: respostaSelecionada === op.v ? 500 : 400,
+                  transition: "all 0.2s"
+                }}
+              >
+                {respostaSelecionada === op.v ? "✓ " : ""}{op.l}
+              </button>
             ))}
           </div>
-          {qi > 0 && <button onClick={() => setQi(qi - 1)} style={{ background: "none", border: "none", color: "rgba(28,26,23,.82)", fontFamily: FB, fontSize: 16, marginTop: "1.1rem", cursor: "pointer" }}>‹ Voltar</button>}
+          
+          {/* Navegação com botões Voltar e Próxima */}
+          <div style={{ display: "flex", gap: 10, marginTop: "1.5rem", justifyContent: "space-between", alignItems: "center" }}>
+            {qi > 0 && <button onClick={() => setQi(qi - 1)} style={{ background: "none", border: "none", color: "rgba(28,26,23,.82)", fontFamily: FB, fontSize: 16, cursor: "pointer", padding: "8px 4px" }}>‹ Voltar</button>}
+            <div style={{ flex: 1 }} />
+            <button 
+              onClick={() => respondida ? (qi < PA_Q.length - 1 ? setQi(qi + 1) : finalizar(resp)) : null}
+              disabled={!respondida}
+              style={{ 
+                background: respondida ? C.ouro : "rgba(28,26,23,.08)", 
+                border: "none", 
+                borderRadius: 50, 
+                padding: "10px 20px", 
+                color: respondida ? C.obs2 : "rgba(28,26,23,.5)",
+                fontFamily: FB, 
+                fontSize: 16,
+                cursor: respondida ? "pointer" : "not-allowed",
+                fontWeight: 500,
+                transition: "all 0.2s"
+              }}
+            >
+              {qi === PA_Q.length - 1 ? (respondida ? "Finalizar" : "Responda para finalizar") : (respondida ? "Próxima ›" : "Selecione uma opção")}
+            </button>
+          </div>
         </div>
       </Grain>
     );
