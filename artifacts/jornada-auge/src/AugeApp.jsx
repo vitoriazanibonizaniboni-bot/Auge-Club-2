@@ -5828,12 +5828,14 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                 <img
  src={p.imgSrc}
  alt=""
+ loading="lazy"
  style={{
  width: "100%",
  height: "100%",
  objectFit: "cover",
  objectPosition: "center",
  display: "block",
+ backgroundColor: "#e0d5c7",
                     }}
                   />
                 {p.destaque_semana && (
@@ -6267,12 +6269,14 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                   <img
  src={dp.imgSrc}
  alt=""
+ loading="lazy"
  style={{
  width: "100%",
  height: "auto",
  maxHeight: "55vh",
  objectFit: "contain",
  display: "block",
+ backgroundColor: "#2a2824",
                     }}
                   />
                 </div>
@@ -11596,8 +11600,9 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                   <img
                     src={thumb}
                     alt=""
+                    loading="lazy"
                     onError={(e) => { e.currentTarget.style.display = "none"; }}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7" }}
                   />
                 ) : (
                   <span style={{ fontSize: 24, color: C.ouroTxt }}>{glifo}</span>
@@ -12254,7 +12259,7 @@ function PainelMentora({ ir }) {
             ) : (
               <div key={v.id} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
                 {v.youtube_id && (
-                  <img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" style={{ width: 60, height: 45, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                  <img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" loading="lazy" style={{ width: 60, height: 45, borderRadius: 6, objectFit: "cover", flexShrink: 0, backgroundColor: "#e0d5c7" }} />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.92)`, marginBottom: 3 }}>{v.titulo}</div>
