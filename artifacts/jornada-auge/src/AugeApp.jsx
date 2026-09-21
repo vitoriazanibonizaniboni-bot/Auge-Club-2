@@ -4677,33 +4677,10 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
 
  return (
     <div style={{ background: C.linho, borderRadius: 14, padding: "14px 15px 13px", marginBottom: 11 }}>
-      {/* linha 1: ícone + nome + círculo de check (um toque marca, outro desmarca) */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+      {/* linha 1: ícone + nome */}
+      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
         {(IcoH[h.id] || IcoH.meu)(C.terra)}
         <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>{h.nome}</div>
-        <button
-          onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
-          aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
-          style={{
-            flex: "none",
-            background: marcado ? C.oliva : C.creme,
-            border: `2px solid ${marcado ? C.oliva : C.ouro}`,
-            borderRadius: 10,
-            padding: "10px 16px",
-            cursor: "pointer",
-            fontFamily: FB,
-            fontSize: 16,
-            fontWeight: 600,
-            color: marcado ? C.creme : C.ouro,
-            whiteSpace: "nowrap",
-            transition: "all 0.2s",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          {marcado ? "✓ Feito" : "Feito hoje"}
-        </button>
       </div>
 
       {/* meta — texto só da meta; toque para editar */}
@@ -4752,6 +4729,29 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
  ver progresso ›
         </button>
       </div>
+
+      {/* Botão "Feito hoje" full width */}
+      <button
+        onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
+        aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
+        style={{
+          width: "100%",
+          background: marcado ? C.oliva : C.creme,
+          border: `2px solid ${marcado ? C.oliva : C.ouro}`,
+          borderRadius: 10,
+          padding: "12px 16px",
+          cursor: "pointer",
+          fontFamily: FB,
+          fontSize: 16,
+          fontWeight: 600,
+          color: marcado ? C.creme : C.ouro,
+          transition: "all 0.2s",
+          marginTop: 10,
+          marginBottom: 10,
+        }}
+      >
+        {marcado ? "✓ Feito" : "Feito hoje"}
+      </button>
 
       {/* sugestão de progressão / redução de meta (seção 4.8) — decisão sempre dela */}
       {!marcado && !progOculto && st.sugerirSubir && !st.sugerirReduzir && (
