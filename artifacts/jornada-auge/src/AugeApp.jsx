@@ -9601,6 +9601,46 @@ function Roda({
           >
             {skipTxt}
           </button>
+
+          {/* Botões de navegação */}
+          <div style={{ display: "flex", gap: 12, marginTop: "1.5rem" }}>
+            <button
+              onClick={() => setRodaI(Math.max(0, rodaI - 1))}
+              disabled={rodaI === 0}
+              style={{
+                flex: 1,
+                background: rodaI === 0 ? `rgba(28,26,23,.1)` : C.creme,
+                border: `1px solid ${C.ouro}55`,
+                borderRadius: 10,
+                padding: "12px 16px",
+                cursor: rodaI === 0 ? "default" : "pointer",
+                fontFamily: FB,
+                fontSize: 16,
+                fontWeight: 500,
+                color: rodaI === 0 ? `rgba(28,26,23,.4)` : C.obs,
+              }}
+            >
+              ← Voltar
+            </button>
+            <button
+              onClick={() => setRodaI(Math.min(24, rodaI + 1))}
+              disabled={rodaI === 24}
+              style={{
+                flex: 1,
+                background: rodaI === 24 ? `rgba(28,26,23,.1)` : C.ouro,
+                border: `1px solid ${C.ouro}88`,
+                borderRadius: 10,
+                padding: "12px 16px",
+                cursor: rodaI === 24 ? "default" : "pointer",
+                fontFamily: FB,
+                fontSize: 16,
+                fontWeight: 500,
+                color: rodaI === 24 ? `rgba(28,26,23,.4)` : C.creme,
+              }}
+            >
+              Próxima →
+            </button>
+          </div>
         </div>
       </Grain>
     );
