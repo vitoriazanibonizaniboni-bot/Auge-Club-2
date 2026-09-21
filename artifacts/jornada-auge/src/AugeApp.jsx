@@ -4730,27 +4730,27 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         </button>
       </div>
 
-      {/* Botão "Feito hoje" full width */}
+      {/* Botão "Feito hoje" full width — igual ao Desafio da Semana */}
       <button
         onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
         aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
         style={{
           width: "100%",
-          background: marcado ? C.oliva : C.creme,
-          border: `2px solid ${marcado ? C.oliva : C.ouro}`,
+          background: marcado ? C.oliva : "transparent",
+          border: `1px solid ${marcado ? C.oliva : C.ouro}`,
           borderRadius: 10,
-          padding: "12px 16px",
+          padding: "10px",
           cursor: "pointer",
           fontFamily: FB,
-          fontSize: 16,
-          fontWeight: 600,
-          color: marcado ? C.creme : C.ouro,
+          fontSize: 17,
+          fontWeight: marcado ? 500 : 400,
+          color: marcado ? C.creme : C.ouroTxt,
           transition: "all 0.2s",
           marginTop: 10,
           marginBottom: 10,
         }}
       >
-        {marcado ? "✓ Feito" : "Feito hoje"}
+        {marcado ? "Feito hoje ✓" : "Feito hoje"}
       </button>
 
       {/* sugestão de progressão / redução de meta (seção 4.8) — decisão sempre dela */}
