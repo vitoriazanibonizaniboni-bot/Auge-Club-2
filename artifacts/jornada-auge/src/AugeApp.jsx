@@ -9453,13 +9453,12 @@ function Roda({
                       : momento === m
                         ? `${C.ouro}22`
                         : `rgba(28,26,23,.04)`,
- border: `1px solid ${bloqMom ? C.ouro + "0A" : momento === m ? C.ouro + "55" : C.ouro + "15"}`,
+ border: `1px solid ${bloqMom ? C.ouro + "0A" : momento === m ? C.ouro + "88" : C.ouro + "55"}`,
  borderRadius: 12,
  padding: "24px 16px",
  cursor: bloqMom ? "default" : "pointer",
  transition: "all 0.2s",
- background: bloqMom ? `rgba(28,26,23,.03)` : momento === m ? `${C.ouro}22` : C.creme,
- border: `1px solid ${bloqMom ? C.ouro + "0A" : momento === m ? C.ouro + "55" : C.ouro + "15"}`,
+ background: bloqMom ? `rgba(28,26,23,.03)` : momento === m ? `${C.ouro}55` : `#F5F0E8`,
  fontFamily: FB,
                   }}
                 >
