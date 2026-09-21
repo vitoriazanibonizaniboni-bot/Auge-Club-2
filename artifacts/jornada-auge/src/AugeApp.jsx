@@ -4682,10 +4682,27 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         {(IcoH[h.id] || IcoH.meu)(C.terra)}
         <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>{h.nome}</div>
         <button
- onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
- aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
- style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", background: marcado ? C.oliva : "transparent", border: `2px solid ${marcado ? C.oliva : C.ouro}`, color: C.creme, fontSize: 17, lineHeight: 1, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {marcado ? "✓" : ""}
+          onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
+          aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
+          style={{
+            flex: "none",
+            background: marcado ? C.oliva : C.creme,
+            border: `2px solid ${marcado ? C.oliva : C.ouro}`,
+            borderRadius: 10,
+            padding: "10px 16px",
+            cursor: "pointer",
+            fontFamily: FB,
+            fontSize: 16,
+            fontWeight: 600,
+            color: marcado ? C.creme : C.ouro,
+            whiteSpace: "nowrap",
+            transition: "all 0.2s",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          {marcado ? "✓ Feito" : "Feito hoje"}
         </button>
       </div>
 
