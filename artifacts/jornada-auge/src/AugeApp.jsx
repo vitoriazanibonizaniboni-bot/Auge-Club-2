@@ -11396,7 +11396,6 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
 }
 
 function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
- const [catSel, setCatSel] = useState("aulas");
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  const [guiaAberto, setGuiaAberto] = useState(null); // guia HTML aberto dentro do app
   const [guiaHtml, setGuiaHtml] = useState(""); // conteudo HTML do guia/indicacao (renderizado via srcDoc)
@@ -11441,23 +11440,33 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  const [showConvite, setShowConvite] = useState(false);
  if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
 
- const catAtual = CATS.find((c) => c.id === catSel);
  const bloqCat = false; // demo: todos os conteúdos desbloqueados
 
-  // Usa vídeos do Supabase se disponíveis, senão usa os estáticos
- const videosCategoria = videosDB?.length
-    ? videosDB
-        .filter((v) => (CAT_LEGADO[catSel] || [catSel]).includes(v.categoria))
-        .map((v) => ({
+  // Cada categoria é um módulo, e cada módulo é uma faixa que passa para o
+  // lado (decisão da Vitória, 24/09). A aba virou uma rolagem só, sem as
+  // pastilhas: categoria sem vídeo simplesmente não vira faixa.
+ const mapearVideo = (v) => ({
  id: v.id,
  titulo: v.titulo,
  sub: v.descricao || "",
  dur: v.duracao || "30 min",
  url: v.url_youtube,
  plano: v.plano_minimo,
-        }))
-    : (VIDS[catSel] || []);
- const videos = videosCategoria;
+  });
+ const secoes = CATS
+    .map((cat) => ({
+ cat,
+ itens: videosDB?.length
+        ? videosDB.filter((v) => (CAT_LEGADO[cat.id] || [cat.id]).includes(v.categoria)).map(mapearVideo)
+        : (VIDS[cat.id] || []),
+    }))
+    .filter((s) => s.itens.length > 0);
+
+ const abrirExterno = (url) => {
+ const a = document.createElement("a");
+ a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+ document.body.appendChild(a); a.click(); a.remove();
+  };
 
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
@@ -11477,37 +11486,10 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
         <div style={{ width: 40 }} />
       </div>
 
-      {/* Categorias — todas visiveis, sem rolagem lateral */}
-      <div style={{ background: C.creme, padding: "12px 16px 13px", borderBottom: `1px solid ${C.ouro}12` }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {CATS.map((cat) => {
-            const ativa = catSel === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setCatSel(cat.id)}
-                style={{
-                  flexShrink: 0,
-                  background: ativa ? C.ouroDk : "transparent",
-                  border: `1px solid ${ativa ? C.ouroDk : C.ouro + "66"}`,
-                  borderRadius: 50,
-                  padding: "9px 16px",
-                  fontFamily: FB,
-                  fontWeight: ativa ? 600 : 400,
-                  fontSize: 16,
-                  color: ativa ? C.obs : C.lt,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* As pastilhas de categoria saíram: cada categoria agora é uma faixa
+          própria, uma embaixo da outra. */}
 
-      <Grain style={{ padding: "14px 16px 24px" }}>
+      <Grain style={{ padding: "14px 0 24px" }}>
         {/* O bloco "Guia dos Hábitos Angulares" saiu da aba Conteúdo (pedido da
             Vitória, 24/09). O visualizador de HTML (guiaAberto) CONTINUA aqui —
             é ele que abre os textos da categoria Indicações. */}
@@ -11520,7 +11502,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  border: `1px solid ${C.ouro}20`,
  borderRadius: 10,
  padding: "14px 16px",
- marginBottom: 16,
+ margin: "0 16px 16px",
             }}
           >
             <div
@@ -11546,108 +11528,105 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
         )}
 
         {/* Sem conteúdo ainda: estado simples de "Em breve" (seção 8) */}
-        {videos.length === 0 && !bloqCat && (
-          <div style={{ border: `1.5px dashed ${C.ouro}40`, borderRadius: 12, padding: "26px 16px", textAlign: "center" }}>
+        {secoes.length === 0 && !bloqCat && (
+          <div style={{ border: `1.5px dashed ${C.ouro}40`, borderRadius: 12, padding: "26px 16px", margin: "0 16px", textAlign: "center" }}>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.terra }}>Em breve</div>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 5, lineHeight: 1.5 }}>
- Esta categoria vai crescendo ao longo da Jornada.
+ O conteúdo vai crescendo ao longo da Jornada.
             </div>
           </div>
         )}
 
-        {/* Lista de vídeos */}
-        {videos.map((v) => {
- const bloqVideo = false; // demo: todos os vídeos desbloqueados
- const ehLink = catSel === "podcast" || catSel === "curadoria";
- const thumb = ehLink ? null : ytThumb(v.url);
- const abrirExterno = (url) => {
- const a = document.createElement("a");
- a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
- document.body.appendChild(a); a.click(); a.remove();
- };
- const abrir = () => !bloqVideo && v.url && (catSel === "podcast" ? abrirExterno(v.url) : catSel === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
-
-          // Um formato so para toda a aba: capa a esquerda, tipo, titulo e formato
-          const rotuloCat = { aulas: "Aula", meditacoes: "Meditação", yoga: "Yoga", curadoria: "Indicação", podcast: "Podcast" }[catSel] || "Conteúdo";
-          const glifo = catSel === "podcast" ? "♪" : "❦";
-          const formato = catSel === "podcast" ? "Ouvir" : catSel === "curadoria" ? "Ler" : "Vídeo";
+        {/* Uma faixa por módulo. Dentro da faixa, os vídeos passam para o
+            lado — o card seguinte aparece cortado de propósito, é o que
+            avisa que dá para arrastar. */}
+        {secoes.map(({ cat, itens }) => {
+          const ehLink = cat.id === "podcast" || cat.id === "curadoria";
+          const glifo = cat.id === "podcast" ? "♪" : "❦";
+          const formato = cat.id === "podcast" ? "Ouvir" : cat.id === "curadoria" ? "Ler" : "Vídeo";
           return (
-            <div
-              key={v.id}
-              onClick={abrir}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 13,
-                background: C.branco,
-                border: `1px solid ${C.linho}`,
-                borderRadius: 14,
-                padding: 11,
-                marginBottom: 10,
-                cursor: "pointer",
-              }}
-            >
+            <div key={cat.id} style={{ marginBottom: 24 }}>
+              <div style={{ padding: "0 16px", marginBottom: 10, fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.obs }}>
+                {cat.label}
+              </div>
               <div
                 style={{
-                  flexShrink: 0,
-                  width: 96,
-                  height: 66,
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  position: "relative",
-                  background: thumb ? "#000" : `${C.ouro}1F`,
-                  border: `1px solid ${C.ouro}33`,
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  overflowX: "auto",
+                  padding: "2px 16px 6px",
+                  WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none",
                 }}
               >
-                {thumb ? (
-                  <img
-                    src={thumb}
-                    alt=""
-                    loading="lazy"
-                    onError={(e) => { e.currentTarget.style.display = "none"; }}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7" }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 24, color: C.ouroTxt }}>{glifo}</span>
-                )}
-                {thumb && (
-                  <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", background: "rgba(28,26,23,.62)", color: "#fff", fontSize: 14 }}>
-                      ▶
-                    </span>
-                  </span>
-                )}
+                {itens.map((v) => {
+                  const thumb = ehLink ? null : ytThumb(v.url);
+                  const visto = jaAssistiu(v.id);
+                  const abrir = () => v.url && (cat.id === "podcast" ? abrirExterno(v.url) : cat.id === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={abrir}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}
+                      style={{ flexShrink: 0, width: 168, cursor: "pointer" }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          height: 112,
+                          borderRadius: 12,
+                          overflow: "hidden",
+                          position: "relative",
+                          background: thumb ? "#000" : `${C.ouro}1F`,
+                          border: `1px solid ${C.ouro}33`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt=""
+                            loading="lazy"
+                            onError={(e) => { e.currentTarget.style.display = "none"; }}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7" }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 30, color: C.ouroTxt }}>{glifo}</span>
+                        )}
+                        {thumb && (
+                          <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "rgba(28,26,23,.62)", color: "#fff", fontSize: 15 }}>
+                              ▶
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                      {/* minHeight de duas linhas: sem isso os cards da mesma
+                          faixa ficam com a duração em alturas diferentes */}
+                      <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs, lineHeight: 1.3, marginBottom: 4, minHeight: 42 }}>
+                        {v.titulo}
+                      </div>
+                      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: visto ? C.terra : C.lt, display: "flex", alignItems: "center", gap: 5 }}>
+                        {visto && (
+                          <span style={{ flexShrink: 0, width: 18, height: 18, borderRadius: "50%", background: C.oliva, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {IcoH.checkCirc(C.creme, 12)}
+                          </span>
+                        )}
+                        <span>
+                          {visto ? "Assistido" : formato}
+                          {cat.id !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-                  <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: C.ouroTxt }}>
-                    {rotuloCat}
-                  </span>
-                  {jaAssistiu(v.id) && (
-                    <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: "50%", background: C.oliva, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {IcoH.checkCirc(C.creme, 13)}
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs, lineHeight: 1.3, marginBottom: 5 }}>
-                  {v.titulo}
-                </div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, display: "flex", alignItems: "center", gap: 5 }}>
-                  <span>
-                    {formato}
-                    {catSel !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
-                  </span>
-                  {jaAssistiu(v.id) && (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: C.terra }}>
-                      · Assistido
-                    </span>
-                  )}
-                </div>
-              </div>
-              <span style={{ flexShrink: 0, fontSize: 20, color: C.ouroTxt, paddingRight: 2 }}>›</span>
             </div>
           );
         })}
