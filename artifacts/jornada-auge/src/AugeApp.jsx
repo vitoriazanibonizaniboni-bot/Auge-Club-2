@@ -11508,46 +11508,9 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
       </div>
 
       <Grain style={{ padding: "14px 16px 24px" }}>
-        {/* Guia dos Hábitos Angulares — arquivos HTML, desbloqueio S1/S5/S9 (seção 7) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 16 }}>
-          <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs, marginBottom: 2 }}>
-            Guia dos Hábitos Angulares
-          </div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 8 }}>
-            Material de apoio de cada hábito
-          </div>
-          {HABS_FIXOS.map((h) => {
-            const bloq = sem < h.unlock;
-            if (bloq) {
-              return (
-                <div
-                  key={h.id}
-                  style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", opacity: 0.55 }}
-                >
-                  {IcoH[h.id](C.terra, 17)}
-                  <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>
-                    Guia de {h.nome}
-                  </div>
-                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FB, fontSize: 13, color: C.ouroTxt }}>{IcoH.cadeado(C.ouroDk, 13)} Semana {h.unlock}</span>
-                </div>
-              );
-            }
-            const lista = guias?.[h.id]?.length ? guias[h.id] : [{ nome: "", url: `${import.meta.env.BASE_URL}guias/${h.id}.html` }];
-            return lista.map((g, i) => (
-              <div
-                key={`${h.id}-${i}`}
-                onClick={() => g.url && setGuiaAberto(g.url)}
-                style={{ display: "flex", alignItems: "center", gap: 10, borderTop: `1px solid ${C.ouro}18`, padding: "11px 0", cursor: "pointer" }}
-              >
-                {IcoH[h.id](C.terra, 17)}
-                <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>
-                  {g.nome ? `Guia de ${h.nome} · ${g.nome}` : `Guia de ${h.nome}`}
-                </div>
-                <span style={{ fontFamily: FB, fontSize: 16, color: C.ouroTxt }}>abrir ›</span>
-              </div>
-            ));
-          })}
-        </div>
+        {/* O bloco "Guia dos Hábitos Angulares" saiu da aba Conteúdo (pedido da
+            Vitória, 24/09). O visualizador de HTML (guiaAberto) CONTINUA aqui —
+            é ele que abre os textos da categoria Indicações. */}
 
         {/* Aviso de bloqueio */}
         {bloqCat && (
