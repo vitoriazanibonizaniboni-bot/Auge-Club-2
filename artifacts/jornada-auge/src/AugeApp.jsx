@@ -11726,36 +11726,6 @@ const CATS_ADMIN = [
 ];
 
 function PainelMentora({ ir }) {
-  // ── Guias dos Hábitos (HTML) — upload direto pelo painel ──
-  const [guiaMsg, setGuiaMsg] = useState({});
-  const [guiasList, setGuiasList] = useState({}); // { movimento: [{nome,url}], ... }
-  const [guiaNome, setGuiaNome] = useState({}); // nome do proximo guia por habito
-  const enviarGuia = async (habId, file) => {
-    if (!file) return;
-    setGuiaMsg((g) => ({ ...g, [habId]: "Enviando..." }));
-    const fname = `${habId}-${Date.now()}.html`;
-    const { error } = await supabase.storage
-      .from("guias")
-      .upload(fname, file, { upsert: true, contentType: "text/html" });
-    if (error) {
-      setGuiaMsg((g) => ({ ...g, [habId]: "Erro ao enviar — confira se o bucket 'guias' existe (SQL)." }));
-      return;
-    }
-    const { data: urlData } = supabase.storage.from("guias").getPublicUrl(fname);
-    const url = `${urlData?.publicUrl}?v=${Date.now()}`;
-    const nome = (guiaNome[habId] || "").trim();
-    const lista = [...(guiasList[habId] || []), { nome, url }];
-    await supabase.from("config").upsert({ id: `guias_${habId}`, valor: JSON.stringify(lista) }, { onConflict: "id" });
-    setGuiasList((g) => ({ ...g, [habId]: lista }));
-    setGuiaNome((g) => ({ ...g, [habId]: "" }));
-    setGuiaMsg((g) => ({ ...g, [habId]: "Guia publicado — já está no ar na aba Conteúdo." }));
-  };
-  const removerGuia = async (habId, idx) => {
-    const lista = (guiasList[habId] || []).filter((_, i) => i !== idx);
-    await supabase.from("config").upsert({ id: `guias_${habId}`, valor: JSON.stringify(lista) }, { onConflict: "id" });
-    setGuiasList((g) => ({ ...g, [habId]: lista }));
-    setGuiaMsg((g) => ({ ...g, [habId]: "Guia removido." }));
-  };
  const [aba, setAba] = useState("videos"); // "videos" | "mentoria" | "alunas"
   // ── estado vídeos ──
  const [videos, setVideos] = useState([]);
@@ -11916,8 +11886,6 @@ function PainelMentora({ ir }) {
  inicio: cfg.jornada_inicio || "",
  whatsapp: cfg.contato_whatsapp || "",
         });
- const pg = (id) => { try { const a = JSON.parse(cfg[`guias_${id}`] || "[]"); if (Array.isArray(a) && a.length) return a; } catch {} return cfg[`guia_${id}`] ? [{ nome: "", url: cfg[`guia_${id}`] }] : []; };
- setGuiasList({ movimento: pg("movimento"), sono: pg("sono"), tempo: pg("tempo") });
       });
  supabase.rpc("get_pendentes_admin").then(({ data }) => setPendentes(data || []));
  supabase.from("turmas").select("*").order("ordem").then(({ data }) => setTurmas(data || []));
@@ -12340,42 +12308,10 @@ function PainelMentora({ ir }) {
               </button>
             </div>
 
-            {/* Guias dos Hábitos Angulares — anexar HTML */}
-            <div style={{ borderTop: `1px solid ${C.ouro}25`, margin: "26px 0 0", paddingTop: 18 }}>
-              <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs, marginBottom: 4 }}>
-                Guias dos Hábitos Angulares
-              </div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 14, lineHeight: 1.5 }}>
-                Anexe quantos guias quiser em cada hábito. Dê um nome a cada um para a aluna diferenciar. Aparecem na hora na aba Conteúdo.
-              </div>
-              {HABS_FIXOS.map((h) => (
-                <div key={h.id} style={{ marginBottom: 22 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 14.5, color: C.obs2, marginBottom: 8 }}>
-                    Guia de {h.nome}
-                  </div>
-                  {(guiasList[h.id] || []).map((g, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt }}>• {g.nome || "Guia sem nome"}</div>
-                      <button onClick={() => removerGuia(h.id, i)} style={{ background: "none", border: "none", color: C.atencao, fontSize: 13, cursor: "pointer", fontFamily: FB }}>remover</button>
-                    </div>
-                  ))}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-                    <input value={guiaNome[h.id] || ""} onChange={(e) => setGuiaNome((g) => ({ ...g, [h.id]: e.target.value }))} placeholder="Nome do guia (ex: Aquecimento)"
-                      style={{ flex: 1, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 14.5, padding: "6px 0" }} />
-                    <label style={{ background: "transparent", border: `1.5px solid ${C.ouro}`, borderRadius: 50, padding: "7px 14px", fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.1em", textTransform: "uppercase", color: C.ouroTxt, cursor: "pointer", whiteSpace: "nowrap" }}>
-                      + Anexar HTML
-                      <input type="file" accept=".html,.htm,text/html" style={{ display: "none" }}
-                        onChange={(e) => { enviarGuia(h.id, e.target.files?.[0]); e.target.value = ""; }} />
-                    </label>
-                  </div>
-                  {guiaMsg[h.id] && (
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: guiaMsg[h.id].startsWith("Erro") ? "#A32D2D" : C.ouroTxt, marginTop: 5 }}>
-                      {guiaMsg[h.id]}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {/* O bloco "Guias dos Hábitos Angulares" saiu daqui junto com o
+                bloco da aba Conteúdo (24/09). Não havia mais onde esses
+                arquivos aparecessem para a aluna. Os que já foram enviados
+                continuam no Storage e no config, intocados. */}
           </div>
         )}
 
