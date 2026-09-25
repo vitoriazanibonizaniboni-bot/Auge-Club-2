@@ -1,31 +1,40 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSignalUser } from "./notifications.js";
 import { supabase } from "./supabase.js";
+import { T, FONTE, alfa, cssVars } from "./tokens.js";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
+// As cores vêm de tokens.js. Os nomes antigos continuam valendo e apontam
+// para o token equivalente, para não mexer nas ~600 referências de uma vez.
 const C = {
- creme: "#FAF6EE",
- linho: "#F0E9DA",
- branco: "#FFFFFF",
- obs: "#1C1A17",
- obs2: "#2E2825",
- mid: "#5A4B43",
- lt: "#4E4139",
- ouro: "#C4A882",
- ouroDk: "#A8865A",
- ouroTxt: "#7E6038", // dourado para TEXTO sobre fundo claro — 5,39:1 no creme, 4,86:1 nas pastilhas douradas (WCAG AA)
+ creme: T.bg,
+ linho: T.surfaceSoft,
+ branco: T.surface,
+ obs: T.ink,
+ obs2: T.ink,
+ mid: T.inkSoft,
+ lt: T.inkSoft,
+ ouro: T.gold, // só decorativo: 2,12:1 como texto
+ ouroDk: "#A8865A", // decorativo (borda, ícone)
+ ouroTxt: "#7E6038", // único dourado permitido como TEXTO — 5,44:1 no bg
  ouroLt: "#EAD8B8",
- oliva: "#626442",   // estado "feito": pontinhos e check do habito. Texto CREME por cima (5,69:1)
- blushDk: "#874E3B", // cor de acao do Kit de Emergencia. Texto CREME por cima (6,12:1)
- ouroAcao: "#7A6140", // dourado de BOTAO cheio. Texto CREME por cima (5,39:1)
- blush: "#E2B9A8",
- terra: "#7E5344",
+ oliva: T.olive, // estado "feito". Texto BRANCO por cima (6,30:1)
+ blushDk: T.primary, // ação do Kit — agora é a terracota de ação. Texto BRANCO (6,12:1)
+ ouroAcao: "#7A6140", // dourado de BOTAO cheio. Texto creme por cima
+ blush: "#E2B9A8", // blush decorativo antigo (bordas). Fundo afetivo novo = C.blushBg
+ blushBg: T.blush,
+ terra: T.inkSoft,
+ primary: T.primary,
+ line: T.line,
+ lineForte: T.lineForte,
  atencao: "#A32D2D",
  dev: "#854F0B",
  augeZ: "#0F6E56",
 };
-const FS = "'Cormorant Garamond', Georgia, serif";
-const FB = "'Inter', sans-serif";
+// Serifada saiu do produto (decisão de 25/09): FS agora é Inter também.
+// A Cormorant continua carregada só para o desenho do logo AUGE.
+const FS = FONTE;
+const FB = FONTE;
 
 // ─── TELAS ────────────────────────────────────────────────────────────────────
 const S = {
@@ -896,7 +905,7 @@ function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
  fontFamily: FS,
  fontSize: 20,
  fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
  marginBottom: 8,
           }}
         >
@@ -908,7 +917,7 @@ function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.6,
  marginBottom: 16,
             }}
@@ -923,9 +932,9 @@ function Confirma({ titulo, descricao, textoSim, onSim, onNao }) {
  flex: 1,
  padding: "13px",
  borderRadius: 50,
- background: "rgba(28,26,23,.06)",
+ background: alfa(C.obs, .06),
  border: `1px solid ${C.ouro}22`,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  fontFamily: FB,
  fontSize: 16,
  cursor: "pointer",
@@ -1054,11 +1063,11 @@ function Cab({ titulo, voltar, acao, destino }) {
         <button
  onClick={voltar}
  style={{
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  border: `1px solid ${C.ouro}33`,
  borderRadius: 50,
  padding: "8px 14px",
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
@@ -2487,7 +2496,7 @@ export default function App() {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  animation: "pulse 1.5s ease-in-out infinite",
  letterSpacing: "0.2em",
             }}
@@ -2674,7 +2683,10 @@ export default function App() {
 function Estilos() {
  return (
     <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&family=Inter:wght@400;500;600;700&display=swap');
+    ${cssVars}
+    html,body{background:var(--bg);}
+    @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
     *{box-sizing:border-box;margin:0;padding:0;}
     ::-webkit-scrollbar{display:none;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -2813,7 +2825,7 @@ function LegendaCores({ onFechar }) {
  const Linha = ({ cor, borda, txt }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
       <div style={{ width: 15, height: 15, borderRadius: "50%", background: cor, border: borda || `1px solid ${C.ouro}40`, flexShrink: 0 }} />
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>{txt}</div>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.45 }}>{txt}</div>
     </div>
   );
  const Titulo = ({ t }) => (
@@ -2822,7 +2834,7 @@ function LegendaCores({ onFechar }) {
  return (
     <div
  onClick={onFechar}
- style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.45)", display: "flex", alignItems: "flex-end" }}
+ style={{ position: "absolute", inset: 0, zIndex: 400, background: alfa(C.obs, .45), display: "flex", alignItems: "flex-end" }}
     >
       <div
  onClick={(e) => e.stopPropagation()}
@@ -2841,7 +2853,7 @@ function LegendaCores({ onFechar }) {
         <Linha cor={ZONAS.atencao.cor} txt="Atenção — essa semana está mais difícil" />
 
         <Titulo t="No seu calendário do mês" />
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.5, marginBottom: 10 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.5, marginBottom: 10 }}>
  Quanto mais forte a cor, mais hábitos você cumpriu naquele dia
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -2857,7 +2869,7 @@ function LegendaCores({ onFechar }) {
           <div style={{ width: 30, height: 30, borderRadius: 8, background: C.ouroDk, position: "relative", flexShrink: 0 }}>
             <span style={{ position: "absolute", top: 1, right: 3, fontSize: 12.5, color: C.creme, fontFamily: FB }}>↺</span>
           </div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.45 }}>Dia em que você acionou o Protocolo de Retomada</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.45 }}>Dia em que você acionou o Protocolo de Retomada</div>
         </div>
 
         <Titulo t="Na sua trajetória semanal" />
@@ -2881,7 +2893,7 @@ function Aguardando({ contato, onSair }) {
       <div style={{ fontFamily: FS, fontSize: 24, fontWeight: 400, color: C.ouroTxt, lineHeight: 1.3, marginTop: 8 }}>
  Sua conta está sendo ativada
       </div>
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, lineHeight: 1.6, maxWidth: 300 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.6, maxWidth: 300 }}>
  Que alegria ter você aqui. Assim que a sua inscrição for confirmada, o seu acesso é liberado e você entra na Jornada. É rapidinho.
       </div>
       {fone && (
@@ -2916,9 +2928,9 @@ function NovaSenha({ onDone, tk }) {
     <Grain style={{ minHeight: 760, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "40px 30px", gap: 16, textAlign: "center" }}>
       <Logo width={130} fundo="claro" />
       <div style={{ fontFamily: FS, fontSize: 24, fontWeight: 400, color: C.ouroTxt, lineHeight: 1.3 }}>Defina sua nova senha</div>
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: "rgba(28,26,23,.8)", maxWidth: 300 }}>Escolha uma senha nova pra sua conta. Depois é só continuar.</div>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.lt, maxWidth: 300 }}>Escolha uma senha nova pra sua conta. Depois é só continuar.</div>
       <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Nova senha (mín. 6 caracteres)"
-        style={{ width: "100%", maxWidth: 320, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.3)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "10px 0", textAlign: "center" }} />
+        style={{ width: "100%", maxWidth: 320, background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .3)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "10px 0", textAlign: "center" }} />
       {msg && <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.terra }}>{msg}</div>}
       <button onClick={salvar} disabled={salvando} style={{ width: "100%", maxWidth: 320, background: C.ouro, border: "none", borderRadius: 50, padding: "13px", fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs2, cursor: "pointer", opacity: salvando ? 0.6 : 1 }}>
         {salvando ? "Salvando..." : "Salvar nova senha"}
@@ -3056,7 +3068,7 @@ function AvisoLegal({ onAceitar }) {
  style={{
  flex: 1,
  overflowY: "auto",
- background: "rgba(28,26,23,.04)",
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 12,
  padding: "18px",
@@ -3068,13 +3080,13 @@ function AvisoLegal({ onAceitar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.8,
           }}
         >
           <p style={{ marginBottom: 12 }}>
  Este aplicativo é um{" "}
-            <b style={{ color: `rgba(28,26,23,.88)` }}>
+            <b style={{ color: C.obs }}>
  programa de desenvolvimento de hábitos e estilo de vida
             </b>
             . Não substitui consulta médica, acompanhamento clínico individual,
@@ -3134,7 +3146,7 @@ function AvisoLegal({ onAceitar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.5,
           }}
         >
@@ -3153,7 +3165,7 @@ function AvisoLegal({ onAceitar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  textAlign: "center",
  marginTop: 10,
           }}
@@ -3216,7 +3228,7 @@ function Onboarding({ onConcluir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginBottom: 40,
  textAlign: "center",
  lineHeight: 1.65,
@@ -3231,7 +3243,7 @@ function Onboarding({ onConcluir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  letterSpacing: "0.2em",
  textTransform: "uppercase",
  marginBottom: 8,
@@ -3250,7 +3262,7 @@ function Onboarding({ onConcluir }) {
  width: "100%",
  background: "transparent",
  border: "none",
- borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.85)"}`,
+ borderBottom: `1px solid ${nome.trim().length >= 2 ? C.ouro + "66" : alfa(C.obs, .85)}`,
  color: C.obs,
  fontFamily: FS,
  fontSize: 17,
@@ -3266,7 +3278,7 @@ function Onboarding({ onConcluir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  letterSpacing: "0.2em",
  textTransform: "uppercase",
  marginBottom: 8,
@@ -3285,7 +3297,7 @@ function Onboarding({ onConcluir }) {
  width: "100%",
  background: "transparent",
  border: "none",
- borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.85)"}`,
+ borderBottom: `1px solid ${emailOk ? C.ouro + "66" : alfa(C.obs, .85)}`,
  color: C.obs,
  fontFamily: FS,
  fontSize: 17,
@@ -3304,7 +3316,7 @@ function Onboarding({ onConcluir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  marginTop: 20,
  textAlign: "center",
  lineHeight: 1.7,
@@ -3378,7 +3390,7 @@ function ModalTermos({ onAceitar, onFechar }) {
  style={{
  background: "none",
  border: "none",
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  fontSize: 20,
  cursor: "pointer",
  lineHeight: 1,
@@ -3403,7 +3415,7 @@ function ModalTermos({ onAceitar, onFechar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  margin: 0,
             }}
           >
@@ -3418,7 +3430,7 @@ function ModalTermos({ onAceitar, onFechar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  letterSpacing: "0.15em",
               }}
             >
@@ -3448,7 +3460,7 @@ function ModalTermos({ onAceitar, onFechar }) {
  width: 18,
  height: 18,
  borderRadius: 4,
- border: `1.5px solid ${marcou ? C.ouro : "rgba(28,26,23,.88)"}`,
+ border: `1.5px solid ${marcou ? C.ouro : alfa(C.obs, .88)}`,
  background: marcou ? `${C.ouro}22` : "transparent",
  flexShrink: 0,
  display: "flex",
@@ -3464,7 +3476,7 @@ function ModalTermos({ onAceitar, onFechar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.5,
               }}
             >
@@ -3574,7 +3586,7 @@ function TelaAuth({ onAuth }) {
  const inp = {
  background: "transparent",
  border: "none",
- borderBottom: `1px solid rgba(28,26,23,.82)`,
+ borderBottom: `1px solid ${alfa(C.obs, .82)}`,
  color: C.obs,
  fontFamily: FB,
  fontWeight: 300,
@@ -3587,7 +3599,7 @@ function TelaAuth({ onAuth }) {
  fontFamily: FB,
  fontWeight: 300,
  fontSize: 15,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  marginBottom: 7,
   };
 
@@ -3634,7 +3646,7 @@ function TelaAuth({ onAuth }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.7,
               }}
             >
@@ -3687,7 +3699,7 @@ function TelaAuth({ onAuth }) {
  marginTop: 24,
  background: "none",
  border: "none",
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
@@ -3730,7 +3742,7 @@ function TelaAuth({ onAuth }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  marginBottom: 28,
  textAlign: "center",
           }}
@@ -3754,7 +3766,7 @@ function TelaAuth({ onAuth }) {
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.6,
  marginBottom: 8,
               }}
@@ -3766,12 +3778,12 @@ function TelaAuth({ onAuth }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.7,
               }}
             >
  Enviamos um link de confirmação para{" "}
-              <strong style={{ color: `rgba(28,26,23,.88)` }}>{email}</strong>
+              <strong style={{ color: C.obs }}>{email}</strong>
               . Clique no link e depois faça login.
             </div>
             <button
@@ -3859,7 +3871,7 @@ function TelaAuth({ onAuth }) {
  width: 18,
  height: 18,
  borderRadius: 4,
- border: `1.5px solid ${lgpd ? C.ouro : "rgba(28,26,23,.92)"}`,
+ border: `1.5px solid ${lgpd ? C.ouro : alfa(C.obs, .92)}`,
  background: lgpd ? `${C.ouro}22` : "transparent",
  flexShrink: 0,
  display: "flex",
@@ -3876,7 +3888,7 @@ function TelaAuth({ onAuth }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.6,
             }}
           >
@@ -3933,7 +3945,7 @@ function TelaAuth({ onAuth }) {
  marginTop: 20,
  background: "none",
  border: "none",
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
@@ -3977,7 +3989,7 @@ function TelaAuth({ onAuth }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginBottom: 40,
  textAlign: "center",
         }}
@@ -4031,7 +4043,7 @@ function TelaAuth({ onAuth }) {
  style={{
  background: "none",
  border: "none",
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
@@ -4126,7 +4138,7 @@ function Diagnostico({ onConcluir }) {
         <div
  style={{
  height: 2,
- background: `rgba(28,26,23,.08)`,
+ background: alfa(C.obs, .08),
  borderRadius: 100,
  marginBottom: "1.5rem",
  position: "relative",
@@ -4150,7 +4162,7 @@ function Diagnostico({ onConcluir }) {
  fontFamily: FB,
  fontSize: 19,
  fontWeight: 400,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
  lineHeight: 1.55,
  marginBottom: "2rem",
           }}
@@ -4163,7 +4175,7 @@ function Diagnostico({ onConcluir }) {
  key={i}
  onClick={() => escolher(op)}
  style={{
- background: `rgba(28,26,23,.05)`,
+ background: alfa(C.obs, .05),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 10,
  padding: "14px 16px",
@@ -4171,7 +4183,7 @@ function Diagnostico({ onConcluir }) {
  textAlign: "left",
  fontFamily: FB,
  fontSize: 17,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.4,
               }}
             >
@@ -4184,7 +4196,7 @@ function Diagnostico({ onConcluir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  textAlign: "center",
  marginTop: "1.5rem",
  lineHeight: 1.6,
@@ -4221,7 +4233,7 @@ function DefinirHabitos({ onSalvar }) {
  fontFamily: FS,
  fontSize: 20,
  fontWeight: 300,
- color: "rgba(28,26,23,.97)",
+ color: C.obs,
  marginBottom: 6,
         }}
       >
@@ -4232,7 +4244,7 @@ function DefinirHabitos({ onSalvar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: "rgba(28,26,23,.92)",
+ color: C.obs,
  lineHeight: 1.65,
  marginBottom: 22,
         }}
@@ -4266,7 +4278,7 @@ function DefinirHabitos({ onSalvar }) {
  width: "100%",
  background: "transparent",
  border: "none",
- borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : "rgba(28,26,23,.85)"}`,
+ borderBottom: `1px solid ${v.trim() ? C.ouro + "66" : alfa(C.obs, .85)}`,
  color: C.obs,
  fontFamily: FS,
  fontSize: 17,
@@ -4290,7 +4302,7 @@ function DefinirHabitos({ onSalvar }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: "rgba(28,26,23,.85)",
+ color: C.obs,
  lineHeight: 1.65,
           }}
         >
@@ -4310,7 +4322,7 @@ function IsaCard({ text, loading }) {
  return (
     <div
  style={{
- background: `rgba(28,26,23,.05)`,
+ background: alfa(C.obs, .05),
  border: `1px solid ${C.ouro}28`,
  borderRadius: 12,
  padding: "16px 18px",
@@ -4333,7 +4345,7 @@ function IsaCard({ text, loading }) {
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 16,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
             }}
           >
  ISA — Inteligência do Clube do Auge
@@ -4371,7 +4383,7 @@ function IsaCard({ text, loading }) {
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
             }}
           >
  ISA está respondendo...
@@ -4383,7 +4395,7 @@ function IsaCard({ text, loading }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.75,
  whiteSpace: "pre-wrap",
           }}
@@ -4482,7 +4494,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  marginTop: 2,
           }}
         >
@@ -4508,7 +4520,7 @@ function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  letterSpacing: "0.1em",
             }}
           >
@@ -4660,8 +4672,8 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
     return (
       <div style={{ background: `${C.linho}8C`, borderRadius: 14, padding: "14px 15px", marginBottom: 11, display: "flex", alignItems: "center", gap: 9 }}>
         {IcoH.cadeado(C.lt, 16)}
-        <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: `rgba(78,65,57,.66)` }}>{h.nome}</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(78,65,57,.66)` }}>
+        <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: alfa(C.lt, .66) }}>{h.nome}</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: alfa(C.lt, .66) }}>
           desbloqueia na S{h.unlock}
         </div>
       </div>
@@ -4690,7 +4702,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
           Meta: {h.pessoal && st.descMeta ? st.descMeta : `${st.descMeta ? `${st.descMeta}, ` : ""}${st.meta}x na semana`}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
         </div>
       ) : (
-        <div style={{ background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+        <div style={{ background: alfa(C.obs, .04), borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <span style={{ fontFamily: FB, fontSize: 16, color: C.terra }}>Vezes por semana:</span>
             <button onClick={() => setFreqEdit((f) => Math.max(1, f - 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 17 }}>−</button>
@@ -4872,7 +4884,7 @@ function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, 
  return n >= 1 && n <= 12 ? (desafiosSemana[n] || "").trim() : "";
   };
  return (
-    <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: "rgba(28,26,23,.87)", display: "flex", alignItems: "flex-end" }}>
+    <div onClick={onFechar} style={{ position: "absolute", inset: 0, zIndex: 400, background: alfa(C.obs, .87), display: "flex", alignItems: "flex-end" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: C.creme, borderRadius: "20px 20px 0 0", padding: "22px 20px 34px", maxHeight: "80%", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: C.obs }}>Registrar dias anteriores</div>
@@ -5145,7 +5157,7 @@ function Home({
  return { bg: C.ouroDk, tc: C.branco, bo: `2px solid ${C.ouro}` };
  return {
  bg: "transparent",
- tc: `rgba(28,26,23,.85)`,
+ tc: C.obs,
  bo: `1px solid ${C.ouro}12`,
     };
   };
@@ -5227,7 +5239,7 @@ function Home({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.5,
  marginBottom: 12,
               }}
@@ -5293,7 +5305,7 @@ function Home({
  style={{
  background: "none",
  border: "none",
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  fontSize: 17,
  cursor: "pointer",
  lineHeight: 1,
@@ -5308,7 +5320,7 @@ function Home({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.6,
  marginBottom: 10,
                 }}
@@ -5640,7 +5652,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
       {/* Filtro Todas / Minhas */}
       <div style={{ background: C.creme, padding: "14px 16px 14px", display: "flex", gap: 10, justifyContent: "center", borderBottom: `1px solid ${C.ouro}10` }}>
         {[["todas", "Todas"], ["minhas", "Minhas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: filtro === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+          <button key={id} onClick={() => setFiltro(id)} style={{ background: filtro === id ? `${C.ouro}22` : alfa(C.obs, .04), border: `1px solid ${filtro === id ? C.ouro + "55" : C.ouro + "12"}`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: filtro === id ? C.ouroTxt : alfa(C.obs, .85), cursor: "pointer" }}>
             {label}
           </button>
         ))}
@@ -5669,7 +5681,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 16,
- color: `rgba(28,26,23,.95)`,
+ color: C.obs,
             }}
           >
  O que você fez por você hoje?
@@ -5679,7 +5691,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14,
- color: `rgba(28,26,23,.75)`,
+ color: C.lt,
             }}
           >
  Inspire a turma e ganhe destaque
@@ -5723,7 +5735,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontSize: 17,
  fontWeight: 400,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
               }}
             >
  Encontre mulheres como você
@@ -5733,7 +5745,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginTop: 3,
               }}
             >
@@ -5767,7 +5779,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
         {visiveis.length === 0 && (
           <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 12,
  padding: "40px 24px",
@@ -5779,7 +5791,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontSize: 20,
  fontWeight: 300,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginBottom: 8,
               }}
             >
@@ -5792,7 +5804,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.6,
               }}
             >
@@ -5807,7 +5819,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
             <div
  key={p.id}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: !p.publica ? `2px solid ${C.blushDk}` : `1px solid ${C.ouro}15`,
  borderRadius: 12,
  marginBottom: 14,
@@ -5877,14 +5889,14 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 16,
- color: `rgba(28,26,23,.95)`,
+ color: C.obs,
                     }}
                   >
                     {p.aut}
                   </div>
                   {(p.userId !== authUserId && p.aut !== "Você") && (
                     <div style={{ marginLeft: "auto", position: "relative" }}>
-                      <button onClick={(e) => { e.stopPropagation(); setMenuPost(menuPost === p.id ? null : p.id); }} aria-label="Mais opções" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "rgba(28,26,23,.55)", padding: "0 4px", lineHeight: 1 }}>⋯</button>
+                      <button onClick={(e) => { e.stopPropagation(); setMenuPost(menuPost === p.id ? null : p.id); }} aria-label="Mais opções" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: C.lt, padding: "0 4px", lineHeight: 1 }}>⋯</button>
                       {menuPost === p.id && (
                         <div style={{ position: "absolute", right: 0, top: 26, zIndex: 30, background: C.creme, border: `1px solid ${C.ouro}33`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.18)", overflow: "hidden", minWidth: 190 }}>
                           <button onClick={() => denunciarPost(p)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "11px 14px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Denunciar publicação</button>
@@ -5901,7 +5913,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         {p.habito}
                       </div>
                     )}
-                    <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: `rgba(28,26,23,.95)`, lineHeight: 1.3 }}>{p.tit}</div>
+                    <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: C.obs, lineHeight: 1.3 }}>{p.tit}</div>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
                   </div>
                 )}
@@ -5911,7 +5923,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontSize: 17,
  fontFamily: FB,
  fontWeight: 400,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.65,
  marginBottom: 10,
                   }}
@@ -5934,7 +5946,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  fontSize: 16,
- color: cu ? C.ouroTxt : `rgba(28,26,23,.92)`,
+ color: cu ? C.ouroTxt : alfa(C.obs, .92),
  fontFamily: FB,
  fontWeight: 400,
  display: "flex",
@@ -5944,12 +5956,12 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "5px 0",
                     }}
                   >
-                    {IcoH.coracao(cu ? C.ouro : "rgba(28,26,23,.92)", 16, cu ? C.ouro : "none")} {cu ? "Curtido" : "Curtir"}
+                    {IcoH.coracao(cu ? C.ouro : alfa(C.obs, .92), 16, cu ? C.ouro : "none")} {cu ? "Curtido" : "Curtir"}
                     {p.cur.length > 0 && (
                       <span
  style={{
  fontSize: 16,
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  marginLeft: 4,
                         }}
                       >
@@ -5965,7 +5977,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  fontSize: 17,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  fontFamily: FB,
  display: "flex",
  alignItems: "center",
@@ -5974,7 +5986,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "5px 0",
                     }}
                   >
-                    {IcoH.comentario("rgba(28,26,23,.92)", 17)}
+                    {IcoH.comentario(alfa(C.obs, .92), 17)}
                     <span style={{ fontSize: 16 }}>{p.com.length}</span>
                   </button>
                   {(p.userId === authUserId || p.aut === "Você") && (
@@ -5985,7 +5997,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  fontSize: 17,
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  padding: "5px 8px",
  display: "flex",
  alignItems: "center",
@@ -6036,12 +6048,12 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                         </div>
                         <div
  style={{
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  borderRadius: 10,
  padding: "6px 10px",
  fontSize: 16,
  fontFamily: FB,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  flex: 1,
                           }}
                         >
@@ -6065,7 +6077,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  background: "none",
  border: "none",
  cursor: "pointer",
- color: `rgba(28,26,23,.86)`,
+ color: C.obs,
  fontSize: 16,
  padding: "2px 4px",
  flexShrink: 0,
@@ -6075,7 +6087,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                           </button>
                         )}
                         {c.cid && c.userId !== authUserId && (
-                          <button onClick={() => denunciarComentario(p.id, c.cid)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(28,26,23,.5)", fontSize: 13, padding: "2px 4px", flexShrink: 0 }}>denunciar</button>
+                          <button onClick={() => denunciarComentario(p.id, c.cid)} style={{ background: "none", border: "none", cursor: "pointer", color: C.lt, fontSize: 13, padding: "2px 4px", flexShrink: 0 }}>denunciar</button>
                         )}
                       </div>
                       {/* Thread simples — uma camada de resposta (seção 6.2) */}
@@ -6103,11 +6115,11 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  r.q.slice(0, 2).toUpperCase()
                               )}
                             </div>
-                            <div style={{ flex: 1, background: `rgba(28,26,23,.04)`, borderRadius: 10, padding: "5px 9px", fontSize: 16, fontFamily: FB, color: `rgba(28,26,23,.9)` }}>
+                            <div style={{ flex: 1, background: alfa(C.obs, .04), borderRadius: 10, padding: "5px 9px", fontSize: 16, fontFamily: FB, color: C.obs }}>
                               <span style={{ fontWeight: 500, fontSize: 16, color: C.terra }}>{r.q} · </span>{r.t}
                             </div>
                             {r.cid && r.userId === authUserId && (
-                              <button onClick={() => setConfirmaComent({ postId: p.id, cid: r.cid })} style={{ background: "none", border: "none", cursor: "pointer", color: `rgba(28,26,23,.85)`, fontSize: 13, flexShrink: 0 }} aria-hidden="true">apagar</button>
+                              <button onClick={() => setConfirmaComent({ postId: p.id, cid: r.cid })} style={{ background: "none", border: "none", cursor: "pointer", color: C.obs, fontSize: 13, flexShrink: 0 }} aria-hidden="true">apagar</button>
                             )}
                           </div>
                         ))}
@@ -6126,7 +6138,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."}
  style={{
  flex: 1,
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  border: "none",
  borderRadius: 20,
  padding: "8px 12px",
@@ -6230,7 +6242,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 16,
- color: `rgba(28,26,23,.95)`,
+ color: C.obs,
                       }}
                     >
                       {dp.aut}
@@ -6240,7 +6252,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
                       }}
                     >
                       {dp.tempo}
@@ -6251,7 +6263,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  onClick={() => setDet(null)}
  aria-label="Fechar"
  style={{
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  border: `1px solid ${C.ouro}33`,
  borderRadius: "50%",
  width: 32,
@@ -6287,7 +6299,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontFamily: FB,
  fontSize: 20,
  fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
  marginBottom: 8,
                   }}
                 >
@@ -6299,7 +6311,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  fontSize: 17,
  fontFamily: FB,
  fontWeight: 400,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.65,
  marginBottom: 12,
                     }}
@@ -6321,7 +6333,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  border: "none",
  cursor: "pointer",
  fontSize: 16,
- color: dcu ? C.ouroTxt : `rgba(28,26,23,.88)`,
+ color: dcu ? C.ouroTxt : alfa(C.obs, .88),
  fontFamily: FB,
  fontWeight: 400,
  display: "flex",
@@ -6330,10 +6342,10 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  padding: "4px 0",
                     }}
                   >
-                    {IcoH.coracao(dcu ? C.ouro : "rgba(28,26,23,.92)", 16, dcu ? C.ouro : "none")} {dcu ? "Curtido" : "Curtir"}
+                    {IcoH.coracao(dcu ? C.ouro : alfa(C.obs, .92), 16, dcu ? C.ouro : "none")} {dcu ? "Curtido" : "Curtir"}
                     {dp.cur.length > 0 && (
                       <span
- style={{ fontSize: 16, color: `rgba(28,26,23,.82)` }}
+ style={{ fontSize: 16, color: C.lt }}
                       >
                         {dp.cur.length}
                       </span>
@@ -6382,12 +6394,12 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     </div>
                     <div
  style={{
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  borderRadius: 10,
  padding: "6px 10px",
  fontSize: 16,
  fontFamily: FB,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  flex: 1,
                       }}
                     >
@@ -6411,7 +6423,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  background: "none",
  border: "none",
  cursor: "pointer",
- color: `rgba(28,26,23,.86)`,
+ color: C.obs,
  fontSize: 16,
  padding: "2px 4px",
  flexShrink: 0,
@@ -6430,7 +6442,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  placeholder="Escreva um comentário..."
  style={{
  flex: 1,
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  border: "none",
  borderRadius: 20,
  padding: "8px 12px",
@@ -6509,13 +6521,13 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  placeholder="Uma linha é o suficiente."
  style={{
  width: "100%",
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}25`,
  borderRadius: 10,
  padding: "13px 14px",
  fontSize: 17,
  fontFamily: FB, fontWeight: 400,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  resize: "none",
  height: 72,
  lineHeight: 1.6,
@@ -6542,7 +6554,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  placeholder="Conta mais para as amigas..."
  style={{
  width: "100%",
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 8,
  padding: "12px 14px",
@@ -6665,7 +6677,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  onClick={() => setPublica(true)}
  style={{
  flex: 1,
- background: publica ? `${C.ouro}22` : `rgba(28,26,23,.04)`,
+ background: publica ? `${C.ouro}22` : alfa(C.obs, .04),
  border: `1px solid ${publica ? C.ouro + "55" : C.ouro + "15"}`,
  borderRadius: 8,
  padding: "11px",
@@ -6679,7 +6691,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: publica ? C.ouroTxt : `rgba(28,26,23,.92)`,
+ color: publica ? C.ouroTxt : alfa(C.obs, .92),
                 }}
               >
  Público
@@ -6689,7 +6701,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  marginTop: 2,
                 }}
               >
@@ -6700,7 +6712,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  onClick={() => setPublica(false)}
  style={{
  flex: 1,
- background: !publica ? `${C.ouro}22` : `rgba(28,26,23,.04)`,
+ background: !publica ? `${C.ouro}22` : alfa(C.obs, .04),
  border: `1px solid ${!publica ? C.ouro + "55" : C.ouro + "15"}`,
  borderRadius: 8,
  padding: "11px",
@@ -6714,7 +6726,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: !publica ? C.ouroTxt : `rgba(28,26,23,.92)`,
+ color: !publica ? C.ouroTxt : alfa(C.obs, .92),
                 }}
               >
  Só para mim
@@ -6724,7 +6736,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  marginTop: 2,
                 }}
               >
@@ -6821,7 +6833,7 @@ function Voz({ back, postTreino, tk }) {
           <div style={{ textAlign: "center" }}>
             <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 12,
  padding: "20px 18px",
@@ -6833,7 +6845,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  marginBottom: 12,
  lineHeight: 1.6,
                 }}
@@ -6848,13 +6860,13 @@ function Voz({ back, postTreino, tk }) {
                 <div
  key={i}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  borderRadius: 8,
  padding: "8px 12px",
  marginBottom: 7,
  fontSize: 15,
  fontFamily: FB, fontWeight: 400,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  textAlign: "left",
                   }}
                 >
@@ -6885,7 +6897,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
               }}
             >
  Toque para falar
@@ -6925,7 +6937,7 @@ function Voz({ back, postTreino, tk }) {
           <div style={{ textAlign: "center" }}>
             <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}33`,
  borderRadius: 12,
  padding: "22px",
@@ -6950,7 +6962,7 @@ function Voz({ back, postTreino, tk }) {
  style={{
  fontFamily: FS,
  fontSize: 17,
- color: tr ? `rgba(28,26,23,.95)` : `rgba(28,26,23,.88)`,
+ color: tr ? alfa(C.obs, .95) : alfa(C.obs, .88),
  fontStyle: tr ? "normal" : "italic",
  lineHeight: 1.6,
                 }}
@@ -7012,7 +7024,7 @@ function Voz({ back, postTreino, tk }) {
  style={{
  fontFamily: FS,
  fontSize: 18,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  marginBottom: 6,
               }}
             >
@@ -7024,7 +7036,7 @@ function Voz({ back, postTreino, tk }) {
           <div style={{ animation: "fadeUp .4s ease" }}>
             <div
  style={{
- background: `rgba(28,26,23,.05)`,
+ background: alfa(C.obs, .05),
  border: `1px solid ${C.ouro}25`,
  borderRadius: 12,
  padding: "13px 15px",
@@ -7048,7 +7060,7 @@ function Voz({ back, postTreino, tk }) {
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
                 }}
               >
  "{res.texto}"
@@ -7056,7 +7068,7 @@ function Voz({ back, postTreino, tk }) {
             </div>
             <div
  style={{
- background: `rgba(28,26,23,.05)`,
+ background: alfa(C.obs, .05),
  border: `1px solid ${C.ouro}25`,
  borderRadius: 12,
  padding: "18px",
@@ -7078,7 +7090,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 16,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
                     }}
                   >
  ISA — Inteligência do Clube do Auge
@@ -7100,7 +7112,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.75,
                 }}
               >
@@ -7113,7 +7125,7 @@ function Voz({ back, postTreino, tk }) {
  onClick={() => setPublica(true)}
  style={{
  flex: 1,
- background: publica ? `${C.ouro}22` : `rgba(28,26,23,.04)`,
+ background: publica ? `${C.ouro}22` : alfa(C.obs, .04),
  border: `1px solid ${publica ? C.ouro + "44" : C.ouro + "12"}`,
  borderRadius: 8,
  padding: "10px 8px",
@@ -7126,7 +7138,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: publica ? C.ouroTxt : `rgba(28,26,23,.88)`,
+ color: publica ? C.ouroTxt : alfa(C.obs, .88),
                   }}
                 >
  Público
@@ -7138,7 +7150,7 @@ function Voz({ back, postTreino, tk }) {
  flex: 1,
  background: !publica
                     ? `${C.ouro}22`
-                    : `rgba(28,26,23,.04)`,
+                    : alfa(C.obs, .04),
  border: `1px solid ${!publica ? C.ouro + "44" : C.ouro + "12"}`,
  borderRadius: 8,
  padding: "10px 8px",
@@ -7151,7 +7163,7 @@ function Voz({ back, postTreino, tk }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: !publica ? C.ouroTxt : `rgba(28,26,23,.88)`,
+ color: !publica ? C.ouroTxt : alfa(C.obs, .88),
                   }}
                 >
  Só para mim
@@ -7250,7 +7262,7 @@ function Cx({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginBottom: 18,
  textAlign: "center",
           }}
@@ -7293,7 +7305,7 @@ function Cx({
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 17,
- color: `rgba(28,26,23,.95)`,
+ color: C.obs,
                     }}
                   >
                     {s.nome}
@@ -7303,7 +7315,7 @@ function Cx({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  marginTop: 2,
                     }}
                   >
@@ -7331,14 +7343,14 @@ function Cx({
  onClick={() => recusar(s)}
  aria-label="Recusar"
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: "50%",
  width: 34,
  height: 34,
  fontFamily: FB,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  cursor: "pointer",
  flexShrink: 0,
                   }}
@@ -7353,7 +7365,7 @@ function Cx({
           <>
             <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 14,
  overflow: "hidden",
@@ -7394,7 +7406,7 @@ function Cx({
  fontSize: 58,
  fontFamily: FS,
  fontWeight: 300,
- color: `rgba(28,26,23,.18)`,
+ color: alfa(C.obs, .18),
                     }}
                   >
                     {p.ini}
@@ -7457,7 +7469,7 @@ function Cx({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.7,
  marginBottom: 10,
                   }}
@@ -7492,9 +7504,9 @@ function Cx({
  flex: 1,
  padding: "15px",
  borderRadius: 50,
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  fontSize: 17,
  fontFamily: FB,
  fontWeight: 400,
@@ -7510,7 +7522,7 @@ function Cx({
  padding: "15px",
  borderRadius: 50,
  background: jaSolicitei
-                    ? `rgba(28,26,23,.04)`
+                    ? alfa(C.obs, .04)
                     : `linear-gradient(135deg,${C.ouro}28,${C.ouro}12)`,
  border: `1px solid ${C.ouro}55`,
  color: C.ouroTxt,
@@ -7528,7 +7540,7 @@ function Cx({
         ) : (
           <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 12,
  padding: "44px 22px",
@@ -7539,7 +7551,7 @@ function Cx({
  style={{
  fontFamily: FS,
  fontSize: 20,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  marginBottom: 8,
               }}
             >
@@ -7550,7 +7562,7 @@ function Cx({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.6,
               }}
             >
@@ -7581,7 +7593,7 @@ function Cx({
  ir(S.CHAT);
                 }}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 12,
  padding: "13px 15px",
@@ -7599,7 +7611,7 @@ function Cx({
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 17,
- color: `rgba(28,26,23,.95)`,
+ color: C.obs,
                     }}
                   >
                     {m.nome}
@@ -7609,7 +7621,7 @@ function Cx({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 14.5,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  marginTop: 2,
                     }}
                   >
@@ -7638,7 +7650,7 @@ function Cx({
                     {naoLidas[m.id]}
                   </div>
                 )}
-                <span style={{ color: `rgba(28,26,23,.8)`, fontSize: 17 }}>
+                <span style={{ color: C.lt, fontSize: 17 }}>
                   ›
                 </span>
               </div>
@@ -7671,7 +7683,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
  position: "absolute",
  top: 14,
  left: 14,
- background: `rgba(28,26,23,.15)`,
+ background: alfa(C.obs, .15),
  border: "none",
  borderRadius: 20,
  padding: "7px 13px",
@@ -7688,7 +7700,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
  width: 76,
  height: 76,
  borderRadius: "50%",
- background: `rgba(28,26,23,.85)`,
+ background: alfa(C.obs, .85),
  display: "flex",
  alignItems: "center",
  justifyContent: "center",
@@ -7713,7 +7725,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
         {m.cidade && (
           <div
  style={{
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  fontSize: 16,
  fontFamily: FB,
  fontWeight: 400,
@@ -7730,7 +7742,7 @@ function MatchDet({ selM, setSelM, ir, back, matches = [] }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.7,
  marginBottom: 14,
           }}
@@ -7889,11 +7901,11 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
         <button
  onClick={back}
  style={{
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  border: `1px solid ${C.ouro}33`,
  borderRadius: 50,
  padding: "8px 14px",
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
@@ -7911,7 +7923,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  fontFamily: FB,
  fontWeight: 500,
  fontSize: 16,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
             }}
           >
             {m.nome.split(" ")[0]}
@@ -7921,7 +7933,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
             }}
           >
             {[m.compat != null ? `${m.compat}% em comum` : null, m.cidade]
@@ -7947,7 +7959,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.6,
               }}
             >
@@ -7979,7 +7991,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  background: "none",
  border: "none",
  cursor: "pointer",
- color: `rgba(28,26,23,.86)`,
+ color: C.obs,
  fontSize: 16,
  padding: "4px 6px",
  flexShrink: 0,
@@ -7991,7 +8003,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
               <div
  style={{
  maxWidth: "73%",
- background: eu ? `${C.ouro}20` : `rgba(28,26,23,.06)`,
+ background: eu ? `${C.ouro}20` : alfa(C.obs, .06),
  borderRadius: eu
                     ? "16px 16px 4px 16px"
                     : "16px 16px 16px 4px",
@@ -8004,7 +8016,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.6,
                   }}
                 >
@@ -8015,7 +8027,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  marginTop: 3,
                   }}
                 >
@@ -8076,7 +8088,7 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
  placeholder="Escreva uma mensagem..."
  style={{
  flex: 1,
- background: `rgba(28,26,23,.06)`,
+ background: alfa(C.obs, .06),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 20,
  padding: "10px 15px",
@@ -8152,13 +8164,13 @@ function CartaEditor({ setCarta, tk, inicial = "", onSalvo, onCancelar }) {
  placeholder="Querida futura eu..."
  style={{
  width: "100%",
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 10,
  padding: "14px",
  fontSize: 17,
  fontFamily: FB, fontWeight: 400,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  resize: "none",
  height: 180,
  lineHeight: 1.8,
@@ -8170,7 +8182,7 @@ function CartaEditor({ setCarta, tk, inicial = "", onSalvo, onCancelar }) {
  Guardar minha carta
       </BtnPill>
       {onCancelar && (
-        <button onClick={onCancelar} style={{ background: "none", border: "none", width: "100%", marginTop: 10, fontFamily: FB, fontWeight: 400, fontSize: 14, color: "rgba(28,26,23,.6)", cursor: "pointer" }}>
+        <button onClick={onCancelar} style={{ background: "none", border: "none", width: "100%", marginTop: 10, fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, cursor: "pointer" }}>
  Cancelar
         </button>
       )}
@@ -8202,7 +8214,7 @@ function TelaConvite({ back }) {
  style={{
  fontFamily: FS, fontWeight: 500,
  fontSize: 18,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  textAlign: "center",
  lineHeight: 1.4,
  marginBottom: 24,
@@ -8247,7 +8259,7 @@ function TelaConvite({ back }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.5,
               }}
             >
@@ -8266,7 +8278,7 @@ function TelaConvite({ back }) {
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.6,
  marginBottom: 6,
             }}
@@ -8370,7 +8382,7 @@ function JornadaClube({ ir }) {
           <LockCard msg="Personalize seus 3 hábitos na Jornada AUGE">
             <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 10,
  padding: "14px",
@@ -8381,7 +8393,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginBottom: 10,
                 }}
               >
@@ -8415,7 +8427,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
                     }}
                   >
                     {h}
@@ -8475,12 +8487,12 @@ function JornadaClube({ ir }) {
  key={m}
  onClick={lock}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 10,
  padding: "14px 0",
  cursor: "pointer",
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  fontFamily: FB,
  fontSize: 15,
  letterSpacing: "0.2em",
@@ -8508,7 +8520,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.5,
             }}
           >
@@ -8533,7 +8545,7 @@ function JornadaClube({ ir }) {
           </div>
           <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}12`,
  borderRadius: 10,
  padding: "14px",
@@ -8571,7 +8583,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.5,
                   }}
                 >
@@ -8584,7 +8596,7 @@ function JornadaClube({ ir }) {
  onClick={lock}
  style={{
  width: "100%",
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 50,
  padding: "13px",
@@ -8599,7 +8611,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  letterSpacing: "0.04em",
               }}
             >
@@ -8627,7 +8639,7 @@ function JornadaClube({ ir }) {
           <LockCard msg="Ferramentas exclusivas da Jornada AUGE">
             <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}12`,
  borderRadius: 10,
  overflow: "hidden",
@@ -8648,7 +8660,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: i === 0 ? C.ouroTxt : `rgba(28,26,23,.18)`,
+ color: i === 0 ? C.ouroTxt : alfa(C.obs, .18),
  textAlign: "center",
  borderBottom: `2px solid ${i === 0 ? C.ouro : "transparent"}`,
                     }}
@@ -8670,7 +8682,7 @@ function JornadaClube({ ir }) {
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  textAlign: "center",
                   }}
                 >
@@ -8708,7 +8720,7 @@ function JornadaClube({ ir }) {
           <div
  onClick={lock}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}12`,
  borderRadius: 10,
  padding: "12px",
@@ -8734,7 +8746,7 @@ function JornadaClube({ ir }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: `rgba(28,26,23,.9)`,
+ color: C.obs,
  textAlign: "center",
               }}
             >
@@ -8784,7 +8796,7 @@ function VitJornada({ ir, onLogin }) {
  fontFamily: FS,
  fontSize: 28,
  fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
  lineHeight: 1.3,
  marginBottom: 8,
           }}
@@ -8828,7 +8840,7 @@ function VitJornada({ ir, onLogin }) {
           <div
  key={i}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 10,
  padding: "14px 16px",
@@ -8846,7 +8858,7 @@ function VitJornada({ ir, onLogin }) {
  fontFamily: FS,
  fontSize: 17,
  fontWeight: 400,
- color: `rgba(28,26,23,.95)`,
+ color: C.obs,
  marginBottom: 3,
                 }}
               >
@@ -8857,7 +8869,7 @@ function VitJornada({ ir, onLogin }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 15,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.5,
                 }}
               >
@@ -8880,7 +8892,7 @@ function VitJornada({ ir, onLogin }) {
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.6,
  marginBottom: 6,
             }}
@@ -8925,7 +8937,7 @@ function MinimosInegociaveis({ metas, salvarMinimo, tk }) {
       <div style={{ fontFamily: FB, fontSize: 16.5, fontWeight: 600, color: C.obs, marginBottom: 2 }}>
  Seus Mínimos Inegociáveis
       </div>
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginBottom: 10 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginBottom: 10 }}>
  O mínimo que ainda conta num dia difícil, bem menor que a meta cheia. Editável por você.
       </div>
       {HABS_FIXOS.map((h) => {
@@ -8980,8 +8992,8 @@ function RodaResumo({ rodaResultados = [] }) {
  if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
  chartRef.current = new window.Chart(ctx, {
  type: "radar",
- data: { labels: DIMS, datasets: [{ data: vals, backgroundColor: "rgba(196,168,130,0.12)", borderColor: "#C4A882", borderWidth: 1.5, pointBackgroundColor: "#C4A882", pointRadius: 3 }] },
- options: { responsive: false, scales: { r: { min: 0, max: 10, ticks: { display: false }, grid: { color: "rgba(90,75,67,0.3)" }, angleLines: { color: "rgba(90,75,67,0.3)" }, pointLabels: { color: C.lt, font: { size: 13, family: "Inter, sans-serif" } } } }, plugins: { legend: { display: false } } },
+ data: { labels: DIMS, datasets: [{ data: vals, backgroundColor: alfa(C.ouro, 0.12), borderColor: "#C4A882", borderWidth: 1.5, pointBackgroundColor: "#C4A882", pointRadius: 3 }] },
+ options: { responsive: false, scales: { r: { min: 0, max: 10, ticks: { display: false }, grid: { color: alfa(C.mid, 0.3) }, angleLines: { color: alfa(C.mid, 0.3) }, pointLabels: { color: C.lt, font: { size: 13, family: "Inter, sans-serif" } } } }, plugins: { legend: { display: false } } },
       });
     };
  if (window.Chart) draw();
@@ -9120,8 +9132,8 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
       <div style={{ padding: "24px 22px 40px", textAlign: "center" }}>
         <Logo width={120} fundo="claro" />
         <div style={{ fontFamily: FB, fontSize: 31, fontWeight: 300, letterSpacing: "0.1em", color: C.ouroTxt, marginTop: 12 }}>PERFIL</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.35em", textTransform: "uppercase", color: "rgba(28,26,23,.88)", marginBottom: 26 }}>AUGE · 15 afirmações · 5 perfis</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.85)", lineHeight: 1.7, textAlign: "left", marginBottom: 28 }}>{PA_INTRO}</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.35em", textTransform: "uppercase", color: C.obs, marginBottom: 26 }}>AUGE · 15 afirmações · 5 perfis</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, lineHeight: 1.7, textAlign: "left", marginBottom: 28 }}>{PA_INTRO}</div>
         <BtnPill onClick={iniciar}>Começar</BtnPill>
       </div>
     </Grain>
@@ -9135,17 +9147,17 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
       <Grain style={{ minHeight: 760, animation: "fadeUp .3s ease" }}>
         <div style={{ padding: "1.5rem 1.25rem" }}>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "1rem" }}>{qi + 1} / 15</div>
-          <div style={{ height: 2, background: "rgba(28,26,23,.08)", borderRadius: 100, marginBottom: "1.5rem", position: "relative" }}>
+          <div style={{ height: 2, background: alfa(C.obs, .08), borderRadius: 100, marginBottom: "1.5rem", position: "relative" }}>
             <div style={{ position: "absolute", top: 0, left: 0, height: "100%", background: C.ouro, borderRadius: 100, width: `${((qi + 1) / 15) * 100}%`, transition: "width .3s" }} />
           </div>
-          <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: "rgba(28,26,23,.97)", lineHeight: 1.5, marginBottom: "2rem", minHeight: 96 }}>{q.t}</div>
+          <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 300, color: C.obs, lineHeight: 1.5, marginBottom: "2rem", minHeight: 96 }}>{q.t}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {OIDENT.map((op) => (
               <button 
                 key={op.v} 
                 onClick={() => setResp({ ...resp, [qi]: op.v })}
                 style={{ 
-                  background: respostaSelecionada === op.v ? C.oliva : "rgba(28,26,23,.05)", 
+                  background: respostaSelecionada === op.v ? C.oliva : alfa(C.obs, .05), 
                   border: `1px solid ${respostaSelecionada === op.v ? C.oliva : C.ouro + "15"}`, 
                   borderRadius: 10, 
                   padding: "14px 16px", 
@@ -9153,7 +9165,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
                   textAlign: "left", 
                   fontFamily: FB, 
                   fontSize: 17, 
-                  color: respostaSelecionada === op.v ? C.creme : "rgba(28,26,23,.88)",
+                  color: respostaSelecionada === op.v ? C.creme : alfa(C.obs, .88),
                   fontWeight: respostaSelecionada === op.v ? 500 : 400,
                   transition: "all 0.2s"
                 }}
@@ -9165,17 +9177,17 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
           
           {/* Navegação com botões Voltar e Próxima */}
           <div style={{ display: "flex", gap: 10, marginTop: "1.5rem", justifyContent: "space-between", alignItems: "center" }}>
-            {qi > 0 && <button onClick={() => setQi(qi - 1)} style={{ background: "none", border: "none", color: "rgba(28,26,23,.82)", fontFamily: FB, fontSize: 16, cursor: "pointer", padding: "8px 4px" }}>‹ Voltar</button>}
+            {qi > 0 && <button onClick={() => setQi(qi - 1)} style={{ background: "none", border: "none", color: C.lt, fontFamily: FB, fontSize: 16, cursor: "pointer", padding: "8px 4px" }}>‹ Voltar</button>}
             <div style={{ flex: 1 }} />
             <button 
               onClick={() => respondida ? (qi < PA_Q.length - 1 ? setQi(qi + 1) : finalizar(resp)) : null}
               disabled={!respondida}
               style={{ 
-                background: respondida ? C.ouro : "rgba(28,26,23,.08)", 
+                background: respondida ? C.ouro : alfa(C.obs, .08), 
                 border: "none", 
                 borderRadius: 50, 
                 padding: "10px 20px", 
-                color: respondida ? C.obs2 : "rgba(28,26,23,.5)",
+                color: respondida ? C.obs2 : alfa(C.obs, .5),
                 fontFamily: FB, 
                 fontSize: 16,
                 cursor: respondida ? "pointer" : "not-allowed",
@@ -9194,7 +9206,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
   const chaves = (perfilAuge || "").split(",").filter(Boolean);
   const perfis = chaves.map((k) => PERFIS[k]).filter(Boolean);
   const tb = { fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.28em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
-  const pp = { fontFamily: FB, fontWeight: 300, fontSize: 16, color: "rgba(28,26,23,.85)", lineHeight: 1.65 };
+  const pp = { fontFamily: FB, fontWeight: 300, fontSize: 16, color: C.obs, lineHeight: 1.65 };
   const li = { display: "flex", gap: 9, marginBottom: 6 };
   const dot = { width: 5, height: 5, borderRadius: "50%", background: C.ouro, marginTop: 8, flexShrink: 0 };
   return (
@@ -9221,16 +9233,16 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
             <div style={pp}>{pf.quando}</div>
             <div style={{ borderLeft: `2px solid ${C.ouroDk}`, padding: "8px 0 8px 14px", margin: "14px 0" }}>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.2em", textTransform: "uppercase", color: C.ouroTxt, marginBottom: 4 }}>Âncora de enfrentamento</div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: "rgba(28,26,23,.9)", lineHeight: 1.5 }}>"{pf.ancora}"</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs, lineHeight: 1.5 }}>"{pf.ancora}"</div>
             </div>
             <div style={tb}>Plano de ação</div>
             <div style={pp}>{pf.plano}</div>
           </div>
         ))}
-        <div style={{ background: "rgba(28,26,23,.04)", border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+        <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
           <div style={{ ...pp, fontSize: 16, color: C.terra }}>{PA_NOTA}</div>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.88)", lineHeight: 1.65, marginBottom: 22 }}>{PA_FECHA}</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, lineHeight: 1.65, marginBottom: 22 }}>{PA_FECHA}</div>
         <BtnOut onClick={iniciar}>Refazer o teste</BtnOut>
         <BtnPill onClick={back} style={{ marginTop: 10 }}>Concluir</BtnPill>
       </div>
@@ -9335,9 +9347,9 @@ function Jornada({
         <div onClick={() => ir(S.RODA)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Roda AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3, lineHeight: 1.45 }}>5 dimensões · 25 perguntas<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicada na semana 1, 6 e 12</span></div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3, lineHeight: 1.45 }}>5 dimensões · 25 perguntas<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicada na semana 1, 6 e 12</span></div>
           </div>
-          <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
+          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
         </div>
         <RodaResumo rodaResultados={rodaResultados} />
         {retomadas > 0 && (
@@ -9351,9 +9363,9 @@ function Jornada({
         <div onClick={() => ir(S.PAUGE)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Questionário de Perfil AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>{perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : <>Descubra seu perfil<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicado na semana 1, 6 e 12</span></>}</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3 }}>{perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : <>Descubra seu perfil<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicado na semana 1, 6 e 12</span></>}</div>
           </div>
-          <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
+          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
         </div>
         {/* Mínimos Inegociáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
@@ -9362,17 +9374,17 @@ function Jornada({
         <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Espaços de escrita</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3 }}>Âncora, Porquês e Carta para o Futuro</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3 }}>Âncora, Porquês e Carta para o Futuro</div>
           </div>
-          <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
+          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
         </div>
         {/* Configurações — dados pessoais, notificações, sair (seção 9) */}
         <div onClick={() => ir(S.PF)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Perfil e Configurações</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.87)`, marginTop: 3, lineHeight: 1.45 }}>Meus dados e objetivos<br /><span style={{ display: "inline-block", marginTop: 4 }}>notificações, sair da conta</span></div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3, lineHeight: 1.45 }}>Meus dados e objetivos<br /><span style={{ display: "inline-block", marginTop: 4 }}>notificações, sair da conta</span></div>
           </div>
-          <div style={{ color: `rgba(28,26,23,.85)`, fontSize: 17 }}>›</div>
+          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
         </div>
 
       </Grain>
@@ -9427,7 +9439,7 @@ function Roda({
  datasets: [
             {
  data,
- backgroundColor: "rgba(196,168,130,0.12)",
+ backgroundColor: alfa(C.ouro, 0.12),
  borderColor: "#C4A882",
  borderWidth: 1.5,
  pointBackgroundColor: "#C4A882",
@@ -9442,8 +9454,8 @@ function Roda({
  min: 0,
  max: 10,
  ticks: { display: false },
- grid: { color: "rgba(90,75,67,0.3)" },
- angleLines: { color: "rgba(90,75,67,0.3)" },
+ grid: { color: alfa(C.mid, 0.3) },
+ angleLines: { color: alfa(C.mid, 0.3) },
  pointLabels: {
  color: C.lt,
  font: { size: 13, family: "Inter, sans-serif" },
@@ -9513,16 +9525,16 @@ function Roda({
  onClick={() => (bloqMom ? null : setMom(m))}
  style={{
  background: bloqMom
-                      ? `rgba(28,26,23,.03)`
+                      ? alfa(C.obs, .03)
                       : momento === m
                         ? `${C.ouro}22`
-                        : `rgba(28,26,23,.04)`,
+                        : alfa(C.obs, .04),
  border: `1px solid ${bloqMom ? C.ouro + "0A" : momento === m ? C.ouro + "88" : C.ouro + "55"}`,
  borderRadius: 12,
  padding: "24px 16px",
  cursor: bloqMom ? "default" : "pointer",
  transition: "all 0.2s",
- background: bloqMom ? `rgba(28,26,23,.03)` : momento === m ? `${C.ouro}55` : `#F5F0E8`,
+ background: bloqMom ? alfa(C.obs, .03) : momento === m ? `${C.ouro}55` : `#F5F0E8`,
  fontFamily: FB,
                   }}
                 >
@@ -9585,14 +9597,14 @@ function Roda({
             <span style={{ opacity: 0.4 }}> · </span>
             <span>{posInDim} de 5</span>
             <span style={{ opacity: 0.4, margin: "0 .4em" }}>·</span>
-            <span style={{ color: `rgba(28,26,23,.88)` }}>
+            <span style={{ color: C.obs }}>
               {rodaI + 1} / 25
             </span>
           </div>
           <div
  style={{
  height: 2,
- background: `rgba(28,26,23,.08)`,
+ background: alfa(C.obs, .08),
  borderRadius: 100,
  marginBottom: "1.5rem",
  position: "relative",
@@ -9616,7 +9628,7 @@ function Roda({
  fontFamily: FB,
  fontSize: 20,
  fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
  lineHeight: 1.6,
  marginBottom: "2rem",
  minHeight: 80,
@@ -9630,7 +9642,7 @@ function Roda({
  key={i}
  onClick={() => resp(op.v)}
  style={{
- background: `rgba(28,26,23,.05)`,
+ background: alfa(C.obs, .05),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 10,
  padding: "14px 16px",
@@ -9638,7 +9650,7 @@ function Roda({
  textAlign: "left",
  fontFamily: FB,
  fontSize: 17,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.4,
                 }}
               >
@@ -9651,7 +9663,7 @@ function Roda({
  style={{
  background: "transparent",
  border: "none",
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  fontFamily: FB,
  fontSize: 16,
  letterSpacing: "0.15em",
@@ -9673,7 +9685,7 @@ function Roda({
               disabled={rodaI === 0}
               style={{
                 flex: 1,
-                background: rodaI === 0 ? `rgba(28,26,23,.1)` : C.creme,
+                background: rodaI === 0 ? alfa(C.obs, .1) : C.creme,
                 border: `1px solid ${C.ouro}55`,
                 borderRadius: 10,
                 padding: "12px 16px",
@@ -9681,7 +9693,7 @@ function Roda({
                 fontFamily: FB,
                 fontSize: 16,
                 fontWeight: 500,
-                color: rodaI === 0 ? `rgba(28,26,23,.4)` : C.obs,
+                color: rodaI === 0 ? alfa(C.obs, .4) : C.obs,
               }}
             >
               ← Voltar
@@ -9691,7 +9703,7 @@ function Roda({
               disabled={rodaI === 24}
               style={{
                 flex: 1,
-                background: rodaI === 24 ? `rgba(28,26,23,.1)` : C.ouro,
+                background: rodaI === 24 ? alfa(C.obs, .1) : C.ouro,
                 border: `1px solid ${C.ouro}88`,
                 borderRadius: 10,
                 padding: "12px 16px",
@@ -9699,7 +9711,7 @@ function Roda({
                 fontFamily: FB,
                 fontSize: 16,
                 fontWeight: 500,
-                color: rodaI === 24 ? `rgba(28,26,23,.4)` : C.creme,
+                color: rodaI === 24 ? alfa(C.obs, .4) : C.creme,
               }}
             >
               Próxima →
@@ -9743,7 +9755,7 @@ function Roda({
                 <button onClick={() => anterior && verMomento(anterior)} disabled={!anterior}
  style={{ background: "none", border: "none", color: anterior ? C.terra : `${C.terra}33`, fontSize: 20, cursor: anterior ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>‹</button>
               )}
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.4em", textTransform: "uppercase", color: `rgba(28,26,23,.88)`, textAlign: "center" }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.4em", textTransform: "uppercase", color: C.obs, textAlign: "center" }}>
  Resultado · {momento}
               </div>
               {temComparacao && (
@@ -9802,7 +9814,7 @@ function Roda({
  const n = notas[d];
  const dc =
  n === null
-                ? { c: `rgba(28,26,23,.85)` }
+                ? { c: alfa(C.obs, .85) }
                 : n <= 3.9
                   ? { c: C.atencao }
                   : n <= 6.9
@@ -9812,7 +9824,7 @@ function Roda({
               <div
  key={d}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}12`,
  borderRadius: 8,
  padding: "10px 14px",
@@ -9827,7 +9839,7 @@ function Roda({
  fontSize: 16,
  letterSpacing: "0.2em",
  textTransform: "uppercase",
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
                   }}
                 >
                   {d}
@@ -9849,7 +9861,7 @@ function Roda({
  const fracas = dimsN.filter((d) => notas[d] === minN);
  const equilibrado = maxN - minN < 1.5;
  const zonaTxt = ind == null ? "" : ind <= 3.9 ? RODA_TXT.zona.atencao : ind <= 6.9 ? RODA_TXT.zona.dev : RODA_TXT.zona.auge;
- const pStyle = { fontFamily: FB, fontWeight: 300, fontSize: 16, color: "rgba(28,26,23,.85)", lineHeight: 1.7, marginBottom: 14 };
+ const pStyle = { fontFamily: FB, fontWeight: 300, fontSize: 16, color: C.obs, lineHeight: 1.7, marginBottom: 14 };
  const tStyle = (c) => ({ fontFamily: FB, fontWeight: 400, fontSize: 13, letterSpacing: "0.28em", textTransform: "uppercase", color: c, marginBottom: 6, marginTop: 4 });
  return (
             <div style={{ marginBottom: "1.2rem" }}>
@@ -9864,7 +9876,7 @@ function Roda({
                   {fracas.map((d) => (<div key={d} style={pStyle}><b style={{ fontWeight: 500 }}>{d}. </b>{RODA_TXT.atencao[d]}</div>))}
                 </>
               )}
-              <div style={{ ...pStyle,  fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.9)` }}>{RODA_TXT.fechamento}</div>
+              <div style={{ ...pStyle,  fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs }}>{RODA_TXT.fechamento}</div>
             </div>
           );
         })()}
@@ -9879,7 +9891,7 @@ function Roda({
  style={{
  fontSize: 17,
  fontWeight: 400,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.6,
  fontFamily: FB,
             }}
@@ -10276,8 +10288,8 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: h.bloqueado ? `${C.linho}8C` : C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: h.bloqueado ? "default" : "pointer", textAlign: "left" }}
           >
             {h.bloqueado ? IcoH.cadeado(C.lt, 16) : (IcoH[h.id] || IcoH.meu)(C.terra)}
-            <span style={{ flex: 1, fontFamily: FB, fontWeight: 600, fontSize: 17, color: h.bloqueado ? `rgba(78,65,57,.66)` : C.obs }}>{h.nome}</span>
-            <span style={{ fontFamily: FB, fontWeight: h.bloqueado ? 400 : 600, fontSize: 16, color: h.bloqueado ? `rgba(78,65,57,.66)` : C.ouroTxt }}>
+            <span style={{ flex: 1, fontFamily: FB, fontWeight: 600, fontSize: 17, color: h.bloqueado ? alfa(C.lt, .66) : C.obs }}>{h.nome}</span>
+            <span style={{ fontFamily: FB, fontWeight: h.bloqueado ? 400 : 600, fontSize: 16, color: h.bloqueado ? alfa(C.lt, .66) : C.ouroTxt }}>
               {h.bloqueado ? `desbloqueia S${h.unlock}` : `${h.diasNoMes} ${h.diasNoMes === 1 ? "dia" : "dias"} em ${nomeMesCurto}`}
             </span>
             {!h.bloqueado && <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>}
@@ -10343,11 +10355,11 @@ function Calendario({ back, historico, dataCadastro }) {
 
  const rdCor = (dataStr) => {
  const d = historico[dataStr];
- if (!d) return { bg: "transparent", tc: `rgba(28,26,23,.85)`, bo: `1px solid ${C.ouro}10` };
+ if (!d) return { bg: "transparent", tc: C.obs, bo: `1px solid ${C.ouro}10` };
  if (d.retomada) return { bg: `${C.blush}40`, tc: C.blush, bo: "none" };
  if (d.total > 0 && d.feitos === d.total) return { bg: C.ouro, tc: C.obs, bo: "none" };
  if (d.feitos > 0) return { bg: `${C.ouroLt}30`, tc: C.ouroDk, bo: `1.5px solid ${C.ouro}` };
- return { bg: "transparent", tc: `rgba(28,26,23,.85)`, bo: `1px solid ${C.ouro}10` };
+ return { bg: "transparent", tc: C.obs, bo: `1px solid ${C.ouro}10` };
   };
 
   // Barras de semanas baseadas em checkins reais
@@ -10380,22 +10392,22 @@ function Calendario({ back, historico, dataCadastro }) {
  return (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                 <div style={{ width: "100%", background: `rgba(196,168,130,${op})`, borderRadius: 4, height: h }} />
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: `rgba(28,26,23,.82)` }}>{i + 1}</div>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.lt }}>{i + 1}</div>
               </div>
             );
           })}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: `rgba(28,26,23,.82)`, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: "none", border: "none", color: C.lt, fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>‹</button>
           <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.35em", textTransform: "uppercase" }}>
             {nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}
           </div>
-          <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? `rgba(28,26,23,.86)` : `rgba(28,26,23,.15)`, fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
+          <button onClick={() => setOffset(o => Math.min(o + 1, 0))} style={{ background: "none", border: "none", color: offset < 0 ? alfa(C.obs, .86) : alfa(C.obs, .15), fontSize: 18, cursor: offset < 0 ? "pointer" : "default", padding: "0 4px", lineHeight: 1 }}>›</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 16 }}>
           {["D","S","T","Q","Q","S","S"].map((d, i) => (
-            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.82)`, padding: "2px 0" }}>{d}</div>
+            <div key={i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, padding: "2px 0" }}>{d}</div>
           ))}
           {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
           {Array.from({ length: diasNoMes }, (_, i) => {
@@ -10425,11 +10437,11 @@ function Calendario({ back, historico, dataCadastro }) {
           ].map(([c, l]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <div style={{ width: 12, height: 12, borderRadius: 4, background: c, border: `1px solid ${C.ouro}25`, flexShrink: 0 }} />
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: `rgba(28,26,23,.88)` }}>{l}</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs }}>{l}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)`, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.lt, marginTop: 20, letterSpacing: "0.05em", textAlign: "center" }}>
  Pequeno, repetido e infinito. Qualquer cor é uma vitória.
         </div>
       </Grain>
@@ -10508,7 +10520,7 @@ function Escritas({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: escT === id ? C.ouroTxt : `rgba(28,26,23,.88)`,
+ color: escT === id ? C.ouroTxt : alfa(C.obs, .88),
  cursor: "pointer",
  transition: "all .2s",
               }}
@@ -10524,7 +10536,7 @@ function Escritas({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginBottom: 10,
               }}
             >
@@ -10536,13 +10548,13 @@ function Escritas({
  placeholder="Não existe vitória pequena demais."
  style={{
  width: "100%",
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 10,
  padding: "13px",
  fontSize: 17,
  fontFamily: FB,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  resize: "none",
  height: 110,
  lineHeight: 1.7,
@@ -10558,7 +10570,7 @@ function Escritas({
             {(isaVitLoad || isaVit) && (
               <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}20`,
  borderRadius: 12,
  padding: "14px 15px",
@@ -10582,7 +10594,7 @@ function Escritas({
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
                       }}
                     >
  ISA está respondendo...
@@ -10594,7 +10606,7 @@ function Escritas({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.75,
  whiteSpace: "pre-wrap",
                     }}
@@ -10643,7 +10655,7 @@ function Escritas({
  style={{
  fontFamily: FB, fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.5,
                   }}
                 >
@@ -10680,7 +10692,7 @@ function Escritas({
  width: "100%", background: "none",
  border: `1px solid ${C.ouro}20`, borderRadius: 50,
  padding: "12px", fontFamily: FB, fontWeight: 400,
- fontSize: 17, color: `rgba(28,26,23,.88)`,
+ fontSize: 17, color: C.obs,
  cursor: "pointer", letterSpacing: "0.1em",
                   }}
                 >
@@ -10689,7 +10701,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.92)`, marginBottom: 12, lineHeight: 1.6 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginBottom: 12, lineHeight: 1.6 }}>
  Escreva a frase que vai te trazer de volta nos dias difíceis.
                 </div>
                 <textarea
@@ -10697,10 +10709,10 @@ function Escritas({
  onChange={(e) => setNa(e.target.value)}
  placeholder="A frase que vai te trazer de volta..."
  style={{
- width: "100%", background: `rgba(28,26,23,.04)`,
+ width: "100%", background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`, borderRadius: 10,
  padding: "13px", fontSize: 17, fontFamily: FB, fontWeight: 400,
-  color: `rgba(28,26,23,.82)`,
+  color: C.lt,
  resize: "none", height: 80, lineHeight: 1.6, marginBottom: 12,
                   }}
                 />
@@ -10724,7 +10736,7 @@ function Escritas({
           <div>
             {pq1 && pq2 && pq3 && !editPq ? (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.82)`, lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.6, marginBottom: 16 }}>
  Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -10733,8 +10745,8 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3],
                 ].map(([q, v], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: `rgba(28,26,23,.8)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
-                    <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FB, fontSize: 17, color: `rgba(28,26,23,.92)`, lineHeight: 1.6 }}>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.lt, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", fontFamily: FB, fontSize: 17, color: C.obs, lineHeight: 1.6 }}>
                       {v}
                     </div>
                   </div>
@@ -10745,7 +10757,7 @@ function Escritas({
  width: "100%", background: "none",
  border: `1px solid ${C.ouro}20`, borderRadius: 50,
  padding: "12px", fontFamily: FB, fontWeight: 400,
- fontSize: 17, color: `rgba(28,26,23,.88)`,
+ fontSize: 17, color: C.obs,
  cursor: "pointer", letterSpacing: "0.1em", marginTop: 4,
                   }}
                 >
@@ -10754,7 +10766,7 @@ function Escritas({
               </div>
             ) : (
               <div>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.82)`, lineHeight: 1.7, marginBottom: 16 }}>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.7, marginBottom: 16 }}>
  Essas respostas são só suas. Ninguém mais acessa.
                 </div>
                 {[
@@ -10763,12 +10775,12 @@ function Escritas({
                   ["Como você quer se sentir daqui a 5 anos?", pq3, setPq3],
                 ].map(([q, v, s], i) => (
                   <div key={i} style={{ marginBottom: 18 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: `rgba(28,26,23,.92)`, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs, lineHeight: 1.5, marginBottom: 8 }}>{q}</div>
                     <textarea
  value={v}
  onChange={(e) => s(e.target.value)}
  placeholder="Escreva com honestidade..."
- style={{ width: "100%", background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 17, fontFamily: FB, color: `rgba(28,26,23,.92)`, resize: "none", height: 80, lineHeight: 1.6 }}
+ style={{ width: "100%", background: alfa(C.obs, .04), border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "11px 12px", fontSize: 17, fontFamily: FB, color: C.obs, resize: "none", height: 80, lineHeight: 1.6 }}
                     />
                   </div>
                 ))}
@@ -10804,7 +10816,7 @@ function Escritas({
  fontFamily: FB,
  fontSize: 18,
  fontWeight: 400,
- color: `rgba(28,26,23,.95)`,
+ color: C.obs,
                   }}
                 >
  Carta para o Futuro
@@ -10814,7 +10826,7 @@ function Escritas({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  marginTop: 2,
                   }}
                 >
@@ -10855,7 +10867,7 @@ function Escritas({
                       </div>
                       <div
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}18`,
  borderRadius: 10,
  padding: "16px",
@@ -10866,7 +10878,7 @@ function Escritas({
  style={{
  fontFamily: FB,
  fontSize: 17,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.8,
  whiteSpace: "pre-wrap",
                           }}
@@ -10915,7 +10927,7 @@ function Escritas({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 17,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  lineHeight: 1.7,
  marginBottom: 10,
                               }}
@@ -10983,7 +10995,7 @@ function Escritas({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  lineHeight: 1.7,
  marginBottom: 16,
                   }}
@@ -11340,9 +11352,9 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
             <div style={{ width: 26, height: 26, borderRadius: "50%", background: C.ouroDk, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs, fontSize: 13, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
               {c.av ? <img src={c.av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : c.q.slice(0, 2).toUpperCase()}
             </div>
-            <div style={{ flex: 1, background: "rgba(28,26,23,.06)", borderRadius: 10, padding: "6px 10px" }}>
+            <div style={{ flex: 1, background: alfa(C.obs, .06), borderRadius: 10, padding: "6px 10px" }}>
               <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.ouroTxt, marginBottom: 2 }}>{c.q}</div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.85)" }}>{c.t}</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs }}>{c.t}</div>
             </div>
           </div>
           <div style={{ paddingLeft: 33, display: "flex", alignItems: "center", gap: 12, marginTop: 3 }}>
@@ -11357,10 +11369,10 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
               </button>
             )}
             {c.cid && c.userId === authUserId && (
-              <button onClick={() => setConfDel(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>apagar</button>
+              <button onClick={() => setConfDel(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: C.lt, cursor: "pointer", padding: "2px 0" }}>apagar</button>
             )}
             {c.cid && c.userId !== authUserId && (
-              <button onClick={() => denunciar(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: "rgba(28,26,23,.5)", cursor: "pointer", padding: "2px 0" }}>denunciar</button>
+              <button onClick={() => denunciar(c.cid)} style={{ background: "none", border: "none", fontFamily: FB, fontSize: 16, color: C.lt, cursor: "pointer", padding: "2px 0" }}>denunciar</button>
             )}
           </div>
           {coms.filter((r) => r.parent === c.cid).map((r, ri) => (
@@ -11368,7 +11380,7 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
               <div style={{ width: 20, height: 20, borderRadius: "50%", background: `${C.ouro}55`, display: "flex", alignItems: "center", justifyContent: "center", color: C.obs2, fontSize: 13, fontFamily: FB, flexShrink: 0, overflow: "hidden" }}>
                 {r.av ? <img src={r.av} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : r.q.slice(0, 2).toUpperCase()}
               </div>
-              <div style={{ flex: 1, background: "rgba(28,26,23,.04)", borderRadius: 10, padding: "5px 9px", fontFamily: FB, fontSize: 16, color: "rgba(28,26,23,.9)" }}>
+              <div style={{ flex: 1, background: alfa(C.obs, .04), borderRadius: 10, padding: "5px 9px", fontFamily: FB, fontSize: 16, color: C.obs }}>
                 <span style={{ fontWeight: 500, fontSize: 13, color: C.terra }}>{r.q} · </span>{r.t}
               </div>
             </div>
@@ -11377,11 +11389,11 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
       ))}
       {resp && <div style={{ fontFamily: FB, fontSize: 13, color: C.terra, marginBottom: 4 }}>Respondendo a {resp.autor}</div>}
       <div style={{ display: "flex", gap: 7, marginTop: 6 }}>
-        <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."} onKeyDown={(e) => { if (e.key === "Enter") enviar(); }} style={{ flex: 1, background: "rgba(28,26,23,.06)", border: "none", borderRadius: 20, padding: "9px 13px", fontSize: 16, fontFamily: FB, color: C.obs }} />
+        <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."} onKeyDown={(e) => { if (e.key === "Enter") enviar(); }} style={{ flex: 1, background: alfa(C.obs, .06), border: "none", borderRadius: 20, padding: "9px 13px", fontSize: 16, fontFamily: FB, color: C.obs }} />
         <button onClick={enviar} style={{ background: C.obs2, border: `1px solid ${C.ouro}33`, borderRadius: "50%", width: 38, height: 38, cursor: "pointer", color: C.ouro, fontSize: 17, flexShrink: 0 }}>→</button>
       </div>
       {confDel && (
-        <div onClick={() => setConfDel(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(28,26,23,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
+        <div onClick={() => setConfDel(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: alfa(C.obs, .6), display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: C.creme, borderRadius: 16, padding: "20px", maxWidth: 320 }}>
             <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 18, color: C.terra, marginBottom: 14 }}>Apagar este comentário?</div>
             <div style={{ display: "flex", gap: 10 }}>
@@ -11510,7 +11522,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.82)`,
+ color: C.lt,
  lineHeight: 1.6,
  marginBottom: 12,
               }}
@@ -11601,7 +11613,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                         )}
                         {thumb && (
                           <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "rgba(28,26,23,.62)", color: "#fff", fontSize: 15 }}>
+                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: alfa(C.obs, .62), color: "#fff", fontSize: 15 }}>
                               ▶
                             </span>
                           </span>
@@ -12087,7 +12099,7 @@ function PainelMentora({ ir }) {
       {/* Abas */}
       <div style={{ display: "flex", borderBottom: `1px solid ${C.ouro}12`, background: C.creme }}>
         {[["videos", "Vídeos"], ["mentoria", "Mentoria"], ["avisos", "Avisos"], ["alunas", "Alunas"]].map(([id, label]) => (
-          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 400, fontSize: 15, color: aba === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer", transition: "all .2s" }}>
+          <button key={id} onClick={() => setAba(id)} style={{ flex: 1, background: "transparent", border: "none", borderBottom: aba === id ? `2px solid ${C.ouro}` : "2px solid transparent", padding: "12px 0", fontFamily: FB, fontWeight: 400, fontSize: 15, color: aba === id ? C.ouroTxt : alfa(C.obs, .85), cursor: "pointer", transition: "all .2s" }}>
             {label}
           </button>
         ))}
@@ -12099,7 +12111,7 @@ function PainelMentora({ ir }) {
         {aba === "videos" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: `rgba(28,26,23,.95)` }}>Aulas no YouTube</div>
+              <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: C.obs }}>Aulas no YouTube</div>
               <button onClick={() => setMostrarForm((v) => !v)} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 20, padding: "6px 14px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.ouroTxt, cursor: "pointer" }}>
                 {mostrarForm ? "Cancelar" : "+ Adicionar"}
               </button>
@@ -12107,7 +12119,7 @@ function PainelMentora({ ir }) {
 
             {/* Formulário de novo vídeo */}
             {mostrarForm && (
-              <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
+              <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>
                 <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>{formV.categoria === "podcast" ? "Novo podcast" : formV.categoria === "curadoria" ? "Nova indicação" : "Novo vídeo"}</div>
                 {(formV.categoria === "curadoria"
                   ? [
@@ -12128,18 +12140,18 @@ function PainelMentora({ ir }) {
                     ]
                 ).map(([lb, field, ph]) => (
                   <div key={field} style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>{lb}</div>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 5 }}>{lb}</div>
                     <input
  value={formV[field]}
  onChange={(e) => setFormV((f) => ({ ...f, [field]: e.target.value }))}
  placeholder={ph}
- style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 16, padding: "6px 0" }}
+ style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .2)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 16, padding: "6px 0" }}
                     />
                   </div>
                 ))}
                 {formV.categoria === "curadoria" && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, marginBottom: 6 }}>Arquivo da indicação (HTML)</div>
+                    <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 6 }}>Arquivo da indicação (HTML)</div>
                     <label style={{ display: "inline-block", background: `${C.ouro}18`, border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.ouroTxt, cursor: "pointer" }}>
                       {formV.url ? "Trocar arquivo" : "Escolher arquivo .html"}
                       <input type="file" accept=".html,text/html" style={{ display: "none" }}
@@ -12149,18 +12161,18 @@ function PainelMentora({ ir }) {
                   </div>
                 )}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>Categoria</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 5 }}>Categoria</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {CATS_ADMIN.map((cat) => (
                       <button key={cat.id} onClick={() => setFormV((f) => ({ ...f, categoria: cat.id }))}
- style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: formV.categoria === cat.id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+ style={{ background: formV.categoria === cat.id ? `${C.ouro}22` : alfa(C.obs, .04), border: `1px solid ${formV.categoria === cat.id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "5px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: formV.categoria === cat.id ? C.ouroTxt : alfa(C.obs, .85), cursor: "pointer" }}>
                         {cat.label}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, marginBottom: 5 }}>Turma</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 5 }}>Turma</div>
                   <select
                     value={formV.turma_id}
                     onChange={(e) => setFormV((f) => ({ ...f, turma_id: e.target.value }))}
@@ -12178,25 +12190,25 @@ function PainelMentora({ ir }) {
                 <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 16 }}>
                   {salvandoV ? "Salvando..." : (formV.categoria === "podcast" ? "Salvar podcast" : formV.categoria === "curadoria" ? "Salvar indicação" : "Salvar vídeo")}
                 </BtnPill>
-                {formV.categoria === "curadoria" && !formV.url && <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.55)`, marginTop: 8, textAlign: "center" }}>Escolha o arquivo .html acima para liberar o salvar.</div>}
+                {formV.categoria === "curadoria" && !formV.url && <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 8, textAlign: "center" }}>Escolha o arquivo .html acima para liberar o salvar.</div>}
               </div>
             )}
 
             {/* Lista de vídeos */}
             {loadingV ? (
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : videos.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", marginTop: 32 }}>Nenhum vídeo cadastrado ainda.</div>
             ) : videos.map((v) => (
  editV?.id === v.id ? (
-              <div key={v.id} style={{ background: `rgba(28,26,23,.05)`, border: `1px solid ${C.ouro}44`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
+              <div key={v.id} style={{ background: alfa(C.obs, .05), border: `1px solid ${C.ouro}44`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
                 {[["Título", "titulo"], ["Descrição", "descricao"], ["Duração", "duracao"]].map(([lb, k]) => (
                   <div key={k} style={{ marginBottom: 10 }}>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 3 }}>{lb}</div>
                     <input
                       value={editV[k] || ""}
                       onChange={(e) => setEditV((x) => ({ ...x, [k]: e.target.value }))}
-                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 15, padding: "5px 0" }}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .2)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 15, padding: "5px 0" }}
                     />
                   </div>
                 ))}
@@ -12210,13 +12222,13 @@ function PainelMentora({ ir }) {
                 </div>
               </div>
             ) : (
-              <div key={v.id} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div key={v.id} style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
                 {v.youtube_id && (
                   <img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" loading="lazy" style={{ width: 60, height: 45, borderRadius: 6, objectFit: "cover", flexShrink: 0, backgroundColor: "#e0d5c7" }} />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.92)`, marginBottom: 3 }}>{v.titulo}</div>
-                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)`, marginBottom: 6 }}>{v.categoria} · {v.duracao}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginBottom: 3 }}>{v.titulo}</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.lt, marginBottom: 6 }}>{v.categoria} · {v.duracao}</div>
                   <select
                     value={v.turma_id || ""}
                     onChange={(e) => trocarTurmaVideo(v.id, e.target.value)}
@@ -12229,7 +12241,7 @@ function PainelMentora({ ir }) {
                   </select>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: `rgba(28,26,23,.9)`, cursor: "pointer", fontSize: 17 }}>✕</button>
+                  <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: C.obs, cursor: "pointer", fontSize: 17 }}>✕</button>
                   <button onClick={() => setEditV({ id: v.id, titulo: v.titulo || "", descricao: v.descricao || "", duracao: v.duracao || "" })}
                     style={{ background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "4px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>
                     editar
@@ -12260,12 +12272,12 @@ function PainelMentora({ ir }) {
                       value={t[k] || ""}
                       onChange={(e) => mudar(k, e.target.value)}
                       placeholder={ph}
-                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 15, padding: "5px 0" }}
+                      style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .2)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 15, padding: "5px 0" }}
                     />
                   </div>
                 );
                 return (
-                  <div key={t.id} style={{ background: `rgba(28,26,23,.03)`, border: `1px solid ${C.ouro}22`, borderRadius: 12, padding: "13px 14px", marginBottom: 12 }}>
+                  <div key={t.id} style={{ background: alfa(C.obs, .03), border: `1px solid ${C.ouro}22`, borderRadius: 12, padding: "13px 14px", marginBottom: 12 }}>
                     {campo("Nome da turma", "nome", "Ex: Turma 1")}
                     {campo("Início — segunda-feira da S1", "inicio", "AAAA-MM-DD, ex: 2026-08-03")}
 
@@ -12290,7 +12302,7 @@ function PainelMentora({ ir }) {
                                 value={desafios[t.id]?.[w] ?? ""}
                                 onChange={(e) => setDesafios((ds) => ({ ...ds, [t.id]: { ...(ds[t.id] || {}), [w]: e.target.value } }))}
                                 placeholder={atual ? "desafio desta semana" : "—"}
-                                style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.18)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 14.5, padding: "4px 0" }}
+                                style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .18)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 14.5, padding: "4px 0" }}
                               />
                             </div>
                           );
@@ -12318,30 +12330,30 @@ function PainelMentora({ ir }) {
         {/* ── ABA AVISOS (push da mentora) ── */}
         {aba === "avisos" && (
           <div>
-            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: `rgba(28,26,23,.95)`, marginBottom: 6 }}>Enviar notificação</div>
+            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 6 }}>Enviar notificação</div>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, lineHeight: 1.5, marginBottom: 20 }}>
               Chega como push no celular de todas as alunas que ativaram os lembretes.
             </div>
 
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Título</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Título</div>
               <input value={pushTit} onChange={(e) => setPushTit(e.target.value)} placeholder="Clube do Auge"
-                style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "7px 0" }} />
+                style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .2)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "7px 0" }} />
             </div>
 
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Mensagem</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Mensagem</div>
               <textarea value={pushMsg} onChange={(e) => setPushMsg(e.target.value)} maxLength={500} placeholder="Ex: Meninas, hoje tem encontro extra às 20h! Não percam 💛"
-                style={{ width: "100%", background: `rgba(28,26,23,.03)`, border: `1px solid ${C.ouro}22`, borderRadius: 10, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 16, padding: "11px", resize: "none", height: 96, lineHeight: 1.5 }} />
+                style={{ width: "100%", background: alfa(C.obs, .03), border: `1px solid ${C.ouro}22`, borderRadius: 10, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 16, padding: "11px", resize: "none", height: 96, lineHeight: 1.5 }} />
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, textAlign: "right", marginTop: 4 }}>{pushMsg.length}/500</div>
             </div>
 
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Quando</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Quando</div>
               <div style={{ display: "flex", gap: 8 }}>
                 {[["agora", "Enviar agora"], ["agendar", "Agendar"]].map(([id, lb]) => (
                   <button key={id} onClick={() => setPushModo(id)}
-                    style={{ flex: 1, background: pushModo === id ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${pushModo === id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "9px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: pushModo === id ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+                    style={{ flex: 1, background: pushModo === id ? `${C.ouro}22` : alfa(C.obs, .04), border: `1px solid ${pushModo === id ? C.ouro + "55" : C.ouro + "15"}`, borderRadius: 50, padding: "9px 12px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: pushModo === id ? C.ouroTxt : alfa(C.obs, .85), cursor: "pointer" }}>
                     {lb}
                   </button>
                 ))}
@@ -12350,9 +12362,9 @@ function PainelMentora({ ir }) {
 
             {pushModo === "agendar" && (
               <div style={{ marginBottom: 18 }}>
-                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: `rgba(28,26,23,.82)`, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Data e hora</div>
+                <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8 }}>Data e hora</div>
                 <input type="datetime-local" value={pushQuando} onChange={(e) => setPushQuando(e.target.value)}
-                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "7px 0" }} />
+                  style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .2)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "7px 0" }} />
               </div>
             )}
 
@@ -12380,8 +12392,8 @@ function PainelMentora({ ir }) {
               const ORDEM = ["S1", "S6", "S12"];
               const rodas = ORDEM.map((mo) => (alunaSel.roda || []).find((r) => r.momento === mo)).filter(Boolean);
               const tb = { fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.25em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
-              const pt = { fontFamily: FS, fontSize: 16, color: `rgba(28,26,23,.85)`, lineHeight: 1.5 };
-              const inp = { width: "100%", background: "rgba(28,26,23,.04)", border: `1px solid ${C.ouro}22`, borderRadius: 8, padding: "9px 11px", fontFamily: FB, fontWeight: 300, fontSize: 15, color: C.obs, boxSizing: "border-box", marginBottom: 8 };
+              const pt = { fontFamily: FS, fontSize: 16, color: C.obs, lineHeight: 1.5 };
+              const inp = { width: "100%", background: alfa(C.obs, .04), border: `1px solid ${C.ouro}22`, borderRadius: 8, padding: "9px 11px", fontFamily: FB, fontWeight: 300, fontSize: 15, color: C.obs, boxSizing: "border-box", marginBottom: 8 };
               const lab = { fontFamily: FB, fontWeight: 300, fontSize: 12.5, color: C.terra, marginBottom: 3 };
               const sub = { fontFamily: FB, fontWeight: 500, fontSize: 12, color: C.ouroDk, letterSpacing: "0.1em", textTransform: "uppercase", margin: "12px 0 6px" };
               const campo = (label, key, ph, multi) => (
@@ -12394,7 +12406,7 @@ function PainelMentora({ ir }) {
               );
               const PERFIS_OPTS = Object.entries(PERFIS).map(([k, v]) => [k, v.nome]);
               return (
-                <div onClick={() => setAlunaSel(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(28,26,23,.55)", display: "flex", alignItems: "flex-end" }}>
+                <div onClick={() => setAlunaSel(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: alfa(C.obs, .55), display: "flex", alignItems: "flex-end" }}>
                   {/* painel de um habito da aluna — o MESMO componente que ela ve */}
                   {habAlunaSel && (
                     <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 520 }}>
@@ -12447,7 +12459,7 @@ function PainelMentora({ ir }) {
                             const on = (edA.perfil || []).includes(k);
                             return (
                               <button key={k} onClick={() => setEdA((x) => ({ ...x, perfil: on ? x.perfil.filter((p) => p !== k) : [...(x.perfil || []), k] }))}
-                                style={{ background: on ? `${C.ouro}22` : "rgba(28,26,23,.04)", border: `1px solid ${on ? C.ouro + "66" : C.ouro + "20"}`, borderRadius: 50, padding: "7px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: on ? C.ouroTxt : C.terra, cursor: "pointer" }}>
+                                style={{ background: on ? `${C.ouro}22` : alfa(C.obs, .04), border: `1px solid ${on ? C.ouro + "66" : C.ouro + "20"}`, borderRadius: 50, padding: "7px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: on ? C.ouroTxt : C.terra, cursor: "pointer" }}>
                                 {nome}
                               </button>
                             );
@@ -12485,7 +12497,7 @@ function PainelMentora({ ir }) {
                         <>
                           {linhasA.map((h) => (
                             <button key={h.id} onClick={() => !h.bloqueado && setHabAlunaSel(h)}
- style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, background: "rgba(28,26,23,.04)", border: `1px solid ${C.ouro}20`, borderRadius: 10, padding: "11px 12px", marginBottom: 7, cursor: h.bloqueado ? "default" : "pointer", textAlign: "left" }}>
+ style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, background: alfa(C.obs, .04), border: `1px solid ${C.ouro}20`, borderRadius: 10, padding: "11px 12px", marginBottom: 7, cursor: h.bloqueado ? "default" : "pointer", textAlign: "left" }}>
                               <span style={{ flex: 1, fontFamily: FB, fontWeight: 500, fontSize: 14.5, color: h.bloqueado ? C.lt : C.obs }}>{h.nome}</span>
                               <span style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: h.bloqueado ? C.lt : C.ouroTxt }}>
                                 {h.bloqueado ? `desbloqueia S${h.unlock}` : `${h.dias} ${h.dias === 1 ? "dia" : "dias"} em ${nomeMes}`}
@@ -12510,7 +12522,7 @@ function PainelMentora({ ir }) {
 
                     <div style={tb}>Roda AUGE</div>
                     {rodas.length ? rodas.map((r) => (
-                      <div key={r.momento} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
+                      <div key={r.momento} style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                           <span style={{ fontFamily: FB, fontSize: 13, letterSpacing: "0.2em", color: C.ouroTxt }}>{r.momento}</span>
                           <span style={{ fontFamily: FS, fontSize: 17, color: C.ouroTxt }}>Índice {fmt(r.indice_auge)}</span>
@@ -12524,18 +12536,18 @@ function PainelMentora({ ir }) {
                 </div>
               );
             })()}
-            <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
+            <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.ouroTxt, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>WhatsApp de suporte</div>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 10, lineHeight: 1.5 }}>Aparece na tela de espera, para a aluna que ainda não foi liberada falar com você.</div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <input value={ment.whatsapp} onChange={(e) => setMent((m) => ({ ...m, whatsapp: e.target.value }))} placeholder="Ex: (48) 99999-0000"
-                  style={{ flex: 1, background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.2)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 16, padding: "7px 0" }} />
+                  style={{ flex: 1, background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .2)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 16, padding: "7px 0" }} />
                 <button onClick={salvarWhats} style={{ background: C.ouro, border: "none", borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 500, fontSize: 13.5, color: C.obs, cursor: "pointer", whiteSpace: "nowrap" }}>
                   {whatsSalvo ? "✓ Salvo" : "Salvar"}
                 </button>
               </div>
             </div>
-            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: `rgba(28,26,23,.95)`, marginBottom: 16 }}>Alunas ativas</div>
+            <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 16 }}>Alunas ativas</div>
             {pendentes.length > 0 && (
               <div style={{ background: `${C.ouro}12`, border: `1px solid ${C.ouro}44`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
                 <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.ouroTxt, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>
@@ -12569,9 +12581,9 @@ function PainelMentora({ ir }) {
               </div>
             )}
             {loadingA ? (
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Carregando...</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", marginTop: 32 }}>Carregando...</div>
             ) : alunas.length === 0 ? (
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", marginTop: 32 }}>Nenhuma aluna ativa ainda.</div>
             ) : (
               <div>
                 {/* Lista 1: dificuldade alta persistente (seção 10) */}
@@ -12603,12 +12615,12 @@ function PainelMentora({ ir }) {
                 {/* Visão geral por aluna (seção 10) */}
                 {alunas.filter((a) => a.plano !== "pendente").map((a) => {
  const dias = diasSemCk(a.ultimaAtiv);
- const statusCor = dias === null ? `rgba(28,26,23,.25)` : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
+ const statusCor = dias === null ? alfa(C.obs, .25) : dias <= 2 ? "#7FC98B" : dias <= 5 ? C.ouro : "#C98B7F";
  const statusTxt = dias === null ? "Sem atividade" : dias === 0 ? "Ativa hoje" : dias === 1 ? "Ontem" : `${dias} dias atrás`;
  return (
-                    <div key={a.id} onClick={() => setAlunaSel(a)} style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10, cursor: "pointer" }}>
+                    <div key={a.id} onClick={() => setAlunaSel(a)} style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}12`, borderRadius: 10, padding: "13px 14px", marginBottom: 10, cursor: "pointer" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: `rgba(28,26,23,.92)` }}>{a.nome || "—"}</div>
+                        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs }}>{a.nome || "—"}</div>
                         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: statusCor }}>{statusTxt}</div>
                       </div>
                       {a.v2 && (
@@ -12623,7 +12635,7 @@ function PainelMentora({ ir }) {
                           })}
                         </div>
                       )}
-                      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: `rgba(28,26,23,.85)` }}>
+                      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.obs }}>
                         {a.plano} {a.ultimoCk ? `· ${a.ultimoCk.percentual}% no último check-in` : ""}
                         {a.v2 ? ` · Kit usado ${a.v2.kitTotal}x` : ""}
                         {a.v2?.progressoes?.length ? ` · ${a.v2.progressoes.length} ajuste(s) de meta` : ""}
@@ -12788,7 +12800,7 @@ function Perfil({
  padding: "3px 0", letterSpacing: "0.05em",
           }}>foto</div>
         </div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: `rgba(28,26,23,.8)`, marginBottom: 8 }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginBottom: 8 }}>
  Toque para alterar foto
         </div>
         <div
@@ -12796,7 +12808,7 @@ function Perfil({
  fontFamily: FB,
  fontSize: 22,
  fontWeight: 300,
- color: `rgba(28,26,23,.97)`,
+ color: C.obs,
           }}
         >
           {usuario?.nome || "—"}
@@ -12806,7 +12818,7 @@ function Perfil({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  marginTop: 3,
           }}
         >
@@ -12883,13 +12895,13 @@ function Perfil({
  onClick={logout}
  style={{
  background: "transparent",
- border: `1px solid rgba(28,26,23,.1)`,
+ border: `1px solid ${alfa(C.obs, .1)}`,
  borderRadius: 20,
  padding: "6px 16px",
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.88)`,
+ color: C.obs,
  cursor: "pointer",
  letterSpacing: "0.1em",
               }}
@@ -12902,7 +12914,7 @@ function Perfil({
       </div>
 
       {confirmDel && (
-        <div onClick={() => !delLoad && setConfirmDel(false)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(28,26,23,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
+        <div onClick={() => !delLoad && setConfirmDel(false)} style={{ position: "fixed", inset: 0, zIndex: 700, background: alfa(C.obs, .6), display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: C.creme, borderRadius: 18, padding: "24px 22px", maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.4)" }}>
             <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 21, color: C.terra, marginBottom: 10 }}>Excluir sua conta?</div>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.55, marginBottom: 18 }}>
@@ -12950,7 +12962,7 @@ function Perfil({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  letterSpacing: "0.15em",
  textTransform: "uppercase",
  marginBottom: 6,
@@ -12965,7 +12977,7 @@ function Perfil({
  width: "100%",
  background: "transparent",
  border: "none",
- borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : "rgba(28,26,23,.85)"}`,
+ borderBottom: `1px solid ${nomeEdit.trim().length >= 2 ? C.ouro + "66" : alfa(C.obs, .85)}`,
  color: C.obs,
  fontFamily: FB,
  fontSize: 17,
@@ -12980,7 +12992,7 @@ function Perfil({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  letterSpacing: "0.15em",
  textTransform: "uppercase",
  marginBottom: 6,
@@ -12996,7 +13008,7 @@ function Perfil({
  width: "100%",
  background: "transparent",
  border: "none",
- borderBottom: `1px solid ${emailOk ? C.ouro + "66" : "rgba(28,26,23,.85)"}`,
+ borderBottom: `1px solid ${emailOk ? C.ouro + "66" : alfa(C.obs, .85)}`,
  color: C.obs,
  fontFamily: FB,
  fontSize: 17,
@@ -13011,7 +13023,7 @@ function Perfil({
 
           {/* Alterar senha */}
           <div style={{ marginTop: 22 }}>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.8)`, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.lt, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>
  Alterar senha
             </div>
             <input
@@ -13019,7 +13031,7 @@ function Perfil({
  value={senhaNova}
  onChange={(e) => { setSenhaNova(e.target.value); setSenhaMsg(null); }}
  placeholder="Nova senha (mínimo 6 caracteres)"
- style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : "rgba(28,26,23,.85)"}`, color: C.obs, fontFamily: FB, fontSize: 17, fontWeight: 400, padding: "6px 0", marginBottom: 12 }}
+ style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${senhaNova.length >= 6 ? C.ouro + "66" : alfa(C.obs, .85)}`, color: C.obs, fontFamily: FB, fontSize: 17, fontWeight: 400, padding: "6px 0", marginBottom: 12 }}
             />
             {senhaMsg && (
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: senhaMsg.ok ? C.ouroTxt : "#A32D2D", marginBottom: 10 }}>
@@ -13063,7 +13075,7 @@ function Perfil({
             <div
  key={l}
  style={{
- background: `rgba(28,26,23,.04)`,
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}12`,
  borderRadius: 10,
  padding: "13px 14px",
@@ -13074,7 +13086,7 @@ function Perfil({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.92)`,
+ color: C.obs,
  marginBottom: 4,
                 }}
               >
@@ -13168,7 +13180,7 @@ function Perfil({
         {/* Aviso legal */}
         <div
  style={{
- background: `rgba(28,26,23,.02)`,
+ background: alfa(C.obs, .02),
  border: `1px solid ${C.ouro}10`,
  borderRadius: 10,
  padding: "12px 14px",
@@ -13180,7 +13192,7 @@ function Perfil({
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 16,
- color: `rgba(28,26,23,.8)`,
+ color: C.lt,
  lineHeight: 1.6,
             }}
           >
@@ -13190,7 +13202,7 @@ function Perfil({
           <div style={{ textAlign: "center", marginTop: 16 }}>
             <button
  onClick={() => { setDelMsg(""); setConfirmDel(true); }}
- style={{ background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 16, color: "rgba(28,26,23,.45)", textDecoration: "underline", cursor: "pointer" }}
+ style={{ background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 16, color: alfa(C.obs, .45), textDecoration: "underline", cursor: "pointer" }}
             >
  Excluir minha conta
             </button>
@@ -13235,7 +13247,7 @@ function PrefRadar({ authUserId }) {
   };
 
  return (
-    <div style={{ background: `rgba(28,26,23,.04)`, border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "16px", marginBottom: 14 }}>
+    <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}15`, borderRadius: 10, padding: "16px", marginBottom: 14 }}>
       <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: 14 }}>
  Minhas preferências · Radar de Amigas
       </div>
@@ -13244,13 +13256,13 @@ function PrefRadar({ authUserId }) {
         <div>
           {cidade && (
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.92)`, marginBottom: 4 }}>Cidade</div>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: `rgba(28,26,23,.92)` }}>{cidade}</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.obs, marginBottom: 4 }}>Cidade</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.obs }}>{cidade}</div>
             </div>
           )}
           {sels.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: `rgba(28,26,23,.92)`, marginBottom: 8 }}>Interesses</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.obs, marginBottom: 8 }}>Interesses</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {sels.map((i) => (
                   <span key={i} style={{ background: `${C.ouro}22`, border: `1px solid ${C.ouro}44`, borderRadius: 50, padding: "6px 13px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.ouroTxt }}>
@@ -13262,26 +13274,26 @@ function PrefRadar({ authUserId }) {
           )}
           <button
  onClick={() => setEditando(true)}
- style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}20`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: `rgba(28,26,23,.88)`, cursor: "pointer", letterSpacing: "0.1em" }}
+ style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}20`, borderRadius: 50, padding: "11px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs, cursor: "pointer", letterSpacing: "0.1em" }}
           >
  Editar preferências
           </button>
         </div>
       ) : (
         <div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: `rgba(28,26,23,.92)`, marginBottom: 8 }}>Cidade</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs, marginBottom: 8 }}>Cidade</div>
           <input
  value={cidade}
  onChange={(e) => setCidade(e.target.value)}
  placeholder="Ex: Florianópolis"
- style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid rgba(28,26,23,.85)`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
+ style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .85)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 17, padding: "7px 0", marginBottom: 18 }}
           />
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: `rgba(28,26,23,.92)`, marginBottom: 10 }}>Interesses (selecione os seus)</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs, marginBottom: 10 }}>Interesses (selecione os seus)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
             {INTERESSES.map((i) => {
  const s = sels.includes(i);
  return (
-                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : `rgba(28,26,23,.04)`, border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: s ? C.ouroTxt : `rgba(28,26,23,.85)`, cursor: "pointer" }}>
+                <button key={i} onClick={() => toggle(i)} style={{ background: s ? `${C.ouro}22` : alfa(C.obs, .04), border: `1px solid ${s ? C.ouro + "44" : C.ouro + "12"}`, borderRadius: 50, padding: "7px 13px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: s ? C.ouroTxt : alfa(C.obs, .85), cursor: "pointer" }}>
                   {i}
                 </button>
               );
@@ -13327,7 +13339,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
  return (
     <div
  style={{
- background: "rgba(28,26,23,.04)",
+ background: alfa(C.obs, .04),
  border: `1px solid ${C.ouro}15`,
  borderRadius: 10,
  padding: "16px",
@@ -13355,7 +13367,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
  fontFamily: FB,
  fontWeight: 400,
  fontSize: 13.5,
- color: "rgba(28,26,23,.92)",
+ color: C.obs,
  letterSpacing: "0.2em",
  textTransform: "uppercase",
  marginBottom: 6,
@@ -13375,7 +13387,7 @@ function EditarHabitos({ habAngulares, setHabAngulares }) {
  width: "100%",
  background: "transparent",
  border: "none",
- borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : "rgba(28,26,23,.85)"}`,
+ borderBottom: `1px solid ${v.trim() ? C.ouro + "55" : alfa(C.obs, .85)}`,
  color: C.obs,
  fontFamily: FS,
  fontSize: 17,
