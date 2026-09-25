@@ -2660,6 +2660,9 @@ function Estilos() {
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&family=Inter:wght@400;500;600;700&display=swap');
     ${cssVars}
     html,body{background:var(--bg);}
+    /* Quebra de linha: evita palavra sozinha na ultima linha; texto centralizado fica com linhas equilibradas */
+    *{text-wrap:pretty;}
+    [style*="text-align: center"]{text-wrap:balance;}
     @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
     *{box-sizing:border-box;margin:0;padding:0;}
     ::-webkit-scrollbar{display:none;}
@@ -4557,7 +4560,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       <div style={{ background: `${C.linho}8C`, borderRadius: 14, padding: "14px 15px", marginBottom: 11, display: "flex", alignItems: "center", gap: 9 }}>
         {IcoH.cadeado(C.lt, 16)}
         <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: alfa(C.lt, .66) }}>{h.nome}</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: alfa(C.lt, .66) }}>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: alfa(C.lt, .66), whiteSpace: "nowrap" }}>
           desbloqueia na S{h.unlock}
         </div>
       </div>
@@ -4583,7 +4586,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {!editando ? (
         <div onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
  style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "5px 0 10px", cursor: "pointer", lineHeight: 1.45 }}>
-          Meta: {h.pessoal && st.descMeta ? st.descMeta : `${st.descMeta ? `${st.descMeta}, ` : ""}${st.meta}x na semana`}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
+          Meta: {h.pessoal && st.descMeta ? st.descMeta : `${st.descMeta ? `${st.descMeta}, ` : ""}${st.meta}x na semana`}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
         </div>
       ) : (
         <div style={{ background: alfa(C.obs, .04), borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
@@ -4866,7 +4869,7 @@ function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }
  return (
     <div style={{ background: `${C.ouro}15`, border: `1px solid ${C.ouro}55`, borderRadius: 12, padding: "16px 16px 14px", marginBottom: 16 }}>
       <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 6 }}>
- Sexta-feira · Vitória da Semana
+ Sexta-feira · Vitória da Semana
       </div>
       {passo === 1 ? (
         <div>
@@ -5071,7 +5074,7 @@ function Home({
  Hoje
         </div>
         <div style={{ marginTop: 4, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>
-          {dataLonga(TODAY)} · Semana {sem} de 12
+          {dataLonga(TODAY)} · <span style={{ whiteSpace: "nowrap" }}>Semana {sem} de 12</span>
         </div>
       </div>
       {retroAberto && (
@@ -10137,9 +10140,13 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: h.bloqueado ? `${C.linho}8C` : C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: h.bloqueado ? "default" : "pointer", textAlign: "left" }}
           >
             {h.bloqueado ? IcoH.cadeado(C.lt, 16) : (IcoH[h.id] || IcoH.meu)(C.terra)}
-            <span style={{ flex: 1, fontFamily: FB, fontWeight: 600, fontSize: 17, color: h.bloqueado ? alfa(C.lt, .66) : C.obs }}>{h.nome}</span>
-            <span style={{ fontFamily: FB, fontWeight: h.bloqueado ? 400 : 600, fontSize: 16, color: h.bloqueado ? alfa(C.lt, .66) : C.ouroTxt }}>
-              {h.bloqueado ? `desbloqueia S${h.unlock}` : `${h.diasNoMes} ${h.diasNoMes === 1 ? "dia" : "dias"} em ${nomeMesCurto}`}
+            {/* nome em cima e a contagem embaixo: lado a lado, nomes como
+                "Beber 2L de água" quebravam em tres linhas */}
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: h.bloqueado ? alfa(C.lt, .66) : C.obs }}>{h.nome}</span>
+              <span style={{ fontFamily: FB, fontWeight: h.bloqueado ? 400 : 600, fontSize: 16, color: h.bloqueado ? alfa(C.lt, .66) : C.ouroTxt, whiteSpace: "nowrap" }}>
+                {h.bloqueado ? `desbloqueia na S${h.unlock}` : `${h.diasNoMes} ${h.diasNoMes === 1 ? "dia" : "dias"} em ${nomeMesCurto}`}
+              </span>
             </span>
             {!h.bloqueado && <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>}
           </button>
@@ -10150,15 +10157,17 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: "pointer", textAlign: "left" }}
         >
           {IcoH.estrela(C.terra)}
-          <span style={{ flex: 1, fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Desafios</span>
-          <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.ouroTxt }}>
-            {desafioNoMes} {desafioNoMes === 1 ? "dia" : "dias"} em {nomeMesCurto}
+          <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Desafios</span>
+            <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.ouroTxt, whiteSpace: "nowrap" }}>
+              {desafioNoMes} {desafioNoMes === 1 ? "dia" : "dias"} em {nomeMesCurto}
+            </span>
           </span>
           <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>
         </button>
 
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", margin: "14px 0 4px" }}>
- toque num hábito para ver o calendário completo
+ toque num hábito<br />para ver o calendário completo
         </div>
 
         {/* painel do desafio — as 12 semanas, com o texto de cada uma */}
