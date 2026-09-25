@@ -499,32 +499,6 @@ const syncInsert = (table, data) => {
   });
 };
 
-// ─── IA ───────────────────────────────────────────────────────────────────────
-const iaCache = new Map();
-const callISA = async (msg) => {
- // Garante a saudação correta para o horário local em TODA resposta da ISA
- const _h = new Date().getHours();
- const _per = _h >= 5 && _h < 12 ? "manhã" : _h >= 12 && _h < 18 ? "tarde" : "noite";
- const _saud = _per === "manhã" ? "Bom dia" : _per === "tarde" ? "Boa tarde" : "Boa noite";
- const _emo = _per === "manhã" ? "☀️" : _per === "tarde" ? "🌤️" : "🌙";
- const msgP = `${msg}\n\n[HORÁRIO ATUAL: ${_per}. Se abrir com saudação, use OBRIGATORIAMENTE "${_saud}" e, se usar emoji de período, use ${_emo}. NUNCA diga "Bom dia" nem use ☀️ fora da manhã.]`;
- if (iaCache.has(msgP)) return iaCache.get(msgP);
- try {
- const r = await fetch(`${import.meta.env.BASE_URL}api/isa`, {
- method: "POST",
- headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ message: msgP }),
-    });
- const d = await r.json();
- const t =
- d.text || d.error || "Não consegui processar agora. Tente em instantes!";
- iaCache.set(msgP, t);
- return t;
-  } catch {
- return "Estou com dificuldade de conexão. Tente em instantes! ";
-  }
-};
-
 // ─── LOCAL STORAGE HOOK ───────────────────────────────────────────────────────
 function useLocalStorage(key, initial) {
  const [val, setVal] = useState(() => {
@@ -4317,96 +4291,6 @@ function DefinirHabitos({ onSalvar }) {
   );
 }
 
-// ─── CARD DA DRA. ISADORA ─────────────────────────────────────────────────────
-function IsaCard({ text, loading }) {
- return (
-    <div
- style={{
- background: alfa(C.obs, .05),
- border: `1px solid ${C.ouro}28`,
- borderRadius: 12,
- padding: "16px 18px",
- marginTop: 16,
- animation: "fadeUp .4s ease",
-      }}
-    >
-      <div
- style={{
- display: "flex",
- alignItems: "center",
- gap: 10,
- marginBottom: 10,
-        }}
-      >
-        <Av ini="ISA" cor={C.ouroDk} sz={38} />
-        <div>
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 500,
- fontSize: 16,
- color: C.obs,
-            }}
-          >
- ISA — Inteligência do Clube do Auge
-          </div>
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 13.5,
- color: C.lt,
-            }}
-          >
- Criada com base no método da Dra. Isadora Zaniboni
-          </div>
-        </div>
-      </div>
-      {loading ? (
-        <div
- style={{
- display: "flex",
- alignItems: "center",
- gap: 10,
- padding: "6px 0",
-          }}
-        >
-          <div
- style={{
- fontSize: 18,
- animation: "pulse 1.5s ease-in-out infinite",
-            }}
-          >
-            
-          </div>
-          <div
- style={{
- fontFamily: FB, fontWeight: 400,
- fontSize: 16,
- color: C.obs,
-            }}
-          >
- ISA está respondendo...
-          </div>
-        </div>
-      ) : (
-        <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.obs,
- lineHeight: 1.75,
- whiteSpace: "pre-wrap",
-          }}
-        >
-          {text}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function MotivBanner({ ckOk, streakAtual, diasSemTreino, ir }) {
  let icon, titulo, sub, cor, bg, onClick;
  if (ckOk) {
@@ -7066,59 +6950,6 @@ function Voz({ back, postTreino, tk }) {
  "{res.texto}"
               </div>
             </div>
-            <div
- style={{
- background: alfa(C.obs, .05),
- border: `1px solid ${C.ouro}25`,
- borderRadius: 12,
- padding: "18px",
- marginBottom: 18,
-              }}
-            >
-              <div
- style={{
- display: "flex",
- alignItems: "center",
- gap: 10,
- marginBottom: 12,
-                }}
-              >
-                <Av ini="ISA" cor={C.ouroDk} sz={40} />
-                <div>
-                  <div
- style={{
- fontFamily: FB,
- fontWeight: 500,
- fontSize: 16,
- color: C.obs,
-                    }}
-                  >
- ISA — Inteligência do Clube do Auge
-                  </div>
-                  <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 14.5,
- color: C.lt,
-                    }}
-                  >
- Criada com base no método da Dra. Isadora Zaniboni
-                  </div>
-                </div>
-              </div>
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 17,
- color: C.obs,
- lineHeight: 1.75,
-                }}
-              >
-                {res.isa}
-              </div>
-            </div>
             {/* Visibilidade */}
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               <button
@@ -8141,6 +7972,12 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
 
 // ═══════════════════════════════════════════════════════════════════
 // ─── EDITOR DE CARTA ──────────────────────────────────────────────────────────
+const CARTA_PERGUNTAS = [
+  "Como você quer estar se sentindo daqui a 12 semanas?",
+  "Que hábito você espera que já faça parte do seu dia?",
+  "O que você quer dizer para si mesma nos dias difíceis?",
+  "Do que você vai se orgulhar quando ler esta carta?",
+];
 function CartaEditor({ setCarta, tk, inicial = "", onSalvo, onCancelar }) {
  const [txt, setTxt] = useState(inicial);
  const ok = txt.trim().length > 10;
@@ -8158,6 +7995,18 @@ function CartaEditor({ setCarta, tk, inicial = "", onSalvo, onCancelar }) {
   };
  return (
     <div>
+      {/* Perguntas de apoio, fixas — no lugar da ISA (decisão de 25/09) */}
+      <div style={{ background: C.linho, borderRadius: 14, padding: "14px 16px", marginBottom: 14 }}>
+        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 15, color: C.lt, marginBottom: 8 }}>
+          Se precisar de um começo, responda:
+        </div>
+        {CARTA_PERGUNTAS.map((q, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, fontFamily: FB, fontSize: 17, lineHeight: 1.45, color: C.obs, marginTop: i ? 8 : 0 }}>
+            <span style={{ color: C.lt, fontWeight: 600, minWidth: 16 }}>{i + 1}.</span>
+            <span>{q}</span>
+          </div>
+        ))}
+      </div>
       <textarea
  value={txt}
  onChange={(e) => setTxt(e.target.value)}
@@ -10465,29 +10314,10 @@ function Escritas({
  pq3,
  setPq3,
 }) {
- const [nv, setNv] = useState("");
  const [na, setNa] = useState(anc);
  const [editAnc, setEditAnc] = useState(!anc || anc === "Eu sou a mulher que volta.");
  const [editPq, setEditPq] = useState(false);
  const [editandoCarta, setEditandoCarta] = useState(false);
- const [isaVit, setIsaVit] = useState(null);
- const [isaVitLoad, setIsaVitLoad] = useState(false);
- const salvarVit = async () => {
- if (!nv.trim()) return;
- const d = new Date();
- const vitData = localDateStr(); // ISO — a coluna e do tipo date
- setVit((v) => [...v, { sem: 3, texto: nv.trim(), data: vitData, criado: new Date().toISOString() }]);
- syncInsert("vitorias", { sem: 3, texto: nv.trim(), data: vitData });
- tk("Vitória registrada! ");
- setIsaVitLoad(true);
- setIsaVit(null);
- const resp = await callISA(
-      `A aluna acabou de registrar uma vitória: "${nv.trim()}". Escreva uma resposta breve (2-3 linhas) celebrando genuinamente essa vitória. Termine sempre com: — ISA, Inteligência do Clube do Auge · Método Dra. Isadora Zaniboni`,
-    );
- setIsaVit(resp);
- setIsaVitLoad(false);
- setNv("");
-  };
  return (
     <div style={{ animation: "fadeUp .4s ease" }}>
       <Cab titulo="Espaços de escrita" voltar={back} destino="Jornada" />
@@ -10525,142 +10355,6 @@ function Escritas({
             </button>
           ))}
         </div>
-        {escT === "vitorias" && (
-          <div>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.obs,
- marginBottom: 10,
-              }}
-            >
- Qual foi sua vitória essa semana?
-            </div>
-            <textarea
- value={nv}
- onChange={(e) => setNv(e.target.value)}
- placeholder="Não existe vitória pequena demais."
- style={{
- width: "100%",
- background: alfa(C.obs, .04),
- border: `1px solid ${C.ouro}15`,
- borderRadius: 10,
- padding: "13px",
- fontSize: 17,
- fontFamily: FB,
- color: C.obs,
- resize: "none",
- height: 110,
- lineHeight: 1.7,
- marginBottom: 12,
-              }}
-            />
-            <BtnPill
- onClick={salvarVit}
- style={{ opacity: nv.trim() ? 1 : 0.4, marginBottom: 14 }}
-            >
- Registrar vitória
-            </BtnPill>
-            {(isaVitLoad || isaVit) && (
-              <div
- style={{
- background: alfa(C.obs, .04),
- border: `1px solid ${C.ouro}20`,
- borderRadius: 12,
- padding: "14px 15px",
- marginBottom: 16,
- animation: "fadeUp .3s ease",
-                }}
-              >
-                {isaVitLoad ? (
-                  <div
- style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  >
-                    <div
- style={{
- fontSize: 17,
- animation: "pulse 1.5s ease-in-out infinite",
-                      }}
-                    >
-                      
-                    </div>
-                    <div
- style={{
- fontFamily: FB, fontWeight: 400,
- fontSize: 16,
- color: C.obs,
-                      }}
-                    >
- ISA está respondendo...
-                    </div>
-                  </div>
-                ) : (
-                  <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.obs,
- lineHeight: 1.75,
- whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {isaVit}
-                  </div>
-                )}
-              </div>
-            )}
-
-              <p
- style={{
- fontFamily: FB,
- fontSize: 16,
- color: C.ouroTxt,
- lineHeight: 1.6,
- marginTop: 14,
- textAlign: 'center',
-                }}
-              >
- "O auge não é o que você foi. É o que você está construindo."
-              </p>
-            {vit.map((v, i) => (
-              <div
- key={i}
- style={{
- borderLeft: `2px solid ${C.ouro}33`,
- paddingLeft: 13,
- marginBottom: 13,
-                }}
-              >
-                <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 13,
- color: C.ouroTxt,
- letterSpacing: "0.2em",
- textTransform: "uppercase",
- marginBottom: 3,
-                  }}
-                >
- Semana {v.sem} · {dataBR(v.data)}
-                </div>
-                <div
- style={{
- fontFamily: FB, fontWeight: 400,
- fontSize: 17,
- color: C.obs,
- lineHeight: 1.5,
-                  }}
-                >
-                  {v.texto}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
         {escT === "ancora" && (
           <div>
             {anc && anc !== "Eu sou a mulher que volta." && !editAnc ? (
@@ -10939,8 +10633,7 @@ function Escritas({
  letterSpacing: "0.04em",
                               }}
                             >
-                              — ISA, Inteligência do Clube do Auge · Método Dra.
- Isadora Zaniboni
+                              — Método AUGE · Dra. Isadora Zaniboni
                             </div>
                           </div>
                         </div>

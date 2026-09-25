@@ -27,7 +27,7 @@ Publicado no **Android**, em processo de envio para o **iOS**.
 - **Deploy:** Vercel, conectado ao GitHub — todo push no `main` publica automaticamente
 - **App nativo:** Capacitor 8 — `appId: com.clubedoauge.jornada`, nome "Clube do Auge"
 - **Push:** OneSignal (SDK web no navegador + plugin Cordova no app nativo)
-- **ISA:** Anthropic API, modelo `claude-haiku-4-5-20251001`, via `api/isa.mjs`
+- **ISA:** removida do app em 25/09/2026 (a `api/isa.mjs` foi apagada). A Carta para o Futuro usa perguntas de apoio fixas
 - **Pacotes:** pnpm workspace
 
 > **Não é mais Replit.** O projeto migrou para GitHub + Vercel. `.replit`, `.replitignore` e `replit.md` são resíduo da fase antiga e não afetam o deploy — `replit.md` inclusive ainda está com o texto de exemplo em branco.
@@ -40,7 +40,7 @@ Publicado no **Android**, em processo de envio para o **iOS**.
 artifacts/jornada-auge/    ← APP ATIVO (APP_MODE = "jornada"). É o que a Vercel publica.
 artifacts/clube-do-auge/   ← app irmão (APP_MODE = "clube"). NÃO está sendo publicado.
 artifacts/api-server/      ← servidor Express (não usado no deploy atual)
-api/                       ← funções serverless da Vercel: isa.mjs, notificar.mjs, push.mjs
+api/                       ← funções serverless da Vercel: notificar.mjs, push.mjs, lembretes.mjs, destaque-semanal.mjs
 ```
 
 O `vercel.json` da raiz builda **apenas** `@workspace/jornada-auge` e serve `artifacts/jornada-auge/dist/public`. Editar o `clube-do-auge` não muda nada no ar.
@@ -116,7 +116,7 @@ Boa parte das leituras e escritas administrativas passa por **funções RPC** (`
 | usuária | aluna |
 | hábitos | hábitos angulares |
 
-A ISA é baseada no método da Dra. Isadora e **não a impersona**. Aparece após o check-in, no Protocolo de Retomada e no Kit de Emergência.
+A ISA foi removida do app em 25/09/2026.
 
 ---
 
