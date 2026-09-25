@@ -10312,10 +10312,6 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  toque num hábito para ver o calendário completo
         </div>
 
-        <div style={{ borderTop: `1px solid ${C.ouro}30`, margin: "10px 0 14px", paddingTop: 14, fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt, textAlign: "center" }}>
- Sexta é dia de Vitória da Semana
-        </div>
-
         {/* painel do desafio — as 12 semanas, com o texto de cada uma */}
         {verDesafio && (
           <PainelDesafio
