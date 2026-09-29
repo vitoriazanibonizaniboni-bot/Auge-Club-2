@@ -5308,9 +5308,15 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  const j = p.cur.includes(userId);
  const newCur = j ? p.cur.filter((x) => x !== userId) : [...p.cur, userId];
  if (!j && p.userId && p.userId !== authUserId) notificarInteracao(p.userId, "curtida", usuario?.nome);
-        // Salva curtida no Supabase se for post real (UUID)
+        // Salva a curtida pelo servidor (curtir_post, migração 019): a aluna só
+        // mexe no PRÓPRIO id da lista, sem precisar editar o post de outra pessoa.
+        // A resposta traz a lista atualizada do banco, que vale mais que a local.
  if (p.dbId) {
- supabase.from("feed").update({ curtidas: newCur }).eq("id", p.dbId).then(() => {});
+ supabase.rpc("curtir_post", { p_post: p.dbId }).then(({ data, error }) => {
+ if (!error && Array.isArray(data)) {
+ setFeed((f2) => f2.map((pp) => (pp.dbId === p.dbId ? { ...pp, cur: data.map(String) } : pp)));
+            }
+          });
         }
  return { ...p, cur: newCur };
       }),
