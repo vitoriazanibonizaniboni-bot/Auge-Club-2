@@ -76,10 +76,10 @@ function textoLembrete({ nome, pessoal, seq }) {
 
 const TEXTOS = {
   sexta: {
-    corpo:
-      "Hoje é sexta. Que tal comemorar a sua vitória da semana contando pra gente? " +
-      "Compartilhe no Mural do 1% — por menor que pareça, ela conta.",
-    url: `${APP_URL}/?open=mural`,
+    // Curta de propósito: a notificação fechada corta o fim no celular.
+    // Abre a tela Hoje, onde fica o cartão da Vitória da Semana.
+    corpo: "É sexta! Conte a sua vitória da semana. Sua vitória merece ser vista.",
+    url: `${APP_URL}/`,
   },
   domingo: {
     corpo:
