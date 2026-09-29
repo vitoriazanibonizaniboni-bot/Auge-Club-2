@@ -525,9 +525,11 @@ function useLocalStorage(key, initial) {
 // ─── LOGO SVG (brand kit oficial) ────────────────────────────────────────────
 function Logo({ width = 200, fundo = "escuro" }) {
  const textoAuge = fundo === "escuro" ? "#F0E9DA" : "#1C1A17";
- const textoClube = fundo === "escuro" ? "#6B5E52" : "#9A8C7E";
- const arco = fundo === "escuro" ? "#C4A882" : "#C4A882";
- const tag = "#C4A882";
+ // No fundo claro, os textos pequenos saem do cinza/dourado claro (3:1 e 2:1)
+ // para tons que passam de 4,5:1: #5C4F47 (7,4:1) e #7E6038 (5,4:1).
+ const textoClube = fundo === "escuro" ? "#6B5E52" : "#5C4F47";
+ const arco = fundo === "escuro" ? "#C4A882" : "#A8865A";
+ const tag = fundo === "escuro" ? "#C4A882" : "#7E6038";
  const h = width * (158 / 380);
  return (
     <svg
@@ -541,18 +543,18 @@ function Logo({ width = 200, fundo = "escuro" }) {
       <path
  d="M 35 126 C 110 142 272 46 350 38"
  stroke={arco}
- strokeWidth="0.55"
+ strokeWidth="1.2"
  fill="none"
  strokeLinecap="round"
       />
-      <circle cx="350" cy="38" r="1.5" fill={arco} />
+      <circle cx="350" cy="38" r="2.4" fill={arco} />
       <text
  x="190"
  y="34"
  textAnchor="middle"
  fontFamily="'Inter',sans-serif"
- fontWeight="300"
- fontSize="10"
+ fontWeight="500"
+ fontSize="13"
  letterSpacing="7"
  fill={textoClube}
       >
@@ -563,7 +565,7 @@ function Logo({ width = 200, fundo = "escuro" }) {
  y="110"
  textAnchor="middle"
  fontFamily="'Cormorant Garamond',Georgia,serif"
- fontWeight="300"
+ fontWeight="500"
  fontSize="80"
  letterSpacing="18"
  fill={textoAuge}
@@ -575,9 +577,9 @@ function Logo({ width = 200, fundo = "escuro" }) {
  y="144"
  textAnchor="middle"
  fontFamily="'Inter',sans-serif"
- fontWeight="400"
- fontSize="10"
- letterSpacing="3.2"
+ fontWeight="500"
+ fontSize="12"
+ letterSpacing="3"
  fill={tag}
       >
  MÉTODO · MOVIMENTO · 40+
@@ -2465,7 +2467,7 @@ export default function App() {
  gap: 24,
           }}
         >
-          <Logo width={140} fundo="claro" />
+          <Logo width={240} fundo="claro" />
           <div
  style={{
  fontFamily: FB,
@@ -2660,7 +2662,7 @@ function Estilos() {
     <>
     <EstilosUI />
     <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Inter:wght@400;500;600;700&display=swap');
     ${cssVars}
     html,body{background:var(--bg);}
     /* Quebra de linha: evita palavra sozinha na ultima linha; texto centralizado fica com linhas equilibradas */
@@ -11069,7 +11071,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
         }}
       >
         <div style={{ width: 40 }} />
-        <Logo width={100} fundo="claro" />
+        <Logo width={200} fundo="claro" />
         <div style={{ width: 40 }} />
       </div>
 
