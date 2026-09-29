@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSignalUser } from "./notifications.js";
 import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
+import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
 // As cores vêm de tokens.js. Os nomes antigos continuam valendo e apontam
@@ -2656,6 +2657,8 @@ export default function App() {
 
 function Estilos() {
  return (
+    <>
+    <EstilosUI />
     <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&family=Inter:wght@400;500;600;700&display=swap');
     ${cssVars}
@@ -2680,6 +2683,7 @@ function Estilos() {
  input,textarea{-webkit-user-select:text;user-select:text;}
  button,[role="button"]{-webkit-touch-callout:none;}
   `}</style>
+    </>
   );
 }
 
@@ -4557,11 +4561,11 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
   // Bloqueado por calendário (seção 4.7) — uma linha só, discreta
  if (st.bloqueado) {
     return (
-      <div style={{ background: `${C.linho}8C`, borderRadius: 14, padding: "14px 15px", marginBottom: 11, display: "flex", alignItems: "center", gap: 9 }}>
-        {IcoH.cadeado(C.lt, 16)}
-        <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: alfa(C.lt, .66) }}>{h.nome}</div>
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: alfa(C.lt, .66), whiteSpace: "nowrap" }}>
-          desbloqueia na S{h.unlock}
+      <div style={{ border: `1.5px dashed ${C.ouro}`, borderRadius: 16, padding: "14px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+        {IcoH.cadeado(C.lt, 18)}
+        <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.lt }}>{h.nome}</div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.lt, whiteSpace: "nowrap" }}>
+          chega na semana {h.unlock}
         </div>
       </div>
     );
@@ -4573,149 +4577,113 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
  setEditando(false);
  tk("Objetivo atualizado ");
   };
+  // Pontinhos: no Sono o dia "em jogo" é ontem (a noite de ontem)
+ const feitosSemana = diasDaSemana.filter((d) => !!regs[d]?.[h.id]);
+ const metaTexto = h.pessoal && st.descMeta ? st.descMeta : `${st.descMeta ? `${st.descMeta}, ` : ""}${st.meta}x na semana`;
 
  return (
-    <div style={{ background: C.linho, borderRadius: 14, padding: "14px 15px 13px", marginBottom: 11 }}>
-      {/* linha 1: ícone + nome */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
-        {(IcoH[h.id] || IcoH.meu)(C.terra)}
-        <div style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>{h.nome}</div>
+    <Card style={{ marginBottom: 12 }}>
+      {/* nome + atalho para o progresso (a seta leva à Jornada) */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {(IcoH[h.id] || IcoH.meu)(C.lt)}
+        <div style={{ flex: 1, minWidth: 0, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>{h.nome}</div>
+        <button onClick={irProgresso} aria-label={`Ver progresso de ${h.nome}`}
+ style={{ width: 48, height: 48, margin: "-12px -12px -12px 0", background: "none", border: "none", cursor: "pointer", color: C.lt, fontSize: 24, lineHeight: 1 }}>
+          ›
+        </button>
       </div>
 
-      {/* meta — texto só da meta; toque para editar */}
+      {/* meta — toque para editar */}
       {!editando ? (
-        <div onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
- style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "5px 0 10px", cursor: "pointer", lineHeight: 1.45 }}>
-          Meta: {h.pessoal && st.descMeta ? st.descMeta : `${st.descMeta ? `${st.descMeta}, ` : ""}${st.meta}x na semana`}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
-        </div>
+        <button onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
+ style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "10px 0", minHeight: 44, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "-8px 0 2px", cursor: "pointer", lineHeight: 1.45 }}>
+          {metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
+        </button>
       ) : (
-        <div style={{ background: alfa(C.obs, .04), borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <span style={{ fontFamily: FB, fontSize: 16, color: C.terra }}>Vezes por semana:</span>
-            <button onClick={() => setFreqEdit((f) => Math.max(1, f - 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 17 }}>−</button>
-            <span style={{ fontFamily: FB, fontSize: 18, color: C.obs, minWidth: 18, textAlign: "center" }}>{freqEdit}</span>
-            <button onClick={() => setFreqEdit((f) => Math.min(7, f + 1))} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 17 }}>+</button>
+        <div style={{ background: C.linho, borderRadius: 12, padding: "12px", margin: "8px 0 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <span style={{ flex: 1, fontFamily: FB, fontSize: 16, color: C.lt }}>Vezes por semana</span>
+            <button onClick={() => setFreqEdit((f) => Math.max(1, f - 1))} aria-label="Menos" style={{ width: 48, height: 48, borderRadius: 12, border: `1px solid ${C.line}`, background: C.branco, color: C.obs, cursor: "pointer", fontSize: 20 }}>−</button>
+            <span style={{ fontFamily: FB, fontSize: 19, fontWeight: 600, color: C.obs, minWidth: 20, textAlign: "center" }}>{freqEdit}</span>
+            <button onClick={() => setFreqEdit((f) => Math.min(7, f + 1))} aria-label="Mais" style={{ width: 48, height: 48, borderRadius: 12, border: `1px solid ${C.line}`, background: C.branco, color: C.obs, cursor: "pointer", fontSize: 20 }}>+</button>
           </div>
           <input value={descEdit} onChange={(e) => setDescEdit(e.target.value)}
  placeholder={h.id === "sono" ? "ex: sem tela 2h antes de dormir" : "ex: 20 minutos"}
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 8 }} />
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={salvarEdicao} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 17, color: C.obs2, cursor: "pointer" }}>Salvar</button>
-            <button onClick={() => setEditando(false)} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 17, color: C.terra, cursor: "pointer" }}>Cancelar</button>
+ style={{ width: "100%", minHeight: 48, background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "0 12px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 10 }} />
+          <div style={{ display: "flex", gap: 10 }}>
+            <Button onClick={salvarEdicao}>Salvar</Button>
+            <Button variante="contorno" onClick={() => setEditando(false)}>Cancelar</Button>
           </div>
           {onRemover && (
-            <button onClick={onRemover} style={{ width: "100%", background: "none", border: "none", marginTop: 10, padding: 0, fontFamily: FB, fontSize: 16, color: C.terra, textDecoration: "underline", cursor: "pointer" }}>
- Tirar esse hábito da minha lista
-            </button>
+            <Button variante="texto" onClick={onRemover} style={{ marginTop: 4, color: C.lt }}>Tirar da minha lista</Button>
           )}
         </div>
       )}
 
-      {/* semana de 7 pontos (segunda a domingo) + atalho para a Trajetória */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          {diasDaSemana.map((d) => {
- const feito = !!regs[d]?.[h.id];
- const alvo = d === dataAlvo;
- return (
-              <div key={d} title={dataBR(d)}
- style={{ width: 14, height: 14, borderRadius: "50%", background: feito ? C.oliva : C.creme, border: `${alvo ? 2.5 : 1.5}px solid ${feito ? C.oliva : alvo ? C.ouroDk : C.ouro + "8C"}`, boxShadow: alvo ? `0 0 0 2px ${C.linho}, 0 0 0 3.5px ${C.ouroDk}66` : "none" }} />
-            );
-          })}
-        </div>
-        <button onClick={irProgresso}
- style={{ background: "none", border: "none", padding: 0, fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.ouroTxt, cursor: "pointer", whiteSpace: "nowrap" }}>
- ver progresso ›
-        </button>
-      </div>
+      {/* a semana, de segunda a domingo */}
+      <ProgressDots dias={diasDaSemana} feitos={feitosSemana} hoje={dataAlvo} />
 
-      {/* Botão "Feito hoje" full width — igual ao Desafio da Semana */}
-      <button
-        onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
-        aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
-        style={{
-          width: "100%",
-          background: marcado ? C.oliva : "transparent",
-          border: `1px solid ${marcado ? C.oliva : C.ouro}`,
-          borderRadius: 10,
-          padding: "10px",
-          cursor: "pointer",
-          fontFamily: FB,
-          fontSize: 17,
-          fontWeight: marcado ? 500 : 400,
-          color: marcado ? C.creme : C.ouroTxt,
-          transition: "all 0.2s",
-          marginTop: 10,
-          marginBottom: 10,
-        }}
-      >
-        {marcado ? "Feito hoje ✓" : "Feito hoje"}
-      </button>
+      {/* Feito hoje — contorno antes, oliva depois */}
+      <div style={{ marginTop: 14 }}>
+        <Button
+ variante={marcado ? "feito" : "contorno"}
+ icone={marcado ? <span aria-hidden="true" style={{ fontSize: 17 }}>✓</span> : null}
+ onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
+ aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
+        >
+ Feito hoje
+        </Button>
+      </div>
 
       {/* sugestão de progressão / redução de meta (seção 4.8) — decisão sempre dela */}
       {!marcado && !progOculto && st.sugerirSubir && !st.sugerirReduzir && (
-        <div style={{ background: `${C.ouro}18`, border: `1px solid ${C.ouro}40`, borderRadius: 10, padding: "10px 12px", marginTop: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
- Você fechou as últimas 2 semanas em cheio no {h.nome}. Quer subir pra {st.meta + 1}x, ou prefere manter esse ritmo?
+        <div style={{ background: C.linho, borderRadius: 12, padding: "12px", marginTop: 12 }}>
+          <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, lineHeight: 1.45, marginBottom: 10 }}>
+ 2 semanas cheias! Subir para {st.meta + 1}x?
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { salvarMeta(h.id, st.meta + 1, st.descMeta); tk(`Meta do ${h.nome}: ${st.meta + 1}x `); }} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Subir pra {st.meta + 1}x</button>
-            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>Manter</button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Button onClick={() => { salvarMeta(h.id, st.meta + 1, st.descMeta); tk(`Meta do ${h.nome}: ${st.meta + 1}x `); }}>Subir</Button>
+            <Button variante="contorno" onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }}>Manter</Button>
           </div>
         </div>
       )}
       {!marcado && !progOculto && st.sugerirReduzir && (
-        <div style={{ background: `${C.blush}20`, border: `1px solid ${C.blush}66`, borderRadius: 10, padding: "10px 12px", marginTop: 12 }}>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.5, marginBottom: 8 }}>
- Esse hábito está pesado pra você nas últimas 2 semanas. Quer ajustar pra um nível mais leve, ou prefere manter?
+        <div style={{ background: C.blushBg, borderRadius: 12, padding: "12px", marginTop: 12 }}>
+          <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, lineHeight: 1.45, marginBottom: 10 }}>
+ Está pesado? Dá para deixar mais leve.
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { salvarMeta(h.id, Math.max(1, st.meta - 1), st.descMeta); tk("Meta ajustada. Leveza também é método "); }} style={{ flex: 1, background: C.blush, border: "none", borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Ajustar pra {Math.max(1, st.meta - 1)}x</button>
-            <button onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }} style={{ flex: 1, background: "none", border: `1px solid ${C.blush}66`, borderRadius: 20, padding: "8px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>Manter</button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Button onClick={() => { salvarMeta(h.id, Math.max(1, st.meta - 1), st.descMeta); tk("Meta ajustada. Leveza também é método "); }}>Ir para {Math.max(1, st.meta - 1)}x</Button>
+            <Button variante="contorno" onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }}>Manter</Button>
           </div>
         </div>
       )}
 
       {/* fronteira de semana do Sono — segunda de manhã fecha a semana passada */}
       {contaSemanaPassada && (
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 8, lineHeight: 1.45 }}>
-          {marcado
-            ? "Noite de domingo — fechou a semana passada."
-            : "Hoje é segunda: a noite de ontem fecha a semana que terminou. Os pontos desta semana começam amanhã."}
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.lt, marginTop: 10, lineHeight: 1.45 }}>
+          {marcado ? "A noite de domingo fechou a semana passada." : "A noite de ontem conta para a semana passada."}
         </div>
       )}
 
       {/* convite pro Mural — logo depois de marcar, uma vez por check-in */}
       {marcado && convite && (
-        <div style={{ border: `1.5px solid ${C.ouro}`, borderRadius: 14, background: C.creme, padding: "14px 15px", marginTop: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: C.oliva, fontSize: 17, lineHeight: 1 }}>✓</span>
-            <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Registrado!</span>
-          </div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "4px 0 12px" }}>
- Quer postar no Mural do 1%?
-          </div>
-          <div style={{ display: "flex", gap: 9 }}>
-            <button onClick={() => { fecharConvite(); convidarMural(h.nome); }}
- style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              {IcoH.camera(C.obs)} Postar
-            </button>
-            <button onClick={fecharConvite}
- style={{ flex: 1, background: "none", border: `1.5px solid ${C.blush}`, borderRadius: 10, padding: "11px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.terra, cursor: "pointer" }}>
- Agora não
-            </button>
+        <div style={{ background: C.linho, borderRadius: 12, padding: "12px", marginTop: 12 }}>
+          <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 10 }}>Postar no Mural do 1%?</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Button icone={IcoH.camera(C.creme)} onClick={() => { fecharConvite(); convidarMural(h.nome); }}>Postar</Button>
+            <Button variante="contorno" onClick={fecharConvite}>Agora não</Button>
           </div>
         </div>
       )}
 
-      {/* confirmação de check-in — só depois de marcar E fechar o convite do Mural */}
+      {/* confirmação de check-in — só depois de fechar o convite do Mural */}
       {marcado && !convite && (
-        <div style={{ marginTop: 12, textAlign: "center", background: `${C.ouro}1F`, borderRadius: 10, padding: "10px 12px" }}>
-          <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.ouroTxt }}>Parabéns, mais 1%!</div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 2 }}>Você cuidou de você hoje.</div>
+        <div style={{ marginTop: 10, textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.oliva }}>
+ Mais 1% hoje!
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -4820,22 +4788,19 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
  if (!texto) return null;
  const feitoHoje = desafioFeitos.includes(TODAY);
  return (
-    <div style={{ background: C.branco, border: `1.5px dashed ${C.ouro}`, borderRadius: 14, padding: "16px 17px", marginTop: 16, marginBottom: 8 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
-        {IcoH.estrela(C.ouro)}
-        <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 16.5, color: C.obs }}>Desafio da Semana</div>
+    <Card style={{ marginBottom: 12, border: `1.5px dashed ${C.ouro}`, boxShadow: "none" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {IcoH.estrela(C.ouroDk)}
+        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Desafio da semana</div>
       </div>
-      <div style={{ fontFamily: FB, fontSize: 16.5, fontWeight: 400, color: C.terra, lineHeight: 1.45, marginBottom: 12 }}>{texto}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-        {diasDaSemana.map((d) => (
-          <div key={d} style={{ width: 10, height: 10, borderRadius: "50%", background: desafioFeitos.includes(d) ? C.oliva : "transparent", border: `1px solid ${desafioFeitos.includes(d) ? C.oliva : C.linho}` }} />
-        ))}
+      <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, margin: "2px 0 12px" }}>{texto}</div>
+      <ProgressDots dias={diasDaSemana} feitos={desafioFeitos} hoje={TODAY} />
+      <div style={{ marginTop: 14 }}>
+        <Button variante={feitoHoje ? "feito" : "contorno"} icone={feitoHoje ? <span aria-hidden="true" style={{ fontSize: 17 }}>✓</span> : null} onClick={() => toggleDesafio(TODAY)}>
+ Feito hoje
+        </Button>
       </div>
-      <button onClick={() => toggleDesafio(TODAY)}
-        style={{ width: "100%", background: feitoHoje ? C.oliva : "transparent", border: `1px solid ${feitoHoje ? C.oliva : C.ouro}`, borderRadius: 10, padding: "10px", fontFamily: FB, fontWeight: feitoHoje ? 500 : 400, fontSize: 17, color: feitoHoje ? C.creme : C.ouroTxt, cursor: "pointer" }}>
-        {feitoHoje ? "Feito hoje ✓" : "Feito hoje"}
-      </button>
-    </div>
+    </Card>
   );
 }
 
@@ -4867,36 +4832,30 @@ function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }
  onFechar();
   };
  return (
-    <div style={{ background: `${C.ouro}15`, border: `1px solid ${C.ouro}55`, borderRadius: 12, padding: "16px 16px 14px", marginBottom: 16 }}>
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 6 }}>
- Sexta-feira · Vitória da Semana
-      </div>
+    <Card tom="blush" style={{ marginBottom: 16 }}>
+      <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 15, color: C.lt, marginBottom: 2 }}>Vitória da Semana</div>
       {passo === 1 ? (
         <div>
-          <div style={{ fontFamily: FB, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 10 }}>
- Como foi essa semana pra você?
+          <div style={{ fontFamily: FB, fontSize: 19, fontWeight: 600, color: C.obs, marginBottom: 12 }}>
+ Como foi a sua semana?
           </div>
           <textarea value={resp} onChange={(e) => setResp(e.target.value)}
- placeholder="No geral, além de cada hábito..."
- style={{ width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 10, padding: "11px", fontSize: 16, fontFamily: FB, color: C.obs, resize: "none", height: 84, lineHeight: 1.6, marginBottom: 10 }} />
-          <button onClick={() => setPasso(2)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>
- Continuar
-          </button>
+ placeholder="Escreva do seu jeito"
+ style={{ width: "100%", background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "12px", fontSize: 17, fontFamily: FB, color: C.obs, resize: "none", height: 96, lineHeight: 1.5, marginBottom: 12 }} />
+          <Button onClick={() => setPasso(2)}>Continuar</Button>
         </div>
       ) : (
         <div>
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, lineHeight: 1.6, marginBottom: 12 }}>
+          <div style={{ fontFamily: FB, fontSize: 17, color: C.obs, lineHeight: 1.5, margin: "4px 0 14px" }}>
             {resumo}
           </div>
-          <button onClick={() => salvar(true)} style={{ width: "100%", background: C.ouro, border: "none", borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer", marginBottom: 8 }}>
- Compartilhar no Mural do 1%
-          </button>
-          <button onClick={() => salvar(false)} style={{ width: "100%", background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>
- Só registrar pra mim
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <Button onClick={() => salvar(true)}>Compartilhar no Mural</Button>
+            <Button variante="contorno" onClick={() => salvar(false)}>Só guardar para mim</Button>
+          </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -5012,6 +4971,9 @@ function Home({
  r.readAsDataURL(f);
   };
  const ONTEM = addDaysStr(TODAY, -1);
+ const _hora = new Date().getHours();
+ const saudacao = _hora >= 5 && _hora < 12 ? "Bom dia" : _hora >= 12 && _hora < 18 ? "Boa tarde" : "Boa noite";
+ const primeiroNome = (usuario?.nome || "").trim().split(/\s+/)[0] || "";
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
  const ehSexta = new Date(TODAY + "T12:00:00").getDay() === 5;
@@ -5055,8 +5017,8 @@ function Home({
       <div
  style={{
  background: C.creme,
- padding: "14px 18px 18px",
- borderBottom: `1px solid ${C.ouro}15`,
+ padding: "16px 20px 16px",
+ borderBottom: `1px solid ${C.line}`,
  position: "relative",
         }}
       >
@@ -5068,13 +5030,22 @@ function Home({
  aria-label="Perfil e configurações"
  style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          {Ico.gear(C.terra, 22)}
+          {Ico.gear(C.lt, 22)}
         </button>
-        <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 600, color: C.obs, letterSpacing: "-0.01em" }}>
- Hoje
+        <div style={{ fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em", paddingRight: 44 }}>
+          {saudacao}{primeiroNome ? `, ${primeiroNome}` : ""}
         </div>
-        <div style={{ marginTop: 4, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>
-          {dataLonga(TODAY)} · <span style={{ whiteSpace: "nowrap" }}>Semana {sem} de 12</span>
+        <div style={{ marginTop: 2, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>
+          {dataLonga(TODAY)}
+        </div>
+        {/* barra das 12 semanas do programa */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+          <div role="img" aria-label={`Semana ${sem} de 12`} style={{ flex: 1, display: "flex", gap: 3 }}>
+            {Array.from({ length: 12 }, (_, i) => (
+              <span key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < sem ? C.ouro : C.linho }} />
+            ))}
+          </div>
+          <span style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.lt, whiteSpace: "nowrap" }}>Semana {sem} de 12</span>
         </div>
       </div>
       {retroAberto && (
@@ -5092,7 +5063,7 @@ function Home({
         />
       )}
 
-      <Grain style={{ padding: "18px 18px 24px" }}>
+      <Grain style={{ padding: "16px 20px 24px" }}>
 
         {/* Stats bar removida — 20/09/2026 */}
 
@@ -5158,96 +5129,23 @@ function Home({
         )}
 
         {/* Card de permissão de notificações (Jornada, primeira vez) */}
-        {perfil === "jornada" &&
- notifStatus === "pending" && (
-            <div
- style={{
- background: `${C.ouro}0A`,
- border: `1px solid ${C.ouro}22`,
- borderRadius: 10,
- padding: "14px 15px",
- marginBottom: 14,
-              }}
-            >
-              <div
- style={{
- display: "flex",
- justifyContent: "space-between",
- alignItems: "flex-start",
- marginBottom: 8,
-                }}
-              >
-                <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.ouroTxt,
-                  }}
-                >
- Lembretes do método
-                </div>
-                <button
- onClick={() => setNotifStatus("dismissed")}
- style={{
- background: "none",
- border: "none",
- color: C.lt,
- fontSize: 17,
- cursor: "pointer",
- lineHeight: 1,
- padding: 0,
-                  }}
-                >
- ×
-                </button>
-              </div>
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.lt,
- lineHeight: 1.6,
- marginBottom: 10,
-                }}
-              >
- Ative para receber os 3 gatilhos do método: Regra dos 2 Dias,
- Ritual de Sexta e Reforço do 1%.
-              </div>
-              <button
- onClick={async () => {
+        {perfil === "jornada" && notifStatus === "pending" && (
+          <Card tom="suave" style={{ marginBottom: 16, position: "relative" }}>
+            <button onClick={() => setNotifStatus("dismissed")} aria-label="Fechar"
+ style={{ position: "absolute", top: 4, right: 4, width: 48, height: 48, background: "none", border: "none", color: C.lt, fontSize: 22, cursor: "pointer" }}>×</button>
+            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, paddingRight: 40 }}>Quer um lembrete gentil?</div>
+            <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, margin: "2px 0 12px" }}>Só nos 3 momentos do método.</div>
+            <Button onClick={async () => {
  const r = await requestPermission();
- if (r === "granted") {
- setNotifStatus("granted");
-                  } else if (r === "unsupported") {
- setNotifStatus("dismissed");
-                  } else {
+ if (r === "granted") setNotifStatus("granted");
+ else if (r === "unsupported") setNotifStatus("dismissed");
+ else {
  setNotifStatus(r === "denied" ? "denied" : "dismissed");
  if (r === "denied") tk("Permissão bloqueada nas configurações do navegador");
-                  }
-                }}
- style={{
- background: C.ouro,
- border: "none",
- borderRadius: 50,
- padding: "10px",
- width: "100%",
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 17,
- color: C.obs2,
- cursor: "pointer",
- letterSpacing: "0.02em",
-                }}
-              >
- Ativar lembretes
-              </button>
-            </div>
-          )}
-
-
-
+              }
+            }}>Ativar lembretes</Button>
+          </Card>
+        )}
 
         {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
         {ehSexta && !vitSemOk && !vitDestaSemana && (
@@ -5263,19 +5161,7 @@ function Home({
 
         {/* Cards dos 3 hábitos angulares (seção 4.2) */}
           <div>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 13,
- color: C.ouroTxt,
- letterSpacing: "0.35em",
- textTransform: "uppercase",
- marginBottom: 12,
-              }}
-            >
- Hábitos angulares
-            </div>
+            <SectionHeader titulo="Hábitos angulares" style={{ marginTop: 8 }} />
             {HABS_FIXOS.map((h) => (
               <HabCard
  key={h.id}
@@ -5304,11 +5190,7 @@ function Home({
             />
 
             {/* Meus hábitos — criados pela aluna (seção 5) */}
-            <div
- style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", margin: "20px 0 10px" }}
-            >
- Meus hábitos
-            </div>
+            <SectionHeader titulo="Meus hábitos" />
             {habsPessoais.map((hp) => (
               <HabCard
  key={hp.id}
@@ -5336,22 +5218,21 @@ function Home({
             ) : (
               <button
  onClick={() => setCriandoHab(true)}
- style={{ width: "100%", background: "none", border: `1.5px dashed ${C.ouro}B3`, borderRadius: 14, padding: "13px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, cursor: "pointer", marginBottom: 11 }}
+ style={{ width: "100%", minHeight: 48, background: "none", border: `1.5px dashed ${C.ouro}`, borderRadius: 16, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs, cursor: "pointer", marginBottom: 12 }}
               >
  + Criar um hábito meu
               </button>
             )}
 
-            <button
- onClick={() => setRetroAberto(true)}
- style={{ width: "100%", background: "none", border: "none", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, cursor: "pointer", margin: "16px 0", lineHeight: 1.5 }}
-            >
-              <div>Esqueceu de um dia?</div>
-              <div style={{ marginTop: 6, textDecoration: "underline" }}>Preencha dias anteriores</div>
-            </button>
+            <Button variante="texto" onClick={() => setRetroAberto(true)} style={{ margin: "4px 0 12px" }}>Preencher dias anteriores</Button>
 
-            {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
-            <div style={{ height: 64 }} />
+            {/* Kit de Emergência — cartão no fim da lista (antes era pastilha flutuante que cobria os cartões) */}
+            <Card tom="blush" onClick={() => ir(S.EM)} rotulo="Bateu a preguiça? Abrir o Kit" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {IcoH.kit(C.blushDk, 22)}
+              <span style={{ flex: 1, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Bateu a preguiça?</span>
+              <span aria-hidden="true" style={{ fontSize: 24, color: C.lt, lineHeight: 1 }}>›</span>
+            </Card>
+            <div style={{ height: 8 }} />
           </div>
 
 
@@ -5359,14 +5240,6 @@ function Home({
 
       <input ref={fotoConviteRef} type="file" accept="image/*" style={{ display: "none" }} onChange={fotoConviteEscolhida} />
 
-      {/* Kit de Emergência — pastilha fixa; o Protocolo de Retomada agora mora dentro dele */}
-      <button
- onClick={() => ir(S.EM)}
- style={{ position: "absolute", right: 16, bottom: 82, zIndex: 60, background: C.blushDk, border: "none", borderRadius: 50, padding: "12px 20px", cursor: "pointer", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.creme, boxShadow: "0 6px 18px rgba(28,26,23,.28)", display: "flex", alignItems: "center", gap: 9 }}
-      >
-        {IcoH.kit(C.creme)}
- bateu a preguiça?
-      </button>
     </div>
   );
 }
