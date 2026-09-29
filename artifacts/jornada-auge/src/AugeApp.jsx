@@ -5227,7 +5227,7 @@ function Home({
             <Button variante="texto" onClick={() => setRetroAberto(true)} style={{ margin: "4px 0 12px" }}>Preencher dias anteriores</Button>
 
             {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
-            <div style={{ height: 72 }} />
+            <div style={{ height: 100 }} />
           </div>
 
 
@@ -5238,7 +5238,7 @@ function Home({
       {/* Kit de Emergência — pastilha fixa (voltou a flutuar a pedido da Vitória, 29/09) */}
       <button
  onClick={() => ir(S.EM)}
- style={{ position: "absolute", right: 16, bottom: 82, zIndex: 60, minHeight: 48, background: C.blushDk, border: "none", borderRadius: 50, padding: "12px 20px", cursor: "pointer", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.creme, boxShadow: "0 6px 18px rgba(28,26,23,.28)", display: "flex", alignItems: "center", gap: 9 }}
+ style={{ position: "absolute", right: 16, bottom: 112, zIndex: 60, minHeight: 48, background: C.blushDk, border: "none", borderRadius: 50, padding: "12px 20px", cursor: "pointer", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.creme, boxShadow: "0 6px 18px rgba(28,26,23,.28)", display: "flex", alignItems: "center", gap: 9 }}
       >
         {IcoH.kit(C.creme)}
  bateu a preguiça?
