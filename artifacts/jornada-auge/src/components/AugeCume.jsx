@@ -115,6 +115,7 @@ export function ComoUsarHoje({ onFechar }) {
       {passo(1, "Faça o seu hábito no seu tempo.")}
       {passo(2, <>Toque em <b>Feito hoje</b>.</>)}
       {passo(3, "Sua luz sobe a trilha da montanha. No fim da semana, você chega ao cume.")}
+      {passo(4, <>Num dia difícil, toque em <b>bateu a preguiça?</b>, no canto de baixo da tela.</>)}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button onClick={onFechar}
                 style={{ minHeight: 44, padding: "0 12px", background: "none", border: "none", cursor: "pointer",
