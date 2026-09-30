@@ -174,7 +174,7 @@ export function ComoUsarHoje({ onFechar }) {
       <div style={{ fontSize: 18, fontWeight: 600, color: T.ink }}>Como usar a tela Hoje</div>
       {passo(1, "Faça o seu hábito no seu tempo.")}
       {passo(2, <>Toque em <b>Feito hoje</b>.</>)}
-      {passo(3, "Sua luz sobe a trilha da montanha. No fim da semana, você chega ao cume.")}
+      {passo(3, "Sua luz sobe a trilha da montanha. No fim da semana, você chega ao seu auge.")}
       {passo(4, <><b>Dia difícil? Vale o mínimo.</b> Nos dias pesados, troque as metas pelos seus mínimos com um toque. Aqui ninguém começa do zero.</>)}
       {passo(5, <>Quando bater a preguiça, toque em <b>bateu a preguiça?</b>, no canto de baixo da tela.</>)}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>

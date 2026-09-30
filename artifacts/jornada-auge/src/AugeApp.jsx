@@ -5033,7 +5033,7 @@ function Home({
  if (cumePendente.current == null) return;
  const de = cumePendente.current;
  cumePendente.current = null;
- const msg = tCume >= 1 ? "Você chegou ao cume!" : (msgPendente.current || "Feito! Você subiu mais um pouco.");
+ const msg = tCume >= 1 ? "Você chegou ao seu auge!" : (msgPendente.current || "Feito! Você subiu mais um pouco.");
  // Aviso com a montanha pequena: só quando a montanha grande saiu da tela.
  // Com ela à vista, a própria luz grande subindo já é o aviso.
  if (cumeVisivel.current) return;
