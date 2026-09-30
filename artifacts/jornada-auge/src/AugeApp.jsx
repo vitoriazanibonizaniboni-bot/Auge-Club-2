@@ -10596,6 +10596,7 @@ function Emergencia({
  pq3,
  ir,
  setRet,
+ salvarKitPessoal,
 }) {
   // Kit de Emergencia (secao 10) — leitura guiada de cima a baixo, com UM
   // ponto de acao no fim. Nao ha mais um botao embaixo de cada bloco: a
@@ -10604,6 +10605,11 @@ function Emergencia({
  const foneLimpo = (kitPessoa?.fone || "").replace(/\D/g, "");
  const waLink = foneLimpo ? `https://wa.me/${foneLimpo.length <= 11 ? "55" + foneLimpo : foneLimpo}` : null;
  const porques = [pq1, pq2, pq3].filter(Boolean);
+ // Sem pessoa cadastrada: dá para cadastrar aqui mesmo, sem sair do Kit
+ const [addPessoa, setAddPessoa] = useState(false);
+ const [novoNome, setNovoNome] = useState(kitPessoa?.nome || "");
+ const [novoFone, setNovoFone] = useState("");
+ const foneOk = novoFone.replace(/\D/g, "").length >= 10;
 
   // Bloco de conteudo: borda lateral em Blush Escuro
  const Bloco = ({ titulo, children }) => (
@@ -10720,9 +10726,36 @@ function Emergencia({
             {IcoH.whats(C.blushDk)}
  Chamar {(kitPessoa?.nome || "").split(" ")[0] || "sua pessoa"}
           </button>
+        ) : !addPessoa ? (
+          <button
+ onClick={() => setAddPessoa(true)}
+ style={{ width: "100%", marginTop: 10, background: "transparent", border: `1.5px solid ${C.blushDk}`, borderRadius: 14, padding: "14px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.blushDk, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
+            {IcoH.whats(C.blushDk)}
+ Adicionar alguém para chamar
+          </button>
         ) : (
-          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
- Cadastre sua Pessoa de Referência em Perfil e Configurações para chamá-la daqui.
+          <div style={{ marginTop: 12, background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 16, padding: "16px" }}>
+            <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Quem você quer chamar num dia difícil?</div>
+            <label style={{ display: "block", fontFamily: FB, fontSize: 15, color: C.lt, marginTop: 12 }}>
+ Nome
+              <input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} autoComplete="name"
+ style={{ display: "block", width: "100%", boxSizing: "border-box", marginTop: 4, minHeight: 48, background: C.creme, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "0 12px", fontFamily: FB, fontSize: 17, color: C.obs }} />
+            </label>
+            <label style={{ display: "block", fontFamily: FB, fontSize: 15, color: C.lt, marginTop: 10 }}>
+ WhatsApp com DDD
+              <input value={novoFone} onChange={(e) => setNovoFone(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="(48) 99999-9999"
+ style={{ display: "block", width: "100%", boxSizing: "border-box", marginTop: 4, minHeight: 48, background: C.creme, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "0 12px", fontFamily: FB, fontSize: 17, color: C.obs }} />
+            </label>
+            <button
+ disabled={!novoNome.trim() || !foneOk}
+ onClick={() => { salvarKitPessoal({ pessoa_nome: novoNome.trim(), pessoa_fone: novoFone.trim() }); setAddPessoa(false); tk("Pessoa salva. Agora é só chamar"); }}
+ style={{ width: "100%", marginTop: 14, minHeight: 48, background: C.blushDk, border: "none", borderRadius: 14, fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.creme, cursor: "pointer", opacity: !novoNome.trim() || !foneOk ? 0.5 : 1 }}>
+ Salvar
+            </button>
+            <button onClick={() => setAddPessoa(false)}
+ style={{ width: "100%", marginTop: 4, minHeight: 44, background: "none", border: "none", fontFamily: FB, fontSize: 16, color: C.lt, cursor: "pointer" }}>
+ Agora não
+            </button>
           </div>
         )}
 
