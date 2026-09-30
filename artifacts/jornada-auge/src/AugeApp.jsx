@@ -3,7 +3,7 @@ import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSi
 import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
-import { Cume, CumeMini, ComoUsarHoje, progressoSemana } from "./components/AugeCume.jsx";
+import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
 import { Target, UserRound, PenLine } from "lucide-react";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
@@ -845,7 +845,12 @@ function Brinde({ msg }) {
  fontFamily: FB, fontWeight: 400,
  
  boxShadow: "0 8px 24px rgba(0,0,0,.5)",
- whiteSpace: "nowrap",
+ // quebra em duas linhas em vez de sair pelas bordas no celular estreito
+ width: "max-content",
+ maxWidth: "calc(100% - 32px)",
+ boxSizing: "border-box",
+ textAlign: "center",
+ lineHeight: 1.35,
  border: `1px solid ${C.ouro}44`,
  animation: "toastIn .3s ease",
       }}
@@ -4535,7 +4540,9 @@ function StatsBarra({ feitos, falta, semana }) {
 // ═══════════════════════════════════════════════════════════════════
 
 // Card de um hábito angular
-function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onRemover, convidarMural }) {
+function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onRemover, convidarMural, minimoHoje = null, pedirMinimo = null }) {
+ const [definindoMin, setDefinindoMin] = useState(false);
+ const [txtMin, setTxtMin] = useState("");
  const [editando, setEditando] = useState(false);
  const [freqEdit, setFreqEdit] = useState(st.meta);
  const [descEdit, setDescEdit] = useState(st.descMeta);
@@ -4590,7 +4597,9 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {/* nome + atalho para o progresso (a seta leva à Jornada) */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {(IcoH[h.id] || IcoH.meu)(C.lt)}
-        <div style={{ flex: 1, minWidth: 0, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>{h.nome}</div>
+        <div style={{ flex: 1, minWidth: 0, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {h.nome}{minimoHoje && <SeloMinimo />}
+        </div>
         <button onClick={irProgresso} aria-label={`Ver progresso de ${h.nome}`}
  style={{ width: 48, height: 48, margin: "-12px -12px -12px 0", background: "none", border: "none", cursor: "pointer", color: C.lt, fontSize: 24, lineHeight: 1 }}>
           ›
@@ -4601,7 +4610,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       {!editando ? (
         <button onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
  style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "10px 0", minHeight: 44, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "-8px 0 2px", cursor: "pointer", lineHeight: 1.45 }}>
-          {metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
+          {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
         </button>
       ) : (
         <div style={{ background: C.linho, borderRadius: 12, padding: "12px", margin: "8px 0 12px" }}>
@@ -4623,6 +4632,27 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
           )}
         </div>
       )}
+
+      {/* dia mínimo sem mínimo cadastrado: dá para definir ali mesmo */}
+      {pedirMinimo && !editando && (!definindoMin ? (
+        <button onClick={() => { setTxtMin(""); setDefinindoMin(true); }}
+ style={{ display: "block", background: "none", border: "none", padding: 0, minHeight: 44, margin: "-6px 0 4px", fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.primary, textDecoration: "underline", cursor: "pointer", textAlign: "left" }}>
+ Definir meu mínimo
+        </button>
+      ) : (
+        <div style={{ background: C.linho, borderRadius: 12, padding: "12px", margin: "4px 0 12px" }}>
+          <label style={{ display: "block", fontFamily: FB, fontSize: 15, color: C.lt, marginBottom: 6 }}>
+ O mínimo que ainda conta num dia difícil
+            <input value={txtMin} onChange={(e) => setTxtMin(e.target.value)} autoFocus
+ placeholder={h.id === "sono" ? "ex: desligar a tela às 22h30" : h.id === "movimento" ? "ex: 5 minutos de alongamento" : "ex: 5 minutos só pra mim"}
+ style={{ display: "block", width: "100%", boxSizing: "border-box", minHeight: 48, marginTop: 6, background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "0 12px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 10 }} />
+          </label>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Button onClick={() => { const t = txtMin.trim(); if (!t) return; pedirMinimo(t); setDefinindoMin(false); }}>Salvar</Button>
+            <Button variante="contorno" onClick={() => setDefinindoMin(false)}>Cancelar</Button>
+          </div>
+        </div>
+      ))}
 
       {/* a semana, de segunda a domingo */}
       <ProgressDots dias={diasDaSemana} feitos={feitosSemana} hoje={dataAlvo} />
@@ -4923,6 +4953,8 @@ function Home({
  toggleDesafio,
  jornadaInicio,
  postTreino,
+ metas,
+ salvarMinimo,
 }) {
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
@@ -5001,7 +5033,7 @@ function Home({
  if (cumePendente.current == null) return;
  const de = cumePendente.current;
  cumePendente.current = null;
- const msg = tCume >= 1 ? "Você chegou ao cume!" : "Feito! Você subiu mais um pouco.";
+ const msg = tCume >= 1 ? "Você chegou ao cume!" : (msgPendente.current || "Feito! Você subiu mais um pouco.");
  // Aviso com a montanha pequena: só quando a montanha grande saiu da tela.
  // Com ela à vista, a própria luz grande subindo já é o aviso.
  if (cumeVisivel.current) return;
@@ -5010,8 +5042,25 @@ function Home({
  // some depois de 3s, a não ser que outro aviso já tenha tomado o lugar
  setTimeout(() => setCumeAviso((a) => (a && a.id === id ? null : a)), 5000);
   }, [regs]);
+ // ── Dia difícil: o modo mínimo vale só para hoje e fica guardado no celular
+ const [diaMinimo, setDiaMinimo] = useState(() => {
+ try { return localStorage.getItem("auge_dia_minimo") === TODAY; } catch { return false; }
+  });
+ const ativarDiaMinimo = () => {
+ try { localStorage.setItem("auge_dia_minimo", TODAY); } catch {}
+ setDiaMinimo(true);
+ tk("Pronto. Hoje suas metas são os seus mínimos.");
+  };
+ const desfazerDiaMinimo = () => {
+ try { localStorage.removeItem("auge_dia_minimo"); } catch {}
+ setDiaMinimo(false);
+  };
+ // hábito do método com mínimo cadastrado, com o modo ligado → mostra o mínimo
+ const minimoDoDia = (id) => (diaMinimo ? (metas?.[id]?.minimo || "").trim() || null : null);
+ const msgPendente = useRef(null);
  const registrarNaHoje = (id, data, dif) => {
  cumePendente.current = tCume;
+ msgPendente.current = minimoDoDia(id) ? "Mínimo feito. Você subiu mais um pouco." : null;
  return registrarHabito(id, data, dif);
   };
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
@@ -5182,9 +5231,14 @@ function Home({
           />
         )}
 
+        {/* Dia difícil? Faça só o mínimo — logo antes dos hábitos */}
+        <div style={{ marginTop: 8 }}>
+          <DiaDificil ativo={diaMinimo} onAtivar={ativarDiaMinimo} onDesfazer={desfazerDiaMinimo} />
+        </div>
+
         {/* Cards dos 3 hábitos angulares (seção 4.2) */}
           <div>
-            <SectionHeader titulo="Hábitos angulares" style={{ marginTop: 8 }} />
+            <SectionHeader titulo="Hábitos angulares" style={{ marginTop: 0 }} />
             {HABS_FIXOS.map((h) => (
               <HabCard
  key={h.id}
@@ -5201,6 +5255,8 @@ function Home({
  diasDaSemana={diasDaSemana}
  irProgresso={() => { setHabProgresso({ id: h.id, nome: h.nome, pessoal: false, unlock: h.unlock }); ir(S.TRAJ); }}
  convidarMural={convidarMural}
+ minimoHoje={minimoDoDia(h.id)}
+ pedirMinimo={diaMinimo && !minimoDoDia(h.id) && salvarMinimo ? (txt) => { salvarMinimo(h.id, txt); tk("Mínimo salvo. Vale para hoje."); } : null}
               />
             ))}
 

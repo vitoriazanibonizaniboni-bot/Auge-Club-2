@@ -175,7 +175,8 @@ export function ComoUsarHoje({ onFechar }) {
       {passo(1, "Faça o seu hábito no seu tempo.")}
       {passo(2, <>Toque em <b>Feito hoje</b>.</>)}
       {passo(3, "Sua luz sobe a trilha da montanha. No fim da semana, você chega ao cume.")}
-      {passo(4, <>Num dia difícil, toque em <b>bateu a preguiça?</b>, no canto de baixo da tela.</>)}
+      {passo(4, <><b>Dia difícil? Vale o mínimo.</b> Nos dias pesados, troque as metas pelos seus mínimos com um toque. Aqui ninguém começa do zero.</>)}
+      {passo(5, <>Quando bater a preguiça, toque em <b>bateu a preguiça?</b>, no canto de baixo da tela.</>)}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button onClick={onFechar}
                 style={{ minHeight: 44, padding: "0 12px", background: "none", border: "none", cursor: "pointer",
@@ -209,5 +210,42 @@ export function CumeMini({ t, de = t, largura = 112, altura = 56 }) {
       </svg>
       <Luz x={`${(x / W) * 100}%`} y={`${((y - topo) / (H - topo)) * 100}%`} raio={11} nucleo={5.5} pulso={pulso} andando={andando} />
     </div>
+  );
+}
+
+// ── Dia difícil? Faça só o mínimo ────────────────────────────────────────────
+// Um toque troca as metas do dia pelos Mínimos Inegociáveis. É só visual:
+// marcar "Feito hoje" grava o mesmo registro de sempre.
+export function DiaDificil({ ativo, onAtivar, onDesfazer }) {
+  if (!ativo) {
+    return (
+      <button onClick={onAtivar} aria-label="Ativar dia mínimo"
+        style={{ width: "100%", minHeight: 56, borderRadius: 18, border: "1px solid #E6DCCF",
+                 background: "#F4EDE3", color: T.ink, display: "flex", alignItems: "center",
+                 gap: 10, padding: "0 16px", textAlign: "left", fontFamily: FONTE, cursor: "pointer", marginBottom: 16 }}>
+        <span style={{ flex: 1, fontSize: 16, lineHeight: 1.35, padding: "10px 0" }}><b>Dia difícil?</b> Faça só o mínimo hoje</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.primary} strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </button>
+    );
+  }
+  return (
+    <div role="status" style={{ background: "#EEF0E4", borderRadius: 18, padding: "14px 16px", fontFamily: FONTE,
+                 display: "flex", alignItems: "center", gap: 10, marginBottom: 16, animation: "fadeUp .3s ease" }}>
+      <div style={{ flex: 1, fontSize: 16, lineHeight: 1.4, color: T.ink }}><b>Hoje é dia de mínimo.</b> Conta igual.</div>
+      <button onClick={onDesfazer}
+        style={{ minHeight: 44, padding: "0 4px", border: "none", background: "transparent", color: T.primary,
+                 fontSize: 15, fontWeight: 600, textDecoration: "underline", fontFamily: FONTE, cursor: "pointer" }}>
+        Desfazer
+      </button>
+    </div>
+  );
+}
+
+export function SeloMinimo() {
+  return (
+    <span style={{ fontSize: 14, fontWeight: 600, color: "#FFFFFF", background: T.olive, fontFamily: FONTE,
+                   borderRadius: 8, padding: "2px 8px", whiteSpace: "nowrap" }}>mínimo</span>
   );
 }
