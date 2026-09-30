@@ -6,6 +6,7 @@
 // A luz é um <div> por cima do desenho, e não um círculo dentro do SVG: o SVG
 // estica na largura do celular (preserveAspectRatio="none") e um círculo lá
 // dentro viraria oval em celular estreito.
+import { useEffect, useState } from "react";
 import { T, FONTE } from "../tokens.js";
 
 const W = 350, H = 210;
@@ -120,6 +121,38 @@ export function ComoUsarHoje({ onFechar }) {
         <button onClick={onFechar}
                 style={{ minHeight: 44, padding: "0 12px", background: "none", border: "none", cursor: "pointer",
                          fontFamily: FONTE, fontSize: 17, fontWeight: 600, color: T.primary }}>Entendi</button>
+      </div>
+    </div>
+  );
+}
+
+// Montanha pequena, para quando o cabeçalho sai da tela. "de" é de onde a luz
+// parte: ela aparece lá e desliza até "t", para a aluna VER a subida.
+export function CumeMini({ t, de = t, largura = 112, altura = 56 }) {
+  const k = 0.62;
+  const trilha = baixa(TRILHA_BASE, k);
+  const [pos, setPos] = useState(de);
+  useEffect(() => {
+    setPos(de);
+    const id = setTimeout(() => setPos(t), 60);
+    return () => clearTimeout(id);
+  }, [t, de]);
+  const [x, y] = pontoNaTrilha(pos, trilha.slice(1));
+  // recorta só a parte de baixo do desenho, onde está a montanha
+  const topo = 72;
+  return (
+    <div aria-hidden="true" style={{ position: "relative", width: largura, height: altura, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
+      <svg width="100%" height="100%" viewBox={`0 ${topo} ${W} ${H - topo}`} preserveAspectRatio="none" style={{ position: "absolute", inset: 0, display: "block" }}>
+        <rect y={topo} width={W} height={H - topo} fill="#F3E3CC" />
+        <path d={caminho(baixa(FUNDO, k))} fill="#D8B79C" />
+        <path d={caminho(baixa(MONTANHA, k))} fill="#B5563C" />
+        <path d={caminho(baixa(SOMBRA, k))} fill={T.primary} />
+        <path d={caminho(baixa(NEVE, k))} fill="#FBF3E8" opacity=".9" />
+        <path d={caminho(trilha, false)} fill="none" stroke="#FBF3E8" strokeWidth="1.6" strokeDasharray="2 4" strokeLinecap="round" opacity=".9" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div style={{ position: "absolute", left: `${(x / W) * 100}%`, top: `${((y - topo) / (H - topo)) * 100}%`, width: 0, height: 0, transition: "left .9s ease-out, top .9s ease-out" }}>
+        <span style={{ position: "absolute", left: -9, top: -9, width: 18, height: 18, borderRadius: 9, background: "#FCE6C4", opacity: 0.6 }} />
+        <span style={{ position: "absolute", left: -4.5, top: -4.5, width: 9, height: 9, borderRadius: 5, background: "#FFF6E2" }} />
       </div>
     </div>
   );

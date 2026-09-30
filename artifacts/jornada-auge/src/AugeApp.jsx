@@ -3,7 +3,7 @@ import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSi
 import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
-import { Cume, ComoUsarHoje, progressoSemana } from "./components/AugeCume.jsx";
+import { Cume, CumeMini, ComoUsarHoje, progressoSemana } from "./components/AugeCume.jsx";
 import { Target, UserRound, PenLine } from "lucide-react";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
@@ -4985,14 +4985,22 @@ function Home({
   ]);
  const [ajudaAberta, setAjudaAberta] = useState(false);
  // Toast só ao MARCAR (desmarcar não fala nada): espera o t novo ser calculado
- const cumePendente = useRef(false);
+ const cumePendente = useRef(null); // t de antes da marcação
+ const [cumeAviso, setCumeAviso] = useState(null);
+ const avisoSeq = useRef(0);
  useEffect(() => {
- if (!cumePendente.current) return;
- cumePendente.current = false;
- tk(tCume >= 1 ? "Você chegou ao cume!" : "Feito! Você subiu mais um pouco.");
+ if (cumePendente.current == null) return;
+ const de = cumePendente.current;
+ cumePendente.current = null;
+ const msg = tCume >= 1 ? "Você chegou ao cume!" : "Feito! Você subiu mais um pouco.";
+ // Aviso com a montanha pequena: a luz sobe ali, mesmo com a tela rolada
+ const id = (avisoSeq.current += 1);
+ setCumeAviso({ de, para: tCume, msg, id });
+ // some depois de 3s, a não ser que outro aviso já tenha tomado o lugar
+ setTimeout(() => setCumeAviso((a) => (a && a.id === id ? null : a)), 3000);
   }, [regs]);
  const registrarNaHoje = (id, data, dif) => {
- cumePendente.current = true;
+ cumePendente.current = tCume;
  return registrarHabito(id, data, dif);
   };
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
@@ -5034,6 +5042,13 @@ function Home({
 
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
+      {/* Aviso ao marcar, com a montanha pequena: a luz sobe ali, onde ela estiver na tela */}
+      {cumeAviso && (
+        <div key={cumeAviso.id} role="status" style={{ position: "fixed", left: 16, right: 16, top: 16, zIndex: 300, maxWidth: 420, margin: "0 auto", background: C.branco, borderRadius: 18, boxShadow: "0 8px 28px rgba(31,26,23,.18)", padding: 10, display: "flex", alignItems: "center", gap: 12, animation: "fadeUp .3s ease" }}>
+          <CumeMini t={cumeAviso.para} de={cumeAviso.de} largura={132} altura={66} />
+          <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.35 }}>{cumeAviso.msg}</div>
+        </div>
+      )}
       {/* O cume (cabeçalho da Hoje): a luz sobe a trilha conforme a semana avança */}
       <div style={{ background: C.creme, padding: "16px 20px 0" }}>
         <Cume
