@@ -169,9 +169,6 @@ export function PainelEditar({ modo, inicial = {}, onSalvar, onTirar, onFechar, 
                 )}
               </div>
 
-              {modo !== "criar" && (
-                <p style={{ ...apoio, margin: "20px 0 0" }}>As mudanças valem a partir de hoje. O que você já fez nesta semana continua contando.</p>
-              )}
 
               <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
                 <button onClick={salvar} disabled={!podeSalvar} style={botaoPrincipal(podeSalvar)}>
