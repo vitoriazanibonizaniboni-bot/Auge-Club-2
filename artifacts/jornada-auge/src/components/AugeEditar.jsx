@@ -223,3 +223,72 @@ export function AvisoHoje({ aviso }) {
     </div>
   );
 }
+
+// Ao ligar o "Dia difícil?" sem mínimo cadastrado: um painel só, com o mínimo
+// de cada hábito do método, em vez de "Definir meu mínimo" cartão por cartão.
+// habitos: [{ id, nome, minimo }]; onSalvar({ id: texto }) → Promise<boolean>
+export function PainelMinimos({ habitos, onSalvar, onFechar }) {
+  const [valores, setValores] = useState(() => Object.fromEntries(habitos.map((h) => [h.id, h.minimo || ""])));
+  const [salvando, setSalvando] = useState(false);
+  const tituloRef = useRef(null);
+  const area = useAreaVisivel();
+  const origem = useRef(typeof document !== "undefined" ? document.activeElement : null);
+  const primeiroVazio = useRef(null);
+  useEffect(() => {
+    // o cursor já vai para o primeiro mínimo que falta
+    const el = primeiroVazio.current;
+    if (el) setTimeout(() => el.focus(), 280); else tituloRef.current?.focus();
+  }, []);
+  useEffect(() => () => { try { origem.current?.focus?.(); } catch {} }, []);
+  useEffect(() => {
+    const esc = (e) => { if (e.key === "Escape" && !salvando) onFechar(); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [salvando, onFechar]);
+  const aoFocar = (e) => { const el = e.target; setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300); };
+  const salvar = async () => {
+    if (salvando) return;
+    setSalvando(true);
+    const ok = await onSalvar(Object.fromEntries(Object.entries(valores).map(([k, v]) => [k, v.trim()])));
+    setSalvando(false);
+    if (ok) onFechar();
+  };
+  const reduz = reduzMovimento();
+  let marcouPrimeiro = false;
+  return (
+    <div onClick={() => !salvando && onFechar()}
+         style={{ position: "fixed", inset: 0, zIndex: 800, background: "rgba(31,26,23,.45)", fontFamily: FONTE, animation: "augeFade .25s ease-out" }}>
+      <style>{ESTILOS}</style>
+      <div role="dialog" aria-modal="true" aria-label="Seus mínimos para hoje" onClick={(e) => e.stopPropagation()}
+           style={{ position: "absolute", left: 0, right: 0, bottom: area.baixo, maxWidth: 520, margin: "0 auto",
+                    maxHeight: Math.round(area.altura * 0.9), display: "flex", flexDirection: "column",
+                    background: "#FFFFFF", borderRadius: "24px 24px 0 0", boxShadow: "0 -8px 30px rgba(31,26,23,.18)",
+                    animation: reduz ? "augeFade .25s ease-out" : "augeSheetSobe .25s ease-out" }}>
+        <div style={{ overflowY: "auto", padding: "12px 20px 28px", WebkitOverflowScrolling: "touch" }}>
+          <div aria-hidden="true" style={{ width: 40, height: 5, borderRadius: 3, background: "#E6DCCF", margin: "0 auto 16px" }} />
+          <h2 ref={tituloRef} tabIndex={-1} style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 700, color: T.ink, lineHeight: 1.2, outline: "none" }}>Seus mínimos para hoje</h2>
+          <p style={{ ...apoio, margin: "0 0 20px" }}>Bem menor que a meta. É o que você faz mesmo num dia pesado.</p>
+          <div style={{ display: "grid", gap: 20 }}>
+            {habitos.map((h) => {
+              const vazio = !h.minimo && !marcouPrimeiro;
+              if (vazio) marcouPrimeiro = true;
+              return (
+                <label key={h.id} style={{ display: "block" }}>
+                  <span style={rotulo}>{h.nome}</span>
+                  <input ref={vazio ? primeiroVazio : undefined} value={valores[h.id]} onFocus={aoFocar} maxLength={60}
+                         onChange={(e) => setValores((v) => ({ ...v, [h.id]: e.target.value }))}
+                         placeholder={h.id === "sono" ? "ex: desligar a tela às 22h30" : h.id === "movimento" ? "ex: 10 minutos de caminhada" : "ex: 5 minutos só pra mim"}
+                         style={campo} />
+                </label>
+              );
+            })}
+          </div>
+          <div style={{ display: "grid", gap: 10, marginTop: 24 }}>
+            <button onClick={salvar} disabled={salvando} style={botaoPrincipal(!salvando)}>{salvando ? "Salvando…" : "Salvar e começar"}</button>
+            <button onClick={onFechar} disabled={salvando} style={botaoContorno}>Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

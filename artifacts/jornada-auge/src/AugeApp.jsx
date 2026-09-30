@@ -4,7 +4,7 @@ import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
-import { PainelEditar, AvisoHoje } from "./components/AugeEditar.jsx";
+import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
 import { Target, UserRound, PenLine } from "lucide-react";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
@@ -1371,6 +1371,16 @@ export default function App() {
  setHabsPessoais((l) => l.map((h) => (h.id === habId ? { ...h, ...campos } : h)));
  return true;
   };
+ const salvarMinimos = async (porHabito) => {
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return false;
+ const campos = { user_id: session.user.id, updated_at: new Date().toISOString() };
+ Object.entries(porHabito).forEach(([id, txt]) => { campos[`${_colMeta[id]}_minimo`] = txt; });
+ const { error } = await supabase.from("habitos_metas").upsert(campos, { onConflict: "user_id" });
+ if (error) return false;
+ setMetas((m) => { const n = { ...m }; Object.entries(porHabito).forEach(([id, txt]) => { n[id] = { ...(n[id] || {}), minimo: txt }; }); return n; });
+ return true;
+  };
  const editarHabMetodo = async (habId, freq, desc, minimo) => {
  const antiga = metas?.[habId]?.freq ?? HABS_FIXOS.find((h) => h.id === habId).freqDef;
  const { data: { session } } = await supabase.auth.getSession();
@@ -2460,6 +2470,7 @@ export default function App() {
  salvarMetaPessoal,
  removerHabPessoal,
  habitosCarregados,
+ salvarMinimos,
  editarHabPessoal,
  editarHabMetodo,
  habsAlerta,
@@ -4578,7 +4589,7 @@ function StatsBarra({ feitos, falta, semana }) {
 // ═══════════════════════════════════════════════════════════════════
 
 // Card de um hábito angular
-function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onEditar, convidarMural, minimoHoje = null, pedirMinimo = null }) {
+function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onEditar, convidarMural, minimoHoje = null }) {
  const [pedindoDif, setPedindoDif] = useState(false);
  const progKey = `auge_prog_${h.id}_${segundaAtual}`;
  const [progOculto, setProgOculto] = useState(() => {
@@ -4643,13 +4654,6 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
       <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "2px 0 10px", lineHeight: 1.45 }}>
           {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""}
       </div>
-      )}
-      {/* dia mínimo sem mínimo cadastrado: abre o painel "Editar" no campo do mínimo */}
-      {pedirMinimo && (
-        <button onClick={pedirMinimo}
- style={{ display: "block", background: "none", border: "none", padding: 0, minHeight: 44, margin: "-6px 0 4px", fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.primary, textDecoration: "underline", cursor: "pointer", textAlign: "left" }}>
- Definir meu mínimo
-        </button>
       )}
 
       {/* a semana, de segunda a domingo */}
@@ -4940,6 +4944,7 @@ function Home({
  salvarMetaPessoal,
  removerHabPessoal,
  habitosCarregados,
+ salvarMinimos,
  editarHabPessoal,
  editarHabMetodo,
  habsAlerta,
@@ -5093,10 +5098,16 @@ function Home({
  const [diaMinimo, setDiaMinimo] = useState(() => {
  try { return localStorage.getItem("auge_dia_minimo") === TODAY; } catch { return false; }
   });
- const ativarDiaMinimo = () => {
+ const ligarDiaMinimo = () => {
  try { localStorage.setItem("auge_dia_minimo", TODAY); } catch {}
  setDiaMinimo(true);
  tk("Pronto. Hoje suas metas são os seus mínimos.");
+  };
+ const [painelMinimos, setPainelMinimos] = useState(false);
+ const habsLiberados = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
+ const ativarDiaMinimo = () => {
+ if (habsLiberados.some((h) => !(metas?.[h.id]?.minimo || "").trim())) setPainelMinimos(true);
+ else ligarDiaMinimo();
   };
  const desfazerDiaMinimo = () => {
  try { localStorage.removeItem("auge_dia_minimo"); } catch {}
@@ -5304,7 +5315,6 @@ function Home({
  convidarMural={convidarMural}
  minimoHoje={minimoDoDia(h.id)}
  onEditar={() => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome } })}
- pedirMinimo={diaMinimo && !minimoDoDia(h.id) ? () => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome }, focarMinimo: true }) : null}
               />
             ))}
 
@@ -5368,6 +5378,17 @@ function Home({
  onTirar={painel.modo === "pessoal" ? tirarDoPainel : null}
  onFechar={() => setPainel(null)}
  focarMinimo={!!painel.focarMinimo}
+        />
+      )}
+      {painelMinimos && (
+        <PainelMinimos
+ habitos={habsLiberados.map((h) => ({ id: h.id, nome: h.nome, minimo: metas?.[h.id]?.minimo || "" }))}
+ onSalvar={async (v) => {
+ const ok = await salvarMinimos(v);
+ if (ok) ligarDiaMinimo(); else tk("Não conseguimos salvar agora. Tente de novo.");
+ return ok;
+          }}
+ onFechar={() => setPainelMinimos(false)}
         />
       )}
       {avisoHoje && <AvisoHoje key={avisoHoje.id} aviso={avisoHoje} />}
