@@ -4988,16 +4988,27 @@ function Home({
  const cumePendente = useRef(null); // t de antes da marcação
  const [cumeAviso, setCumeAviso] = useState(null);
  const avisoSeq = useRef(0);
+ // A montanha grande está na tela? (ref, não estado: só é lida na hora de marcar)
+ const cumeRef = useRef(null);
+ const cumeVisivel = useRef(true);
+ useEffect(() => {
+ if (!cumeRef.current || typeof IntersectionObserver === "undefined") return;
+ const ob = new IntersectionObserver(([e]) => { cumeVisivel.current = e.isIntersecting; }, { threshold: 0.6 });
+ ob.observe(cumeRef.current);
+ return () => ob.disconnect();
+  }, []);
  useEffect(() => {
  if (cumePendente.current == null) return;
  const de = cumePendente.current;
  cumePendente.current = null;
  const msg = tCume >= 1 ? "Você chegou ao cume!" : "Feito! Você subiu mais um pouco.";
- // Aviso com a montanha pequena: a luz sobe ali, mesmo com a tela rolada
+ // Aviso com a montanha pequena: só quando a montanha grande saiu da tela.
+ // Com ela à vista, a própria luz grande subindo já é o aviso.
+ if (cumeVisivel.current) return;
  const id = (avisoSeq.current += 1);
  setCumeAviso({ de, para: tCume, msg, id });
  // some depois de 3s, a não ser que outro aviso já tenha tomado o lugar
- setTimeout(() => setCumeAviso((a) => (a && a.id === id ? null : a)), 3000);
+ setTimeout(() => setCumeAviso((a) => (a && a.id === id ? null : a)), 3800);
   }, [regs]);
  const registrarNaHoje = (id, data, dif) => {
  cumePendente.current = tCume;
@@ -5050,7 +5061,7 @@ function Home({
         </div>
       )}
       {/* O cume (cabeçalho da Hoje): a luz sobe a trilha conforme a semana avança */}
-      <div style={{ background: C.creme, padding: "16px 20px 0" }}>
+      <div ref={cumeRef} style={{ background: C.creme, padding: "16px 20px 0" }}>
         <Cume
  t={tCume}
  achatar={0.62}

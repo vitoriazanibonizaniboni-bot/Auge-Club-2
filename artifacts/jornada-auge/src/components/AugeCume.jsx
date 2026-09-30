@@ -6,7 +6,7 @@
 // A luz é um <div> por cima do desenho, e não um círculo dentro do SVG: o SVG
 // estica na largura do celular (preserveAspectRatio="none") e um círculo lá
 // dentro viraria oval em celular estreito.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { T, FONTE } from "../tokens.js";
 
 const W = 350, H = 210;
@@ -49,12 +49,60 @@ export function pontoNaTrilha(t, pts = TRILHA_BASE) {
   return pts[pts.length - 1];
 }
 
+// ── A luz sobe devagar, PELA TRILHA ─────────────────────────────────────────
+// Em vez de pular em linha reta (transição de CSS), o valor de t vai mudando
+// quadro a quadro, e a luz segue as curvas da trilha. Começa devagar, acelera
+// e chega devagar. Quando chega, o brilho pulsa uma vez.
+const reduzMovimento = () =>
+  typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const suave = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+function useLuzAnimada(alvo, inicio = alvo) {
+  const [valor, setValor] = useState(inicio);
+  const [chegou, setChegou] = useState(0);
+  const atual = useRef(inicio);
+  useEffect(() => {
+    const de = atual.current;
+    if (Math.abs(alvo - de) < 1e-4) return;
+    if (reduzMovimento()) { atual.current = alvo; setValor(alvo); return; }
+    // subidas pequenas também demoram o bastante para ela VER a luz andar
+    const dur = Math.min(2400, 1400 + Math.abs(alvo - de) * 2000);
+    let t0 = null, raf;
+    const passo = (agora) => {
+      if (t0 == null) t0 = agora;
+      const f = Math.min(1, (agora - t0) / dur);
+      const v = de + (alvo - de) * suave(f);
+      atual.current = v;
+      setValor(v);
+      if (f < 1) raf = requestAnimationFrame(passo);
+      else if (alvo > de) setChegou((c) => c + 1);
+    };
+    raf = requestAnimationFrame(passo);
+    return () => cancelAnimationFrame(raf);
+  }, [alvo]);
+  return [valor, chegou];
+}
+
+// O brilho em volta da luz; "pulso" muda a cada chegada e dispara a animação
+function Luz({ x, y, raio, nucleo, pulso, dataLuz }) {
+  return (
+    <div aria-hidden="true" {...(dataLuz ? { "data-luz": "" } : {})}
+         style={{ position: "absolute", left: x, top: y, width: 0, height: 0 }}>
+      <span key={pulso} style={{ position: "absolute", left: -raio, top: -raio, width: raio * 2, height: raio * 2, borderRadius: raio,
+                                 background: "#FCE6C4", opacity: 0.55, animation: pulso ? "augeLuzPulso .8s ease-out" : "none" }} />
+      <span style={{ position: "absolute", left: -nucleo, top: -nucleo, width: nucleo * 2, height: nucleo * 2, borderRadius: nucleo, background: "#FFF6E2" }} />
+      <style>{"@keyframes augeLuzPulso{0%{transform:scale(1);opacity:.55}45%{transform:scale(1.7);opacity:.85}100%{transform:scale(1);opacity:.55}}"}</style>
+    </div>
+  );
+}
+
 export function Cume({ t, titulo, subtitulo, onAjuda, achatar = 1 }) {
   const k = achatar;
   const trilha = baixa(TRILHA_BASE, k);
   // A luz sai do 2º ponto da trilha, não da borda: na base ela ficava cortada
   // pela metade. O tracejado continua desenhado desde a borda.
-  const [x, y] = pontoNaTrilha(t, trilha.slice(1));
+  const [tLuz, pulso] = useLuzAnimada(t);
+  const [x, y] = pontoNaTrilha(tLuz, trilha.slice(1));
   return (
     <div style={{ position: "relative", height: H, borderRadius: 24, fontFamily: FONTE, overflow: "hidden", flexShrink: 0 }}>
       <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true"
@@ -73,13 +121,8 @@ export function Cume({ t, titulo, subtitulo, onAjuda, achatar = 1 }) {
               strokeLinecap="round" strokeLinejoin="round" opacity=".9" vectorEffect="non-scaling-stroke" />
       </svg>
 
-      {/* a luz — a transição some sozinha com "reduzir movimento" (regra global do app) */}
-      <div aria-hidden="true" data-luz
-           style={{ position: "absolute", left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%`, width: 0, height: 0,
-                    transition: "left .9s ease-out, top .9s ease-out" }}>
-        <span style={{ position: "absolute", left: -16, top: -16, width: 32, height: 32, borderRadius: 16, background: "#FCE6C4", opacity: 0.55 }} />
-        <span style={{ position: "absolute", left: -7.5, top: -7.5, width: 15, height: 15, borderRadius: 8, background: "#FFF6E2" }} />
-      </div>
+      {/* a luz — com "reduzir movimento" ela muda de lugar sem animar */}
+      <Luz x={`${(x / W) * 100}%`} y={`${(y / H) * 100}%`} raio={16} nucleo={7.5} pulso={pulso} dataLuz />
 
       <div style={{ position: "absolute", left: 20, right: 12, top: 16, display: "flex", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -131,12 +174,10 @@ export function ComoUsarHoje({ onFechar }) {
 export function CumeMini({ t, de = t, largura = 112, altura = 56 }) {
   const k = 0.62;
   const trilha = baixa(TRILHA_BASE, k);
-  const [pos, setPos] = useState(de);
-  useEffect(() => {
-    setPos(de);
-    const id = setTimeout(() => setPos(t), 60);
-    return () => clearTimeout(id);
-  }, [t, de]);
+  // aparece onde a luz estava e, logo depois, sobe até o ponto novo
+  const [alvo, setAlvo] = useState(de);
+  useEffect(() => { const id = setTimeout(() => setAlvo(t), 250); return () => clearTimeout(id); }, [t]);
+  const [pos, pulso] = useLuzAnimada(alvo, de);
   const [x, y] = pontoNaTrilha(pos, trilha.slice(1));
   // recorta só a parte de baixo do desenho, onde está a montanha
   const topo = 72;
@@ -150,10 +191,7 @@ export function CumeMini({ t, de = t, largura = 112, altura = 56 }) {
         <path d={caminho(baixa(NEVE, k))} fill="#FBF3E8" opacity=".9" />
         <path d={caminho(trilha, false)} fill="none" stroke="#FBF3E8" strokeWidth="1.6" strokeDasharray="2 4" strokeLinecap="round" opacity=".9" vectorEffect="non-scaling-stroke" />
       </svg>
-      <div style={{ position: "absolute", left: `${(x / W) * 100}%`, top: `${((y - topo) / (H - topo)) * 100}%`, width: 0, height: 0, transition: "left .9s ease-out, top .9s ease-out" }}>
-        <span style={{ position: "absolute", left: -9, top: -9, width: 18, height: 18, borderRadius: 9, background: "#FCE6C4", opacity: 0.6 }} />
-        <span style={{ position: "absolute", left: -4.5, top: -4.5, width: 9, height: 9, borderRadius: 5, background: "#FFF6E2" }} />
-      </div>
+      <Luz x={`${(x / W) * 100}%`} y={`${((y - topo) / (H - topo)) * 100}%`} raio={9} nucleo={4.5} pulso={pulso} />
     </div>
   );
 }
