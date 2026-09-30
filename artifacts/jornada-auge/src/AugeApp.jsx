@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
+import { PainelEditar, AvisoHoje } from "./components/AugeEditar.jsx";
 import { Target, UserRound, PenLine } from "lucide-react";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
@@ -1327,7 +1328,7 @@ export default function App() {
  // ── Meus hábitos: criar, editar meta, remover ──────────────────────────────
  const criarHabPessoal = async (nome, metaTexto, freq) => {
  const { data: { session } } = await supabase.auth.getSession();
- if (!session?.user) return;
+ if (!session?.user) return false;
  const { data, error } = await supabase.from("habitos_pessoais").insert({
  user_id: session.user.id,
  nome: nome.trim(),
@@ -1335,9 +1336,9 @@ export default function App() {
  meta_texto: (metaTexto || "").trim() || null,
  ordem: habsPessoais.length,
     }).select().single();
- if (error || !data) { tk("Não consegui salvar. Tente de novo."); return; }
+ if (error || !data) return false;
  setHabsPessoais((l) => [...l, data]);
- tk("Hábito criado ");
+ return true;
   };
  const salvarMetaPessoal = async (habId, freq, metaTexto) => {
  setHabsPessoais((l) => l.map((h) => (h.id === habId ? { ...h, meta: freq, meta_texto: metaTexto || null } : h)));
@@ -1348,13 +1349,44 @@ export default function App() {
       .eq("id", habId).eq("user_id", session.user.id).then(() => {});
   };
  const removerHabPessoal = async (habId) => {
- setHabsPessoais((l) => l.filter((h) => h.id !== habId));
  const { data: { session } } = await supabase.auth.getSession();
- if (!session?.user) return;
+ if (!session?.user) return false;
     // ativo=false em vez de apagar: as marcações já feitas continuam valendo
- supabase.from("habitos_pessoais").update({ ativo: false })
-      .eq("id", habId).eq("user_id", session.user.id).then(() => {});
- tk("Hábito removido da lista");
+ const { error } = await supabase.from("habitos_pessoais").update({ ativo: false })
+      .eq("id", habId).eq("user_id", session.user.id);
+ if (error) return false;
+ setHabsPessoais((l) => l.filter((h) => h.id !== habId));
+ return true;
+  };
+ // Painel "Editar": salva nome (se pessoal), meta e vezes por semana de uma vez
+ // e espera a resposta do banco, para o botão mostrar "Salvando…" de verdade.
+ const editarHabPessoal = async (habId, nome, freq, metaTexto) => {
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return false;
+ const campos = { nome: nome.trim(), meta: freq, meta_texto: (metaTexto || "").trim() || null };
+ const { error } = await supabase.from("habitos_pessoais").update(campos).eq("id", habId).eq("user_id", session.user.id);
+ if (error) return false;
+ setHabsPessoais((l) => l.map((h) => (h.id === habId ? { ...h, ...campos } : h)));
+ return true;
+  };
+ const editarHabMetodo = async (habId, freq, desc, minimo) => {
+ const antiga = metas?.[habId]?.freq ?? HABS_FIXOS.find((h) => h.id === habId).freqDef;
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return false;
+ const p = _colMeta[habId];
+    // mesma linha de habitos_metas que o Meu Mapa e o Kit leem: o mínimo não é duplicado
+ const { error } = await supabase.from("habitos_metas").upsert(
+      { user_id: session.user.id, [`${p}_freq`]: freq, [`${p}_desc`]: desc, [`${p}_minimo`]: minimo, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" },
+    );
+ if (error) return false;
+ setMetas((m) => ({ ...m, [habId]: { ...(m[habId] || {}), freq, desc, minimo } }));
+ if (freq !== antiga) {
+ supabase.from("metas_historico").insert(
+        { user_id: session.user.id, habito: habId, freq_antiga: antiga, freq_nova: freq },
+      ).then(() => {});
+    }
+ return true;
   };
 
  const salvarMeta = async (habId, freq, desc) => {
@@ -2424,6 +2456,8 @@ export default function App() {
  criarHabPessoal,
  salvarMetaPessoal,
  removerHabPessoal,
+ editarHabPessoal,
+ editarHabMetodo,
  habsAlerta,
  diasDaSemana,
  segundaAtual,
@@ -4540,12 +4574,7 @@ function StatsBarra({ feitos, falta, semana }) {
 // ═══════════════════════════════════════════════════════════════════
 
 // Card de um hábito angular
-function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onRemover, convidarMural, minimoHoje = null, pedirMinimo = null }) {
- const [definindoMin, setDefinindoMin] = useState(false);
- const [txtMin, setTxtMin] = useState("");
- const [editando, setEditando] = useState(false);
- const [freqEdit, setFreqEdit] = useState(st.meta);
- const [descEdit, setDescEdit] = useState(st.descMeta);
+function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito, salvarMeta, segundaAtual, tk, regs, diasDaSemana, irProgresso, onEditar, convidarMural, minimoHoje = null, pedirMinimo = null }) {
  const [pedindoDif, setPedindoDif] = useState(false);
  const progKey = `auge_prog_${h.id}_${segundaAtual}`;
  const [progOculto, setProgOculto] = useState(() => {
@@ -4582,12 +4611,6 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
     );
   }
 
- const salvarEdicao = () => {
- const f = Math.max(1, Math.min(7, +freqEdit || st.meta));
- salvarMeta(h.id, f, descEdit.trim());
- setEditando(false);
- tk("Objetivo atualizado ");
-  };
   // Pontinhos: no Sono o dia "em jogo" é ontem (a noite de ontem)
  const feitosSemana = diasDaSemana.filter((d) => !!regs[d]?.[h.id]);
  const metaTexto = h.pessoal && st.descMeta ? st.descMeta : `${st.descMeta ? `${st.descMeta}, ` : ""}${st.meta}x na semana`;
@@ -4606,53 +4629,24 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         </button>
       </div>
 
-      {/* meta — toque para editar */}
-      {!editando ? (
-        <button onClick={() => { setFreqEdit(st.meta); setDescEdit(st.descMeta); setEditando(true); }}
- style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "10px 0", minHeight: 44, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "-8px 0 2px", cursor: "pointer", lineHeight: 1.45 }}>
-          {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""} <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}>{IcoH.editar(C.ouroDk)}</span>
+      {/* meta (a edição fica no painel "Editar") */}
+      {/* a meta com o lápis: tocar abre o painel "Editar" */}
+      {onEditar ? (
+        <button onClick={onEditar} aria-label={`Editar ${h.nome}`} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "8px 0", minHeight: 44, margin: "-6px 0 4px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.45, cursor: "pointer" }}>
+          {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""}{" "}<span style={{ display: "inline-block", verticalAlign: "-3px", marginLeft: 4, color: C.primary }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z" /><path d="M13.5 6.5l4 4" /></svg></span>
         </button>
       ) : (
-        <div style={{ background: C.linho, borderRadius: 12, padding: "12px", margin: "8px 0 12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <span style={{ flex: 1, fontFamily: FB, fontSize: 16, color: C.lt }}>Vezes por semana</span>
-            <button onClick={() => setFreqEdit((f) => Math.max(1, f - 1))} aria-label="Menos" style={{ width: 48, height: 48, borderRadius: 12, border: `1px solid ${C.line}`, background: C.branco, color: C.obs, cursor: "pointer", fontSize: 20 }}>−</button>
-            <span style={{ fontFamily: FB, fontSize: 19, fontWeight: 600, color: C.obs, minWidth: 20, textAlign: "center" }}>{freqEdit}</span>
-            <button onClick={() => setFreqEdit((f) => Math.min(7, f + 1))} aria-label="Mais" style={{ width: 48, height: 48, borderRadius: 12, border: `1px solid ${C.line}`, background: C.branco, color: C.obs, cursor: "pointer", fontSize: 20 }}>+</button>
-          </div>
-          <input value={descEdit} onChange={(e) => setDescEdit(e.target.value)}
- placeholder={h.id === "sono" ? "ex: sem tela 2h antes de dormir" : "ex: 20 minutos"}
- style={{ width: "100%", minHeight: 48, background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "0 12px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 10 }} />
-          <div style={{ display: "flex", gap: 10 }}>
-            <Button onClick={salvarEdicao}>Salvar</Button>
-            <Button variante="contorno" onClick={() => setEditando(false)}>Cancelar</Button>
-          </div>
-          {onRemover && (
-            <Button variante="texto" onClick={onRemover} style={{ marginTop: 4, color: C.lt }}>Tirar da minha lista</Button>
-          )}
-        </div>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "2px 0 10px", lineHeight: 1.45 }}>
+          {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""}
+      </div>
       )}
-
-      {/* dia mínimo sem mínimo cadastrado: dá para definir ali mesmo */}
-      {pedirMinimo && !editando && (!definindoMin ? (
-        <button onClick={() => { setTxtMin(""); setDefinindoMin(true); }}
+      {/* dia mínimo sem mínimo cadastrado: abre o painel "Editar" no campo do mínimo */}
+      {pedirMinimo && (
+        <button onClick={pedirMinimo}
  style={{ display: "block", background: "none", border: "none", padding: 0, minHeight: 44, margin: "-6px 0 4px", fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.primary, textDecoration: "underline", cursor: "pointer", textAlign: "left" }}>
  Definir meu mínimo
         </button>
-      ) : (
-        <div style={{ background: C.linho, borderRadius: 12, padding: "12px", margin: "4px 0 12px" }}>
-          <label style={{ display: "block", fontFamily: FB, fontSize: 15, color: C.lt, marginBottom: 6 }}>
- O mínimo que ainda conta num dia difícil
-            <input value={txtMin} onChange={(e) => setTxtMin(e.target.value)} autoFocus
- placeholder={h.id === "sono" ? "ex: desligar a tela às 22h30" : h.id === "movimento" ? "ex: 5 minutos de alongamento" : "ex: 5 minutos só pra mim"}
- style={{ display: "block", width: "100%", boxSizing: "border-box", minHeight: 48, marginTop: 6, background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "0 12px", fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 10 }} />
-          </label>
-          <div style={{ display: "flex", gap: 10 }}>
-            <Button onClick={() => { const t = txtMin.trim(); if (!t) return; pedirMinimo(t); setDefinindoMin(false); }}>Salvar</Button>
-            <Button variante="contorno" onClick={() => setDefinindoMin(false)}>Cancelar</Button>
-          </div>
-        </div>
-      ))}
+      )}
 
       {/* a semana, de segunda a domingo */}
       <ProgressDots dias={diasDaSemana} feitos={feitosSemana} hoje={dataAlvo} />
@@ -4916,7 +4910,7 @@ function Home({
  pontos,
  medC,
  ir,
- tk,
+ tk: tkGlobal,
  habAngulares,
  setHabAngulares,
  usuario,
@@ -4941,6 +4935,8 @@ function Home({
  criarHabPessoal,
  salvarMetaPessoal,
  removerHabPessoal,
+ editarHabPessoal,
+ editarHabMetodo,
  habsAlerta,
  diasDaSemana,
  segundaAtual,
@@ -4959,6 +4955,30 @@ function Home({
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
  const [criandoHab, setCriandoHab] = useState(false);
+ // Avisos da Hoje: acima da barra de baixo, um por vez (o novo substitui o anterior)
+ const [avisoHoje, setAvisoHoje] = useState(null);
+ const avisoHojeSeq = useRef(0);
+ const tk = (msg) => {
+ const id = (avisoHojeSeq.current += 1);
+ setAvisoHoje({ msg, id });
+ setTimeout(() => setAvisoHoje((a) => (a && a.id === id ? null : a)), 2800);
+  };
+ // Painel "Editar": { modo: "metodo" | "pessoal" | "criar", hab }
+ const [painel, setPainel] = useState(null);
+ const ERRO_SALVAR = "Não conseguimos salvar agora. Tente de novo.";
+ const salvarPainel = async (v) => {
+ let ok = false;
+ if (painel.modo === "metodo") ok = await editarHabMetodo(painel.hab.id, v.vezes, v.meta, v.minimo);
+ else if (painel.modo === "pessoal") ok = await editarHabPessoal(painel.hab.id, v.nome, v.vezes, v.meta);
+ else ok = await criarHabPessoal(v.nome, v.meta, v.vezes);
+ tk(ok ? (painel.modo === "criar" ? "Hábito criado! Ele aparece aqui a partir de hoje." : "Pronto! Sua meta foi atualizada.") : ERRO_SALVAR);
+ return ok;
+  };
+ const tirarDoPainel = async () => {
+ const ok = await removerHabPessoal(painel.hab.id);
+ tk(ok ? "Hábito tirado da lista. O histórico fica guardado." : ERRO_SALVAR);
+ return ok;
+  };
  const [statsHoje, setStatsHoje] = useState({ feitos: 0, falta: 0, semana: 0 });
 
  // Carregar stats do dia (RPC function get_stats_hoje)
@@ -5256,7 +5276,8 @@ function Home({
  irProgresso={() => { setHabProgresso({ id: h.id, nome: h.nome, pessoal: false, unlock: h.unlock }); ir(S.TRAJ); }}
  convidarMural={convidarMural}
  minimoHoje={minimoDoDia(h.id)}
- pedirMinimo={diaMinimo && !minimoDoDia(h.id) && salvarMinimo ? (txt) => { salvarMinimo(h.id, txt); tk("Mínimo salvo. Vale para hoje."); } : null}
+ onEditar={() => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome } })}
+ pedirMinimo={diaMinimo && !minimoDoDia(h.id) ? () => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome }, focarMinimo: true }) : null}
               />
             ))}
 
@@ -5285,23 +5306,16 @@ function Home({
  regs={regs}
  diasDaSemana={diasDaSemana}
  irProgresso={() => { setHabProgresso({ id: hp.id, nome: hp.nome, pessoal: true, meta: hp.meta, metaTexto: hp.meta_texto }); ir(S.TRAJ); }}
- onRemover={() => removerHabPessoal(hp.id)}
+ onEditar={() => setPainel({ modo: "pessoal", hab: { id: hp.id, nome: hp.nome } })}
  convidarMural={convidarMural}
               />
             ))}
-            {criandoHab ? (
-              <NovoHabito
- onCriar={(nome, metaTexto, freq) => { criarHabPessoal(nome, metaTexto, freq); setCriandoHab(false); }}
- onCancelar={() => setCriandoHab(false)}
-              />
-            ) : (
-              <button
- onClick={() => setCriandoHab(true)}
- style={{ width: "100%", minHeight: 48, background: "none", border: `1.5px dashed ${C.ouro}`, borderRadius: 16, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 16, color: C.obs, cursor: "pointer", marginBottom: 12 }}
-              >
+            <button
+ onClick={() => setPainel({ modo: "criar", hab: null })}
+ style={{ width: "100%", minHeight: 56, background: "none", border: `1.5px dashed ${C.primary}`, borderRadius: 16, padding: "12px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.primary, cursor: "pointer", marginBottom: 12 }}
+            >
  + Criar um hábito meu
-              </button>
-            )}
+            </button>
 
             <Button variante="texto" onClick={() => setRetroAberto(true)} style={{ margin: "4px 0 12px" }}>Preencher dias anteriores</Button>
 
@@ -5313,6 +5327,23 @@ function Home({
       </Grain>
 
       <input ref={fotoConviteRef} type="file" accept="image/*" style={{ display: "none" }} onChange={fotoConviteEscolhida} />
+
+      {/* Painel "Editar" / "Criar um hábito meu" */}
+      {painel && (
+        <PainelEditar
+ modo={painel.modo}
+ inicial={painel.modo === "metodo"
+            ? { nome: painel.hab.nome, meta: habStats[painel.hab.id]?.descMeta || "", vezes: habStats[painel.hab.id]?.meta || 3, minimo: metas?.[painel.hab.id]?.minimo || "" }
+            : painel.modo === "pessoal"
+              ? (() => { const hp = habsPessoais.find((x) => x.id === painel.hab.id) || {}; return { nome: hp.nome || painel.hab.nome, meta: hp.meta_texto || "", vezes: hp.meta || 3 }; })()
+              : { nome: "", meta: "", vezes: 3 }}
+ onSalvar={salvarPainel}
+ onTirar={painel.modo === "pessoal" ? tirarDoPainel : null}
+ onFechar={() => setPainel(null)}
+ focarMinimo={!!painel.focarMinimo}
+        />
+      )}
+      {avisoHoje && <AvisoHoje key={avisoHoje.id} aviso={avisoHoje} />}
 
       {/* Kit de Emergência — pastilha fixa (voltou a flutuar a pedido da Vitória, 29/09) */}
       <button
