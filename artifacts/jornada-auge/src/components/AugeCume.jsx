@@ -60,14 +60,16 @@ const suave = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
 function useLuzAnimada(alvo, inicio = alvo) {
   const [valor, setValor] = useState(inicio);
   const [chegou, setChegou] = useState(0);
+  const [andando, setAndando] = useState(false);
   const atual = useRef(inicio);
   useEffect(() => {
     const de = atual.current;
     if (Math.abs(alvo - de) < 1e-4) return;
     if (reduzMovimento()) { atual.current = alvo; setValor(alvo); return; }
-    // subidas pequenas também demoram o bastante para ela VER a luz andar
-    const dur = Math.min(2400, 1400 + Math.abs(alvo - de) * 2000);
+    // devagar de propósito: mesmo uma subida pequena leva mais de 2 segundos
+    const dur = Math.min(3500, 2200 + Math.abs(alvo - de) * 2500);
     let t0 = null, raf;
+    setAndando(true);
     const passo = (agora) => {
       if (t0 == null) t0 = agora;
       const f = Math.min(1, (agora - t0) / dur);
@@ -75,23 +77,37 @@ function useLuzAnimada(alvo, inicio = alvo) {
       atual.current = v;
       setValor(v);
       if (f < 1) raf = requestAnimationFrame(passo);
-      else if (alvo > de) setChegou((c) => c + 1);
+      else { setAndando(false); if (alvo > de) setChegou((c) => c + 1); }
     };
     raf = requestAnimationFrame(passo);
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); setAndando(false); };
   }, [alvo]);
-  return [valor, chegou];
+  return [valor, chegou, andando];
 }
 
-// O brilho em volta da luz; "pulso" muda a cada chegada e dispara a animação
-function Luz({ x, y, raio, nucleo, pulso, dataLuz }) {
+// A luz: enquanto sobe, o brilho fica um pouco maior; quando para, ela
+// "acende": o brilho cresce e volta, e um anel de luz se abre e some.
+function Luz({ x, y, raio, nucleo, pulso, andando, dataLuz }) {
+  const halo = raio * 2, anel = raio * 2;
   return (
     <div aria-hidden="true" {...(dataLuz ? { "data-luz": "" } : {})}
          style={{ position: "absolute", left: x, top: y, width: 0, height: 0 }}>
-      <span key={pulso} style={{ position: "absolute", left: -raio, top: -raio, width: raio * 2, height: raio * 2, borderRadius: raio,
-                                 background: "#FCE6C4", opacity: 0.55, animation: pulso ? "augeLuzPulso .8s ease-out" : "none" }} />
-      <span style={{ position: "absolute", left: -nucleo, top: -nucleo, width: nucleo * 2, height: nucleo * 2, borderRadius: nucleo, background: "#FFF6E2" }} />
-      <style>{"@keyframes augeLuzPulso{0%{transform:scale(1);opacity:.55}45%{transform:scale(1.7);opacity:.85}100%{transform:scale(1);opacity:.55}}"}</style>
+      {pulso > 0 && (
+        <span key={`anel${pulso}`} style={{ position: "absolute", left: -raio, top: -raio, width: anel, height: anel, borderRadius: raio,
+                                            border: `${Math.max(2, raio / 6)}px solid #FFE3AE`, boxSizing: "border-box", opacity: 0,
+                                            animation: "augeLuzAnel 1.4s ease-out" }} />
+      )}
+      <span key={`halo${pulso}`} style={{ position: "absolute", left: -raio, top: -raio, width: halo, height: halo, borderRadius: raio,
+                                          background: "radial-gradient(circle, #FFEFC9 0%, #FCE6C4 55%, rgba(252,230,196,0) 100%)",
+                                          opacity: andando ? 0.85 : 0.6, transform: andando ? "scale(1.35)" : "scale(1)",
+                                          transition: "transform .6s ease, opacity .6s ease",
+                                          animation: pulso ? "augeLuzBrilho 1.6s ease-out" : "none" }} />
+      <span key={`nucleo${pulso}`} style={{ position: "absolute", left: -nucleo, top: -nucleo, width: nucleo * 2, height: nucleo * 2, borderRadius: nucleo,
+                                            background: "#FFF8E8", boxShadow: "0 0 6px 1px rgba(255,236,190,.9)",
+                                            animation: pulso ? "augeLuzNucleo 1.6s ease-out" : "none" }} />
+      <style>{"@keyframes augeLuzBrilho{0%{transform:scale(1.35);opacity:.85}35%{transform:scale(2.3);opacity:1}100%{transform:scale(1);opacity:.6}}"
+             + "@keyframes augeLuzNucleo{0%{transform:scale(1)}35%{transform:scale(1.35)}100%{transform:scale(1)}}"
+             + "@keyframes augeLuzAnel{0%{transform:scale(.8);opacity:.9}100%{transform:scale(3.2);opacity:0}}"}</style>
     </div>
   );
 }
@@ -101,7 +117,7 @@ export function Cume({ t, titulo, subtitulo, onAjuda, achatar = 1 }) {
   const trilha = baixa(TRILHA_BASE, k);
   // A luz sai do 2º ponto da trilha, não da borda: na base ela ficava cortada
   // pela metade. O tracejado continua desenhado desde a borda.
-  const [tLuz, pulso] = useLuzAnimada(t);
+  const [tLuz, pulso, andando] = useLuzAnimada(t);
   const [x, y] = pontoNaTrilha(tLuz, trilha.slice(1));
   return (
     <div style={{ position: "relative", height: H, borderRadius: 24, fontFamily: FONTE, overflow: "hidden", flexShrink: 0 }}>
@@ -122,7 +138,7 @@ export function Cume({ t, titulo, subtitulo, onAjuda, achatar = 1 }) {
       </svg>
 
       {/* a luz — com "reduzir movimento" ela muda de lugar sem animar */}
-      <Luz x={`${(x / W) * 100}%`} y={`${(y / H) * 100}%`} raio={16} nucleo={7.5} pulso={pulso} dataLuz />
+      <Luz x={`${(x / W) * 100}%`} y={`${(y / H) * 100}%`} raio={16} nucleo={7.5} pulso={pulso} andando={andando} dataLuz />
 
       <div style={{ position: "absolute", left: 20, right: 12, top: 16, display: "flex", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -177,7 +193,7 @@ export function CumeMini({ t, de = t, largura = 112, altura = 56 }) {
   // aparece onde a luz estava e, logo depois, sobe até o ponto novo
   const [alvo, setAlvo] = useState(de);
   useEffect(() => { const id = setTimeout(() => setAlvo(t), 250); return () => clearTimeout(id); }, [t]);
-  const [pos, pulso] = useLuzAnimada(alvo, de);
+  const [pos, pulso, andando] = useLuzAnimada(alvo, de);
   const [x, y] = pontoNaTrilha(pos, trilha.slice(1));
   // recorta só a parte de baixo do desenho, onde está a montanha
   const topo = 72;
@@ -191,7 +207,7 @@ export function CumeMini({ t, de = t, largura = 112, altura = 56 }) {
         <path d={caminho(baixa(NEVE, k))} fill="#FBF3E8" opacity=".9" />
         <path d={caminho(trilha, false)} fill="none" stroke="#FBF3E8" strokeWidth="1.6" strokeDasharray="2 4" strokeLinecap="round" opacity=".9" vectorEffect="non-scaling-stroke" />
       </svg>
-      <Luz x={`${(x / W) * 100}%`} y={`${((y - topo) / (H - topo)) * 100}%`} raio={9} nucleo={4.5} pulso={pulso} />
+      <Luz x={`${(x / W) * 100}%`} y={`${((y - topo) / (H - topo)) * 100}%`} raio={11} nucleo={5.5} pulso={pulso} andando={andando} />
     </div>
   );
 }

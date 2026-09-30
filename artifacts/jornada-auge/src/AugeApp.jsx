@@ -5008,7 +5008,7 @@ function Home({
  const id = (avisoSeq.current += 1);
  setCumeAviso({ de, para: tCume, msg, id });
  // some depois de 3s, a não ser que outro aviso já tenha tomado o lugar
- setTimeout(() => setCumeAviso((a) => (a && a.id === id ? null : a)), 3800);
+ setTimeout(() => setCumeAviso((a) => (a && a.id === id ? null : a)), 5000);
   }, [regs]);
  const registrarNaHoje = (id, data, dif) => {
  cumePendente.current = tCume;
@@ -5056,7 +5056,7 @@ function Home({
       {/* Aviso ao marcar, com a montanha pequena: a luz sobe ali, onde ela estiver na tela */}
       {cumeAviso && (
         <div key={cumeAviso.id} role="status" style={{ position: "fixed", left: 16, right: 16, top: 16, zIndex: 300, maxWidth: 420, margin: "0 auto", background: C.branco, borderRadius: 18, boxShadow: "0 8px 28px rgba(31,26,23,.18)", padding: 10, display: "flex", alignItems: "center", gap: 12, animation: "fadeUp .3s ease" }}>
-          <CumeMini t={cumeAviso.para} de={cumeAviso.de} largura={132} altura={66} />
+          <CumeMini t={cumeAviso.para} de={cumeAviso.de} largura={150} altura={76} />
           <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.35 }}>{cumeAviso.msg}</div>
         </div>
       )}
