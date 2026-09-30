@@ -1206,6 +1206,8 @@ export default function App() {
  const [desafioFeitos, setDesafioFeitos] = useState([]); // datas do mini check-in
  const [desafiosSemana, setDesafiosSemana] = useState({}); // { 7: "texto" } — o desafio de cada semana da turma dela
  const [habsPessoais, setHabsPessoais] = useState([]); // hábitos criados pela aluna
+ // metas e hábitos pessoais chegaram do banco sem erro (a base da montanha só é guardada com eles)
+ const [habitosCarregados, setHabitosCarregados] = useState(false);
  // Convite pro Mural depois de marcar um hábito: leva foto e hábito ao compositor
  const [postPrefill, setPostPrefill] = useState(null);
  // "ver progresso" na Hoje: abre a Trajetoria ja com o painel deste hábito
@@ -1678,6 +1680,7 @@ export default function App() {
  setKitUsos(kitUsosRes?.data?.map((k) => ({ data: k.data, acao: k.acao })) || []);
  setDesafioFeitos(desafioRes?.data?.map((d) => d.data) || []);
  setHabsPessoais(habsPessRes?.data || []);
+ setHabitosCarregados(!!metasRes?.data && !metasRes.error && !habsPessRes?.error);
 
     // habitos_angulares tem prioridade sobre profiles.habito_1/2/3
  if (habsAngRes?.data) {
@@ -2456,6 +2459,7 @@ export default function App() {
  criarHabPessoal,
  salvarMetaPessoal,
  removerHabPessoal,
+ habitosCarregados,
  editarHabPessoal,
  editarHabMetodo,
  habsAlerta,
@@ -4935,6 +4939,7 @@ function Home({
  criarHabPessoal,
  salvarMetaPessoal,
  removerHabPessoal,
+ habitosCarregados,
  editarHabPessoal,
  editarHabMetodo,
  habsAlerta,
@@ -5031,10 +5036,32 @@ function Home({
  const saudacao = _hora >= 5 && _hora < 12 ? "Bom dia" : _hora >= 12 && _hora < 18 ? "Boa tarde" : "Boa noite";
  const primeiroNome = (usuario?.nome || "").trim().split(/\s+/)[0] || "";
  // ── O cume: t = soma(min(feitos, meta)) / soma(meta) dos hábitos ativos da semana
- const tCume = progressoSemana([
-    ...HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado).map((h) => ({ feitos: habStats[h.id].feitas, meta: habStats[h.id].meta })),
-    ...habsPessoais.filter((hp) => habsPessStats[hp.id]).map((hp) => ({ feitos: habsPessStats[hp.id].feitas, meta: habsPessStats[hp.id].meta })),
-  ]);
+ // Mudança de meta, hábito criado ou tirado no meio da semana só entra na
+ // montanha na semana seguinte (decisão da Vitória): a luz não desce por isso.
+ // A "base" da semana guarda a meta de cada hábito na primeira vez que ele
+ // aparece na semana; fica no celular, como o dia mínimo.
+ const chaveBase = `auge_cume_base_${segundaAtual}`;
+ const metasAgora = {};
+ HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado).forEach((h) => { metasAgora[h.id] = habStats[h.id].meta; });
+ habsPessoais
+    .filter((hp) => habsPessStats[hp.id] && !(hp.created_at && localDateStr(new Date(hp.created_at)) >= segundaAtual))
+    .forEach((hp) => { metasAgora[hp.id] = habsPessStats[hp.id].meta; });
+ const [baseCume, setBaseCume] = useState(() => {
+ try { return JSON.parse(localStorage.getItem(chaveBase) || "null") || {}; } catch { return {}; }
+  });
+ const faltaNaBase = Object.keys(metasAgora).some((id) => !(id in baseCume));
+ useEffect(() => {
+ if (!habitosCarregados || !faltaNaBase) return;
+ const nova = { ...metasAgora, ...baseCume };
+ setBaseCume(nova);
+ try {
+      Object.keys(localStorage).filter((k) => k.startsWith("auge_cume_base_") && k !== chaveBase).forEach((k) => localStorage.removeItem(k));
+ localStorage.setItem(chaveBase, JSON.stringify(nova));
+    } catch {}
+  }, [habitosCarregados, faltaNaBase, chaveBase]);
+ const feitosNaSemana = (id) => (habStats[id] ? habStats[id].feitas : diasDaSemana.filter((d) => regs[d]?.[id]).length);
+ const idsCume = new Set([...Object.keys(baseCume), ...Object.keys(metasAgora)]);
+ const tCume = progressoSemana([...idsCume].map((id) => ({ feitos: feitosNaSemana(id), meta: baseCume[id] ?? metasAgora[id] })));
  const [ajudaAberta, setAjudaAberta] = useState(false);
  // Toast só ao MARCAR (desmarcar não fala nada): espera o t novo ser calculado
  const cumePendente = useRef(null); // t de antes da marcação
