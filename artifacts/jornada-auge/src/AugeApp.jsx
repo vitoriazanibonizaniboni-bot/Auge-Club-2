@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, ComoUsarHoje, progressoSemana } from "./components/AugeCume.jsx";
+import { Target, UserRound, PenLine } from "lucide-react";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
 // As cores vêm de tokens.js. Os nomes antigos continuam valendo e apontam
@@ -9004,9 +9005,24 @@ function Jornada({
  salvarMeta,
  salvarMinimo,
  tk,
+ usuario,
 }) {
  const hist = historico || {};
  const SEMANA = ["S", "T", "Q", "Q", "S", "S", "D"];
+ const inicial = ((usuario?.nome || "").trim()[0] || "").toUpperCase();
+ // Cartão do Meu Mapa: ícone à esquerda, título e UMA linha de explicação
+ const CartaoMapa = ({ icone: Icone, titulo, linha, onClick }) => (
+    <button onClick={onClick} style={{ width: "100%", textAlign: "left", fontFamily: FB, background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 16, padding: "14px 16px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
+      <span aria-hidden="true" style={{ width: 44, height: 44, borderRadius: 22, background: C.linho, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icone size={22} strokeWidth={1.75} color={C.ouroTxt} />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 17, fontWeight: 600, color: C.obs }}>{titulo}</span>
+        <span style={{ display: "block", fontSize: 16, fontWeight: 400, color: C.lt, marginTop: 2 }}>{linha}</span>
+      </span>
+      <span aria-hidden="true" style={{ color: C.obs, fontSize: 20 }}>›</span>
+    </button>
+  );
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       <div
@@ -9024,7 +9040,8 @@ function Jornada({
  fontFamily: FB,
  fontSize: 17,
  fontWeight: 400,
- letterSpacing: "0.1em",
+ letterSpacing: "0.05em",
+ whiteSpace: "nowrap",
  color: C.obs,
           }}
         >
@@ -9036,27 +9053,27 @@ function Jornada({
  fontWeight: 400,
  fontSize: 16,
  color: C.ouroTxt,
- letterSpacing: "0.2em",
+ letterSpacing: "0.05em",
+ whiteSpace: "nowrap",
+ marginLeft: "auto",
           }}
         >
  S{sem} de 12
         </div>
+        {/* Perfil e Configurações: o círculo com a inicial dela */}
+        <button onClick={() => ir(S.PF)} aria-label="Perfil e Configurações"
+ style={{ width: 44, height: 44, borderRadius: 22, border: "none", background: C.blushBg, color: C.primary, fontFamily: FB, fontSize: 18, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 12 }}>
+          {inicial || <UserRound size={22} strokeWidth={1.75} color={C.primary} />}
+        </button>
       </div>
       <Grain style={{ padding: "16px 18px 24px" }}>
-        {/* Âncora */}
-        <div
- style={{
- fontFamily: FB, fontWeight: 400,
- fontSize: 16.5,
- color: C.terra,
- lineHeight: 1.5,
- marginBottom: 16,
- borderLeft: `2px solid ${C.ouro}`,
- paddingLeft: 12,
-          }}
-        >
- "{anc}"
-        </div>
+        {/* Âncora em destaque */}
+        {anc && (
+          <div style={{ background: C.blushBg, borderRadius: 20, padding: "16px 18px", marginBottom: 20 }}>
+            <div style={{ fontFamily: FB, fontSize: 13, fontWeight: 600, color: C.primary }}>Minha âncora</div>
+            <div style={{ fontFamily: FB, fontSize: 18, fontWeight: 500, color: C.obs, lineHeight: 1.45, marginTop: 6 }}>"{anc}"</div>
+          </div>
+        )}
 
         
         {/* ── Meu Mapa (seção 7) ── */}
@@ -9075,13 +9092,7 @@ function Jornada({
         </div>
 
         {/* Roda AUGE */}
-        <div onClick={() => ir(S.RODA)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Roda AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3, lineHeight: 1.45 }}>5 dimensões · 25 perguntas<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicada na semana 1, 6 e 12</span></div>
-          </div>
-          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
-        </div>
+        <CartaoMapa icone={Target} titulo="Roda AUGE" linha="Semanas 1, 6 e 12" onClick={() => ir(S.RODA)} />
         <RodaResumo rodaResultados={rodaResultados} />
         {retomadas > 0 && (
           <div style={{ background: `${C.ouroDk}12`, border: `1px solid ${C.ouroDk}33`, borderRadius: 14, padding: "14px 16px", marginBottom: 12, textAlign: "center" }}>
@@ -9091,32 +9102,13 @@ function Jornada({
         )}
 
         {/* Questionário de Perfil AUGE */}
-        <div onClick={() => ir(S.PAUGE)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Questionário de Perfil AUGE</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3 }}>{perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : <>Descubra seu perfil<br /><span style={{ display: "inline-block", marginTop: 4 }}>aplicado na semana 1, 6 e 12</span></>}</div>
-          </div>
-          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
-        </div>
+        <CartaoMapa icone={UserRound} titulo="Perfil AUGE" linha={perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : "Descubra seu perfil"} onClick={() => ir(S.PAUGE)} />
         {/* Mínimos Inegociáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
 
-        {/* Espaços de escrita — Vitórias, Âncora, Porquês e Carta */}
-        <div onClick={() => ir(S.ESC)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Espaços de escrita</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3 }}>Âncora, Porquês e Carta para o Futuro</div>
-          </div>
-          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
-        </div>
-        {/* Configurações — dados pessoais, notificações, sair (seção 9) */}
-        <div onClick={() => ir(S.PF)} style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 13 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Perfil e Configurações</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginTop: 3, lineHeight: 1.45 }}>Meus dados e objetivos<br /><span style={{ display: "inline-block", marginTop: 4 }}>notificações, sair da conta</span></div>
-          </div>
-          <div style={{ color: C.obs, fontSize: 17 }}>›</div>
-        </div>
+        {/* Espaços de escrita — Âncora, Porquês e Carta */}
+        <CartaoMapa icone={PenLine} titulo="Espaços de escrita" linha="Âncora, Porquês e Carta" onClick={() => ir(S.ESC)} />
+        {/* Perfil e Configurações agora é o círculo no alto da tela */}
 
       </Grain>
     </div>
