@@ -3,6 +3,7 @@ import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSi
 import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
+import { Cume, ComoUsarHoje, progressoSemana } from "./components/AugeCume.jsx";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
 // As cores vêm de tokens.js. Os nomes antigos continuam valendo e apontam
@@ -4976,6 +4977,23 @@ function Home({
  const _hora = new Date().getHours();
  const saudacao = _hora >= 5 && _hora < 12 ? "Bom dia" : _hora >= 12 && _hora < 18 ? "Boa tarde" : "Boa noite";
  const primeiroNome = (usuario?.nome || "").trim().split(/\s+/)[0] || "";
+ // ── O cume: t = soma(min(feitos, meta)) / soma(meta) dos hábitos ativos da semana
+ const tCume = progressoSemana([
+    ...HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado).map((h) => ({ feitos: habStats[h.id].feitas, meta: habStats[h.id].meta })),
+    ...habsPessoais.filter((hp) => habsPessStats[hp.id]).map((hp) => ({ feitos: habsPessStats[hp.id].feitas, meta: habsPessStats[hp.id].meta })),
+  ]);
+ const [ajudaAberta, setAjudaAberta] = useState(false);
+ // Toast só ao MARCAR (desmarcar não fala nada): espera o t novo ser calculado
+ const cumePendente = useRef(false);
+ useEffect(() => {
+ if (!cumePendente.current) return;
+ cumePendente.current = false;
+ tk(tCume >= 1 ? "Você chegou ao cume!" : "Feito! Você subiu mais um pouco.");
+  }, [regs]);
+ const registrarNaHoje = (id, data, dif) => {
+ cumePendente.current = true;
+ return registrarHabito(id, data, dif);
+  };
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
  const regDoDia = (h) => (h.id === "sono" ? regs[ONTEM]?.sono : regs[TODAY]?.[h.id]);
  const ehSexta = new Date(TODAY + "T12:00:00").getDay() === 5;
@@ -5015,40 +5033,16 @@ function Home({
 
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
-      {/* Header com logo */}
-      <div
- style={{
- background: C.creme,
- padding: "16px 20px 16px",
- borderBottom: `1px solid ${C.line}`,
- position: "relative",
-        }}
-      >
-        {/* Configuracoes (secoes 4.1, 3.4 e 9) — so o icone.
-            aria-label mantem o nome para quem usa leitor de tela, e a area
-            de toque continua com 44px, o minimo para o dedo. */}
-        <button
- onClick={() => ir(S.PF)}
- aria-label="Perfil e configurações"
- style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
-          {Ico.gear(C.lt, 22)}
-        </button>
-        <div style={{ fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em", paddingRight: 44 }}>
-          {saudacao}{primeiroNome ? `, ${primeiroNome}` : ""}
-        </div>
-        <div style={{ marginTop: 2, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt }}>
-          {dataLonga(TODAY)}
-        </div>
-        {/* barra das 12 semanas do programa */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
-          <div role="img" aria-label={`Semana ${sem} de 12`} style={{ flex: 1, display: "flex", gap: 3 }}>
-            {Array.from({ length: 12 }, (_, i) => (
-              <span key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < sem ? C.ouro : C.linho }} />
-            ))}
-          </div>
-          <span style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.lt, whiteSpace: "nowrap" }}>Semana {sem} de 12</span>
-        </div>
+      {/* O cume (cabeçalho da Hoje): a luz sobe a trilha conforme a semana avança */}
+      <div style={{ background: C.creme, padding: "16px 20px 0" }}>
+        <Cume
+ t={tCume}
+ achatar={0.62}
+ titulo={`${saudacao}${primeiroNome ? `, ${primeiroNome}` : ""}`}
+ subtitulo={`${dataLonga(TODAY)} · Semana ${sem}`}
+ onAjuda={() => setAjudaAberta((a) => !a)}
+        />
+        {ajudaAberta && <ComoUsarHoje onFechar={() => setAjudaAberta(false)} />}
       </div>
       {retroAberto && (
         <RetroModal
@@ -5171,7 +5165,7 @@ function Home({
  st={habStats[h.id]}
  regAlvo={regDoDia(h)}
  dataAlvo={h.id === "sono" ? ONTEM : TODAY}
- registrarHabito={registrarHabito}
+ registrarHabito={registrarNaHoje}
  desregistrarHabito={desregistrarHabito}
  salvarMeta={salvarMeta}
  segundaAtual={segundaAtual}
@@ -5200,7 +5194,7 @@ function Home({
  st={habsPessStats[hp.id]}
  regAlvo={regs[TODAY]?.[hp.id]}
  dataAlvo={TODAY}
- registrarHabito={registrarHabito}
+ registrarHabito={registrarNaHoje}
  desregistrarHabito={desregistrarHabito}
  salvarMeta={(id, freq, desc) => salvarMetaPessoal(id, freq, desc)}
  segundaAtual={segundaAtual}
