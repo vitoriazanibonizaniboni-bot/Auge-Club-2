@@ -5,7 +5,7 @@ import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
-import { PassoAPasso, DicaHoje, CHAVE_TOUR, CHAVE_DICA, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
+import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
 import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
 import { Target, UserRound, PenLine } from "lucide-react";
 
@@ -2523,6 +2523,16 @@ export default function App() {
  setTour({ antiga });
   }, [profileLoaded, authUser, perfil]);
  const fecharTour = () => { gravarFlag(CHAVE_TOUR); setTour(null); setTela(S.HOME); };
+ // Passo a passo de cada aba: na primeira vez que ela abre a aba (depois do da Hoje)
+ const ABA_DO_TOUR = { [S.TRAJ]: "trajetoria", [S.FEED]: "mural", [S.JOR]: "meumapa", [S.CT]: "conteudo" };
+ const [tourAba, setTourAba] = useState(null);
+ useEffect(() => {
+ const aba = ABA_DO_TOUR[tela];
+ if (!aba || tour || !authUser || perfil === "admin" || perfil === "pendente") return;
+ if (!lerFlag(CHAVE_TOUR) || lerFlag(`auge_tour_${aba}`)) return;
+ setTourAba(aba);
+  }, [tela, tour]);
+ const fecharTourAba = () => { gravarFlag(`auge_tour_${tourAba}`); setTourAba(null); };
 
   // Aguardando verificação de sessão Supabase
  if (loadingAuth)
@@ -2714,6 +2724,7 @@ export default function App() {
       {/* Banner "nova versão" removido — atualização agora é silenciosa (auto-reload) */}
       <Rolar>{renderTela()}</Rolar>
       {tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
+      {!tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
       {!SEM_NAV.includes(tela) && (
         <NavBar
  tela={tela}
