@@ -5,6 +5,7 @@ import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
+import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
 import { Target, UserRound, PenLine } from "lucide-react";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
@@ -11213,6 +11214,10 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1` : null;
   };
  const [showConvite, setShowConvite] = useState(false);
+ // busca, filtro e favoritos (favoritos ficam no celular)
+ const [busca, setBusca] = useState("");
+ const [filtro, setFiltro] = useState("tudo");
+ const { favoritos, ehFavorito, alternar: alternarFavorito } = useFavoritos();
  if (showConvite) return <TelaConvite back={() => setShowConvite(false)} />;
 
  const bloqCat = false; // demo: todos os conteúdos desbloqueados
@@ -11227,6 +11232,8 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
  dur: v.duracao || "30 min",
  url: v.url_youtube,
  plano: v.plano_minimo,
+ criado: v.created_at || "",
+ ordem: v.ordem ?? 0,
   });
  const secoes = CATS
     .map((cat) => ({
@@ -11237,6 +11244,28 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
     }))
     .filter((s) => s.itens.length > 0);
 
+ // todos os itens numa lista só, com o tipo de cada um
+ const todos = secoes.flatMap(({ cat, itens }) => itens.map((v) => ({ ...v, cat: cat.id })));
+ // mais recente: data de publicação; sem data, a maior "ordem"
+ const recente = (lista) => [...lista].sort((x, y) => String(y.criado).localeCompare(String(x.criado)) || (y.ordem || 0) - (x.ordem || 0))[0];
+ const curta = (lista) => [...lista].sort((x, y) => minutos(x.dur) - minutos(y.dur))[0];
+ const aulas = todos.filter((v) => v.cat === "aulas");
+ const meditacoes = todos.filter((v) => v.cat === "meditacoes");
+ const destaques = [
+    aulas.length && { etiqueta: "AULA DA SEMANA", item: recente(aulas) },
+    meditacoes.length && { etiqueta: "PARA RELAXAR", item: curta(meditacoes) },
+  ].filter(Boolean).map((d) => ({ ...d, capa: ytThumb(d.item.url) }));
+ const tiposExistentes = ORDEM_CHIPS.filter((id) => todos.some((v) => v.cat === id));
+ const opcoesFiltro = [{ id: "tudo", rotulo: "Tudo" }, { id: "favoritas", rotulo: "♡ Favoritas" }, ...tiposExistentes.map((id) => ({ id, rotulo: TIPOS[id].chip }))];
+ const termo = normalizar(busca);
+ let lista = todos;
+ if (filtro === "favoritas") lista = lista.filter((v) => favoritos.includes(String(v.id)));
+ else if (filtro !== "tudo") lista = lista.filter((v) => v.cat === filtro);
+ if (termo) lista = lista.filter((v) => normalizar(`${v.titulo} ${TIPOS[v.cat]?.nome || ""} ${TIPOS[v.cat]?.chip || ""}`).includes(termo));
+ if (filtro === "meditacoes" || filtro === "yoga") lista = [...lista].sort((x, y) => minutos(x.dur) - minutos(y.dur));
+ const mostrarFaixas = filtro === "tudo" && !termo;
+ const abrirAbrivel = (v) => v.url && (v.cat === "podcast" ? abrirExterno(v.url) : v.cat === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
+
  const abrirExterno = (url) => {
  const a = document.createElement("a");
  a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
@@ -11245,26 +11274,34 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
 
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
-      {/* Header */}
-      <div
- style={{
- background: C.creme,
- padding: "12px 18px 14px",
- display: "flex",
- alignItems: "center",
- justifyContent: "space-between",
- borderBottom: `1px solid ${C.ouro}15`,
-        }}
-      >
-        <div style={{ width: 40 }} />
-        <Logo width={200} fundo="claro" />
-        <div style={{ width: 40 }} />
+      {/* Título (a logo saiu daqui a pedido da Vitória, 30/09) */}
+      <div style={{ background: C.creme, padding: "20px 20px 14px" }}>
+        <h1 style={{ margin: 0, fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em" }}>Conteúdo</h1>
       </div>
 
       {/* As pastilhas de categoria saíram: cada categoria agora é uma faixa
           própria, uma embaixo da outra. */}
 
-      <Grain style={{ padding: "14px 0 24px" }}>
+      <Grain style={{ padding: "0 0 24px" }}>
+        {/* busca → destaques → filtros → lista */}
+        {secoes.length > 0 && (
+          <>
+            <BuscaConteudo onBuscar={setBusca} />
+            {!termo && <Destaques itens={destaques} onAbrir={abrirAbrivel} />}
+            <Filtros opcoes={opcoesFiltro} ativo={filtro} onEscolher={setFiltro} />
+            {!mostrarFaixas && (
+              <ListaConteudo
+ titulo={termo ? "Resultados da busca" : null}
+ itens={lista}
+ vazio={termo ? "Nada encontrado. Tente outra palavra." : filtro === "favoritas" ? "Toque no coração de um conteúdo para guardá-lo aqui." : "Nada por aqui ainda."}
+ onAbrir={abrirAbrivel}
+ ehFavorito={ehFavorito}
+ alternarFavorito={alternarFavorito}
+ jaVisto={jaAssistiu}
+              />
+            )}
+          </>
+        )}
         {/* O bloco "Guia dos Hábitos Angulares" saiu da aba Conteúdo (pedido da
             Vitória, 24/09). O visualizador de HTML (guiaAberto) CONTINUA aqui —
             é ele que abre os textos da categoria Indicações. */}
@@ -11315,13 +11352,13 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
         {/* Uma faixa por módulo. Dentro da faixa, os vídeos passam para o
             lado — o card seguinte aparece cortado de propósito, é o que
             avisa que dá para arrastar. */}
-        {secoes.map(({ cat, itens }) => {
+        {mostrarFaixas && secoes.map(({ cat, itens }) => {
           const ehLink = cat.id === "podcast" || cat.id === "curadoria";
           const glifo = cat.id === "podcast" ? "♪" : "❦";
           const formato = cat.id === "podcast" ? "Ouvir" : cat.id === "curadoria" ? "Ler" : "Vídeo";
           return (
             <div key={cat.id} style={{ marginBottom: 24 }}>
-              <div style={{ padding: "0 16px", marginBottom: 10, fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.obs }}>
+              <div style={{ padding: "0 20px", marginBottom: 10, fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.obs }}>
                 {cat.label}
               </div>
               <div
@@ -11330,7 +11367,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                   alignItems: "flex-start",
                   gap: 12,
                   overflowX: "auto",
-                  padding: "2px 16px 6px",
+                  padding: "2px 20px 6px",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                 }}
@@ -11340,13 +11377,17 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                   const visto = jaAssistiu(v.id);
                   const abrir = () => v.url && (cat.id === "podcast" ? abrirExterno(v.url) : cat.id === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
                   return (
+                    <div key={v.id} style={{ flexShrink: 0, width: 168, position: "relative" }}>
+                    {/* o coração fica fora do cartão clicável, por cima do canto da capa */}
+                    <span style={{ position: "absolute", top: 4, right: 4, zIndex: 1 }}>
+                      <Coracao fundo ativo={ehFavorito(v.id)} onClick={() => alternarFavorito(v.id)} />
+                    </span>
                     <div
-                      key={v.id}
                       onClick={abrir}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}
-                      style={{ flexShrink: 0, width: 168, cursor: "pointer" }}
+                      style={{ cursor: "pointer" }}
                     >
                       <div
                         style={{
@@ -11375,7 +11416,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                           <span style={{ fontSize: 30, color: C.ouroTxt }}>{glifo}</span>
                         )}
                         {thumb && (
-                          <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
                             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: alfa(C.obs, .62), color: "#fff", fontSize: 15 }}>
                               ▶
                             </span>
@@ -11398,6 +11439,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                           {cat.id !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
                         </span>
                       </div>
+                    </div>
                     </div>
                   );
                 })}
