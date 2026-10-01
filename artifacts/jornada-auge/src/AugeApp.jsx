@@ -11378,8 +11378,8 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                   const abrir = () => v.url && (cat.id === "podcast" ? abrirExterno(v.url) : cat.id === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
                   return (
                     <div key={v.id} style={{ flexShrink: 0, width: 168, position: "relative" }}>
-                    {/* o coração fica fora do cartão clicável, por cima do canto da capa */}
-                    <span style={{ position: "absolute", top: 4, right: 4, zIndex: 1 }}>
+                    {/* o coração fica fora do cartão clicável, no canto de cima à esquerda da capa */}
+                    <span style={{ position: "absolute", top: 4, left: 4, zIndex: 1 }}>
                       <Coracao fundo ativo={ehFavorito(v.id)} onClick={() => alternarFavorito(v.id)} />
                     </span>
                     <div
@@ -11392,7 +11392,9 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                       <div
                         style={{
                           width: "100%",
-                          height: 112,
+                          // 16:9 como o vídeo: a capa do YouTube (4:3) vem com faixas pretas
+                          // em cima e embaixo, e o "cover" num quadro 16:9 corta exatamente elas
+                          aspectRatio: "16 / 9",
                           borderRadius: 12,
                           overflow: "hidden",
                           position: "relative",
@@ -11410,7 +11412,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
                             alt=""
                             loading="lazy"
                             onError={(e) => { e.currentTarget.style.display = "none"; }}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7" }}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7", transform: "scale(1.03)" }}
                           />
                         ) : (
                           <span style={{ fontSize: 30, color: C.ouroTxt }}>{glifo}</span>

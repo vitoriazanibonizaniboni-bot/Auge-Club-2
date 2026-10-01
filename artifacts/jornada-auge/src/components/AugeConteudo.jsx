@@ -114,6 +114,8 @@ export function Destaques({ itens, onAbrir }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <style>{ESTILOS}</style>
+      {/* mesmo estilo dos títulos das faixas ("Aulas", "Meditações") */}
+      <div style={{ padding: "0 20px", marginBottom: 10, fontFamily: FONTE, fontWeight: 500, fontSize: 17, color: T.ink }}>Destaques</div>
       <div ref={trilho} onScroll={aoRolar} className="auge-sem-barra"
            style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", padding: "0 20px", scrollPaddingLeft: 20, WebkitOverflowScrolling: "touch" }}>
         {itens.map(({ etiqueta, item, capa }) => (
@@ -142,7 +144,7 @@ function CartaoDestaque({ etiqueta, item, capa, onAbrir }) {
   if (!semCapa) {
     return (
       <button onClick={() => onAbrir(item)} aria-label={`${etiqueta}: ${item.titulo}`} style={{ ...base, background: tipo.cor }}>
-        <img src={capa} alt="" onError={() => setSemCapa(true)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <img src={capa} alt="" onError={() => setSemCapa(true)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.03)" }} />
       </button>
     );
   }
