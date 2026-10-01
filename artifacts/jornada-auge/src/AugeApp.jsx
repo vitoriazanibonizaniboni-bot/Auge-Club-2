@@ -5,6 +5,7 @@ import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
+import { PassoAPasso, DicaHoje, CHAVE_TOUR, CHAVE_DICA, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
 import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
 import { Target, UserRound, PenLine } from "lucide-react";
 
@@ -1105,6 +1106,9 @@ export default function App() {
  const [loadingAuth, setLoadingAuth] = useState(true);
  const [perfil, setPerfil] = useState(null);
  const [profileLoaded, setProfileLoaded] = useState(false);
+ // Passo a passo de boas-vindas: uma vez só (primeiro acesso, ou primeira
+ // abertura desta versão para quem já usava o app)
+ const [tour, setTour] = useState(null); // null | { antiga: bool }
  const loadedRef = useRef(false);
  const [lgpdOk, setLgpdOk] = useState(() => {
  try {
@@ -2510,6 +2514,16 @@ export default function App() {
 
  const SEM_NAV = [S.SPLASH, S.LEGAL, S.LOGIN, S.DIAG, S.HABSETUP, S.ADMIN, S.VOZ, S.CHAT, S.RODA];
 
+  // Quem já tinha hábito marcado antes desta versão vê "O que mudou no app"
+ const DATA_VERSAO_TOUR = "2026-10-01";
+ useEffect(() => {
+ if (!profileLoaded || !authUser || tour || lerFlag(CHAVE_TOUR)) return;
+ if (perfil === "pendente" || perfil === "admin" || !perfil) return;
+ const antiga = Object.entries(regs || {}).some(([d, hs]) => d < DATA_VERSAO_TOUR && hs && Object.keys(hs).length > 0);
+ setTour({ antiga });
+  }, [profileLoaded, authUser, perfil]);
+ const fecharTour = () => { gravarFlag(CHAVE_TOUR); setTour(null); setTela(S.HOME); };
+
   // Aguardando verificação de sessão Supabase
  if (loadingAuth)
  return (
@@ -2699,6 +2713,7 @@ export default function App() {
       {toast && <Brinde msg={toast} />}
       {/* Banner "nova versão" removido — atualização agora é silenciosa (auto-reload) */}
       <Rolar>{renderTela()}</Rolar>
+      {tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
       {!SEM_NAV.includes(tela) && (
         <NavBar
  tela={tela}
@@ -5069,6 +5084,7 @@ function Home({
  const idsCume = new Set([...Object.keys(baseCume), ...Object.keys(metasAgora)]);
  const tCume = progressoSemana([...idsCume].map((id) => ({ feitos: feitosNaSemana(id), meta: baseCume[id] ?? metasAgora[id] })));
  const [ajudaAberta, setAjudaAberta] = useState(false);
+ const [dicaVista, setDicaVista] = useState(() => lerFlag(CHAVE_DICA));
  // Toast só ao MARCAR (desmarcar não fala nada): espera o t novo ser calculado
  const cumePendente = useRef(null); // t de antes da marcação
  const [cumeAviso, setCumeAviso] = useState(null);
@@ -5178,6 +5194,7 @@ function Home({
  onAjuda={() => setAjudaAberta((a) => !a)}
         />
         {ajudaAberta && <ComoUsarHoje onFechar={() => setAjudaAberta(false)} />}
+        {!ajudaAberta && !dicaVista && <DicaHoje onEntendi={() => { gravarFlag(CHAVE_DICA); setDicaVista(true); }} />}
       </div>
       {retroAberto && (
         <RetroModal
