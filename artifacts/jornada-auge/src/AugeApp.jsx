@@ -2755,8 +2755,7 @@ export default function App() {
       >
         {/* SEM position neste invólucro: o botão "bateu a preguiça?" e os
             painéis das telas usam position:absolute/fixed presos ao app
-            inteiro. O transform da entrada so existe durante os 0,26 s da
-            animação; nesse instante o botão fica escondido e reaparece. */}
+            inteiro. Por isso a entrada da tela é só opacidade, sem transform. */}
         <div key={tela} className={entrada ? `aba-entra-${entrada} mov-sempre` : undefined} style={{ width: "100%" }}>
           {renderTela()}
         </div>
@@ -2790,17 +2789,10 @@ function Estilos() {
     *{text-wrap:pretty;}
     [style*="text-align: center"]{text-wrap:balance;}
     /* Transicao entre abas: desliza 24px e aparece. Anima a margem: nem left (exige position) nem transform. */
-    /* transform + opacity: o celular anima isso na placa de video, liso
-       mesmo enquanto monta a tela. (A margem, usada antes, refazia o layout
-       da tela inteira a cada quadro e travava.) Sem fill-mode "forwards":
-       terminada a animacao o transform some, e o botao "bateu a preguica?",
-       que se prende ao app inteiro, volta para o canto. */
-    @keyframes abaDir{from{transform:translate3d(28px,0,0);opacity:0}to{transform:none;opacity:1}}
-    @keyframes abaEsq{from{transform:translate3d(-28px,0,0);opacity:0}to{transform:none;opacity:1}}
-    @keyframes abaSobe{from{transform:translate3d(0,14px,0);opacity:0}to{transform:none;opacity:1}}
-    .aba-entra-dir{animation:abaDir .26s cubic-bezier(.2,.8,.2,1) backwards}
-    .aba-entra-esq{animation:abaEsq .26s cubic-bezier(.2,.8,.2,1) backwards}
-    .aba-entra-sobe{animation:abaSobe .24s cubic-bezier(.2,.8,.2,1) backwards}
+    /* A tela nova so aparece (sem vir da lateral — a Vitoria achou estranho,
+       05/10). Quem da a direcao e a bolinha da barra. */
+    @keyframes abaAparece{from{opacity:0}to{opacity:1}}
+    .aba-entra-dir,.aba-entra-esq,.aba-entra-sobe{animation:abaAparece .16s ease-out backwards}
     /* Toque na barra de abas: o icone afunda um pouco */
     .aba-nav>div{transition:transform .12s ease}
     .aba-nav:active>div{transform:scale(.9)}
@@ -2884,7 +2876,9 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  posRef.current = destino; setPos(destino); setTrajeto({ de: destino, para: destino }); aoFim && aoFim(); return;
     }
  setTrajeto({ de: Math.round(de), para: destino });
- const dur = Math.min(460, 300 + Math.abs(destino - de) * 45);
+    // Curto de proposito: a tela so troca quando a bolinha chega, e mais
+    // tempo que isso parece demora (pedido da Vitoria, 05/10).
+ const dur = Math.min(300, 200 + Math.abs(destino - de) * 30);
  let t0 = null;
  const passo = (agora) => {
  if (t0 == null) t0 = agora;
