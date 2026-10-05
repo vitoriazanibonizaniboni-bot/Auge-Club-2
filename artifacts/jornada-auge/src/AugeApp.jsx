@@ -2487,13 +2487,13 @@ export default function App() {
  bussola,
  perfilAuge,
  setPerfilAuge,
-    // O desafio da semana em curso vem SO da tabela por semana para quem tem
-    // turma. O texto unico da turma (turmas.desafio) parou de ser editavel no
-    // Painel e ficou congelado no desafio da S7: usar ele como reserva fazia
-    // toda segunda-feira, antes de a mentora preencher a semana nova, voltar o
-    // desafio da S7. Semana em branco = sem card, como o Painel promete.
+    // O desafio da semana em curso vem da tabela por semana para quem tem
+    // turma. Semana ainda em branco (a segunda antes do encontro, quando a
+    // mentora troca o desafio) continua com o desafio da ULTIMA semana
+    // preenchida — pedido da Vitoria, 05/10. Nao usar turmas.desafio como
+    // reserva: ele parou de ser editavel e ficou congelado no desafio da S7.
     // Aluna sem turma continua no texto geral do config.
- desafioTexto: turma ? (desafiosSemana[sem] || "") : desafioTexto,
+ desafioTexto: turma ? desafioVigente(desafiosSemana, sem) : desafioTexto,
  desafiosSemana,
  desafioFeitos,
     guias,
@@ -4870,6 +4870,16 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
     </Card>
   );
 }
+
+// Desafio que vale na semana `sem`: o da propria semana ou, se ela ainda
+// estiver em branco, o da ultima semana anterior que tem desafio.
+const desafioVigente = (porSemana = {}, sem = 1) => {
+ for (let w = sem; w >= 1; w--) {
+ const t = (porSemana[w] || "").trim();
+ if (t) return t;
+  }
+ return "";
+};
 
 // Vitória da Semana — sexta-feira, fluxo em 2 partes (seção 4.11)
 function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }) {
@@ -12147,7 +12157,7 @@ function PainelMentora({ ir }) {
                           );
                         })}
                         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 6, lineHeight: 1.45 }}>
-                          Semana em branco = sem desafio naquela semana; o card não aparece para a aluna.
+                          Semana em branco = continua valendo o desafio da última semana preenchida, até você trocar.
                         </div>
                       </div>
                     )}
