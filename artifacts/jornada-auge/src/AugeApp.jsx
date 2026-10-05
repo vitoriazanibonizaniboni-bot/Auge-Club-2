@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSignalUser } from "./notifications.js";
 import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
@@ -764,6 +764,8 @@ function Grain({ children, style = {} }) {
   );
 }
 
+// Ordem das abas na barra — decide para que lado a tela desliza
+const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
 function Phone({ children }) {
  const [full, setFull] = useState(
     typeof window === "undefined" ? true : window.innerWidth <= 500
@@ -1129,6 +1131,26 @@ export default function App() {
  try { return localStorage.getItem("auge_diagOk_" + userId) === "1"; } catch { return false; }
   };
  const [tela, setTela] = useState(S.HOME);
+ // ── Transicao entre abas ────────────────────────────────────────────────
+ // Cada tela guarda onde a aluna parou de rolar; ao voltar para uma das 5
+ // abas, ela continua dali. Tela que nao e aba (Roda, Kit, Escritas...)
+ // sempre abre do topo. A entrada desliza do lado da aba de destino.
+ const rolarRef = useRef(null);
+ const rolagem = useRef({}); // { [tela]: scrollTop }
+ const telaRolando = useRef(tela);
+ const telaAnterior = useRef(tela);
+ const [entrada, setEntrada] = useState(null); // "dir" | "esq" | "sobe" | null
+ useLayoutEffect(() => {
+ const de = telaAnterior.current;
+ telaAnterior.current = tela;
+ telaRolando.current = tela;
+ if (de === tela) return;
+ const ordem = ORDEM_ABAS;
+ const i = ordem.indexOf(de), j = ordem.indexOf(tela);
+ setEntrada(i >= 0 && j >= 0 ? (j > i ? "dir" : "esq") : "sobe");
+ const el = rolarRef.current;
+ if (el) el.scrollTop = j >= 0 ? (rolagem.current[tela] || 0) : 0;
+  }, [tela]);
 
   // Feed
  const [feed, setFeed] = useState([]);
@@ -2726,7 +2748,17 @@ export default function App() {
     <Phone>
       {toast && <Brinde msg={toast} />}
       {/* Banner "nova versão" removido — atualização agora é silenciosa (auto-reload) */}
-      <Rolar>{renderTela()}</Rolar>
+      <div
+ ref={rolarRef}
+ onScroll={(e) => { rolagem.current[telaRolando.current] = e.currentTarget.scrollTop; }}
+ style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
+      >
+        {/* left/opacity, e nao transform: transform faria os elementos
+            position:fixed das telas (Kit, paineis) andarem junto */}
+        <div key={tela} className={entrada ? `aba-entra-${entrada}` : undefined} style={{ position: "relative" }}>
+          {renderTela()}
+        </div>
+      </div>
       {tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
       {!tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
       {!SEM_NAV.includes(tela) && (
@@ -2755,6 +2787,18 @@ function Estilos() {
     /* Quebra de linha: evita palavra sozinha na ultima linha; texto centralizado fica com linhas equilibradas */
     *{text-wrap:pretty;}
     [style*="text-align: center"]{text-wrap:balance;}
+    /* Transicao entre abas: desliza 24px e aparece. Usa left, nao transform. */
+    @keyframes abaDir{from{left:24px;opacity:0}to{left:0;opacity:1}}
+    @keyframes abaEsq{from{left:-24px;opacity:0}to{left:0;opacity:1}}
+    @keyframes abaSobe{from{top:12px;opacity:0}to{top:0;opacity:1}}
+    .aba-entra-dir{animation:abaDir .24s cubic-bezier(.2,.8,.2,1) backwards}
+    .aba-entra-esq{animation:abaEsq .24s cubic-bezier(.2,.8,.2,1) backwards}
+    .aba-entra-sobe{animation:abaSobe .22s cubic-bezier(.2,.8,.2,1) backwards}
+    /* Toque na barra de abas: o icone afunda um pouco */
+    .aba-nav>div{transition:transform .12s ease}
+    .aba-nav:active>div{transform:scale(.9)}
+    /* Celular estreito (320px): "Meu Mapa" e "Conteudo" encostavam */
+    @media (max-width:350px){.aba-rotulo{letter-spacing:-0.03em!important}}
     @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
     *{box-sizing:border-box;margin:0;padding:0;}
     ::-webkit-scrollbar{display:none;}
@@ -2777,6 +2821,13 @@ function Estilos() {
 }
 
 // ─── NAV BAR ──────────────────────────────────────────────────────────────────
+// Barra de abas com a "bolinha": o icone da aba ativa sobe para dentro de um
+// circulo que desliza de uma aba para a outra (referencia enviada pela
+// Vitoria, 05/10). O anel claro em volta do circulo e da cor do fundo do app,
+// o que da o efeito de recorte na barra.
+// Barra clara com a bolinha terracota — escolhida pela Vitoria em 05/10
+// (a versao com barra escura, como no exemplo, foi descartada).
+const NAV = { barra: "#F4EDE3", borda: "#E6DCCF", disco: "#9A4B36", iconeAtivo: "#FFFFFF", icone: "#5C4F47", rotulo: "#5C4F47", rotuloAtivo: "#9A4B36" };
 function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
   // 5 abas (seção 2): Hoje · Trajetória · Mural do 1% · Meu Mapa · Conteúdo
   // Configurações fica fora da barra, acessada por ícone (seção 9)
@@ -2803,15 +2854,24 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  return (
     <div
  style={{
- background: C.creme,
- borderTop: `1px solid ${C.ouro}15`,
+ background: NAV.barra,
+ borderTop: `1px solid ${NAV.borda}`,
  display: "flex",
  padding: "16px 0 26px",
+ position: "relative",
+ zIndex: 5,
       }}
     >
+      {/* A bolinha da aba ativa: desliza ate a aba; o icone sobe para dentro dela */}
+      {tabs.findIndex((t) => t.id === aba) >= 0 && (
+        <div aria-hidden="true" style={{ position: "absolute", top: -21, left: 0, width: `${100 / tabs.length}%`, transform: `translateX(${tabs.findIndex((t) => t.id === aba) * 100}%)`, transition: "transform .35s cubic-bezier(.2,.8,.2,1)", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: NAV.disco, border: `5px solid ${C.creme}`, boxShadow: "0 2px 6px rgba(31,26,23,.12)" }} />
+        </div>
+      )}
       {tabs.map((t) => (
         <div
  key={t.id}
+ className="aba-nav"
  onClick={() => ir(t.id)}
  style={{
  flex: 1,
@@ -2866,17 +2926,20 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  gap: 7,
             }}
           >
-            {t.icon(aba === t.id ? C.ouroDk : C.lt, 24)}
+            <div style={{ position: "relative", zIndex: 1, height: 24, transform: aba === t.id ? "translateY(-21px)" : "none", transition: "transform .35s cubic-bezier(.2,.8,.2,1)" }}>
+              {t.icon(aba === t.id ? NAV.iconeAtivo : NAV.icone, 24)}
+            </div>
             <div
+ className="aba-rotulo"
  style={{
  fontFamily: FB,
- fontWeight: aba === t.id ? 600 : 400,
+ fontWeight: aba === t.id ? 500 : 400,
                 // Caixa normal, nao maiuscula: medido, MAIUSCULA nao cabe nas 5
                 // abas em nenhum tamanho — em 11px ja encavalava num celular de
                 // 320px. Em caixa normal, 13px cabe ate no mais estreito.
  fontSize: 13,
  letterSpacing: "0",
- color: aba === t.id ? C.ouroTxt : C.lt,
+ color: aba === t.id ? NAV.rotuloAtivo : NAV.rotulo,
  transition: "color .2s",
  whiteSpace: "nowrap",
               }}
