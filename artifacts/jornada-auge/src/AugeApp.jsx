@@ -2753,9 +2753,11 @@ export default function App() {
  onScroll={(e) => { rolagem.current[telaRolando.current] = e.currentTarget.scrollTop; }}
  style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
       >
-        {/* left/opacity, e nao transform: transform faria os elementos
-            position:fixed das telas (Kit, paineis) andarem junto */}
-        <div key={tela} className={entrada ? `aba-entra-${entrada}` : undefined} style={{ position: "relative" }}>
+        {/* SEM position e SEM transform neste invólucro: o botão "bateu a
+            preguiça?" e os painéis das telas usam position:absolute/fixed
+            presos ao app inteiro. Com position:relative aqui, o botão ia
+            parar no fim da página. Por isso a entrada anima a margem. */}
+        <div key={tela} className={entrada ? `aba-entra-${entrada}` : undefined} style={{ width: "100%" }}>
           {renderTela()}
         </div>
       </div>
@@ -2787,10 +2789,10 @@ function Estilos() {
     /* Quebra de linha: evita palavra sozinha na ultima linha; texto centralizado fica com linhas equilibradas */
     *{text-wrap:pretty;}
     [style*="text-align: center"]{text-wrap:balance;}
-    /* Transicao entre abas: desliza 24px e aparece. Usa left, nao transform. */
-    @keyframes abaDir{from{left:24px;opacity:0}to{left:0;opacity:1}}
-    @keyframes abaEsq{from{left:-24px;opacity:0}to{left:0;opacity:1}}
-    @keyframes abaSobe{from{top:12px;opacity:0}to{top:0;opacity:1}}
+    /* Transicao entre abas: desliza 24px e aparece. Anima a margem: nem left (exige position) nem transform. */
+    @keyframes abaDir{from{margin-left:24px;opacity:0}to{margin-left:0;opacity:1}}
+    @keyframes abaEsq{from{margin-left:-24px;opacity:0}to{margin-left:0;opacity:1}}
+    @keyframes abaSobe{from{margin-top:12px;opacity:0}to{margin-top:0;opacity:1}}
     .aba-entra-dir{animation:abaDir .24s cubic-bezier(.2,.8,.2,1) backwards}
     .aba-entra-esq{animation:abaEsq .24s cubic-bezier(.2,.8,.2,1) backwards}
     .aba-entra-sobe{animation:abaSobe .22s cubic-bezier(.2,.8,.2,1) backwards}
