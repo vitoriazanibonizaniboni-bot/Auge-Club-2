@@ -4871,6 +4871,12 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
   );
 }
 
+// Vitória da Semana — sexta-feira, fluxo em 2 partes (seção 4.11)
+//
+// O post do Mural leva SO o texto que a aluna escreveu e, embaixo, uma linha
+// curta de pastilhas: "Movimento 5x · Sono 4x". Antes ia um paragrafo inteiro
+// ("Voce fez seu movimento 5x essa semana e sentiu facil na maioria delas...")
+// que virava muito texto no Mural.
 // Desafio que vale na semana `sem`: o da propria semana ou, se ela ainda
 // estiver em branco, o da ultima semana anterior que tem desafio.
 const desafioVigente = (porSemana = {}, sem = 1) => {
@@ -4880,9 +4886,59 @@ const desafioVigente = (porSemana = {}, sem = 1) => {
   }
  return "";
 };
+const SEP_TAGS = " · ";
+const linhaTags = (tags) => tags.map((t) => `${t.nome} ${t.n}x`).join(SEP_TAGS);
+// Le a descricao de um post da Vitoria da Semana e separa texto e pastilhas.
+// Entende o formato novo e o antigo (paragrafo "Voce fez..."), para os posts
+// que ja estao no Mural tambem ficarem curtos.
+const NOME_ANTIGO = { "seu movimento": "Movimento", "sono": "Sono", "tempo para si": "Tempo para Si" };
+function lerVitoriaSemana(desc = "") {
+ const d = String(desc || "").trim();
+ if (/^Você fez /.test(d) || /^Essa semana ainda está sendo escrita/.test(d)) {
+ const tags = [];
+ const re = /Você fez (.+?) (\d+)x essa semana/g;
+ let m;
+ while ((m = re.exec(d))) tags.push({ nome: NOME_ANTIGO[m[1].toLowerCase()] || (m[1][0].toUpperCase() + m[1].slice(1)), n: Number(m[2]) });
+ const q = d.match(/\n\n"([\s\S]*)"$/);
+ return { texto: q ? q[1].trim() : "", tags };
+  }
+ const linhas = d.split("\n");
+ const ult = linhas[linhas.length - 1] || "";
+ const partes = ult.split(SEP_TAGS);
+ if (ult && partes.every((x) => /^.+ \d+x$/.test(x))) {
+ const tags = partes.map((x) => { const m = x.match(/^(.+) (\d+)x$/); return { nome: m[1], n: Number(m[2]) }; });
+ return { texto: linhas.slice(0, -1).join("\n").trim(), tags };
+  }
+ return { texto: d, tags: [] };
+}
+// Uma cor por pastilha: Movimento verde, Sono azul, Tempo para Si terracota,
+// Desafio dourado; habito criado pela aluna em marrom neutro. O texto e uma
+// versao mais escura da cor, medida acima de 5,5:1 no blush e no card do
+// Mural (o tom da propria cor ficava abaixo de 4,5:1 sobre o fundo tingido).
+const COR_TAG = {
+ "Movimento": { txt: "#424629", base: "#5E6340" },
+ "Sono": { txt: "#2F4A6E", base: "#3D5A80" },
+ "Tempo para Si": { txt: "#7A3626", base: "#9A4B36" },
+ "Desafio": { txt: "#644A26", base: "#C4A882" },
+};
+const COR_TAG_PESSOAL = { txt: "#4A3F38", base: "#5C4F47" };
+function PastilhasSemana({ tags }) {
+ if (!tags?.length) return null;
+ return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {tags.map((t) => {
+ const cor = COR_TAG[t.nome] || COR_TAG_PESSOAL;
+ return (
+        <span key={t.nome} style={{ background: alfa(cor.base, .18), border: `1px solid ${alfa(cor.base, .45)}`, borderRadius: 50, padding: "4px 12px", fontFamily: FB, fontWeight: 500, fontSize: 14, color: cor.txt, whiteSpace: "nowrap" }}>
+          {t.nome} {t.n}x
+        </span>
+ );
+      })}
+    </div>
+  );
+}
 
-// Vitória da Semana — sexta-feira, fluxo em 2 partes (seção 4.11)
-function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }) {
+function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafioFeitos = [], diasDaSemana = [], sem, segundaAtual, postTreino, tk, onFechar }) {
  const [passo, setPasso] = useState(1);
  const [resp, setResp] = useState("");
  const ativos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
@@ -4896,12 +4952,22 @@ function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }
     })
     .filter(Boolean)
     .join(" ") || "Essa semana ainda está sendo escrita — e você está aqui.";
+  // As pastilhas: os habitos do metodo ja liberados e os criados por ela,
+  // so os que ela fez pelo menos uma vez na semana.
+ const tags = [
+    ...ativos.map((h) => ({ nome: h.nome, n: habStats[h.id].feitas })),
+    ...habsPessoais.filter((hp) => hp.ativo !== false && habsPessStats[hp.id]).map((hp) => ({ nome: hp.nome, n: habsPessStats[hp.id].feitas })),
+    // e o desafio da semana, nos dias em que ela marcou
+    { nome: "Desafio", n: diasDaSemana.filter((d) => desafioFeitos.includes(d)).length },
+  ].filter((t) => t.n > 0);
+ const texto = resp.trim();
  const salvar = (compartilhar) => {
  const vitData = localDateStr(); // ISO — a coluna e do tipo date
- syncInsert("vitorias", { sem, texto: resp.trim() || resumo, data: vitData, resumo });
+ syncInsert("vitorias", { sem, texto: texto || resumo, data: vitData, resumo });
  try { localStorage.setItem(`auge_vitsem_${segundaAtual}`, "1"); } catch {}
  if (compartilhar) {
- postTreino({ tit: "Vitória da Semana ", desc: `${resumo}${resp.trim() ? `\n\n"${resp.trim()}"` : ""}`, publica: true });
+ const desc = [texto, linhaTags(tags)].filter(Boolean).join("\n\n") || "Essa semana ainda está sendo escrita — e você está aqui.";
+ postTreino({ tit: "Vitória da Semana ", desc, publica: true });
  tk("Vitória compartilhada no Mural ");
     } else {
  tk("Vitória registrada ");
@@ -4923,9 +4989,19 @@ function VitoriaSemana({ habStats, sem, segundaAtual, postTreino, tk, onFechar }
         </div>
       ) : (
         <div>
-          <div style={{ fontFamily: FB, fontSize: 17, color: C.obs, lineHeight: 1.5, margin: "4px 0 14px" }}>
-            {resumo}
-          </div>
+          {/* O que vai para o Mural: o texto dela e as pastilhas da semana */}
+          {texto && (
+            <div style={{ fontFamily: FB, fontSize: 17, color: C.obs, lineHeight: 1.5, margin: "4px 0 10px", whiteSpace: "pre-wrap" }}>
+              {texto}
+            </div>
+          )}
+          {tags.length ? (
+            <div style={{ margin: texto ? "0 0 14px" : "4px 0 14px" }}><PastilhasSemana tags={tags} /></div>
+          ) : !texto && (
+            <div style={{ fontFamily: FB, fontSize: 17, color: C.obs, lineHeight: 1.5, margin: "4px 0 14px" }}>
+              Essa semana ainda está sendo escrita — e você está aqui.
+            </div>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <Button onClick={() => salvar(true)}>Compartilhar no Mural</Button>
             <Button variante="contorno" onClick={() => salvar(false)}>Só guardar para mim</Button>
@@ -5324,6 +5400,10 @@ function Home({
         {ehSexta && !vitSemOk && !vitDestaSemana && (
           <VitoriaSemana
  habStats={habStats}
+ habsPessoais={habsPessoais}
+ habsPessStats={habsPessStats}
+ desafioFeitos={desafioFeitos}
+ diasDaSemana={diasDaSemana}
  sem={sem}
  segundaAtual={segundaAtual}
  postTreino={postTreino}
@@ -5888,7 +5968,18 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 14, color: C.lt, marginTop: 3 }}>{p.tempo}</div>
                   </div>
                 )}
-                {p.desc && (
+                {/* Vitoria da Semana: o texto dela e as pastilhas "Movimento 5x" */}
+                {p.desc && /^Vitória da Semana/.test(p.tit || "") ? (() => {
+ const v = lerVitoriaSemana(p.desc);
+ return (
+                    <div style={{ marginBottom: 10 }}>
+                      {v.texto && (
+                        <div style={{ fontSize: 17, fontFamily: FB, fontWeight: 400, color: C.lt, lineHeight: 1.65, marginBottom: v.tags.length ? 8 : 0, whiteSpace: "pre-wrap" }}>{v.texto}</div>
+                      )}
+                      <PastilhasSemana tags={v.tags} />
+                    </div>
+                  );
+                })() : p.desc && (
                 <div
  style={{
  fontSize: 17,
