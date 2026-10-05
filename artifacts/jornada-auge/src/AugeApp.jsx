@@ -2756,7 +2756,7 @@ export default function App() {
         {/* SEM position neste invólucro: o botão "bateu a preguiça?" e os
             painéis das telas usam position:absolute/fixed presos ao app
             inteiro. Por isso a entrada da tela é só opacidade, sem transform. */}
-        <div key={tela} className={entrada ? `aba-entra-${entrada} mov-sempre` : undefined} style={{ width: "100%" }}>
+        <div key={tela} className={entrada ? "aba-cascata" : undefined} style={{ width: "100%" }}>
           {renderTela()}
         </div>
       </div>
@@ -2791,8 +2791,15 @@ function Estilos() {
     /* Transicao entre abas: desliza 24px e aparece. Anima a margem: nem left (exige position) nem transform. */
     /* A tela nova so aparece (sem vir da lateral — a Vitoria achou estranho,
        05/10). Quem da a direcao e a bolinha da barra. */
-    @keyframes abaAparece{from{opacity:0}to{opacity:1}}
-    .aba-entra-dir,.aba-entra-esq,.aba-entra-sobe{animation:abaAparece .16s ease-out backwards}
+    /* Entrada em cascata, de cima para baixo: cada bloco da tela desce 12px
+       e aparece, um logo depois do outro (pedido da Vitoria, 05/10). So
+       transform e opacity, que o celular anima na placa de video, sem travar.
+       O fadeUp proprio de cada tela fica desligado na troca de aba, para nao
+       somar duas animacoes. */
+    @keyframes abaDesce{from{opacity:0;transform:translate3d(0,-12px,0)}to{opacity:1;transform:none}}
+    .aba-cascata>*{animation:none!important}
+    .aba-cascata>*>*{animation:abaDesce .34s cubic-bezier(.2,.8,.2,1) backwards}
+    .aba-cascata>*>*:nth-child(2){animation-delay:0.045s}.aba-cascata>*>*:nth-child(3){animation-delay:0.090s}.aba-cascata>*>*:nth-child(4){animation-delay:0.135s}.aba-cascata>*>*:nth-child(5){animation-delay:0.180s}.aba-cascata>*>*:nth-child(6){animation-delay:0.225s}.aba-cascata>*>*:nth-child(7){animation-delay:0.270s}.aba-cascata>*>*:nth-child(8){animation-delay:0.315s}.aba-cascata>*>*:nth-child(n+9){animation-delay:.32s}
     /* Toque na barra de abas: o icone afunda um pouco */
     .aba-nav>div{transition:transform .12s ease}
     .aba-nav:active>div{transform:scale(.9)}
@@ -2801,7 +2808,7 @@ function Estilos() {
     /* "Reduzir movimento" do celular corta as animacoes do app — menos as
        marcadas com .mov-sempre (a troca de tela e a luz da montanha):
        movimentos curtos, que os apps nativos mantem com a opcao ligada. */
-    @media (prefers-reduced-motion: reduce){*:not(.mov-sempre),*:not(.mov-sempre)::before,*:not(.mov-sempre)::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
+    @media (prefers-reduced-motion: reduce){*:not(.mov-sempre):not(.aba-cascata>*>*),*:not(.mov-sempre)::before,*:not(.mov-sempre)::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
     *{box-sizing:border-box;margin:0;padding:0;}
     ::-webkit-scrollbar{display:none;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
