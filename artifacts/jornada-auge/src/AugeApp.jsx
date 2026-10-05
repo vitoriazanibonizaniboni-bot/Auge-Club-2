@@ -2842,6 +2842,19 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  if (IS_CLUBE && [S.CX, S.MATCH, S.CHAT].includes(tela)) {
  aba = S.CX;
   }
+  // A bolinha anda ANTES de a tela trocar. Montar a tela nova (Mural, Hoje)
+  // trava o celular por alguns décimos de segundo; se as duas coisas
+  // acontecessem juntas, a bolinha so seria desenhada ja no destino e
+  // pareceria pular. Assim ela comeca a deslizar e, um quadro depois, a
+  // tela troca — a animação segue sozinha, sem depender do resto do app.
+ const [alvo, setAlvo] = useState(null);
+ useEffect(() => { if (alvo && alvo === aba) setAlvo(null); }, [aba, alvo]);
+ const ativa = alvo || aba;
+ const tocar = (id) => {
+ if (id === aba) { setAlvo(null); ir(id); return; }
+ setAlvo(id);
+ requestAnimationFrame(() => setTimeout(() => ir(id), 80));
+  };
  const tabs = [
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
@@ -2863,8 +2876,8 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
       }}
     >
       {/* A bolinha da aba ativa: desliza ate a aba; o icone sobe para dentro dela */}
-      {tabs.findIndex((t) => t.id === aba) >= 0 && (
-        <div aria-hidden="true" style={{ position: "absolute", top: -21, left: 0, width: `${100 / tabs.length}%`, transform: `translateX(${tabs.findIndex((t) => t.id === aba) * 100}%)`, transition: "transform .35s cubic-bezier(.2,.8,.2,1)", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+      {tabs.findIndex((t) => t.id === ativa) >= 0 && (
+        <div aria-hidden="true" style={{ position: "absolute", top: -21, left: 0, width: `${100 / tabs.length}%`, transform: `translateX(${tabs.findIndex((t) => t.id === ativa) * 100}%)`, transition: "transform .35s cubic-bezier(.2,.8,.2,1)", willChange: "transform", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: NAV.disco, border: `5px solid ${C.creme}`, boxShadow: "0 2px 6px rgba(31,26,23,.12)" }} />
         </div>
       )}
@@ -2872,7 +2885,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
         <div
  key={t.id}
  className="aba-nav"
- onClick={() => ir(t.id)}
+ onClick={() => tocar(t.id)}
  style={{
  flex: 1,
  textAlign: "center",
@@ -2926,20 +2939,20 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  gap: 7,
             }}
           >
-            <div style={{ position: "relative", zIndex: 1, height: 24, transform: aba === t.id ? "translateY(-21px)" : "none", transition: "transform .35s cubic-bezier(.2,.8,.2,1)" }}>
-              {t.icon(aba === t.id ? NAV.iconeAtivo : NAV.icone, 24)}
+            <div style={{ position: "relative", zIndex: 1, height: 24, transform: ativa === t.id ? "translateY(-21px)" : "none", transition: "transform .35s cubic-bezier(.2,.8,.2,1)", willChange: "transform" }}>
+              {t.icon(ativa === t.id ? NAV.iconeAtivo : NAV.icone, 24)}
             </div>
             <div
  className="aba-rotulo"
  style={{
  fontFamily: FB,
- fontWeight: aba === t.id ? 500 : 400,
+ fontWeight: ativa === t.id ? 500 : 400,
                 // Caixa normal, nao maiuscula: medido, MAIUSCULA nao cabe nas 5
                 // abas em nenhum tamanho — em 11px ja encavalava num celular de
                 // 320px. Em caixa normal, 13px cabe ate no mais estreito.
  fontSize: 13,
  letterSpacing: "0",
- color: aba === t.id ? NAV.rotuloAtivo : NAV.rotulo,
+ color: ativa === t.id ? NAV.rotuloAtivo : NAV.rotulo,
  transition: "color .2s",
  whiteSpace: "nowrap",
               }}
