@@ -2860,15 +2860,20 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  const idxAba = tabs.findIndex((t) => t.id === aba);
  const [pos, setPos] = useState(idxAba);
  const posRef = useRef(idxAba);
+ const [trajeto, setTrajeto] = useState({ de: idxAba, para: idxAba });
  const rafRef = useRef(0);
  const indo = useRef(false);
  const animar = (destino, aoFim) => {
  cancelAnimationFrame(rafRef.current);
  const de = posRef.current;
- const reduz = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
- if (destino < 0 || de < 0 || reduz || Math.abs(destino - de) < 0.001) {
- posRef.current = destino; setPos(destino); aoFim && aoFim(); return;
+    // De proposito NAO segue o "Reduzir movimento" do celular: e um
+    // deslocamento curto, na horizontal, dentro da barra — o tipo de
+    // movimento que os apps nativos mantem com essa opcao ligada. Sem isso,
+    // num iPhone com a opcao ligada a bolinha so pulava.
+ if (destino < 0 || de < 0 || Math.abs(destino - de) < 0.001) {
+ posRef.current = destino; setPos(destino); setTrajeto({ de: destino, para: destino }); aoFim && aoFim(); return;
     }
+ setTrajeto({ de: Math.round(de), para: destino });
  const dur = Math.min(460, 300 + Math.abs(destino - de) * 45);
  let t0 = null;
  const passo = (agora) => {
@@ -2891,8 +2896,13 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  indo.current = true;
  animar(j, () => { indo.current = false; ir(id); });
   };
-  // quanto cada icone esta "dentro" da bolinha agora (0 a 1)
- const dentro = (i) => Math.max(0, 1 - Math.abs(pos - i) * 1.6);
+  // quanto cada icone esta "dentro" da bolinha agora (0 a 1). So os icones
+  // de saida e de chegada sobem e descem; os do meio do caminho ficam
+  // parados enquanto a bolinha passa por tras deles.
+ const dentro = (i) => {
+ if (i !== trajeto.de && i !== trajeto.para) return 0;
+ return Math.max(0, 1 - Math.abs(pos - i) * 1.6);
+  };
  return (
     <div
  style={{
