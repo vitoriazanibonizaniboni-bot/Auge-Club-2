@@ -2842,19 +2842,6 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  if (IS_CLUBE && [S.CX, S.MATCH, S.CHAT].includes(tela)) {
  aba = S.CX;
   }
-  // A bolinha anda ANTES de a tela trocar. Montar a tela nova (Mural, Hoje)
-  // trava o celular por alguns décimos de segundo; se as duas coisas
-  // acontecessem juntas, a bolinha so seria desenhada ja no destino e
-  // pareceria pular. Assim ela comeca a deslizar e, um quadro depois, a
-  // tela troca — a animação segue sozinha, sem depender do resto do app.
- const [alvo, setAlvo] = useState(null);
- useEffect(() => { if (alvo && alvo === aba) setAlvo(null); }, [aba, alvo]);
- const ativa = alvo || aba;
- const tocar = (id) => {
- if (id === aba) { setAlvo(null); ir(id); return; }
- setAlvo(id);
- requestAnimationFrame(() => setTimeout(() => ir(id), 80));
-  };
  const tabs = [
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
@@ -2864,6 +2851,48 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
     { id: S.CT, label: "Conteúdo", icon: Ico.livro },
   ];
   // Nota: Jornada aparece para todos — Comunidade vê vitrine, Jornada vê conteúdo
+  // ── A bolinha ──────────────────────────────────────────────────────────
+  // Movida pelo proprio app, quadro a quadro (como a luz da montanha), e a
+  // tela so troca quando ela chega. Duas tentativas com transicao de CSS
+  // pularam no iPhone: montar a tela nova trava o celular por alguns
+  // decimos de segundo, e a animacao passava sem ser desenhada.
+  // `pos` e a posicao em "abas" (0 = Hoje, 1,5 = entre Trajetoria e Mural).
+ const idxAba = tabs.findIndex((t) => t.id === aba);
+ const [pos, setPos] = useState(idxAba);
+ const posRef = useRef(idxAba);
+ const rafRef = useRef(0);
+ const indo = useRef(false);
+ const animar = (destino, aoFim) => {
+ cancelAnimationFrame(rafRef.current);
+ const de = posRef.current;
+ const reduz = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+ if (destino < 0 || de < 0 || reduz || Math.abs(destino - de) < 0.001) {
+ posRef.current = destino; setPos(destino); aoFim && aoFim(); return;
+    }
+ const dur = Math.min(460, 300 + Math.abs(destino - de) * 45);
+ let t0 = null;
+ const passo = (agora) => {
+ if (t0 == null) t0 = agora;
+ const f = Math.min(1, (agora - t0) / dur);
+ const e = 1 - Math.pow(1 - f, 3); // comeca rapido, chega devagar
+ const v = de + (destino - de) * e;
+ posRef.current = v; setPos(v);
+ if (f < 1) rafRef.current = requestAnimationFrame(passo);
+ else aoFim && aoFim();
+    };
+ rafRef.current = requestAnimationFrame(passo);
+  };
+  // Tela trocada por outro caminho (botao voltar, link): a bolinha vai junto
+ useEffect(() => { if (!indo.current) animar(idxAba); }, [idxAba]);
+ useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
+ const tocar = (id) => {
+ const j = tabs.findIndex((t) => t.id === id);
+ if (id === aba && Math.abs(posRef.current - j) < 0.001) { ir(id); return; }
+ indo.current = true;
+ animar(j, () => { indo.current = false; ir(id); });
+  };
+  // quanto cada icone esta "dentro" da bolinha agora (0 a 1)
+ const dentro = (i) => Math.max(0, 1 - Math.abs(pos - i) * 1.6);
  return (
     <div
  style={{
@@ -2876,12 +2905,12 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
       }}
     >
       {/* A bolinha da aba ativa: desliza ate a aba; o icone sobe para dentro dela */}
-      {tabs.findIndex((t) => t.id === ativa) >= 0 && (
-        <div aria-hidden="true" style={{ position: "absolute", top: -21, left: 0, width: `${100 / tabs.length}%`, transform: `translateX(${tabs.findIndex((t) => t.id === ativa) * 100}%)`, transition: "transform .35s cubic-bezier(.2,.8,.2,1)", willChange: "transform", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+      {pos >= 0 && (
+        <div aria-hidden="true" style={{ position: "absolute", top: -21, left: 0, width: `${100 / tabs.length}%`, transform: `translateX(${pos * 100}%)`, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: NAV.disco, border: `5px solid ${C.creme}`, boxShadow: "0 2px 6px rgba(31,26,23,.12)" }} />
         </div>
       )}
-      {tabs.map((t) => (
+      {tabs.map((t, i) => (
         <div
  key={t.id}
  className="aba-nav"
@@ -2939,20 +2968,20 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  gap: 7,
             }}
           >
-            <div style={{ position: "relative", zIndex: 1, height: 24, transform: ativa === t.id ? "translateY(-21px)" : "none", transition: "transform .35s cubic-bezier(.2,.8,.2,1)", willChange: "transform" }}>
-              {t.icon(ativa === t.id ? NAV.iconeAtivo : NAV.icone, 24)}
+            <div style={{ position: "relative", zIndex: 1, height: 24, transform: `translateY(${-21 * dentro(i)}px)` }}>
+              {t.icon(dentro(i) > 0.5 ? NAV.iconeAtivo : NAV.icone, 24)}
             </div>
             <div
  className="aba-rotulo"
  style={{
  fontFamily: FB,
- fontWeight: ativa === t.id ? 500 : 400,
+ fontWeight: Math.round(pos) === i ? 500 : 400,
                 // Caixa normal, nao maiuscula: medido, MAIUSCULA nao cabe nas 5
                 // abas em nenhum tamanho — em 11px ja encavalava num celular de
                 // 320px. Em caixa normal, 13px cabe ate no mais estreito.
  fontSize: 13,
  letterSpacing: "0",
- color: ativa === t.id ? NAV.rotuloAtivo : NAV.rotulo,
+ color: Math.round(pos) === i ? NAV.rotuloAtivo : NAV.rotulo,
  transition: "color .2s",
  whiteSpace: "nowrap",
               }}
