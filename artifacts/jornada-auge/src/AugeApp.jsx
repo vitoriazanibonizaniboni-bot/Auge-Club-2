@@ -5317,13 +5317,17 @@ function Home({
  const avisoSeq = useRef(0);
  // A montanha grande está na tela? (ref, não estado: só é lida na hora de marcar)
  const cumeRef = useRef(null);
- const cumeVisivel = useRef(true);
- useEffect(() => {
- if (!cumeRef.current || typeof IntersectionObserver === "undefined") return;
- const ob = new IntersectionObserver(([e]) => { cumeVisivel.current = e.isIntersecting; }, { threshold: 0.6 });
- ob.observe(cumeRef.current);
- return () => ob.disconnect();
-  }, []);
+  // Medido na hora de marcar, pela posicao na tela. Antes era um
+  // IntersectionObserver com isIntersecting, que no iPhone continuava
+  // "visivel" depois de a montanha sair da tela — e o aviso nunca aparecia.
+ const cumeNaTela = () => {
+ const el = cumeRef.current;
+ if (!el) return false;
+ const r = el.getBoundingClientRect();
+ const vh = window.innerHeight || document.documentElement.clientHeight;
+ const visivel = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+ return r.height > 0 && visivel / r.height >= 0.6;
+  };
  useEffect(() => {
  if (cumePendente.current == null) return;
  const de = cumePendente.current;
@@ -5331,7 +5335,7 @@ function Home({
  const msg = tCume >= 1 ? "Você chegou ao seu auge!" : (msgPendente.current || "Feito! Você subiu mais um pouco.");
  // Aviso com a montanha pequena: só quando a montanha grande saiu da tela.
  // Com ela à vista, a própria luz grande subindo já é o aviso.
- if (cumeVisivel.current) return;
+ if (cumeNaTela()) return;
  const id = (avisoSeq.current += 1);
  setCumeAviso({ de, para: tCume, msg, id });
  // some depois de 3s, a não ser que outro aviso já tenha tomado o lugar
