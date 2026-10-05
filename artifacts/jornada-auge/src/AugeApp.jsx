@@ -2753,11 +2753,11 @@ export default function App() {
  onScroll={(e) => { rolagem.current[telaRolando.current] = e.currentTarget.scrollTop; }}
  style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
       >
-        {/* SEM position e SEM transform neste invólucro: o botão "bateu a
-            preguiça?" e os painéis das telas usam position:absolute/fixed
-            presos ao app inteiro. Com position:relative aqui, o botão ia
-            parar no fim da página. Por isso a entrada anima a margem. */}
-        <div key={tela} className={entrada ? `aba-entra-${entrada}` : undefined} style={{ width: "100%" }}>
+        {/* SEM position neste invólucro: o botão "bateu a preguiça?" e os
+            painéis das telas usam position:absolute/fixed presos ao app
+            inteiro. O transform da entrada so existe durante os 0,26 s da
+            animação; nesse instante o botão fica escondido e reaparece. */}
+        <div key={tela} className={entrada ? `aba-entra-${entrada} mov-sempre` : undefined} style={{ width: "100%" }}>
           {renderTela()}
         </div>
       </div>
@@ -2790,18 +2790,26 @@ function Estilos() {
     *{text-wrap:pretty;}
     [style*="text-align: center"]{text-wrap:balance;}
     /* Transicao entre abas: desliza 24px e aparece. Anima a margem: nem left (exige position) nem transform. */
-    @keyframes abaDir{from{margin-left:24px;opacity:0}to{margin-left:0;opacity:1}}
-    @keyframes abaEsq{from{margin-left:-24px;opacity:0}to{margin-left:0;opacity:1}}
-    @keyframes abaSobe{from{margin-top:12px;opacity:0}to{margin-top:0;opacity:1}}
-    .aba-entra-dir{animation:abaDir .24s cubic-bezier(.2,.8,.2,1) backwards}
-    .aba-entra-esq{animation:abaEsq .24s cubic-bezier(.2,.8,.2,1) backwards}
-    .aba-entra-sobe{animation:abaSobe .22s cubic-bezier(.2,.8,.2,1) backwards}
+    /* transform + opacity: o celular anima isso na placa de video, liso
+       mesmo enquanto monta a tela. (A margem, usada antes, refazia o layout
+       da tela inteira a cada quadro e travava.) Sem fill-mode "forwards":
+       terminada a animacao o transform some, e o botao "bateu a preguica?",
+       que se prende ao app inteiro, volta para o canto. */
+    @keyframes abaDir{from{transform:translate3d(28px,0,0);opacity:0}to{transform:none;opacity:1}}
+    @keyframes abaEsq{from{transform:translate3d(-28px,0,0);opacity:0}to{transform:none;opacity:1}}
+    @keyframes abaSobe{from{transform:translate3d(0,14px,0);opacity:0}to{transform:none;opacity:1}}
+    .aba-entra-dir{animation:abaDir .26s cubic-bezier(.2,.8,.2,1) backwards}
+    .aba-entra-esq{animation:abaEsq .26s cubic-bezier(.2,.8,.2,1) backwards}
+    .aba-entra-sobe{animation:abaSobe .24s cubic-bezier(.2,.8,.2,1) backwards}
     /* Toque na barra de abas: o icone afunda um pouco */
     .aba-nav>div{transition:transform .12s ease}
     .aba-nav:active>div{transform:scale(.9)}
     /* Celular estreito (320px): "Meu Mapa" e "Conteudo" encostavam */
     @media (max-width:350px){.aba-rotulo{letter-spacing:-0.03em!important}}
-    @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
+    /* "Reduzir movimento" do celular corta as animacoes do app — menos as
+       marcadas com .mov-sempre (a troca de tela e a luz da montanha):
+       movimentos curtos, que os apps nativos mantem com a opcao ligada. */
+    @media (prefers-reduced-motion: reduce){*:not(.mov-sempre),*:not(.mov-sempre)::before,*:not(.mov-sempre)::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
     *{box-sizing:border-box;margin:0;padding:0;}
     ::-webkit-scrollbar{display:none;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}

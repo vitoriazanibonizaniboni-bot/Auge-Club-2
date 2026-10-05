@@ -53,8 +53,6 @@ export function pontoNaTrilha(t, pts = TRILHA_BASE) {
 // Em vez de pular em linha reta (transição de CSS), o valor de t vai mudando
 // quadro a quadro, e a luz segue as curvas da trilha. Começa devagar, acelera
 // e chega devagar. Quando chega, o brilho pulsa uma vez.
-const reduzMovimento = () =>
-  typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const suave = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
 function useLuzAnimada(alvo, inicio = alvo) {
@@ -65,7 +63,9 @@ function useLuzAnimada(alvo, inicio = alvo) {
   useEffect(() => {
     const de = atual.current;
     if (Math.abs(alvo - de) < 1e-4) return;
-    if (reduzMovimento()) { atual.current = alvo; setValor(alvo); return; }
+    // NAO segue o "Reduzir movimento" do celular: com a opcao ligada a luz
+    // so pulava, e a subida e o momento do app. (Mesma decisao da bolinha da
+    // barra de abas, 05/10.)
     // devagar de propósito: mesmo uma subida pequena leva mais de 2 segundos
     const dur = Math.min(3500, 2200 + Math.abs(alvo - de) * 2500);
     let t0 = null, raf;
@@ -90,19 +90,19 @@ function useLuzAnimada(alvo, inicio = alvo) {
 function Luz({ x, y, raio, nucleo, pulso, andando, dataLuz }) {
   const halo = raio * 2, anel = raio * 2;
   return (
-    <div aria-hidden="true" {...(dataLuz ? { "data-luz": "" } : {})}
+    <div aria-hidden="true" className="mov-sempre" {...(dataLuz ? { "data-luz": "" } : {})}
          style={{ position: "absolute", left: x, top: y, width: 0, height: 0 }}>
       {pulso > 0 && (
-        <span key={`anel${pulso}`} style={{ position: "absolute", left: -raio, top: -raio, width: anel, height: anel, borderRadius: raio,
+        <span key={`anel${pulso}`} className="mov-sempre" style={{ position: "absolute", left: -raio, top: -raio, width: anel, height: anel, borderRadius: raio,
                                             border: `${Math.max(2, raio / 6)}px solid #FFE3AE`, boxSizing: "border-box", opacity: 0,
                                             animation: "augeLuzAnel 1.4s ease-out" }} />
       )}
-      <span key={`halo${pulso}`} style={{ position: "absolute", left: -raio, top: -raio, width: halo, height: halo, borderRadius: raio,
+      <span key={`halo${pulso}`} className="mov-sempre" style={{ position: "absolute", left: -raio, top: -raio, width: halo, height: halo, borderRadius: raio,
                                           background: "radial-gradient(circle, #FFEFC9 0%, #FCE6C4 55%, rgba(252,230,196,0) 100%)",
                                           opacity: andando ? 0.85 : 0.6, transform: andando ? "scale(1.35)" : "scale(1)",
                                           transition: "transform .6s ease, opacity .6s ease",
                                           animation: pulso ? "augeLuzBrilho 1.6s ease-out" : "none" }} />
-      <span key={`nucleo${pulso}`} style={{ position: "absolute", left: -nucleo, top: -nucleo, width: nucleo * 2, height: nucleo * 2, borderRadius: nucleo,
+      <span key={`nucleo${pulso}`} className="mov-sempre" style={{ position: "absolute", left: -nucleo, top: -nucleo, width: nucleo * 2, height: nucleo * 2, borderRadius: nucleo,
                                             background: "#FFF8E8", boxShadow: "0 0 6px 1px rgba(255,236,190,.9)",
                                             animation: pulso ? "augeLuzNucleo 1.6s ease-out" : "none" }} />
       <style>{"@keyframes augeLuzBrilho{0%{transform:scale(1.35);opacity:.85}35%{transform:scale(2.3);opacity:1}100%{transform:scale(1);opacity:.6}}"
@@ -137,7 +137,7 @@ export function Cume({ t, titulo, subtitulo, onAjuda, achatar = 1 }) {
               strokeLinecap="round" strokeLinejoin="round" opacity=".9" vectorEffect="non-scaling-stroke" />
       </svg>
 
-      {/* a luz — com "reduzir movimento" ela muda de lugar sem animar */}
+      {/* a luz — sobe deslizando mesmo com "reduzir movimento" ligado */}
       <Luz x={`${(x / W) * 100}%`} y={`${(y / H) * 100}%`} raio={16} nucleo={7.5} pulso={pulso} andando={andando} dataLuz />
 
       <div style={{ position: "absolute", left: 20, right: 12, top: 16, display: "flex", gap: 8 }}>
