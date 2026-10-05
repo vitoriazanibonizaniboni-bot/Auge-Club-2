@@ -2487,9 +2487,13 @@ export default function App() {
  bussola,
  perfilAuge,
  setPerfilAuge,
-    // O desafio da semana em curso vem da tabela por semana; sem ele, cai no
-    // texto unico da turma, que e o que existia antes.
- desafioTexto: desafiosSemana[sem] ?? desafioTexto,
+    // O desafio da semana em curso vem SO da tabela por semana para quem tem
+    // turma. O texto unico da turma (turmas.desafio) parou de ser editavel no
+    // Painel e ficou congelado no desafio da S7: usar ele como reserva fazia
+    // toda segunda-feira, antes de a mentora preencher a semana nova, voltar o
+    // desafio da S7. Semana em branco = sem card, como o Painel promete.
+    // Aluna sem turma continua no texto geral do config.
+ desafioTexto: turma ? (desafiosSemana[sem] || "") : desafioTexto,
  desafiosSemana,
  desafioFeitos,
     guias,
