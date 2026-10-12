@@ -23,6 +23,9 @@ const baixa = (pts, k) => pts.map(([x, y]) => [x, H - (H - y) * k]);
 const caminho = (pts, fechar = true) =>
   pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ") + (fechar ? "Z" : "");
 
+// O desenho é o mesmo no post da Sexta da Vitória (AugeSexta.jsx)
+export const DESENHO = { W, H, TRILHA_BASE, FUNDO, MONTANHA, SOMBRA, NEVE };
+
 // habitos: [{ feitos, meta }] — só os ativos na semana
 export function progressoSemana(habitos) {
   const g = habitos.reduce((a, h) => a + h.meta, 0);

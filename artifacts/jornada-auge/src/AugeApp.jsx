@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
+import { SextaDaVitoria } from "./components/AugeSexta.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
 import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
 import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
@@ -1131,6 +1132,9 @@ export default function App() {
  try { return localStorage.getItem("auge_diagOk_" + userId) === "1"; } catch { return false; }
   };
  const [tela, setTela] = useState(S.HOME);
+ // Sexta da Vitória — fica no App, e não na Hoje: ao compartilhar no Mural o
+ // app vai para a aba Mural e a Hoje sai da tela, levando a Sexta junto.
+ const [sexta, setSexta] = useState(null); // { frase, tags, t, semana }
  // ── Transicao entre abas ────────────────────────────────────────────────
  // Cada tela guarda onde a aluna parou de rolar; ao voltar para uma das 5
  // abas, ela continua dali. Tela que nao e aba (Roda, Kit, Escritas...)
@@ -2413,6 +2417,7 @@ export default function App() {
   // (Questionário de diagnóstico removido do primeiro acesso a pedido da Vitória)
 
  const ctx = {
+ setSexta,
  perfil,
  ir,
  back,
@@ -2760,6 +2765,20 @@ export default function App() {
           {renderTela()}
         </div>
       </div>
+      {sexta && (
+        <SextaDaVitoria
+ C={C}
+ Button={Button}
+ t={sexta.t}
+ semana={sexta.semana}
+ fraseInicial={sexta.frase}
+ tags={sexta.tags}
+ corDe={(nome) => COR_TAG[nome] || COR_TAG_PESSOAL}
+ nome={(usuario?.nome || "").trim().split(/\s+/)[0] || ""}
+ tk={tk}
+ onFechar={() => setSexta(null)}
+        />
+      )}
       {tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
       {!tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
       {!SEM_NAV.includes(tela) && (
@@ -5064,7 +5083,7 @@ function PastilhasSemana({ tags }) {
   );
 }
 
-function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafioFeitos = [], diasDaSemana = [], sem, segundaAtual, postTreino, tk, onFechar }) {
+function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafioFeitos = [], diasDaSemana = [], sem, segundaAtual, postTreino, tk, onFechar, onEnviada }) {
  const [passo, setPasso] = useState(1);
  const [resp, setResp] = useState("");
  const ativos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
@@ -5099,6 +5118,9 @@ function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafi
  tk("Vitória registrada ");
     }
  onFechar();
+    // Abre a "Sexta da Vitória": o post da semana para os stories/WhatsApp.
+    // A frase é editada lá e NÃO altera o que foi salvo aqui.
+ if (onEnviada) onEnviada(texto, tags);
   };
  return (
     <Card tom="blush" style={{ marginBottom: 16 }}>
@@ -5139,6 +5161,7 @@ function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafi
 }
 
 function Home({
+ setSexta,
  perfil,
  sem,
  mes,
@@ -5539,6 +5562,7 @@ function Home({
  postTreino={postTreino}
  tk={tk}
  onFechar={() => setVitSemOk(true)}
+ onEnviada={(frase, tags) => setSexta({ frase, tags, t: tCume, semana: sem })}
           />
         )}
 
