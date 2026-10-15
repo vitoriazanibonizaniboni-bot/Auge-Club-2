@@ -1616,7 +1616,7 @@ export default function App() {
  const back = () => ir(ABA_ORIGEM[tela] || S.HOME);
 
   // ── Carrega todos os dados da aluna do Supabase após autenticação ────────────
- const loadUserData = async (userId) => {
+ const carregarDados = async (userId, aoEssencial) => {
     // Interesses da própria aluna — usados para calcular compatibilidade real
  let meusInteresses = [];
     // Compatibilidade real por interesses em comum (Jaccard).
@@ -1882,11 +1882,21 @@ export default function App() {
  setPq3(porquesRes.data.p3 || "");
     }
 
- // A turma vem do perfil que acabou de ser lido: o estado ainda nao existe aqui.
- await carregarFeed(userId, profileRes.data?.turma_id || null, profileRes.data?.plano === "admin");
-
-    // Carregar configurações (mentoria)
- const configRes = await supabase.from("config").select("*");
+ // ── O resto chega em PARALELO, nao uma consulta depois da outra ──────────
+    // Antes eram 7 idas e voltas ao Supabase em fila (Mural, config, turma,
+    // desafios, videos, Radar) antes de a tela de abertura sair — no celular,
+    // varios segundos de "carregando". Agora todas saem juntas, e a abertura
+    // sai assim que config e turma chegam (sem elas a semana sairia errada);
+    // Mural, videos e Radar terminam de chegar com o app ja aberto.
+ const _turmaId = profileRes.data?.turma_id;
+ const pFeed = carregarFeed(userId, _turmaId || null, profileRes.data?.plano === "admin").catch(() => {});
+ const pConfigTurma = (async () => {
+ const [configRes, turmaRes, dsRes] = await Promise.all([
+ supabase.from("config").select("*"),
+ _turmaId ? supabase.from("turmas").select("*").eq("id", _turmaId).single() : Promise.resolve({ data: null }),
+ _turmaId ? supabase.from("desafios_semana").select("semana,texto").eq("turma_id", _turmaId) : Promise.resolve({ data: null }),
+      ]);
+      // Config primeiro, turma depois: a turma vale mais que os valores gerais.
  if (configRes.data?.length) {
  const cfg = Object.fromEntries(configRes.data.map((c) => [c.id, c.valor]));
  setMentoria({
@@ -1902,14 +1912,11 @@ export default function App() {
  setGuias({ movimento: _pg("movimento"), sono: _pg("sono"), tempo: _pg("tempo") });
     }
 
-    // ── A turma da aluna ────────────────────────────────────────────────────
-    // Vem DEPOIS do config de proposito: a data de inicio, o encontro, o link
-    // do Meet e o desafio da turma valem mais que os valores gerais. Aluna sem
-    // turma continua no que esta no config, como sempre foi.
- const _turmaId = profileRes.data?.turma_id;
- if (_turmaId) {
- const { data: t } = await supabase.from("turmas").select("*").eq("id", _turmaId).single();
- if (t) {
+      // A turma e a unica fonte para quem tem turma: se a mentora apagar o
+      // desafio da turma, a aluna fica sem desafio, e nao com o valor antigo
+      // que sobrou no config.
+ const t = turmaRes?.data;
+ if (_turmaId && t) {
  setTurma(t);
  if (t.inicio) setJornadaInicio(t.inicio);
  setMentoria((m) => ({
@@ -1918,29 +1925,19 @@ export default function App() {
  duracao: t.mentoria_duracao || m.duracao,
  zoom: t.zoom || m.zoom,
         }));
- // A turma e a unica fonte para quem tem turma: se a mentora apagar o
-        // desafio da turma, a aluna fica sem desafio, e nao com o valor antigo
-        // que sobrou no config.
  setDesafioTexto(t.desafio || "");
-        // E o desafio de CADA semana, que alimenta a Trajetoria
- const { data: ds } = await supabase
-          .from("desafios_semana")
-          .select("semana,texto")
-          .eq("turma_id", _turmaId);
  const porSemana = {};
- for (const d of ds || []) porSemana[d.semana] = d.texto || "";
+ for (const d of dsRes?.data || []) porSemana[d.semana] = d.texto || "";
  setDesafiosSemana(porSemana);
       }
-    }
-
-    // Carregar vídeos do Supabase
- const videosRes = await supabase
+    })();
+ const pVideos = supabase
       .from("videos")
       .select("*")
       .eq("ativo", true)
       .order("ordem", { ascending: true })
-      .order("created_at", { ascending: false });
-
+      .order("created_at", { ascending: false })
+      .then((videosRes) => {
  if (videosRes.data?.length) {
       // Video sem turma e de todas; video com turma so aparece para a turma dele.
       // Esquecer de marcar deixa o video visivel para todas, nunca invisivel.
@@ -1949,8 +1946,8 @@ export default function App() {
  setVideos(videosRes.data.filter((v) => _admin || !v.turma_id || v.turma_id === _turmaId));
     }
 
-    // Carregar perfis do Radar de Amigas
- const { data: radarData } = await supabase.rpc("get_radar_profiles", { uid: userId });
+      });
+ const pRadar = supabase.rpc("get_radar_profiles", { uid: userId }).then(({ data: radarData }) => {
  if (radarData?.length) {
  const CORES = ["#8B4A6B", "#3A6B5C", "#5C4A8B", "#6B5C3A", "#3A5C6B"];
  const mapPerfil = (p, i) => ({
@@ -1970,6 +1967,12 @@ export default function App() {
  radarData.map(mapPerfil).sort((a, b) => (b.compat ?? 0) - (a.compat ?? 0))
       );
     }
+
+    });
+
+ await pConfigTurma;
+ if (aoEssencial) aoEssencial();
+ await Promise.all([pFeed, pVideos.catch(() => {}), pRadar.catch(() => {})]);
 
     } catch (e) {
  console.error("loadUserData error:", e);
@@ -2055,6 +2058,23 @@ export default function App() {
  setNaoLidas(counts);
         }
       });
+  };
+  // Uma carga por vez para a mesma aluna. Ao abrir o app, a sessão salva e o
+  // aviso de login do Supabase chamavam a carga ao mesmo tempo, e tudo era
+  // buscado DUAS vezes — o dobro de espera na abertura. Quem chega no meio da
+  // carga pega a mesma, e é avisado quando o essencial chegar.
+ const cargaRef = useRef(null);
+ const loadUserData = (userId, aoEssencial) => {
+ const c = cargaRef.current;
+ if (c && c.id === userId && !c.fim) {
+ if (aoEssencial) { if (c.essencial) aoEssencial(); else c.avisar.push(aoEssencial); }
+ return c.p;
+    }
+ const nova = { id: userId, avisar: aoEssencial ? [aoEssencial] : [], essencial: false, fim: false };
+ nova.p = carregarDados(userId, () => { nova.essencial = true; nova.avisar.forEach((f) => f()); })
+      .finally(() => { nova.fim = true; });
+ cargaRef.current = nova;
+ return nova.p;
   };
 
  const formatTempo = (iso) => {
@@ -2317,10 +2337,10 @@ export default function App() {
  setOneSignalUser(session.user.id);
         // Timeout de segurança: nunca fica preso no carregando
  const loadTimeout = setTimeout(() => setLoadingAuth(false), 8000);
- loadUserData(session.user.id).finally(() => {
- clearTimeout(loadTimeout);
- setLoadingAuth(false);
-        });
+ const liberar = () => { clearTimeout(loadTimeout); setLoadingAuth(false); };
+        // A abertura sai quando o essencial chega (perfil, hábitos, turma);
+        // Mural, vídeos e Radar continuam chegando com o app já aberto.
+ loadUserData(session.user.id, liberar).finally(liberar);
       } else {
  setLoadingAuth(false);
       }
@@ -2571,7 +2591,7 @@ export default function App() {
       <Phone>
         <Grain
  style={{
- minHeight: 760,
+ flex: 1,
  display: "flex",
  flexDirection: "column",
  alignItems: "center",
@@ -2579,19 +2599,9 @@ export default function App() {
  gap: 24,
           }}
         >
+          {/* Só a marca na abertura — o "carregando..." saiu (pedido da
+              Vitória, 15/10): ficava desalinhado e chamava atenção para a espera. */}
           <Logo width={240} fundo="claro" />
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.lt,
- animation: "pulse 1.5s ease-in-out infinite",
- letterSpacing: "0.2em",
-            }}
-          >
- carregando...
-          </div>
         </Grain>
         <Estilos />
       </Phone>
