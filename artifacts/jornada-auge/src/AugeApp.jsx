@@ -778,16 +778,21 @@ function Phone({ children }) {
  return () => window.removeEventListener("resize", onR);
   }, []);
  if (full) {
-    // Celular / app das lojas — ocupa a tela inteira, sem moldura
+    // Celular / app das lojas — ocupa a tela inteira, sem moldura.
+    // Preso nas quatro bordas da tela VISIVEL (position: fixed + inset 0), e
+    // nao com height: 100vh: no iPhone o 100vh e mais alto que a area que
+    // aparece, a pagina inteira rolava alguns pixels e a barra de abas saia
+    // pela metade da tela, "pulando" a cada toque. Vale para qualquer
+    // tamanho de celular, iPhone ou Android.
  return (
       <div
  style={{
- height: "100vh",
+ position: "fixed",
+ inset: 0,
  background: C.creme,
  fontFamily: FB,
  display: "flex",
  flexDirection: "column",
- position: "relative",
  overflow: "hidden",
         }}
       >
@@ -2814,6 +2819,9 @@ function Estilos() {
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Inter:wght@400;500;600;700&display=swap');
     ${cssVars}
     html,body{background:var(--bg);}
+    /* A pagina em si nunca rola: quem rola e a area da tela, por dentro.
+       Sem isso o iPhone deixava a pagina inteira escorregar. */
+    @media (max-width:500px){html,body{height:100%;overflow:hidden;overscroll-behavior:none;}}
     /* Quebra de linha: evita palavra sozinha na ultima linha; texto centralizado fica com linhas equilibradas */
     *{text-wrap:pretty;}
     [style*="text-align: center"]{text-wrap:balance;}
@@ -2949,7 +2957,8 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  background: NAV.barra,
  borderTop: `1px solid ${NAV.borda}`,
  display: "flex",
- padding: "16px 0 26px",
+        // a faixa do "home" do iPhone/Android fica por baixo da barra, sem cortar os nomes
+ padding: "16px 0 max(26px, calc(10px + env(safe-area-inset-bottom)))",
  position: "relative",
  zIndex: 5,
       }}
