@@ -25,12 +25,42 @@ function nextDailyAt(hour, minute = 0) {
   return d.getTime();
 }
 
+// ─── App nativo: esperar o plugin do OneSignal ficar pronto ──────────────────
+// No app nativo, o plugin (window.plugins.OneSignal) só existe depois do
+// "deviceready" do Cordova. No iPhone isso costuma chegar DEPOIS de a tela
+// montar: o código antigo procurava o plugin uma vez só, não achava e
+// desistia calado — o celular nunca era registrado e nenhum push chegava.
+// Agora espera o plugin (até 20 s) antes de iniciar, pedir permissão e
+// ligar a aluna ao aparelho.
+const ehNativo = () =>
+  typeof window !== "undefined" && !!window.Capacitor &&
+  !!window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+const pluginOneSignal = () => {
+  const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
+  return OS && typeof OS.initialize === "function" ? OS : null;
+};
+let esperaPlugin = null;
+function esperarOneSignal() {
+  if (!ehNativo()) return Promise.resolve(null);
+  if (esperaPlugin) return esperaPlugin;
+  esperaPlugin = new Promise((ok) => {
+    const ja = pluginOneSignal();
+    if (ja) return ok(ja);
+    let fim = false;
+    const achou = () => { const OS = pluginOneSignal(); if (OS && !fim) { fim = true; clearInterval(t); ok(OS); } };
+    document.addEventListener("deviceready", achou, { once: true });
+    const t = setInterval(achou, 300);
+    setTimeout(() => { if (!fim) { fim = true; clearInterval(t); ok(null); } }, 20000);
+  });
+  return esperaPlugin;
+}
+
 // ─── Solicitar permissão ──────────────────────────────────────────────────────
 export async function requestPermission() {
   // App nativo (Capacitor / lojas): quem pede a permissão é o OneSignal nativo
-  if (typeof window !== "undefined" && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+  if (ehNativo()) {
     try {
-      const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
+      const OS = await esperarOneSignal();
       if (OS && OS.Notifications && typeof OS.Notifications.requestPermission === "function") {
         const ok = await OS.Notifications.requestPermission(true);
         return ok ? "granted" : "denied";
@@ -112,14 +142,17 @@ export async function clearAll() {
 // ─── ONESIGNAL NATIVO (Capacitor / apps das lojas) ───────────────────────────
 // Roda só dentro do app nativo. No navegador (PWA) o SDK web continua cuidando.
 const ONESIGNAL_APP_ID = "c0ce93ea-ba72-44c1-abfe-367a510aed39";
-export function initOneSignalNative() {
+let nativoIniciado = false;
+let uidPendente = null;
+export async function initOneSignalNative() {
   try {
-    const isNative = typeof window !== "undefined" && window.Capacitor &&
-      window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    if (!isNative) return;
-    const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
-    if (!OS || typeof OS.initialize !== "function") return;
+    if (!ehNativo()) return;
+    const OS = await esperarOneSignal();
+    if (!OS || nativoIniciado) return;
     OS.initialize(ONESIGNAL_APP_ID);
+    nativoIniciado = true;
+    // a aluna que entrou antes de o plugin ficar pronto
+    if (uidPendente && typeof OS.login === "function") { try { OS.login(uidPendente); } catch (e) {} }
     if (OS.Notifications && typeof OS.Notifications.requestPermission === "function") {
       OS.Notifications.requestPermission(true);
     }
@@ -139,8 +172,13 @@ export function initOneSignalNative() {
 // ─── Liga o OneSignal ao usuário (para notificações direcionadas) ─────────────
 export function setOneSignalUser(uid) {
   if (!uid || typeof window === "undefined") return;
-  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
-    try { const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal; OS && OS.login && OS.login(String(uid)); } catch (e) {}
+  if (ehNativo()) {
+    // Só dá para ligar a aluna depois do initialize; se ainda não rodou,
+    // fica guardado e o initOneSignalNative faz o login.
+    uidPendente = String(uid);
+    if (nativoIniciado) {
+      try { const OS = pluginOneSignal(); OS && OS.login && OS.login(uidPendente); } catch (e) {}
+    }
     return;
   }
   window.OneSignalDeferred = window.OneSignalDeferred || [];
