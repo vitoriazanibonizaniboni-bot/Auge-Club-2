@@ -61,7 +61,14 @@ const SEQ_MINIMA = 3;
 // Template do lembrete (secao 9). Nunca fala em perder sequencia nem em
 // quebrar progresso: o publico ja vive o ciclo comecar-parar-culpa, e ameaca
 // de perda reforca exatamente esse padrao. So convite ou celebracao.
-function textoLembrete({ nome, pessoal, seq }) {
+function textoLembrete({ nome, pessoal, seq, ontem }) {
+  // O Sono e marcado referente a NOITE ANTERIOR: "ainda nao foi hoje" nao
+  // faz sentido. O lembrete convida para a noite de hoje, curto (textos da
+  // Vitoria, 16/10). Com sequencia, celebra o que ja existe.
+  if (ontem) {
+    if (seq >= SEQ_MINIMA) return `${seq} noites de sono, que tal continuar assim?`;
+    return "Esta noite pode ser diferente. Tente não usar o celular antes de dormir.";
+  }
   if (seq >= SEQ_MINIMA) {
     return `${seq} dias seguidos de ${nome}. Hoje pode ser mais um.`;
   }
@@ -259,7 +266,7 @@ async function lembretesDoDia(supaUrl, serviceKey) {
       if (sem < hb.unlock) continue; // habito ainda bloqueado para ela
       const alvo = hb.ontem ? ontem : hoje;
       if (marcas.has(`${hb.id}|${alvo}`)) continue;
-      candidatos.push({ nome: hb.nome, pessoal: false, seq: sequencia(marcas, hb.id, alvo) });
+      candidatos.push({ nome: hb.nome, pessoal: false, ontem: hb.ontem, seq: sequencia(marcas, hb.id, alvo) });
     }
     for (const hp of pessoaisDe.get(a.id) || []) {
       if (marcas.has(`${hp.id}|${hoje}`)) continue;
