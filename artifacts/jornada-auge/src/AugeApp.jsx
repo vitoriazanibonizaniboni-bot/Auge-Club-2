@@ -1314,7 +1314,9 @@ export default function App() {
  const bloqueado = sem < h.unlock;
  const s1 = statsSemana(addDaysStr(segundaAtual, -7))[h.id];
  const s2 = statsSemana(addDaysStr(segundaAtual, -14))[h.id];
- const sugerirSubir = !bloqueado && s1.feitas >= meta && s2.feitas >= meta;
+    // A semana tem 7 dias: com a meta em 7x nao ha para onde subir, e o
+    // aviso "Subir para 8x?" nao faz sentido.
+ const sugerirSubir = !bloqueado && meta < 7 && s1.feitas >= meta && s2.feitas >= meta;
  const sugerirReduzir = !bloqueado && s1.predom === 5 && s2.predom === 5;
  habStats[h.id] = { meta, descMeta, feitas, predom, zona, bloqueado, sugerirSubir, sugerirReduzir };
   }
