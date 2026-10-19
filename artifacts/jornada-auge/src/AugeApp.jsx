@@ -11488,6 +11488,22 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
 
 function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
+ // Tela acesa enquanto a página do vídeo está aberta. Numa meditação a aluna
+ // fica de olhos fechados, sem tocar no celular: depois de 30 s a 1 min o
+ // Android apaga a tela, o app vai para segundo plano e o áudio para. O
+ // "Wake Lock" pede ao celular para não apagar a tela; ao fechar o vídeo,
+ // libera. Quando o celular não tem esse recurso, nada muda.
+ useEffect(() => {
+ if (!videoAberto || typeof navigator === "undefined" || !navigator.wakeLock) return;
+ let trava = null, vivo = true;
+ const pedir = async () => {
+ try { if (vivo && document.visibilityState === "visible") trava = await navigator.wakeLock.request("screen"); } catch {}
+    };
+ const aoVoltar = () => { if (document.visibilityState === "visible") pedir(); };
+ pedir();
+ document.addEventListener("visibilitychange", aoVoltar);
+ return () => { vivo = false; document.removeEventListener("visibilitychange", aoVoltar); try { trava && trava.release(); } catch {} };
+  }, [videoAberto]);
  const [guiaAberto, setGuiaAberto] = useState(null); // guia HTML aberto dentro do app
   const [guiaHtml, setGuiaHtml] = useState(""); // conteudo HTML do guia/indicacao (renderizado via srcDoc)
   // ── "Assistido": ids dos videos que esta aluna ja marcou (tabela videos_assistidos) ──
