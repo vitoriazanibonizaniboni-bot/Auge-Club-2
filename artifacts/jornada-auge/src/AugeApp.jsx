@@ -767,12 +767,19 @@ function Grain({ children, style = {} }) {
 
 // Ordem das abas na barra — decide para que lado a tela desliza
 const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
+// Celular = tela cheia; computador = moldura de celular no meio da tela.
+// Decide pelo LADO MENOR da tela (ou toque), não pela largura: com a largura,
+// virar o celular deitado (paisagem, 844px) trocava o app para a moldura do
+// computador, a tela inteira era montada de novo — e a meditação ou aula que
+// estava tocando parava sozinha e a página do vídeo fechava.
+const ehCelular = () =>
+  typeof window === "undefined" ||
+  Math.min(window.innerWidth, window.innerHeight) <= 500 ||
+  (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
 function Phone({ children }) {
- const [full, setFull] = useState(
-    typeof window === "undefined" ? true : window.innerWidth <= 500
-  );
+ const [full, setFull] = useState(ehCelular);
  useEffect(() => {
- const onR = () => setFull(window.innerWidth <= 500);
+ const onR = () => setFull(ehCelular());
  onR();
  window.addEventListener("resize", onR);
  return () => window.removeEventListener("resize", onR);
@@ -2823,7 +2830,7 @@ function Estilos() {
     html,body{background:var(--bg);}
     /* A pagina em si nunca rola: quem rola e a area da tela, por dentro.
        Sem isso o iPhone deixava a pagina inteira escorregar. */
-    @media (max-width:500px){html,body{height:100%;overflow:hidden;overscroll-behavior:none;}}
+    @media (max-width:500px),(max-height:500px),(pointer:coarse){html,body{height:100%;overflow:hidden;overscroll-behavior:none;}}
     /* Quebra de linha: evita palavra sozinha na ultima linha; texto centralizado fica com linhas equilibradas */
     *{text-wrap:pretty;}
     [style*="text-align: center"]{text-wrap:balance;}
