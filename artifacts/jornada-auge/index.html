@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+    <script>
+      // App do iPhone a partir da 1.0.2: a tela vai de ponta a ponta (a barra de abas
+      // desce ate o fim, por baixo da barrinha do home). So o app novo manda essa marca
+      // no navegador interno; Android, navegador e o app 1.0.1 ficam como estavam.
+      if (/AugeBordaABorda/.test(navigator.userAgent)) {
+        var m = document.querySelector('meta[name="viewport"]');
+        if (m) m.setAttribute("content", m.getAttribute("content") + ", viewport-fit=cover");
+      }
+    </script>
     <title>Clube do Auge</title>
     <meta name="description" content="Método · Movimento · 40+ — Dra. Isadora Zaniboni" />
 

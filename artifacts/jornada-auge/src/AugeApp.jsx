@@ -801,6 +801,9 @@ function Phone({ children }) {
  display: "flex",
  flexDirection: "column",
  overflow: "hidden",
+        // no app do iPhone de ponta a ponta, o conteudo comeca abaixo do relogio
+        // (fora dele o valor e zero e nada muda)
+ paddingTop: "env(safe-area-inset-top)",
         }}
       >
         {children}
@@ -5461,7 +5464,7 @@ function Home({
     <div style={{ animation: "fadeUp .35s ease" }}>
       {/* Aviso ao marcar, com a montanha pequena: a luz sobe ali, onde ela estiver na tela */}
       {cumeAviso && (
-        <div key={cumeAviso.id} role="status" style={{ position: "fixed", left: 16, right: 16, top: 16, zIndex: 300, maxWidth: 420, margin: "0 auto", background: C.branco, borderRadius: 18, boxShadow: "0 8px 28px rgba(31,26,23,.18)", padding: 10, display: "flex", alignItems: "center", gap: 12, animation: "fadeUp .3s ease" }}>
+        <div key={cumeAviso.id} role="status" style={{ position: "fixed", left: 16, right: 16, top: "calc(16px + env(safe-area-inset-top))", zIndex: 300, maxWidth: 420, margin: "0 auto", background: C.branco, borderRadius: 18, boxShadow: "0 8px 28px rgba(31,26,23,.18)", padding: 10, display: "flex", alignItems: "center", gap: 12, animation: "fadeUp .3s ease" }}>
           <CumeMini t={cumeAviso.para} de={cumeAviso.de} largura={150} altura={76} />
           <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.35 }}>{cumeAviso.msg}</div>
         </div>
@@ -5874,7 +5877,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       {avisoAcao && (
-        <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 16, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
+        <div style={{ position: "fixed", top: "calc(14px + env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 16, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
       )}
       <div style={{ background: C.creme, padding: "18px 18px 14px", textAlign: "center", borderBottom: `1px solid ${C.ouro}20` }}>
         <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 400, color: C.ouroTxt }}>Mural do 1%</div>
@@ -11783,7 +11786,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
 
         {/* Player interno — o vídeo toca dentro do app (sem ir ao YouTube) */}
         {guiaAberto && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 600, background: C.creme, display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 600, background: C.creme, display: "flex", flexDirection: "column", paddingTop: "env(safe-area-inset-top)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${C.linho}`, background: C.creme, flexShrink: 0 }}>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt }}>Guia</div>
               <button onClick={() => setGuiaAberto(null)} style={{ background: "none", border: `1px solid ${C.ouro}66`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, cursor: "pointer" }}>Fechar ✕</button>
@@ -11793,7 +11796,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
         )}
         {videoAberto && (
           <div style={{ position: "fixed", inset: 0, zIndex: 500, background: C.creme, overflowY: "auto" }}>
-            <div style={{ position: "sticky", top: 0, zIndex: 2, background: C.creme, padding: "12px 16px 10px" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 2, background: C.creme, padding: "calc(12px + env(safe-area-inset-top)) 16px 10px" }}>
               <button
                 onClick={() => setVideoAberto(null)}
                 style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt }}
