@@ -184,22 +184,3 @@ export function setOneSignalUser(uid) {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push((OneSignal) => { try { OneSignal.login(String(uid)); } catch (e) {} });
 }
-
-// ─── Diagnóstico (escondido no Perfil: 5 toques em "Notificações e lembretes") ─
-// Mostra, no próprio iPhone/Android, em que ponto o registro no OneSignal
-// parou. Não envia nada para ninguém.
-export async function diagnosticoPush() {
-  const d = { nativo: ehNativo(), plugin: false, iniciado: nativoIniciado, permissao: null, inscrito: null, id: null, token: null, aluna: uidPendente, erro: null };
-  try {
-    if (!d.nativo) return d;
-    const OS = await esperarOneSignal();
-    d.plugin = !!OS;
-    if (!OS) return d;
-    const sub = OS.User && OS.User.pushSubscription;
-    if (OS.Notifications && OS.Notifications.getPermissionAsync) d.permissao = await OS.Notifications.getPermissionAsync();
-    if (sub && sub.getOptedInAsync) d.inscrito = await sub.getOptedInAsync();
-    if (sub && sub.getIdAsync) d.id = await sub.getIdAsync();
-    if (sub && sub.getTokenAsync) { const t = await sub.getTokenAsync(); d.token = t ? t.slice(0, 8) + "…" : null; }
-  } catch (e) { d.erro = String((e && e.message) || e); }
-  return d;
-}

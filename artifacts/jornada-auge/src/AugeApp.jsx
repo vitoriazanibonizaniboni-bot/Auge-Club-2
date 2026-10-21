@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
-import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSignalUser, diagnosticoPush } from "./notifications.js";
+import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSignalUser } from "./notifications.js";
 import { supabase } from "./supabase.js";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
@@ -12831,8 +12831,6 @@ function Perfil({
  const [senhaMsg, setSenhaMsg] = useState(null);
  const [salvandoSenha, setSalvandoSenha] = useState(false);
  const [confirmDel, setConfirmDel] = useState(false);
- const [diag, setDiag] = useState(null); // diagnostico das notificacoes (5 toques)
- const toquesDiag = useRef(0);
  const [delLoad, setDelLoad] = useState(false);
  const [delMsg, setDelMsg] = useState("");
  const excluirConta = async () => {
@@ -13297,7 +13295,7 @@ function Perfil({
         {/* Notificações e lembretes — ligar/desligar (seção 9) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ flex: 1 }}>
-            <div onClick={async () => { const n = (toquesDiag.current = toquesDiag.current + 1); if (n >= 5) { toquesDiag.current = 0; setDiag({ carregando: true }); setDiag(await diagnosticoPush()); } }} style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra }}> Notificações e lembretes</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra }}> Notificações e lembretes</div>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 3 }}>
               {notifStatus === "granted" ? "Ativadas" : notifStatus === "denied" ? "Bloqueadas no navegador" : "Desativadas"}
             </div>
@@ -13317,25 +13315,6 @@ function Perfil({
             {notifStatus === "granted" ? "Desligar" : "Ligar"}
           </button>
         </div>
-
-        {diag && (
-          <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "14px 17px", marginBottom: 12, fontFamily: FB, fontSize: 14, color: C.terra, lineHeight: 1.6 }}>
-            {diag.carregando ? "Verificando…" : (
-              <>
-                <div>App nativo: {diag.nativo ? "sim" : "não"}</div>
-                <div>OneSignal carregado: {diag.plugin ? "sim" : "não"}</div>
-                <div>OneSignal iniciado: {diag.iniciado ? "sim" : "não"}</div>
-                <div>Permissão do iPhone: {diag.permissao === null ? "—" : diag.permissao ? "sim" : "não"}</div>
-                <div>Inscrita: {diag.inscrito === null ? "—" : diag.inscrito ? "sim" : "não"}</div>
-                <div>ID: {diag.id || "—"}</div>
-                <div>Token da Apple: {diag.token || "—"}</div>
-                <div>Aluna ligada: {diag.aluna ? "sim" : "não"}</div>
-                {diag.erro && <div>Erro: {diag.erro}</div>}
-              </>
-            )}
-            <button onClick={() => setDiag(null)} style={{ marginTop: 8, background: "none", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "6px 14px", fontFamily: FB, fontSize: 14, color: C.ouroTxt, cursor: "pointer" }}>Fechar</button>
-          </div>
-        )}
 
         {!IS_JORNADA && <PrefRadar authUserId={authUserId} />}
 
