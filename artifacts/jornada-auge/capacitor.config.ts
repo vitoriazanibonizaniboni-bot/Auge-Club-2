@@ -13,7 +13,11 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   ios: {
-    contentInset: 'always',
+    // de ponta a ponta: a barra de abas desce ate o fim da tela, por baixo da
+    // barrinha do home (antes ficava uma faixa de outra cor embaixo)
+    contentInset: 'never',
+    // marca lida pelo index.html para ligar o viewport-fit=cover so neste app
+    appendUserAgent: 'AugeBordaABorda',
   },
 };
 
