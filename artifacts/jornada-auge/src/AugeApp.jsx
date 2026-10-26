@@ -1141,6 +1141,7 @@ export default function App() {
  // e até quando o Clube vale (null = sem Clube)
  const [planoConta, setPlanoConta] = useState(null);
  const [clubeAte, setClubeAte] = useState(null);
+ const [dispensada, setDispensada] = useState(false); // pediu acesso sem estar na Jornada
  // Passo a passo de boas-vindas: uma vez só (primeiro acesso, ou primeira
  // abertura desta versão para quem já usava o app)
  const [tour, setTour] = useState(null); // null | { antiga: bool }
@@ -1816,6 +1817,7 @@ export default function App() {
  setPerfil(_acesso);
  setPlanoConta(p.plano || null);
  setClubeAte(p.clube_ate ? String(p.clube_ate).slice(0, 10) : null);
+ setDispensada(!!p.dispensada_em);
  setUsuario({ nome: p.nome || "", email: p.email || "" });
  setLgpdOk(!!p.lgpd_aceito);
  setBussola(p.bussola || "");
@@ -2199,6 +2201,7 @@ export default function App() {
  setPrimAcesso(null);
  setPlanoConta(null);
  setClubeAte(null);
+ setDispensada(false);
  setTela(S.HOME);
   };
 
@@ -2739,7 +2742,7 @@ export default function App() {
  if (perfil === "pendente")
  return (
       <Phone>
-        <Aguardando contato={contatoWhats} onSair={logout} onAtualizar={() => loadUserData(authUser?.id)} />
+        <Aguardando contato={contatoWhats} onSair={logout} onAtualizar={() => loadUserData(authUser?.id)} interessada={dispensada} />
         <Estilos />
       </Phone>
     );
@@ -3267,23 +3270,30 @@ function SemAcessoClube({ contato, onAtualizar, onSair }) {
 
 // Mesmo desenho da tela "Seu acesso ao Clube não está ativo" (26/10): título
 // forte, texto em Terra 17px, botão terracota e "Sair da conta" discreto.
-function Aguardando({ contato, onSair, onAtualizar }) {
+function Aguardando({ contato, onSair, onAtualizar, interessada = false }) {
  const fone = (contato || "").replace(/\D/g, "");
  const [atualizando, setAtualizando] = useState(false);
  const btn = { width: "100%", maxWidth: 340, minHeight: 54, borderRadius: 50, fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer", boxSizing: "border-box" };
  return (
     <div style={{ minHeight: "100%", background: C.creme, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center", gap: 14, fontFamily: FB }}>
       <Logo width={140} fundo="claro" />
-      <h1 style={{ fontFamily: FB, fontSize: 26, fontWeight: 700, color: C.obs, lineHeight: 1.25, margin: "14px 0 0" }}>Sua conta está sendo ativada</h1>
+      <h1 style={{ fontFamily: FB, fontSize: 26, fontWeight: 700, color: C.obs, lineHeight: 1.25, margin: "14px 0 0" }}>{interessada ? "Que bom ter você por aqui" : "Sua conta está sendo ativada"}</h1>
       <p style={{ fontSize: 17, color: C.terra, lineHeight: 1.55, maxWidth: 340, margin: "0 0 10px" }}>
-        Que alegria ter você aqui. Assim que a sua inscrição for confirmada, o seu acesso é liberado. É rapidinho.
+        {interessada
+          ? "No momento, o app é exclusivo para as alunas da Jornada AUGE. Se você tem interesse em participar, fale com a gente pelo WhatsApp."
+          : "Que alegria ter você aqui. Assim que a sua inscrição for confirmada, o seu acesso é liberado. É rapidinho."}
       </p>
-      {onAtualizar && (
+      {interessada && fone && (
+        <a href={`https://wa.me/55${fone}`} target="_blank" rel="noopener noreferrer" style={{ ...btn, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: C.primary, border: "none", color: "#FFFFFF" }}>
+          Falar no WhatsApp
+        </a>
+      )}
+      {!interessada && onAtualizar && (
         <button onClick={async () => { setAtualizando(true); await onAtualizar(); setAtualizando(false); }} style={{ ...btn, background: C.primary, border: "none", color: "#FFFFFF" }}>
           {atualizando ? "Conferindo..." : "Já fui liberada"}
         </button>
       )}
-      {fone && (
+      {!interessada && fone && (
         <a href={`https://wa.me/55${fone}`} target="_blank" rel="noopener noreferrer" style={{ ...btn, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: "none", border: `1px solid ${C.lineForte}`, color: C.obs }}>
           Falar no WhatsApp
         </a>
@@ -12137,6 +12147,9 @@ function PainelMentora({ ir }) {
  const [alunas, setAlunas] = useState([]);
  const [loadingA, setLoadingA] = useState(false);
  const [pendentes, setPendentes] = useState([]);
+ // Interessadas: pediram acesso sem estar na Jornada; saem de "Aguardando" (migração 023)
+ const [interessadas, setInteressadas] = useState([]);
+ const [verInteressadas, setVerInteressadas] = useState(false);
  const [alunaSel, setAlunaSel] = useState(null);
  const [habAlunaSel, setHabAlunaSel] = useState(null); // painel de um habito da aluna (secao 11)
  const [edA, setEdA] = useState(null); // formulario: mentora preenche dados da aluna
@@ -12181,7 +12194,23 @@ function PainelMentora({ ir }) {
  const t = turmaPend[id];
  if (t) { try { await supabase.rpc("admin_set_turma", { p_user_id: id, p_turma: t }); } catch {} }
  setPendentes((ps) => ps.filter((x) => x.id !== id));
+ setInteressadas((ps) => ps.filter((x) => x.id !== id));
   };
+ const dispensar = async (a) => {
+ if (!confirm(`Tirar ${a.nome || "esta conta"} de "Aguardando liberação"? Ela fica guardada em Interessadas e vê o aviso para falar pelo WhatsApp.`)) return;
+ const { error } = await supabase.rpc("admin_dispensar", { p_user_id: a.id, p_dispensar: true });
+ if (error) { tk("Não deu para dispensar. A migração 023 já foi rodada?"); return; }
+ setInteressadas((xs) => [{ id: a.id, nome: a.nome, email: a.email, dispensada_em: new Date().toISOString() }, ...xs]);
+ tk("Guardada em Interessadas");
+  };
+ const voltarParaLista = async (a) => {
+ const { error } = await supabase.rpc("admin_dispensar", { p_user_id: a.id, p_dispensar: false });
+ if (error) { tk("Não deu para salvar."); return; }
+ setInteressadas((xs) => xs.filter((x) => x.id !== a.id));
+ tk("De volta em Aguardando liberação");
+  };
+ const idsInteressadas = new Set(interessadas.map((x) => x.id));
+ const pendentesVis = pendentes.filter((x) => !idsInteressadas.has(x.id));
   // ── turmas: cada uma com a sua data de inicio ──
  const [turmas, setTurmas] = useState([]);
   // Um desafio por semana, por turma: { t1: { 7: "texto" } }. O snapshot serve
@@ -12288,6 +12317,7 @@ function PainelMentora({ ir }) {
         });
       });
  supabase.rpc("get_pendentes_admin").then(({ data }) => setPendentes(data || []));
+ supabase.rpc("admin_get_interessadas").then(({ data, error }) => { if (!error) setInteressadas(data || []); });
  supabase.from("turmas").select("*").order("ordem").then(({ data }) => setTurmas(data || []));
  supabase.from("desafios_semana").select("turma_id,semana,texto").then(({ data }) => {
  const porTurma = {};
@@ -12956,12 +12986,12 @@ function PainelMentora({ ir }) {
               </div>
             </div>
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 16 }}>Alunas ativas</div>
-            {pendentes.length > 0 && (
+            {pendentesVis.length > 0 && (
               <div style={{ background: `${C.ouro}12`, border: `1px solid ${C.ouro}44`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
                 <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.ouroTxt, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>
-                  Aguardando liberação ({pendentes.length})
+                  Aguardando liberação ({pendentesVis.length})
                 </div>
-                {pendentes.map((a) => (
+                {pendentesVis.map((a) => (
                   <div key={a.id} style={{ borderTop: `1px solid ${C.ouro}20`, paddingTop: 10, marginTop: 10 }}>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs }}>{a.nome || "—"}</div>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 8 }}>{a.email || ""}</div>
@@ -12984,8 +13014,32 @@ function PainelMentora({ ir }) {
                       <button onClick={() => ativarAluna(a.id, "jornada")} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 500, fontSize: 13.5, color: C.obs, cursor: "pointer" }}>Liberar Jornada</button>
                       <button onClick={() => ativarAluna(a.id, "comunidade")} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>Liberar Clube</button>
                     </div>
+                    <button onClick={() => dispensar(a)} style={{ width: "100%", marginTop: 6, background: "none", border: "none", padding: "8px", fontFamily: FB, fontSize: 13.5, color: C.terra, textDecoration: "underline", cursor: "pointer" }}>Não é aluna da Jornada — dispensar</button>
                   </div>
                 ))}
+              </div>
+            )}
+            {/* Interessadas: pediram acesso sem estar na Jornada (guardadas para o Clube) */}
+            {interessadas.length > 0 && (
+              <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 12, padding: "12px 15px", marginBottom: 20 }}>
+                <button onClick={() => setVerInteressadas((v) => !v)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: FB, fontSize: 12.5, letterSpacing: "0.15em", textTransform: "uppercase", color: C.ouroTxt }}>
+                  <span>Interessadas ({interessadas.length})</span><span style={{ fontSize: 16, letterSpacing: 0 }}>{verInteressadas ? "−" : "+"}</span>
+                </button>
+                {verInteressadas && (
+                  <>
+                    <div style={{ fontFamily: FB, fontSize: 13.5, color: C.terra, lineHeight: 1.5, margin: "8px 0 4px" }}>Pediram acesso sem estar na Jornada. Quando o Clube abrir, é só liberar daqui.</div>
+                    {interessadas.map((a) => (
+                      <div key={a.id} style={{ borderTop: `1px solid ${C.ouro}20`, paddingTop: 10, marginTop: 10 }}>
+                        <div style={{ fontFamily: FB, fontSize: 15, color: C.obs }}>{a.nome || "—"}</div>
+                        <div style={{ fontFamily: FB, fontSize: 13.5, color: C.lt, marginBottom: 8 }}>{a.email || ""}</div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => ativarAluna(a.id, "comunidade")} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "8px", fontFamily: FB, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>Liberar Clube</button>
+                          <button onClick={() => voltarParaLista(a)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.linho}`, borderRadius: 50, padding: "8px", fontFamily: FB, fontSize: 13.5, color: C.terra, cursor: "pointer" }}>Voltar para Aguardando</button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
             {loadingA ? (
