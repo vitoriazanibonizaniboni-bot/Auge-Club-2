@@ -1339,6 +1339,11 @@ export default function App() {
  const modoClube = previaClube() || (planoConta !== "admin" && clubeAtivo && !jornadaEmCurso);
  const semAcessoClube = planoConta === "comunidade" && !clubeAtivo && !previaClube();
  modoClubeRef.current = modoClube;
+ // Carta para o Futuro é só da Jornada (decisão da Vitória, 26/10): no Clube o
+ // primeiro acesso ignora a carta, e se só faltava ela, não abre.
+ const primAcessoEf = !primAcesso ? null : modoClube
+ ? ((primAcesso.porques || primAcesso.ancora || primAcesso.minimos) ? { ...primAcesso, carta: false } : null)
+ : primAcesso;
  const sem = modoClube ? 12 : _iniJornada
     ? Math.min(
         12,
@@ -2693,11 +2698,11 @@ export default function App() {
   // Quem já tinha hábito marcado antes desta versão vê "O que mudou no app"
  const DATA_VERSAO_TOUR = "2026-10-01";
  useEffect(() => {
- if (!profileLoaded || !authUser || tour || primAcesso || lerFlag(CHAVE_TOUR)) return;
+ if (!profileLoaded || !authUser || tour || primAcessoEf || lerFlag(CHAVE_TOUR)) return;
  if (perfil === "pendente" || perfil === "admin" || !perfil) return;
  const antiga = Object.entries(regs || {}).some(([d, hs]) => d < DATA_VERSAO_TOUR && hs && Object.keys(hs).length > 0);
  setTour({ antiga });
-  }, [profileLoaded, authUser, perfil, primAcesso]);
+  }, [profileLoaded, authUser, perfil, primAcessoEf]);
  const fecharTour = () => { gravarFlag(CHAVE_TOUR); setTour(null); setTela(S.HOME); };
  // Passo a passo de cada aba: na primeira vez que ela abre a aba (depois do da Hoje)
  const ABA_DO_TOUR = { [S.TRAJ]: "trajetoria", [S.FEED]: "mural", [S.JOR]: "meumapa", [S.CT]: "conteudo" };
@@ -2921,12 +2926,12 @@ export default function App() {
  onFechar={() => setSexta(null)}
         />
       )}
-      {primAcesso && perfil !== "admin" && perfil !== "pendente" && (
+      {primAcessoEf && perfil !== "admin" && perfil !== "pendente" && (
         <PrimeiroAcesso
  nome={usuario?.nome || ""}
- faltam={primAcesso}
+ faltam={primAcessoEf}
  pqs={[pq1, pq2, pq3]}
- anc={anc === "Eu sou a mulher que volta." && primAcesso.ancora ? "" : anc}
+ anc={anc === "Eu sou a mulher que volta." && primAcessoEf.ancora ? "" : anc}
  metas={metas}
  salvarPorques={([a, b, c]) => { setPq1(a); setPq2(b); setPq3(c); syncDB("porques", { p1: a, p2: b, p3: c }, { onConflict: "user_id" }); }}
  salvarAncora={(t) => { setAnc(t); syncDB("ancora", { texto: t }, { onConflict: "user_id" }); }}
@@ -2936,8 +2941,8 @@ export default function App() {
  onConcluir={() => { setPrimAcesso(null); setTela(S.HOME); }}
         />
       )}
-      {!primAcesso && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
-      {!primAcesso && !tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
+      {!primAcessoEf && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
+      {!primAcessoEf && !tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
       {!SEM_NAV.includes(tela) && (
         <NavBar
  tela={tela}
@@ -9868,7 +9873,7 @@ function Jornada({
         <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
 
         {/* Espaços de escrita — Âncora, Porquês e Carta */}
-        <CartaoMapa icone={PenLine} titulo="Espaços de escrita" linha="Âncora, Porquês e Carta" onClick={() => ir(S.ESC)} />
+        <CartaoMapa icone={PenLine} titulo="Espaços de escrita" linha={modoClube ? "Âncora e Porquês" : "Âncora, Porquês e Carta"} onClick={() => ir(S.ESC)} />
         {/* Perfil e Configurações agora é o círculo no alto da tela */}
 
       </Grain>
@@ -11047,6 +11052,7 @@ function Calendario({ back, historico, dataCadastro }) {
 
 // ─── ESPAÇOS DE ESCRITA ───────────────────────────────────────────────────────
 function Escritas({
+ modoClube = false,
  vit,
  setVit,
  anc,
@@ -11068,10 +11074,12 @@ function Escritas({
  const [na, setNa] = useState(anc);
  const [editAnc, setEditAnc] = useState(!anc || anc === "Eu sou a mulher que volta.");
  const [editPq, setEditPq] = useState(false);
+ // no Clube não há Carta: se chegou pedindo a carta, abre na Âncora
+ useEffect(() => { if (modoClube && escT === "carta") setEscT("ancora"); }, [modoClube, escT]);
  const [editandoCarta, setEditandoCarta] = useState(false);
  return (
     <div style={{ animation: "fadeUp .4s ease" }}>
-      <Cab titulo="Espaços de escrita" voltar={back} destino="Jornada" />
+      <Cab titulo="Espaços de escrita" voltar={back} destino={modoClube ? "Meu Mapa" : "Jornada"} />
       <Grain style={{ padding: "0 18px 24px" }}>
         <div
  style={{
@@ -11083,7 +11091,7 @@ function Escritas({
           {[
             ["ancora", "Âncora"],
             ["porques", "Porquês"],
-            ["carta", "Carta"],
+            ...(modoClube ? [] : [["carta", "Carta"]]),
           ].map(([id, lb]) => (
             <button
  key={id}
@@ -11240,7 +11248,7 @@ function Escritas({
             )}
           </div>
         )}
-        {escT === "carta" && (
+        {escT === "carta" && !modoClube && (
           <div style={{ paddingTop: 4 }}>
             <div
  style={{
