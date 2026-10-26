@@ -5069,7 +5069,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
  2 semanas cheias! Subir para {st.meta + 1}x?
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <Button onClick={() => { salvarMeta(h.id, st.meta + 1, st.descMeta); tk(`Meta do ${h.nome}: ${st.meta + 1}x `); }}>Subir</Button>
+            <Button onClick={() => { salvarMeta(h.id, st.meta + 1, st.descMeta); tk(`Meta do ${h.nome}: ${st.meta + 1}x `); try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }}>Subir</Button>
             <Button variante="contorno" onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }}>Manter</Button>
           </div>
         </div>
@@ -5080,7 +5080,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
  Está pesado? Dá para deixar mais leve.
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <Button onClick={() => { salvarMeta(h.id, Math.max(1, st.meta - 1), st.descMeta); tk("Meta ajustada. Leveza também é método "); }}>Ir para {Math.max(1, st.meta - 1)}x</Button>
+            <Button onClick={() => { salvarMeta(h.id, Math.max(1, st.meta - 1), st.descMeta); tk("Meta ajustada. Leveza também é método "); try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }}>Ir para {Math.max(1, st.meta - 1)}x</Button>
             <Button variante="contorno" onClick={() => { try { localStorage.setItem(progKey, "1"); } catch {} setProgOculto(true); }}>Manter</Button>
           </div>
         </div>
