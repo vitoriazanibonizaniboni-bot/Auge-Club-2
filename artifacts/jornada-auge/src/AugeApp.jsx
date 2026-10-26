@@ -5800,7 +5800,7 @@ function Home({
  regs={regs}
  diasDaSemana={diasDaSemana}
  irProgresso={() => { setHabProgresso({ id: h.id, nome: h.nome, pessoal: false, unlock: h.unlock }); ir(S.TRAJ); }}
- convidarMural={convidarMural}
+ convidarMural={modoClube ? null : convidarMural}
  minimoHoje={minimoDoDia(h.id)}
  onEditar={() => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome } })}
               />
@@ -5832,7 +5832,7 @@ function Home({
  diasDaSemana={diasDaSemana}
  irProgresso={() => { setHabProgresso({ id: hp.id, nome: hp.nome, pessoal: true, meta: hp.meta, metaTexto: hp.meta_texto }); ir(S.TRAJ); }}
  onEditar={() => setPainel({ modo: "pessoal", hab: { id: hp.id, nome: hp.nome } })}
- convidarMural={convidarMural}
+ convidarMural={modoClube ? null : convidarMural}
               />
             ))}
             <button
