@@ -59,6 +59,8 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>O Clube do Auge não usa a sua localização. O aviso só existe porque faz parte do componente de notificações, e o app nunca pede essa permissão.</string>
 	<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleDarkContent</string>
 	<key>UISupportedInterfaceOrientations</key>
