@@ -776,7 +776,7 @@ function Grain({ children, style = {} }) {
 const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
 // Clube (continuo): os videos vem logo depois da Hoje, porque nao ha aula ao vivo
 const ORDEM_ABAS_CLUBE = [S.HOME, S.CT, S.FEED, S.TRAJ, S.JOR];
-// ETAPA 1 (rascunho): o modo Clube por enquanto so liga pela chave de previa no aparelho
+// Chave de prévia no aparelho ("1" = ver como Clube), para testar sem mexer na conta
 const previaClube = () => { try { return localStorage.getItem("auge_previa_clube") === "1"; } catch { return false; } };
 // Celular = tela cheia; computador = moldura de celular no meio da tela.
 // Decide pelo LADO MENOR da tela (ou toque), não pela largura: com a largura,
@@ -1137,6 +1137,10 @@ export default function App() {
  const [profileLoaded, setProfileLoaded] = useState(false);
  // Primeiro acesso: o que ainda falta escrever ({ porques, ancora, minimos, carta }) ou null
  const [primAcesso, setPrimAcesso] = useState(null);
+ // Clube: plano da conta como está no banco (perfil traduz 'comunidade' para o plano da build)
+ // e até quando o Clube vale (null = sem Clube)
+ const [planoConta, setPlanoConta] = useState(null);
+ const [clubeAte, setClubeAte] = useState(null);
  // Passo a passo de boas-vindas: uma vez só (primeiro acesso, ou primeira
  // abertura desta versão para quem já usava o app)
  const [tour, setTour] = useState(null); // null | { antiga: bool }
@@ -1172,12 +1176,13 @@ export default function App() {
  const telaRolando = useRef(tela);
  const telaAnterior = useRef(tela);
  const [entrada, setEntrada] = useState(null); // "dir" | "esq" | "sobe" | null
+ const modoClubeRef = useRef(false); // a ordem das abas muda no Clube
  useLayoutEffect(() => {
  const de = telaAnterior.current;
  telaAnterior.current = tela;
  telaRolando.current = tela;
  if (de === tela) return;
- const ordem = previaClube() ? ORDEM_ABAS_CLUBE : ORDEM_ABAS;
+ const ordem = modoClubeRef.current ? ORDEM_ABAS_CLUBE : ORDEM_ABAS;
  const i = ordem.indexOf(de), j = ordem.indexOf(tela);
  setEntrada(i >= 0 && j >= 0 ? (j > i ? "dir" : "esq") : "sobe");
  const el = rolarRef.current;
@@ -1290,9 +1295,19 @@ export default function App() {
   // Semana da Jornada — alinhada à SEGUNDA-FEIRA (seção 1).
   // Fonte: config.jornada_inicio (segunda da S1 da turma); fallback: data de cadastro.
  const _iniJornada = jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : null);
- // Clube: o app continuo, sem as 12 semanas. ETAPA 1 (rascunho): por enquanto
- // so liga pela chave de previa no aparelho; o acesso pela conta entra depois.
- const modoClube = previaClube();
+ // Clube: o app contínuo, sem as 12 semanas. Quem decide é a conta:
+ //  - Jornada em curso (plano jornada, até a 12ª semana da turma) → Jornada
+ //  - Clube ativo (clube_ate hoje ou depois) e sem Jornada em curso → Clube
+ //  - plano 'comunidade' sem Clube ativo → aviso neutro de acesso
+ //  - Jornada já terminada e sem Clube → continua como Jornada (Turma 1 até o lançamento)
+ const _semCorridas = _iniJornada
+    ? Math.floor((new Date(mondayOf(TODAY)) - new Date(mondayOf(_iniJornada))) / (7 * 24 * 60 * 60 * 1000)) + 1
+    : 0;
+ const clubeAtivo = !!clubeAte && clubeAte >= TODAY;
+ const jornadaEmCurso = planoConta === "jornada" && (!_iniJornada || _semCorridas <= 12);
+ const modoClube = previaClube() || (planoConta !== "admin" && clubeAtivo && !jornadaEmCurso);
+ const semAcessoClube = planoConta === "comunidade" && !clubeAtivo && !previaClube();
+ modoClubeRef.current = modoClube;
  const sem = modoClube ? 12 : _iniJornada
     ? Math.min(
         12,
@@ -1799,6 +1814,8 @@ export default function App() {
       // Conta admin mantém acesso ao Painel da Facilitadora
  const _acesso = p.plano === "admin" ? "admin" : ["jornada", "comunidade"].includes(p.plano) ? FORCED_PLANO : "pendente";
  setPerfil(_acesso);
+ setPlanoConta(p.plano || null);
+ setClubeAte(p.clube_ate ? String(p.clube_ate).slice(0, 10) : null);
  setUsuario({ nome: p.nome || "", email: p.email || "" });
  setLgpdOk(!!p.lgpd_aceito);
  setBussola(p.bussola || "");
@@ -2162,6 +2179,8 @@ export default function App() {
  setPq2("");
  setPq3("");
  setPrimAcesso(null);
+ setPlanoConta(null);
+ setClubeAte(null);
  setTela(S.HOME);
   };
 
@@ -2689,8 +2708,8 @@ export default function App() {
       </Phone>
     );
 
-  // Clube sem acesso ativo (ETAPA 1, rascunho: so pela chave de previa "sem")
- if ((() => { try { return localStorage.getItem("auge_previa_clube") === "sem"; } catch { return false; } })())
+  // Clube sem acesso ativo (ou a chave de prévia "sem", para testar a tela)
+ if (semAcessoClube || (() => { try { return localStorage.getItem("auge_previa_clube") === "sem"; } catch { return false; } })())
  return (
       <Phone>
         <SemAcessoClube contato={contatoWhats} onAtualizar={() => loadUserData(authUser?.id)} onSair={logout} />
@@ -12081,6 +12100,9 @@ const CATS_ADMIN = [
 
 function PainelMentora({ ir }) {
  const [aba, setAba] = useState("videos"); // "videos" | "mentoria" | "alunas"
+ // aviso curto no rodapé (o Painel não recebe o tk do app)
+ const [avisoP, setAvisoP] = useState(null);
+ const tk = (m) => { setAvisoP(m); setTimeout(() => setAvisoP(null), 2600); };
   // ── estado vídeos ──
  const [videos, setVideos] = useState([]);
  const [loadingV, setLoadingV] = useState(true);
@@ -12129,6 +12151,11 @@ function PainelMentora({ ir }) {
  const ativarAluna = async (id, plano) => {
  const { error } = await supabase.rpc("set_aluna_plano", { p_user_id: id, p_plano: plano });
  if (error) return;
+    // Clube liberado à mão: vale 1 mês a partir de hoje (depois, o Asaas renova)
+ if (plano === "comunidade") {
+ const d = new Date(); d.setMonth(d.getMonth() + 1);
+ try { await supabase.rpc("admin_set_clube", { p_user_id: id, p_ate: localDateStr(d), p_origem: "manual" }); } catch {}
+ }
     // A turma escolhida na hora de liberar: e dela que sai a semana da aluna.
  const t = turmaPend[id];
  if (t) { try { await supabase.rpc("admin_set_turma", { p_user_id: id, p_turma: t }); } catch {} }
@@ -12352,7 +12379,10 @@ function PainelMentora({ ir }) {
         };
  const ultimaAtivPor = {};
  for (const uid of Object.keys(regsPor)) { const ds = Object.keys(regsPor[uid]); if (ds.length) ultimaAtivPor[uid] = ds.reduce((x, y) => (x > y ? x : y)); }
- setAlunas(perfis.map((p) => ({ ...p, perfil_auge: perfilPor[p.id] || "", ultimoCk: ultimoCk[p.id] || null, ultimaAtiv: [ultimaAtivPor[p.id], ultimoCk[p.id]?.data].filter(Boolean).sort().pop() || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [], regs: regsPor[p.id] || {}, pessoais: pessoaisPor[p.id] || [] })));
+ // Clube: até quando vale para cada aluna (sem a migração 021, fica vazio)
+ const clubePor = {};
+ try { const { data: cl } = await supabase.rpc("admin_get_clube"); (cl || []).forEach((c) => { clubePor[c.id] = c; }); } catch {}
+ setAlunas(perfis.map((p) => ({ ...p, clube: clubePor[p.id] || null, perfil_auge: perfilPor[p.id] || "", ultimoCk: ultimoCk[p.id] || null, ultimaAtiv: [ultimaAtivPor[p.id], ultimoCk[p.id]?.data].filter(Boolean).sort().pop() || null, v2: analisa(p.id), metas: metasPor[p.id] || null, roda: rodaPor[p.id] || [], regs: regsPor[p.id] || {}, pessoais: pessoaisPor[p.id] || [] })));
  setLoadingA(false);
       });
   }, [aba]);
@@ -12430,6 +12460,7 @@ function PainelMentora({ ir }) {
 
  return (
     <Grain style={{ minHeight: 760, animation: "fadeUp .35s ease" }}>
+      {avisoP && <div role="status" style={{ position: "fixed", left: 16, right: 16, bottom: "calc(24px + env(safe-area-inset-bottom))", zIndex: 900, maxWidth: 420, margin: "0 auto", background: C.obs, color: C.creme, fontFamily: FB, fontSize: 15, borderRadius: 14, padding: "12px 16px", textAlign: "center" }}>{avisoP}</div>}
       {/* Header */}
       <div style={{ background: C.creme, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.ouro}18` }}>
         <button onClick={() => ir(S.PF)} style={{ background: "transparent", border: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 18, padding: 0 }}>←</button>
@@ -12777,6 +12808,49 @@ function PainelMentora({ ir }) {
                     </div>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt }}>{alunaSel.email || ""}</div>
 
+                    {/* Clube: até quando vale, e os botões da mentora */}
+                    {(() => {
+ const cl = alunaSel.clube || {};
+ const ate = cl.clube_ate ? String(cl.clube_ate).slice(0, 10) : null;
+ const ativo = !!ate && ate >= localDateStr();
+ const origemTxt = { manual: "liberado no Painel", cortesia: "cortesia", bonus_jornada: "bônus da Jornada", asaas: "assinatura", migracao: "conta antiga" }[cl.clube_origem] || "";
+ const fmtD = (d) => d.split("-").reverse().join("/");
+ const somarMeses = async (n) => {
+ const base = ativo ? new Date(ate + "T12:00:00") : new Date();
+ base.setMonth(base.getMonth() + n);
+ const nova = localDateStr(base);
+ const { error } = await supabase.rpc("admin_set_clube", { p_user_id: alunaSel.id, p_ate: nova, p_origem: "cortesia" });
+ if (error) { tk("Não deu para salvar. A migração 021 já foi rodada?"); return; }
+ const novoCl = { ...cl, clube_ate: nova, clube_origem: "cortesia", clube_status: "ativa" };
+ setAlunaSel((a) => ({ ...a, clube: novoCl }));
+ setAlunas((as) => as.map((x) => (x.id === alunaSel.id ? { ...x, clube: novoCl } : x)));
+ tk(`Clube liberado até ${fmtD(nova)}`);
+ };
+ const encerrar = async () => {
+ if (!confirm("Encerrar o Clube desta aluna agora?")) return;
+ const { error } = await supabase.rpc("admin_set_clube", { p_user_id: alunaSel.id, p_ate: null, p_origem: null });
+ if (error) { tk("Não deu para salvar."); return; }
+ const novoCl = { ...cl, clube_ate: null, clube_status: "encerrada" };
+ setAlunaSel((a) => ({ ...a, clube: novoCl }));
+ setAlunas((as) => as.map((x) => (x.id === alunaSel.id ? { ...x, clube: novoCl } : x)));
+ tk("Clube encerrado");
+ };
+ const bt = { flex: 1, minHeight: 40, borderRadius: 50, fontFamily: FB, fontSize: 14, cursor: "pointer" };
+ return (
+                        <div style={{ marginTop: 14, background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 12, padding: "12px 14px" }}>
+                          <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 15, color: C.obs }}>Clube</div>
+                          <div style={{ fontFamily: FB, fontSize: 14.5, color: ativo ? C.obs : C.terra, margin: "3px 0 10px" }}>
+                            {ativo ? `Ativo até ${fmtD(ate)}${origemTxt ? ` · ${origemTxt}` : ""}` : "Sem Clube"}
+                          </div>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button onClick={() => somarMeses(1)} style={{ ...bt, background: C.ouro, border: "none", color: C.obs }}>+1 mês</button>
+                            <button onClick={() => somarMeses(3)} style={{ ...bt, background: "transparent", border: `1px solid ${C.ouro}`, color: C.ouroTxt }}>+3 meses</button>
+                            {ativo && <button onClick={encerrar} style={{ ...bt, background: "transparent", border: `1px solid ${C.linho}`, color: C.terra }}>Encerrar</button>}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {edA && (
                       <div style={{ marginTop: 14, background: `${C.ouro}0E`, border: `1px solid ${C.ouro}33`, borderRadius: 12, padding: "14px 14px" }}>
                         <div style={{ fontFamily: FB, fontWeight: 500, fontSize: 12.5, color: C.ouroTxt, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>Preencher para a aluna</div>
@@ -12887,7 +12961,7 @@ function PainelMentora({ ir }) {
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={() => ativarAluna(a.id, "jornada")} style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 500, fontSize: 13.5, color: C.obs, cursor: "pointer" }}>Liberar Jornada</button>
-                      <button onClick={() => ativarAluna(a.id, "comunidade")} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>Liberar Comunidade</button>
+                      <button onClick={() => ativarAluna(a.id, "comunidade")} style={{ flex: 1, background: "transparent", border: `1px solid ${C.ouro}`, borderRadius: 50, padding: "8px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>Liberar Clube</button>
                     </div>
                   </div>
                 ))}
