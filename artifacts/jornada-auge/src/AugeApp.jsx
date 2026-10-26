@@ -9571,18 +9571,8 @@ function Jornada({
  Meu Mapa
         </div>
 
-        {/* Roda AUGE */}
-        <CartaoMapa icone={Target} titulo="Roda AUGE" linha="Semanas 1, 6 e 12" onClick={() => ir(S.RODA)} />
-        <RodaResumo rodaResultados={rodaResultados} />
-        {retomadas > 0 && (
-          <div style={{ background: `${C.ouroDk}12`, border: `1px solid ${C.ouroDk}33`, borderRadius: 14, padding: "14px 16px", marginBottom: 12, textAlign: "center" }}>
-            <div style={{ fontFamily: FB, fontSize: 21, fontWeight: 300, color: C.ouroTxt }}>Você já retomou {retomadas} {retomadas === 1 ? "vez" : "vezes"}!</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, marginTop: 3 }}>Isso é motivo pra comemorar. Cada volta conta como resiliência, nunca como falha.</div>
-          </div>
-        )}
-
-        {/* Questionário de Perfil AUGE */}
-        <CartaoMapa icone={UserRound} titulo="Perfil AUGE" linha={perfilAuge ? perfilAuge.split(",").map((k) => PERFIS[k]?.nome).filter(Boolean).join(" · ") : "Descubra seu perfil"} onClick={() => ir(S.PAUGE)} />
+        {/* Roda AUGE, Perfil AUGE e o card de retomadas sairam em 26/10, a pedido da Vitoria:
+            nao eram usados. As telas e os dados continuam no codigo e no banco. */}
         {/* Mínimos Inegociáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
 
@@ -11919,10 +11909,8 @@ function PainelMentora({ ir }) {
  await supabase.rpc("admin_set_ancora", { target: alunaSel.id, texto: edA.ancora || "" });
  await supabase.rpc("admin_set_porques", { target: alunaSel.id, p1: edA.p1 || "", p2: edA.p2 || "", p3: edA.p3 || "" });
  await supabase.rpc("admin_set_metas", { target: alunaSel.id, ...novaMetas });
- const novoPerfil = (edA.perfil || []).join(",");
- await supabase.rpc("admin_set_perfil_auge", { target: alunaSel.id, perfil: novoPerfil });
- setAlunas((as) => as.map((a) => a.id === alunaSel.id ? { ...a, metas: { ...(a.metas || {}), ...novaMetas }, perfil_auge: novoPerfil } : a));
- setAlunaSel((a) => a ? { ...a, metas: { ...(a.metas || {}), ...novaMetas }, perfil_auge: novoPerfil } : a);
+ setAlunas((as) => as.map((a) => a.id === alunaSel.id ? { ...a, metas: { ...(a.metas || {}), ...novaMetas } } : a));
+ setAlunaSel((a) => a ? { ...a, metas: { ...(a.metas || {}), ...novaMetas } } : a);
  setSalvoAluna(true); setTimeout(() => setSalvoAluna(false), 2500);
  } catch {}
  setSalvandoAluna(false);
@@ -12594,18 +12582,6 @@ function PainelMentora({ ir }) {
                         {campo("Movimento", "mov_minimo", "Ex: Caminhada de 10 min")}
                         {campo("Sono", "sono_minimo", "Ex: 30 min sem celular")}
                         {campo("Tempo para Si", "tsi_minimo", "Ex: Ler 1 página")}
-                        <div style={sub}>Perfil AUGE</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-                          {PERFIS_OPTS.map(([k, nome]) => {
-                            const on = (edA.perfil || []).includes(k);
-                            return (
-                              <button key={k} onClick={() => setEdA((x) => ({ ...x, perfil: on ? x.perfil.filter((p) => p !== k) : [...(x.perfil || []), k] }))}
-                                style={{ background: on ? `${C.ouro}22` : alfa(C.obs, .04), border: `1px solid ${on ? C.ouro + "66" : C.ouro + "20"}`, borderRadius: 50, padding: "7px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13, color: on ? C.ouroTxt : C.terra, cursor: "pointer" }}>
-                                {nome}
-                              </button>
-                            );
-                          })}
-                        </div>
                         <button onClick={salvarDadosAluna} disabled={salvandoAluna} style={{ width: "100%", marginTop: 6, background: C.ouro, border: "none", borderRadius: 50, padding: "12px", fontFamily: FB, fontWeight: 500, fontSize: 15, color: C.obs, cursor: "pointer", opacity: salvandoAluna ? 0.6 : 1 }}>
                           {salvandoAluna ? "Salvando..." : salvoAluna ? "✓ Salvo para a aluna" : "Salvar para a aluna"}
                         </button>
@@ -12653,26 +12629,11 @@ function PainelMentora({ ir }) {
                       );
                     })()}
 
-                    <div style={tb}>Perfil AUGE</div>
-                    <div style={pt}>{perfis.length ? perfis.join(" · ") : "Ainda não respondeu"}</div>
-
                     <div style={tb}>Mínimos Inegociáveis</div>
                     {minimos.length ? minimos.map(([nome, c]) => (
                       <div key={c} style={{ marginBottom: 5 }}><span style={{ fontFamily: FB, fontSize: 13.5, color: C.terra }}>{nome}: </span><span style={{ fontFamily: FS, fontSize: 15, color: C.obs }}>{mv[c]}</span></div>
                     )) : <div style={pt}>Ainda não definidos</div>}
 
-                    <div style={tb}>Roda AUGE</div>
-                    {rodas.length ? rodas.map((r) => (
-                      <div key={r.momento} style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                          <span style={{ fontFamily: FB, fontSize: 13, letterSpacing: "0.2em", color: C.ouroTxt }}>{r.momento}</span>
-                          <span style={{ fontFamily: FS, fontSize: 17, color: C.ouroTxt }}>Índice {fmt(r.indice_auge)}</span>
-                        </div>
-                        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.obs2, lineHeight: 1.6 }}>
-                          Energia {fmt(r.nota_energia)} · Consciência {fmt(r.nota_consciencia)} · Organização {fmt(r.nota_organizacao)} · Autocuidado {fmt(r.nota_autocuidado)} · Protagonismo {fmt(r.nota_protagonismo)}
-                        </div>
-                      </div>
-                    )) : <div style={pt}>Ainda não respondeu</div>}
                   </div>
                 </div>
               );

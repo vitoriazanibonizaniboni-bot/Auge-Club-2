@@ -277,11 +277,11 @@ export const PASSOS_ABA = {
     },
     {
       titulo: "O seu mapa completo",
-      texto: <>A {forte("Roda AUGE")}, os seus {forte("mínimos")} e os {forte("Espaços de escrita")}, com os seus Porquês e a Carta para o Futuro.</>,
+      texto: <>Os seus {forte("mínimos inegociáveis")} e os {forte("Espaços de escrita")}, com os seus Porquês e a Carta para o Futuro.</>,
       ilustra: (
         <Ilustracao fundo="#F2E4DC">
           <div style={{ display: "grid", gap: 10, width: "86%", maxWidth: 300 }}>
-            {["Roda AUGE", "Seus mínimos", "Espaços de escrita"].map((t) => (
+            {["Seus mínimos", "Espaços de escrita"].map((t) => (
               <div key={t} style={{ background: "#FFFFFF", borderRadius: 14, padding: "12px 14px", fontFamily: FONTE, fontSize: 16, fontWeight: 600, color: T.ink, display: "flex", justifyContent: "space-between" }}>
                 {t}<span style={{ color: T.inkSoft }}>›</span>
               </div>
