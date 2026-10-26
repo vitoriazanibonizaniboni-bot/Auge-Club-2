@@ -1846,19 +1846,37 @@ export default function App() {
  loadedRef.current = true;
       // Cache local do perfil para evitar tela errada se Supabase falhar
  try {
- localStorage.setItem("auge_perfil_plano", _acesso);
+ localStorage.setItem(`auge_perfil_plano_${userId}`, _acesso);
  if (p.data_cadastro) localStorage.setItem("auge_perfil_datacad", p.data_cadastro);
       } catch {}
     } else {
-      // Tentar recuperar do cache local
- const cachedPlano = (() => { try { return localStorage.getItem("auge_perfil_plano"); } catch { return null; } })();
- const cachedDataCad = (() => { try { return localStorage.getItem("auge_perfil_datacad"); } catch { return null; } })();
- if (cachedPlano) {
-        // respeita o plano em cache (inclusive "admin") — não rebaixa a mentora
- setPerfil(cachedPlano);
- if (cachedDataCad) setDataCadastro(new Date(cachedDataCad));
+      // Sem perfil: NUNCA liberar o app por padrão. Antes, a conta sem linha em
+      // profiles caía no plano da build ("jornada") ou no plano guardado no
+      // aparelho por OUTRA conta — uma conta nova entrava direto no app.
+      //  - não existe a linha (PGRST116): cria agora como "pendente" e mostra
+      //    "Aguardando liberação" (acontece quando o cadastro pede confirmação
+      //    de e-mail: a gravação do perfil no cadastro sai sem sessão e falha)
+      //  - erro de rede: usa o plano guardado DESTA conta; sem ele, "pendente"
+ const semLinha = profileRes.error?.code === "PGRST116" || !profileRes.error;
+ if (semLinha) {
+ const { data: { session: _sp } } = await supabase.auth.getSession();
+ const meta = _sp?.user?.user_metadata || {};
+ await supabase.from("profiles").upsert({
+ id: userId,
+ nome: meta.nome || "",
+ email: (_sp?.user?.email || "").toLowerCase(),
+ plano: "pendente",
+ lgpd_aceito: true,
+ lgpd_data: new Date().toISOString(),
+ data_cadastro: new Date().toISOString(),
+        }).then(() => {}, () => {});
+ setPerfil("pendente");
+ setPlanoConta("pendente");
       } else {
- setPerfil(FORCED_PLANO);
+ const cachedPlano = (() => { try { return localStorage.getItem(`auge_perfil_plano_${userId}`); } catch { return null; } })();
+ const cachedDataCad = (() => { try { return localStorage.getItem("auge_perfil_datacad"); } catch { return null; } })();
+ setPerfil(cachedPlano || "pendente");
+ if (cachedDataCad) setDataCadastro(new Date(cachedDataCad));
       }
  if (diagDone) markDiagOk(userId);
  setProfileLoaded(true);
