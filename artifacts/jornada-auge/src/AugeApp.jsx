@@ -529,7 +529,7 @@ function useLocalStorage(key, initial) {
 }
 
 // ─── LOGO SVG (brand kit oficial) ────────────────────────────────────────────
-function Logo({ width = 200, fundo = "escuro" }) {
+function Logo({ width = 200, fundo = "escuro", marca = MARCA_EYEBROW }) {
  const textoAuge = fundo === "escuro" ? "#F0E9DA" : "#1C1A17";
  // No fundo claro, os textos pequenos saem do cinza/dourado claro (3:1 e 2:1)
  // para tons que passam de 4,5:1: #5C4F47 (7,4:1) e #7E6038 (5,4:1).
@@ -564,7 +564,7 @@ function Logo({ width = 200, fundo = "escuro" }) {
  letterSpacing="7"
  fill={textoClube}
       >
-        {MARCA_EYEBROW}
+        {marca}
       </text>
       <text
  x="190"
@@ -714,6 +714,13 @@ const Ico = {
       <path d="M21 15l-5-5L5 21" />
     </svg>
   ),
+  // Comunidade (Clube) — dois balões de conversa
+ comunidade: (c, s = 22) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 9.5a5.5 5 0 0 0-11 0c0 1.3.5 2.5 1.4 3.4L5 16l3-1.3c.8.3 1.6.4 2.5.4" />
+      <path d="M20 14.5c0-2.8-2.5-5-5.5-5s-5.5 2.2-5.5 5 2.5 5 5.5 5c.9 0 1.7-.2 2.5-.5L20 20.5l-.6-3c.4-.9.6-1.9.6-3z" />
+    </svg>
+  ),
   // Meu Mapa — bússola (seção 2.1)
  mapa: (c, s = 22) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
@@ -767,6 +774,10 @@ function Grain({ children, style = {} }) {
 
 // Ordem das abas na barra — decide para que lado a tela desliza
 const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
+// Clube (continuo): os videos vem logo depois da Hoje, porque nao ha aula ao vivo
+const ORDEM_ABAS_CLUBE = [S.HOME, S.CT, S.FEED, S.TRAJ, S.JOR];
+// ETAPA 1 (rascunho): o modo Clube por enquanto so liga pela chave de previa no aparelho
+const previaClube = () => { try { return localStorage.getItem("auge_previa_clube") === "1"; } catch { return false; } };
 // Celular = tela cheia; computador = moldura de celular no meio da tela.
 // Decide pelo LADO MENOR da tela (ou toque), não pela largura: com a largura,
 // virar o celular deitado (paisagem, 844px) trocava o app para a moldura do
@@ -1166,7 +1177,7 @@ export default function App() {
  telaAnterior.current = tela;
  telaRolando.current = tela;
  if (de === tela) return;
- const ordem = ORDEM_ABAS;
+ const ordem = previaClube() ? ORDEM_ABAS_CLUBE : ORDEM_ABAS;
  const i = ordem.indexOf(de), j = ordem.indexOf(tela);
  setEntrada(i >= 0 && j >= 0 ? (j > i ? "dir" : "esq") : "sobe");
  const el = rolarRef.current;
@@ -1279,7 +1290,10 @@ export default function App() {
   // Semana da Jornada — alinhada à SEGUNDA-FEIRA (seção 1).
   // Fonte: config.jornada_inicio (segunda da S1 da turma); fallback: data de cadastro.
  const _iniJornada = jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : null);
- const sem = _iniJornada
+ // Clube: o app continuo, sem as 12 semanas. ETAPA 1 (rascunho): por enquanto
+ // so liga pela chave de previa no aparelho; o acesso pela conta entra depois.
+ const modoClube = previaClube();
+ const sem = modoClube ? 12 : _iniJornada
     ? Math.min(
         12,
  Math.max(
@@ -2477,6 +2491,7 @@ export default function App() {
   // (Questionário de diagnóstico removido do primeiro acesso a pedido da Vitória)
 
  const ctx = {
+ modoClube,
  setSexta,
  perfil,
  ir,
@@ -2674,6 +2689,15 @@ export default function App() {
       </Phone>
     );
 
+  // Clube sem acesso ativo (ETAPA 1, rascunho: so pela chave de previa "sem")
+ if ((() => { try { return localStorage.getItem("auge_previa_clube") === "sem"; } catch { return false; } })())
+ return (
+      <Phone>
+        <SemAcessoClube contato={contatoWhats} onAtualizar={() => loadUserData(authUser?.id)} onSair={logout} />
+        <Estilos />
+      </Phone>
+    );
+
   // Conta aguardando liberação da mentora (controle de acesso)
  if (perfil === "pendente")
  return (
@@ -2854,6 +2878,7 @@ export default function App() {
  perfil={perfil}
  ckOk={ckOk}
  msgCount={Object.values(naoLidas).reduce((a, b) => a + b, 0)}
+ modoClube={modoClube}
         />
       )}
       <Estilos />
@@ -2924,10 +2949,10 @@ function Estilos() {
 // Barra clara com a bolinha terracota — escolhida pela Vitoria em 05/10
 // (a versao com barra escura, como no exemplo, foi descartada).
 const NAV = { barra: "#F4EDE3", borda: "#E6DCCF", disco: "#9A4B36", iconeAtivo: "#FFFFFF", icone: "#5C4F47", rotulo: "#5C4F47", rotuloAtivo: "#9A4B36" };
-function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
+function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0, modoClube = false }) {
   // 5 abas (seção 2): Hoje · Trajetória · Mural do 1% · Meu Mapa · Conteúdo
   // Configurações fica fora da barra, acessada por ícone (seção 9)
- const mainAbas = IS_CLUBE
+ const mainAbas = modoClube ? ORDEM_ABAS_CLUBE : IS_CLUBE
     ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT]
     : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
  let aba = ABA_ORIGEM[tela] || S.HOME;
@@ -2938,7 +2963,13 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0 }) {
  if (IS_CLUBE && [S.CX, S.MATCH, S.CHAT].includes(tela)) {
  aba = S.CX;
   }
- const tabs = [
+ const tabs = modoClube ? [
+    { id: S.HOME, label: "Hoje", icon: Ico.hoje },
+    { id: S.CT, label: "Aprenda", icon: Ico.livro },
+    { id: S.FEED, label: "Chat", icon: Ico.comunidade },
+    { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
+    { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
+  ] : [
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
     { id: S.FEED, label: "Mural", icon: Ico.mural, msgCount: IS_CLUBE ? 0 : msgCount },
@@ -3169,6 +3200,36 @@ function LegendaCores({ onFechar }) {
 
 // ─── SPLASH ───────────────────────────────────────────────────────────────────
 // ─── TELA DE ESPERA — conta aguardando liberação da mentora ───────────────────
+// ─── CLUBE SEM ACESSO ATIVO ──────────────────────────────────────────────────
+// Aviso NEUTRO de propósito: a assinatura é vendida fora do app (Asaas). Pelas
+// regras da Apple, aqui não pode haver preço, botão "Assinar" nem texto
+// mandando assinar no site — só a situação da conta e o contato da equipe.
+function SemAcessoClube({ contato, onAtualizar, onSair }) {
+ const fone = (contato || "").replace(/\D/g, "");
+ const [atualizando, setAtualizando] = useState(false);
+ const btn = { width: "100%", maxWidth: 340, minHeight: 54, borderRadius: 50, fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" };
+ return (
+    <div style={{ minHeight: "100%", background: C.creme, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center", gap: 14, fontFamily: FB }}>
+      <Logo width={140} fundo="claro" marca="CLUBE DO" />
+      <h1 style={{ fontFamily: FB, fontSize: 26, fontWeight: 700, color: C.obs, lineHeight: 1.25, margin: "14px 0 0" }}>Seu acesso ao Clube não está ativo</h1>
+      <p style={{ fontSize: 17, color: C.terra, lineHeight: 1.55, maxWidth: 340, margin: "0 0 10px" }}>
+        Se você acabou de assinar, a liberação pode levar alguns minutos. Toque em Atualizar para conferir.
+      </p>
+      <button onClick={async () => { setAtualizando(true); await onAtualizar?.(); setAtualizando(false); }} style={{ ...btn, background: C.primary, border: "none", color: "#FFFFFF" }}>
+        {atualizando ? "Conferindo..." : "Atualizar"}
+      </button>
+      {fone && (
+        <a href={`https://wa.me/55${fone}`} target="_blank" rel="noopener noreferrer" style={{ ...btn, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: "none", border: `1px solid ${C.lineForte}`, color: C.obs, boxSizing: "border-box" }}>
+          Falar com a equipe
+        </a>
+      )}
+      <button onClick={onSair} style={{ background: "none", border: "none", minHeight: 44, fontFamily: FB, fontSize: 16, fontWeight: 500, color: C.terra, textDecoration: "underline", cursor: "pointer", marginTop: 4 }}>
+        Sair da conta
+      </button>
+    </div>
+  );
+}
+
 function Aguardando({ contato, onSair }) {
  const fone = (contato || "").replace(/\D/g, "");
  return (
@@ -5230,6 +5291,7 @@ function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafi
 }
 
 function Home({
+ modoClube,
  setSexta,
  perfil,
  sem,
@@ -5513,7 +5575,7 @@ function Home({
  t={tCume}
  achatar={0.62}
  titulo={`${saudacao}${primeiroNome ? `, ${primeiroNome}` : ""}`}
- subtitulo={`${dataLonga(TODAY)} · Semana ${sem}`}
+ subtitulo={modoClube ? dataLonga(TODAY) : `${dataLonga(TODAY)} · Semana ${sem}`}
  onAjuda={() => setAjudaAberta((a) => !a)}
         />
         {ajudaAberta && <ComoUsarHoje onFechar={() => setAjudaAberta(false)} />}
@@ -5542,7 +5604,7 @@ function Home({
         {/* Próximo encontro foi removido — info será enviada por WhatsApp */}
 
         {/* Banner carta semana 12 */}
-        {carta && sem >= 12 && (
+        {carta && sem >= 12 && !modoClube && (
           <div
  style={{
  background: `${C.ouro}12`,
@@ -5665,12 +5727,12 @@ function Home({
             ))}
 
             {/* Desafio da Semana (seção 4.10) — contido no card, sem zona nem alerta */}
-            <DesafioCard
+            {!modoClube && <DesafioCard
  texto={desafioTexto}
  desafioFeitos={desafioFeitos}
  toggleDesafio={toggleDesafio}
  diasDaSemana={diasDaSemana}
-            />
+            />}
 
             {/* Meus hábitos — criados pela aluna (seção 5) */}
             <SectionHeader titulo="Meus hábitos" />
@@ -9611,6 +9673,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
 }
 
 function Jornada({
+ modoClube,
  sem,
  rodaResultados = [],
  hDia,
@@ -9673,7 +9736,7 @@ function Jornada({
  color: C.obs,
           }}
         >
- Jornada AUGE
+ {modoClube ? "Clube do Auge" : "Jornada AUGE"}
         </div>
         <div
  style={{
@@ -9686,7 +9749,7 @@ function Jornada({
  marginLeft: "auto",
           }}
         >
- S{sem} de 12
+ {modoClube ? "" : `S${sem} de 12`}
         </div>
         {/* Perfil e Configurações: o círculo com a inicial dela */}
         <button onClick={() => ir(S.PF)} aria-label="Perfil e Configurações"
@@ -10538,7 +10601,7 @@ function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
   );
 }
 
-function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
+function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
  const hojeReal = new Date();
  const [habSel, setHabSel] = useState(habProgresso || null); // painel individual do hábito (seção 7)
  const [verDesafio, setVerDesafio] = useState(false); // painel das 12 semanas do desafio
@@ -10601,13 +10664,13 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  Trajetória
         </div>
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, marginTop: 4 }}>
- Sua jornada até aqui
+ {modoClube ? "Seus hábitos, mês a mês" : "Sua jornada até aqui"}
         </div>
       </div>
       <Grain style={{ padding: "18px 18px 32px" }}>
 
-        {/* ── Trajetória semanal (seção 5.2) ── */}
-        <div style={{ padding: "4px 2px 8px", marginBottom: 6 }}>
+        {/* ── Trajetória semanal (seção 5.2) — o arco das 12 semanas é só da Jornada ── */}
+        {!modoClube && <div style={{ padding: "4px 2px 8px", marginBottom: 6 }}>
           <svg width="100%" viewBox="0 0 380 158" fill="none" style={{ display: "block", marginBottom: 6 }}>
             <path d="M 35 126 C 110 142 272 46 350 38" stroke={`${C.ouro}55`} strokeWidth="1.2" fill="none" strokeLinecap="round" />
             <circle cx="350" cy="38" r="2.2" fill={`${C.ouro}88`} />
@@ -10616,7 +10679,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
  S{sem}
             </text>
           </svg>
-        </div>
+        </div>}
 
         {/* ── Seus hábitos (seção 7) — contagem do mês, não sequência ── */}
         <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", margin: "6px 0 10px" }}>
@@ -10641,7 +10704,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
           </button>
         ))}
         {/* Desafio da semana — mesma linha dos habitos, mas abre as 12 semanas */}
-        <button
+        {!modoClube && <button
  onClick={() => setVerDesafio(true)}
  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: "pointer", textAlign: "left" }}
         >
@@ -10653,7 +10716,7 @@ function Trajetoria({ regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, hi
             </span>
           </span>
           <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>
-        </button>
+        </button>}
 
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", margin: "14px 0 4px" }}>
  toque num hábito<br />para ver o calendário completo
@@ -11627,7 +11690,7 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
   );
 }
 
-function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
+function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  // Tela acesa enquanto a página do vídeo está aberta. Numa meditação a aluna
  // fica de olhos fechados, sem tocar no celular: depois de 30 s a 1 min o
@@ -11748,7 +11811,7 @@ function Conteudo({ perfil, videos: videosDB, sem, guias, authUserId, usuario, m
     <div style={{ animation: "fadeUp .35s ease" }}>
       {/* Título (a logo saiu daqui a pedido da Vitória, 30/09) */}
       <div style={{ background: C.creme, padding: "20px 20px 14px" }}>
-        <h1 style={{ margin: 0, fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em" }}>Conteúdo</h1>
+        <h1 style={{ margin: 0, fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em" }}>{modoClube ? "Aprenda" : "Conteúdo"}</h1>
       </div>
 
       {/* As pastilhas de categoria saíram: cada categoria agora é uma faixa
