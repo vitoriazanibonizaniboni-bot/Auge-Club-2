@@ -10681,9 +10681,114 @@ function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
   );
 }
 
+// ─── Calendário colorido do Clube ──────────────────────────────────────────────
+// Decisão da Vitória (26/10/2026): no Clube a Trajetória é um calendário só,
+// com um risco grosso por hábito em tom pastel. Cada hábito tem sempre a mesma
+// altura dentro do dia; o risco clarinho é "não fez". Tocar num hábito da
+// legenda mostra só ele, com sequência, total do mês e meta.
+// As cores só identificam o hábito — o nome vem sempre na legenda ao lado.
+const CORES_HAB_CLUBE = ["#A3B07E", "#B4A2D6", "#E2BE85", "#87C2BC", "#E7AE98", "#9DB7D9", "#C9B79C"];
+const RISCO_VAZIO = "#F1EBE2";
+
+function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
+ const hojeReal = new Date();
+ const [offset, setOffset] = useState(0);
+ const [sel, setSel] = useState(inicial);
+ const vizData = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + offset, 1);
+ const ano = vizData.getFullYear();
+ const mes = vizData.getMonth();
+ const nomeMes = vizData.toLocaleString("pt-BR", { month: "long" });
+ const titulo = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1) + " " + ano;
+ const primeiroDia = (new Date(ano, mes, 1).getDay() + 6) % 7; // semana começa na segunda
+ const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+ const todayStr = localDateStr(hojeReal);
+ const dsDe = (dia) => `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+
+ const habs = linhas.map((h, i) => ({ ...h, cor: CORES_HAB_CLUBE[i % CORES_HAB_CLUBE.length] }));
+ const habSel = habs.find((h) => h.id === sel) || null;
+ const visiveis = habSel ? [habSel] : habs;
+
+ const feitosNoMes = habSel
+ ? Array.from({ length: diasNoMes }, (_, i) => dsDe(i + 1)).filter((ds) => regs[ds]?.[habSel.id]).length
+ : 0;
+ const sequencia = (() => {
+ if (!habSel) return 0;
+ let n = 0;
+ let d = regs[todayStr]?.[habSel.id] ? todayStr : addDaysStr(todayStr, -1);
+ while (regs[d]?.[habSel.id]) { n++; d = addDaysStr(d, -1); }
+ return n;
+  })();
+
+ const Numero = ({ valor, rotulo, menor }) => (
+    <div style={{ flex: 1, background: C.linho, borderRadius: 14, padding: "10px 6px", textAlign: "center", minWidth: 0 }}>
+      <div style={{ fontFamily: FB, fontWeight: 700, fontSize: menor ? 17 : 22, color: C.obs, lineHeight: 1.25, overflowWrap: "anywhere" }}>{valor}</div>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 2 }}>{rotulo}</div>
+    </div>
+  );
+
+ return (
+    <div style={{ background: C.branco, border: `1px solid ${C.line}`, borderRadius: 20, padding: "14px 12px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2px 10px" }}>
+        <button onClick={() => setOffset((o) => o - 1)} aria-label="Mês anterior" style={{ width: 44, height: 44, background: "none", border: "none", color: C.terra, fontSize: 26, cursor: "pointer", lineHeight: 1 }}>‹</button>
+        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 18, color: C.obs }}>{titulo}</div>
+        <button onClick={() => setOffset((o) => Math.min(o + 1, 0))} aria-label="Próximo mês" disabled={offset >= 0} style={{ width: 44, height: 44, background: "none", border: "none", color: offset < 0 ? C.terra : alfa(C.terra, .3), fontSize: 26, cursor: offset < 0 ? "pointer" : "default", lineHeight: 1 }}>›</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", columnGap: 6, rowGap: 4 }}>
+        {["S","T","Q","Q","S","S","D"].map((d, i) => (
+          <div key={"s" + i} style={{ textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.lt, paddingBottom: 4 }}>{d}</div>
+        ))}
+        {Array.from({ length: primeiroDia }, (_, i) => <div key={"e" + i} />)}
+        {Array.from({ length: diasNoMes }, (_, i) => {
+ const dia = i + 1;
+ const ds = dsDe(dia);
+ const feitos = visiveis.filter((h) => regs[ds]?.[h.id]);
+ const hoje = ds === todayStr;
+ return (
+            <div key={dia} aria-label={`${dia}: ${feitos.length ? feitos.map((h) => h.nome).join(", ") : "nenhum hábito"}`}
+ style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, paddingBottom: 6 }}>
+              <span style={{ fontFamily: FB, fontSize: 15, fontWeight: hoje ? 700 : 400, color: C.obs, width: 28, height: 28, borderRadius: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", boxShadow: hoje ? `inset 0 0 0 2px ${C.obs}` : "none" }}>{dia}</span>
+              <span aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}>
+                {visiveis.map((h) => (
+                  <span key={h.id} style={{ height: 8, borderRadius: 4, background: regs[ds]?.[h.id] ? h.cor : RISCO_VAZIO }} />
+                ))}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* legenda: tocar num hábito mostra só ele; tocar de novo volta a todos */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
+        {habs.map((h) => {
+ const on = sel === h.id;
+ const apagado = sel && !on;
+ return (
+            <button key={h.id} onClick={() => setSel(on ? null : h.id)} aria-pressed={on}
+ style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 14px", borderRadius: 999, background: C.branco, border: on ? `2px solid ${C.obs}` : `1px solid ${C.line}`, fontFamily: FB, fontSize: 15, fontWeight: on ? 600 : 400, color: C.obs, cursor: "pointer" }}>
+              <span aria-hidden="true" style={{ width: 18, height: 8, borderRadius: 4, background: h.cor, opacity: apagado ? .4 : 1 }} />
+              {h.nome}
+            </button>
+          );
+        })}
+      </div>
+
+      {habSel ? (
+        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <Numero valor={sequencia} rotulo={sequencia === 1 ? "dia seguido" : "dias seguidos"} />
+          <Numero valor={feitosNoMes} rotulo={`${feitosNoMes === 1 ? "dia" : "dias"} em ${nomeMes}`} />
+          <Numero valor={metaDoHabito(habSel)} rotulo="meta" menor />
+        </div>
+      ) : (
+        <div style={{ fontFamily: FB, fontSize: 13, color: C.lt, margin: "10px 2px 0" }}>Toque num hábito para ver só ele</div>
+      )}
+    </div>
+  );
+}
+
 function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
  const hojeReal = new Date();
- const [habSel, setHabSel] = useState(habProgresso || null); // painel individual do hábito (seção 7)
+ const [habSel, setHabSel] = useState(modoClube ? null : (habProgresso || null)); // painel individual do hábito (seção 7)
+ const [filtroInicial] = useState(modoClube && habProgresso ? habProgresso.id : null); // no Clube, o "ver progresso" abre o calendário já filtrado
  const [verDesafio, setVerDesafio] = useState(false); // painel das 12 semanas do desafio
   // Chegou pelo "ver progresso" da Hoje: abre o painel e limpa, para o
   // painel não reabrir sozinho na próxima vez que ela entrar na aba.
@@ -10761,6 +10866,10 @@ function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataC
           </svg>
         </div>}
 
+        {/* ── Clube: um calendário só, colorido por hábito ── */}
+        {modoClube && <CalendarioCores linhas={linhas.filter((h) => !h.bloqueado)} regs={regs} metaDoHabito={metaDoHabito} inicial={filtroInicial} />}
+
+        {!modoClube && <>
         {/* ── Seus hábitos (seção 7) — contagem do mês, não sequência ── */}
         <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", margin: "6px 0 10px" }}>
  Seus hábitos
@@ -10801,6 +10910,7 @@ function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataC
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", margin: "14px 0 4px" }}>
  toque num hábito<br />para ver o calendário completo
         </div>
+        </>}
 
         {/* painel do desafio — as 12 semanas, com o texto de cada uma */}
         {verDesafio && (
