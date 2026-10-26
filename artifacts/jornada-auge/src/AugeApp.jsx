@@ -487,6 +487,36 @@ const MEDALHAS = [
 ];
 
 // ─── SYNC SUPABASE (fire-and-forget, pega userId da sessão cacheada) ──────────
+// ─── Foto menor antes de enviar ──────────────────────────────────────────────
+// A foto do celular chega com 3–8 MB. Para o Mural, 1440 px no lado maior e
+// JPEG 82% bastam para a tela do celular e ficam por volta de 200–400 KB —
+// cerca de um décimo. Se algo falhar (formato estranho, navegador antigo),
+// envia a original: nunca impede a aluna de postar.
+async function reduzirFoto(file, lado = 1440, qualidade = 0.82) {
+ try {
+ if (!file || !/^image\//.test(file.type || "") || file.type === "image/gif") return file;
+ let img = null;
+ if (typeof createImageBitmap === "function") {
+ try { img = await createImageBitmap(file, { imageOrientation: "from-image" }); } catch { img = null; }
+    }
+ if (!img) {
+ img = await new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = URL.createObjectURL(file); });
+    }
+ const w = img.width, h = img.height;
+ if (!w || !h) return file;
+ const esc = Math.min(1, lado / Math.max(w, h));
+ if (esc === 1 && file.size < 500 * 1024) return file;
+ const c = document.createElement("canvas");
+ c.width = Math.round(w * esc); c.height = Math.round(h * esc);
+ c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+ const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", qualidade));
+ if (!blob || blob.size >= file.size) return file;
+ return new File([blob], (file.name || "foto").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+ return file;
+  }
+}
+
 const syncDB = (table, data, options = {}) => {
  supabase.auth.getSession().then(({ data: { session } }) => {
  if (!session?.user) return;
@@ -2243,7 +2273,7 @@ export default function App() {
  if (entry.imgSrc && entry.imgFile) {
  const { data: { session } } = await supabase.auth.getSession();
  if (session?.user) {
- const f = entry.imgFile;
+ const f = await reduzirFoto(entry.imgFile);
  const ext = f.name.split(".").pop();
  const path = `${session.user.id}/${Date.now()}.${ext}`;
  const { data, error } = await supabase.storage
@@ -13216,11 +13246,12 @@ function Perfil({
             // Upload para Supabase Storage
  const { data: { session } } = await supabase.auth.getSession();
  if (!session?.user) return;
- const ext = f.name.split(".").pop() || "jpg";
+ const fa = await reduzirFoto(f, 512, 0.85);
+ const ext = fa.name.split(".").pop() || "jpg";
  const path = `${session.user.id}/avatar.${ext}`;
  const { error } = await supabase.storage
               .from("avatars")
-              .upload(path, f, { upsert: true, contentType: f.type });
+              .upload(path, fa, { upsert: true, contentType: fa.type });
  if (!error) {
  const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
  if (urlData?.publicUrl) {
