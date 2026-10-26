@@ -1124,6 +1124,8 @@ export default function App() {
  const [loadingAuth, setLoadingAuth] = useState(true);
  const [perfil, setPerfil] = useState(null);
  const [profileLoaded, setProfileLoaded] = useState(false);
+ // Primeiro acesso: o que ainda falta escrever ({ porques, ancora, minimos, carta }) ou null
+ const [primAcesso, setPrimAcesso] = useState(null);
  // Passo a passo de boas-vindas: uma vez só (primeiro acesso, ou primeira
  // abertura desta versão para quem já usava o app)
  const [tour, setTour] = useState(null); // null | { antiga: bool }
@@ -1740,6 +1742,26 @@ export default function App() {
  setHabsPessoais(habsPessRes?.data || []);
  setHabitosCarregados(!!metasRes?.data && !metasRes.error && !habsPessRes?.error);
 
+    // ── Primeiro acesso: porquês, âncora e mínimos ainda não escritos ────────
+    // Só para aluna liberada. "Sem linha" (PGRST116) é o mesmo que vazio; um
+    // erro de rede é outra coisa: nesse caso não abre nada, para não pedir de
+    // novo o que ela já escreveu.
+ {
+ const semLinha = (r) => !r?.data && (!r?.error || r.error.code === "PGRST116");
+ const falhou = [ancRes, porquesRes, metasRes, cartaRes].some((r) => r?.error && r.error.code !== "PGRST116");
+ const planoPA = profileRes?.data?.plano;
+ const pqP = porquesRes?.data || {};
+ const mtP = metasRes?.data || {};
+ const faltam = {
+ porques: semLinha(porquesRes) || ![pqP.p1, pqP.p2, pqP.p3].every((t) => (t || "").trim()),
+ ancora: semLinha(ancRes) || !(ancRes.data.texto || "").trim(),
+ minimos: semLinha(metasRes) || ![mtP.mov_minimo, mtP.sono_minimo, mtP.tsi_minimo].every((t) => (t || "").trim()),
+      };
+ faltam.carta = semLinha(cartaRes) || !(cartaRes.data.texto || "").trim();
+ const liberada = ["jornada", "comunidade"].includes(planoPA);
+ setPrimAcesso(liberada && !falhou && (faltam.porques || faltam.ancora || faltam.minimos) ? faltam : null);
+    }
+
     // habitos_angulares tem prioridade sobre profiles.habito_1/2/3
  if (habsAngRes?.data) {
  const ha = habsAngRes.data;
@@ -2125,6 +2147,7 @@ export default function App() {
  setPq1("");
  setPq2("");
  setPq3("");
+ setPrimAcesso(null);
  setTela(S.HOME);
   };
 
@@ -2585,11 +2608,11 @@ export default function App() {
   // Quem já tinha hábito marcado antes desta versão vê "O que mudou no app"
  const DATA_VERSAO_TOUR = "2026-10-01";
  useEffect(() => {
- if (!profileLoaded || !authUser || tour || lerFlag(CHAVE_TOUR)) return;
+ if (!profileLoaded || !authUser || tour || primAcesso || lerFlag(CHAVE_TOUR)) return;
  if (perfil === "pendente" || perfil === "admin" || !perfil) return;
  const antiga = Object.entries(regs || {}).some(([d, hs]) => d < DATA_VERSAO_TOUR && hs && Object.keys(hs).length > 0);
  setTour({ antiga });
-  }, [profileLoaded, authUser, perfil]);
+  }, [profileLoaded, authUser, perfil, primAcesso]);
  const fecharTour = () => { gravarFlag(CHAVE_TOUR); setTour(null); setTela(S.HOME); };
  // Passo a passo de cada aba: na primeira vez que ela abre a aba (depois do da Hoje)
  const ABA_DO_TOUR = { [S.TRAJ]: "trajetoria", [S.FEED]: "mural", [S.JOR]: "meumapa", [S.CT]: "conteudo" };
@@ -2806,8 +2829,23 @@ export default function App() {
  onFechar={() => setSexta(null)}
         />
       )}
-      {tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
-      {!tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
+      {primAcesso && perfil !== "admin" && perfil !== "pendente" && (
+        <PrimeiroAcesso
+ nome={usuario?.nome || ""}
+ faltam={primAcesso}
+ pqs={[pq1, pq2, pq3]}
+ anc={anc === "Eu sou a mulher que volta." && primAcesso.ancora ? "" : anc}
+ metas={metas}
+ salvarPorques={([a, b, c]) => { setPq1(a); setPq2(b); setPq3(c); syncDB("porques", { p1: a, p2: b, p3: c }, { onConflict: "user_id" }); }}
+ salvarAncora={(t) => { setAnc(t); syncDB("ancora", { texto: t }, { onConflict: "user_id" }); }}
+ salvarMinimos={salvarMinimos}
+ setCarta={setCarta}
+ tk={tk}
+ onConcluir={() => { setPrimAcesso(null); setTela(S.HOME); }}
+        />
+      )}
+      {!primAcesso && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
+      {!primAcesso && !tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
       {!SEM_NAV.includes(tela) && (
         <NavBar
  tela={tela}
@@ -8334,6 +8372,116 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// ─── PRIMEIRO ACESSO ──────────────────────────────────────────────────────────
+// Logo depois do login, quem ainda não escreveu os porquês, a âncora ou os
+// mínimos passa por estes passos. Só a Carta para o Futuro tem "Pular".
+// Cada passo grava ao continuar: se ela fechar o app no meio, o que já
+// escreveu fica salvo e o app volta só nos passos que faltam.
+const PA_PORQUES = [
+  "Por que isso importa para você de verdade?",
+  "O que você está perdendo hoje por estar onde está?",
+  "Como você quer se sentir daqui a 5 anos?",
+];
+const PA_MIN_EX = { movimento: "ex: caminhar 10 minutos", sono: "ex: 30 min sem celular", tempo: "ex: ler 1 página" };
+function PrimeiroAcesso({ nome, faltam, pqs, anc, metas, salvarPorques, salvarAncora, salvarMinimos, setCarta, tk, onConcluir }) {
+  const passos = [
+    faltam.porques && "porques",
+    faltam.ancora && "ancora",
+    faltam.minimos && "minimos",
+    faltam.carta && "carta",
+  ].filter(Boolean);
+  const [i, setI] = useState(0);
+  const [p, setP] = useState(pqs);
+  const [a, setA] = useState(anc);
+  const [m, setM] = useState({ movimento: metas?.movimento?.minimo || "", sono: metas?.sono?.minimo || "", tempo: metas?.tempo?.minimo || "" });
+  const [salvando, setSalvando] = useState(false);
+  const passo = passos[i];
+  const ultimo = i === passos.length - 1;
+  const avancar = () => { if (ultimo) onConcluir(); else { setI(i + 1); window.scrollTo?.(0, 0); } };
+  const pronto =
+    passo === "porques" ? p.every((t) => t.trim()) :
+    passo === "ancora" ? !!a.trim() :
+    passo === "minimos" ? HABS_FIXOS.every((h) => (m[h.id] || "").trim()) : true;
+  const continuar = async () => {
+    if (!pronto || salvando) return;
+    setSalvando(true);
+    if (passo === "porques") salvarPorques(p.map((t) => t.trim()));
+    if (passo === "ancora") salvarAncora(a.trim());
+    if (passo === "minimos") {
+      const ok = await salvarMinimos({ movimento: m.movimento.trim(), sono: m.sono.trim(), tempo: m.tempo.trim() });
+      if (!ok) { setSalvando(false); tk("Não conseguimos salvar agora. Tente de novo."); return; }
+    }
+    setSalvando(false);
+    avancar();
+  };
+  const campo = { width: "100%", background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "12px 14px", fontFamily: FB, fontSize: 17, color: C.obs, lineHeight: 1.5, resize: "none" };
+  const pergunta = { fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.obs, lineHeight: 1.45, marginBottom: 8 };
+  const titulos = {
+    porques: ["Por que você começou", "Antes de tudo, o seu motivo. É ele que te traz de volta quando a vontade some."],
+    ancora: ["Quem você quer ser", "Uma frase curta sobre a mulher que você está se tornando. Ela aparece para você nos dias difíceis."],
+    minimos: ["Seus mínimos inegociáveis", "O mínimo que ainda conta num dia difícil, bem menor que a meta cheia. Pense num dia em que tudo deu errado."],
+    carta: ["Uma carta para você", "Escreva para a mulher que vai terminar a Jornada. Você lê esta carta na Semana 12. Se preferir, deixe para depois."],
+  };
+  if (!passo) return null;
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Primeiro acesso"
+      style={{ position: "fixed", inset: 0, zIndex: 1100, background: C.creme, fontFamily: FB, overflowY: "auto",
+        paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto", padding: "16px 20px 32px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 44 }}>
+          <span style={{ fontSize: 16, fontWeight: 500, color: C.terra }}>Passo {i + 1} de {passos.length}</span>
+          {i > 0 && (
+            <button onClick={() => setI(i - 1)} style={{ minHeight: 44, background: "none", border: "none", fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.primary, cursor: "pointer" }}>Voltar</button>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+          {passos.map((_, k) => <span key={k} style={{ flex: 1, height: 6, borderRadius: 3, background: k <= i ? C.primary : C.line }} />)}
+        </div>
+        {i === 0 && nome && <div style={{ fontSize: 17, color: C.terra, marginBottom: 6 }}>Boas-vindas, {nome.split(" ")[0]}.</div>}
+        <h1 style={{ fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, lineHeight: 1.2, margin: "0 0 10px" }}>{titulos[passo][0]}</h1>
+        <p style={{ fontSize: 17, color: C.terra, lineHeight: 1.55, margin: "0 0 22px" }}>{titulos[passo][1]}</p>
+
+        {passo === "porques" && PA_PORQUES.map((q, k) => (
+          <div key={k} style={{ marginBottom: 18 }}>
+            <div style={pergunta}>{q}</div>
+            <textarea value={p[k]} onChange={(e) => setP((x) => x.map((t, j) => (j === k ? e.target.value : t)))} placeholder="Escreva com honestidade..." style={{ ...campo, height: 88 }} />
+          </div>
+        ))}
+
+        {passo === "ancora" && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={pergunta}>Complete do seu jeito:</div>
+            <textarea value={a} onChange={(e) => setA(e.target.value)} placeholder="Eu sou a mulher que..." style={{ ...campo, height: 96 }} />
+            <div style={{ fontSize: 16, color: C.terra, lineHeight: 1.5, marginTop: 10 }}>Exemplos: "Eu sou a mulher que volta." · "Eu sou a mulher que cuida de si sem pedir licença."</div>
+          </div>
+        )}
+
+        {passo === "minimos" && HABS_FIXOS.map((h) => (
+          <div key={h.id} style={{ marginBottom: 18 }}>
+            <div style={pergunta}>{h.nome}</div>
+            <input value={m[h.id]} onChange={(e) => setM((x) => ({ ...x, [h.id]: e.target.value }))} placeholder={PA_MIN_EX[h.id] || ""} style={{ ...campo, minHeight: 50 }} />
+          </div>
+        ))}
+
+        {passo === "carta" ? (
+          <>
+            <CartaEditor setCarta={setCarta} tk={tk} onSalvo={avancar} />
+            <button onClick={avancar} style={{ width: "100%", minHeight: 52, marginTop: 12, background: "none", border: `1px solid ${C.lineForte}`, borderRadius: 50, fontFamily: FB, fontSize: 17, fontWeight: 500, color: C.obs, cursor: "pointer" }}>
+              Pular por agora
+            </button>
+            <div style={{ fontSize: 16, color: C.terra, textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>Você pode escrever depois, em Meu Mapa → Espaços de escrita.</div>
+          </>
+        ) : (
+          <button onClick={continuar} disabled={!pronto || salvando}
+            style={{ width: "100%", minHeight: 54, marginTop: 6, background: C.primary, border: "none", borderRadius: 50, fontFamily: FB, fontSize: 17, fontWeight: 600, color: "#FFFFFF", cursor: pronto ? "pointer" : "default", opacity: pronto ? 1 : 0.4 }}>
+            {salvando ? "Salvando..." : ultimo ? "Começar" : "Continuar"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── EDITOR DE CARTA ──────────────────────────────────────────────────────────
 const CARTA_PERGUNTAS = [
   "Como você quer estar se sentindo daqui a 12 semanas?",
