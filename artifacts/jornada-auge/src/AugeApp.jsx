@@ -2739,9 +2739,7 @@ export default function App() {
  if (perfil === "pendente")
  return (
       <Phone>
-        <Rolar>
-          <Aguardando contato={contatoWhats} onSair={logout} />
-        </Rolar>
+        <Aguardando contato={contatoWhats} onSair={logout} onAtualizar={() => loadUserData(authUser?.id)} />
         <Estilos />
       </Phone>
     );
@@ -3267,28 +3265,33 @@ function SemAcessoClube({ contato, onAtualizar, onSair }) {
   );
 }
 
-function Aguardando({ contato, onSair }) {
+// Mesmo desenho da tela "Seu acesso ao Clube não está ativo" (26/10): título
+// forte, texto em Terra 17px, botão terracota e "Sair da conta" discreto.
+function Aguardando({ contato, onSair, onAtualizar }) {
  const fone = (contato || "").replace(/\D/g, "");
+ const [atualizando, setAtualizando] = useState(false);
+ const btn = { width: "100%", maxWidth: 340, minHeight: 54, borderRadius: 50, fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer", boxSizing: "border-box" };
  return (
-    <Grain style={{ minHeight: 760, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 30px", textAlign: "center", gap: 18 }}>
+    <div style={{ minHeight: "100%", background: C.creme, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center", gap: 14, fontFamily: FB }}>
       <Logo width={140} fundo="claro" />
-      <div style={{ fontFamily: FS, fontSize: 24, fontWeight: 400, color: C.ouroTxt, lineHeight: 1.3, marginTop: 8 }}>
- Sua conta está sendo ativada
-      </div>
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.6, maxWidth: 300 }}>
- Que alegria ter você aqui. Assim que a sua inscrição for confirmada, o seu acesso é liberado e você entra na Jornada. É rapidinho.
-      </div>
+      <h1 style={{ fontFamily: FB, fontSize: 26, fontWeight: 700, color: C.obs, lineHeight: 1.25, margin: "14px 0 0" }}>Sua conta está sendo ativada</h1>
+      <p style={{ fontSize: 17, color: C.terra, lineHeight: 1.55, maxWidth: 340, margin: "0 0 10px" }}>
+        Que alegria ter você aqui. Assim que a sua inscrição for confirmada, o seu acesso é liberado. É rapidinho.
+      </p>
+      {onAtualizar && (
+        <button onClick={async () => { setAtualizando(true); await onAtualizar(); setAtualizando(false); }} style={{ ...btn, background: C.primary, border: "none", color: "#FFFFFF" }}>
+          {atualizando ? "Conferindo..." : "Já fui liberada"}
+        </button>
+      )}
       {fone && (
-        <a href={`https://wa.me/55${fone}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", marginTop: 6 }}>
-          <div style={{ background: C.ouroLt, color: C.obs2, fontFamily: FB, fontWeight: 400, fontSize: 15, padding: "11px 24px", borderRadius: 50, letterSpacing: "0.04em" }}>
- Falar no WhatsApp
-          </div>
+        <a href={`https://wa.me/55${fone}`} target="_blank" rel="noopener noreferrer" style={{ ...btn, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: "none", border: `1px solid ${C.lineForte}`, color: C.obs }}>
+          Falar no WhatsApp
         </a>
       )}
-      <button onClick={onSair} style={{ background: "none", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "9px 26px", fontFamily: FB, fontWeight: 400, fontSize: 14.5, color: C.ouroTxt, cursor: "pointer", marginTop: 6 }}>
- Sair
+      <button onClick={onSair} style={{ background: "none", border: "none", minHeight: 44, fontFamily: FB, fontSize: 16, fontWeight: 500, color: C.terra, textDecoration: "underline", cursor: "pointer", marginTop: 4 }}>
+        Sair da conta
       </button>
-    </Grain>
+    </div>
   );
 }
 
