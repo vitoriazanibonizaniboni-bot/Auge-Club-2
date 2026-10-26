@@ -2965,7 +2965,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0, modoClube = false })
   }
  const tabs = modoClube ? [
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
-    { id: S.CT, label: "Assistir", icon: Ico.livro },
+    { id: S.CT, label: "Dicas", icon: Ico.livro },
     { id: S.FEED, label: "Chat", icon: Ico.comunidade },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
     { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
@@ -11811,7 +11811,7 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
     <div style={{ animation: "fadeUp .35s ease" }}>
       {/* Título (a logo saiu daqui a pedido da Vitória, 30/09) */}
       <div style={{ background: C.creme, padding: "20px 20px 14px" }}>
-        <h1 style={{ margin: 0, fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em" }}>{modoClube ? "Assistir" : "Conteúdo"}</h1>
+        <h1 style={{ margin: 0, fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em" }}>{modoClube ? "Dicas" : "Conteúdo"}</h1>
       </div>
 
       {/* As pastilhas de categoria saíram: cada categoria agora é uma faixa
