@@ -8,7 +8,7 @@ import { SextaDaVitoria } from "./components/AugeSexta.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
 import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
 import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
-import { Target, UserRound, PenLine } from "lucide-react";
+import { Target, UserRound, PenLine, MessageCircle } from "lucide-react";
 
 // ─── BRAND KIT ────────────────────────────────────────────────────────────────
 // As cores vêm de tokens.js. Os nomes antigos continuam valendo e apontam
@@ -1312,6 +1312,7 @@ export default function App() {
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config, ou da turma)
  const [turma, setTurma] = useState(null); // turma da aluna: inicio, encontro, link do Meet e desafio
  const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
+ const [grupoClube, setGrupoClube] = useState(""); // link do grupo de WhatsApp do Clube (config)
   // Foto de perfil da própria aluna (para posts, comentários e chat)
  const [minhaFoto, setMinhaFoto] = useState(null);
   // Nova versão do app disponível (service worker atualizado)
@@ -2040,6 +2041,7 @@ export default function App() {
  setDesafioTexto(cfg.desafio_texto || "");
  setJornadaInicio(cfg.jornada_inicio || null);
  setContatoWhats(cfg.contato_whatsapp || "");
+ setGrupoClube(cfg.grupo_clube || "");
  const _pg = (id) => { try { const a = JSON.parse(cfg[`guias_${id}`] || "[]"); if (Array.isArray(a) && a.length) return a; } catch {} return cfg[`guia_${id}`] ? [{ nome: "", url: cfg[`guia_${id}`] }] : []; };
  setGuias({ movimento: _pg("movimento"), sono: _pg("sono"), tempo: _pg("tempo") });
     }
@@ -2574,6 +2576,7 @@ export default function App() {
 
  const ctx = {
  modoClube,
+ grupoClube,
  setSexta,
  perfil,
  ir,
@@ -9765,6 +9768,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
 
 function Jornada({
  modoClube,
+ grupoClube = "",
  sem,
  rodaResultados = [],
  hDia,
@@ -9857,7 +9861,22 @@ function Jornada({
           </div>
         )}
 
-        
+        {/* Grupo do Clube no WhatsApp (decisão da Vitória, 27/10): a conversa entre as
+            alunas do Clube fica no grupo, não no app. Só aparece com link salvo no Painel. */}
+        {modoClube && /^https?:\/\//i.test(grupoClube.trim()) && (
+          <a href={grupoClube.trim()} target="_blank" rel="noopener noreferrer"
+ style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", background: C.oliva, borderRadius: 20, padding: "16px 18px", marginBottom: 20, fontFamily: FB }}>
+            <span aria-hidden="true" style={{ width: 44, height: 44, borderRadius: 22, background: "rgba(255,255,255,.16)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <MessageCircle size={22} strokeWidth={1.75} color="#FFFFFF" />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 17, fontWeight: 600, color: "#FFFFFF" }}>Grupo do Clube</span>
+              <span style={{ display: "block", fontSize: 16, fontWeight: 400, color: "#FFFFFF", marginTop: 2 }}>Converse com as outras alunas no WhatsApp</span>
+            </span>
+            <span aria-hidden="true" style={{ color: "#FFFFFF", fontSize: 20 }}>›</span>
+          </a>
+        )}
+
         {/* ── Meu Mapa (seção 7) ── */}
         <div
  style={{
@@ -12410,6 +12429,14 @@ function PainelMentora({ ir }) {
  setSalvandoT(false);
   };
  const [whatsSalvo, setWhatsSalvo] = useState(false);
+ const [grupoSalvo, setGrupoSalvo] = useState("");
+  // Link do grupo de WhatsApp do Clube: vazio tira o cartão do app das alunas
+ const salvarGrupo = async () => {
+ const link = (ment.grupo || "").trim();
+ if (link && !/^https?:\/\//i.test(link)) { setGrupoSalvo("Cole o link completo, começando com https://"); return; }
+ const { error } = await supabase.from("config").upsert({ id: "grupo_clube", valor: link }, { onConflict: "id" });
+ setGrupoSalvo(error ? "Não deu para salvar." : "✓ Salvo"); setTimeout(() => setGrupoSalvo(""), 3000);
+  };
  const salvarWhats = async () => {
  await supabase.from("config").upsert({ id: "contato_whatsapp", valor: ment.whatsapp || "" }, { onConflict: "id" });
  setWhatsSalvo(true); setTimeout(() => setWhatsSalvo(false), 2500);
@@ -12468,6 +12495,7 @@ function PainelMentora({ ir }) {
  desafio: cfg.desafio_texto || "",
  inicio: cfg.jornada_inicio || "",
  whatsapp: cfg.contato_whatsapp || "",
+ grupo: cfg.grupo_clube || "",
         });
       });
  supabase.rpc("get_pendentes_admin").then(({ data }) => setPendentes(data || []));
@@ -13138,6 +13166,18 @@ function PainelMentora({ ir }) {
                   {whatsSalvo ? "✓ Salvo" : "Salvar"}
                 </button>
               </div>
+            </div>
+            <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.ouroTxt, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>Grupo do Clube</div>
+              <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 10, lineHeight: 1.5 }}>Link do grupo de WhatsApp. Aparece no Meu Mapa das alunas do Clube. Deixe vazio para esconder.</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input value={ment.grupo || ""} onChange={(e) => setMent((m) => ({ ...m, grupo: e.target.value }))} placeholder="https://chat.whatsapp.com/..."
+                  style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderBottom: `1px solid ${alfa(C.obs, .2)}`, color: C.obs, fontFamily: FB, fontWeight: 400, fontSize: 16, padding: "7px 0" }} />
+                <button onClick={salvarGrupo} style={{ background: C.ouro, border: "none", borderRadius: 50, padding: "8px 18px", fontFamily: FB, fontWeight: 500, fontSize: 13.5, color: C.obs, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  {grupoSalvo === "✓ Salvo" ? "✓ Salvo" : "Salvar"}
+                </button>
+              </div>
+              {grupoSalvo && grupoSalvo !== "✓ Salvo" && <div style={{ fontFamily: FB, fontSize: 13, color: C.atencao, marginTop: 8 }}>{grupoSalvo}</div>}
             </div>
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 16 }}>Alunas ativas</div>
             {pendentesVis.length > 0 && (
