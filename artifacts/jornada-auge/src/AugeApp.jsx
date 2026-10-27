@@ -1695,7 +1695,9 @@ export default function App() {
 
  const ir = (t) => {
     // Mural sempre atualizado ao abrir a aba
- if (t === S.FEED) carregarFeed(authUser.id, turma?.id || null, perfil === "admin");
+ // Pelo link da notificação (?open=mural) o app chega aqui antes de saber
+ // quem entrou; sem a conta, o feed carrega depois, no loadUserData.
+ if (t === S.FEED && authUser?.id) carregarFeed(authUser.id, turma?.id || null, perfil === "admin");
  setTela(t);
   };
  const tk = (m) => {
