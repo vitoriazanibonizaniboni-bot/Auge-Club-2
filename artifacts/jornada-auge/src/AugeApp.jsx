@@ -8599,7 +8599,7 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
             primeiro acesso parecia um recomeço (caso da Leticia, 27/10). */}
         {i === 0 && antiga && (
           <div style={{ background: C.blushBg, borderRadius: 16, padding: "14px 16px", marginBottom: 20, fontSize: 17, color: C.obs, lineHeight: 1.5 }}>
-            <b style={{ fontWeight: 600 }}>Seu histórico continua aqui.</b> Só faltam algumas respostas para completar o seu Meu Mapa.
+            <b style={{ fontWeight: 600 }}>Seu histórico continua aqui.</b> Só faltam algumas respostas para completar o seu mapa.
           </div>
         )}
         <h1 style={{ fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, lineHeight: 1.2, margin: "0 0 10px" }}>{titulos[passo][0]}</h1>
