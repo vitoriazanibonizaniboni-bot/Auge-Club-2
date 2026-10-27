@@ -2939,6 +2939,7 @@ export default function App() {
       {primAcessoEf && perfil !== "admin" && perfil !== "pendente" && (
         <PrimeiroAcesso
  nome={usuario?.nome || ""}
+ antiga={Object.values(regs || {}).some((hs) => hs && Object.keys(hs).length > 0)}
  faltam={primAcessoEf}
  pqs={[pq1, pq2, pq3]}
  anc={anc === "Eu sou a mulher que volta." && primAcessoEf.ancora ? "" : anc}
@@ -8539,7 +8540,7 @@ const PA_PORQUES = [
   "Como você quer se sentir daqui a 5 anos?",
 ];
 const PA_MIN_EX = { movimento: "ex: caminhar 10 minutos", sono: "ex: 30 min sem celular", tempo: "ex: ler 1 página" };
-function PrimeiroAcesso({ nome, faltam, pqs, anc, metas, salvarPorques, salvarAncora, salvarMinimos, setCarta, tk, onConcluir }) {
+function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarPorques, salvarAncora, salvarMinimos, setCarta, tk, onConcluir }) {
   const passos = [
     faltam.porques && "porques",
     faltam.ancora && "ancora",
@@ -8593,7 +8594,14 @@ function PrimeiroAcesso({ nome, faltam, pqs, anc, metas, salvarPorques, salvarAn
         <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
           {passos.map((_, k) => <span key={k} style={{ flex: 1, height: 6, borderRadius: 3, background: k <= i ? C.primary : C.line }} />)}
         </div>
-        {i === 0 && nome && <div style={{ fontSize: 17, color: C.terra, marginBottom: 6 }}>Boas-vindas, {nome.split(" ")[0]}.</div>}
+        {i === 0 && nome && <div style={{ fontSize: 17, color: C.terra, marginBottom: 6 }}>{antiga ? "Que bom te ver" : "Boas-vindas"}, {nome.split(" ")[0]}.</div>}
+        {/* Aluna antiga que ainda não tinha escrito porquês/âncora/mínimos: o
+            primeiro acesso parecia um recomeço (caso da Leticia, 27/10). */}
+        {i === 0 && antiga && (
+          <div style={{ background: C.blushBg, borderRadius: 16, padding: "14px 16px", marginBottom: 20, fontSize: 17, color: C.obs, lineHeight: 1.5 }}>
+            <b style={{ fontWeight: 600 }}>Seu histórico continua aqui.</b> Só faltam algumas respostas para completar o seu Meu Mapa.
+          </div>
+        )}
         <h1 style={{ fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, lineHeight: 1.2, margin: "0 0 10px" }}>{titulos[passo][0]}</h1>
         <p style={{ fontSize: 17, color: C.terra, lineHeight: 1.55, margin: "0 0 22px" }}>{titulos[passo][1]}</p>
 
