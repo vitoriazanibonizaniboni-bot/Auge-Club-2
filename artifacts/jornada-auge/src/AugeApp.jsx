@@ -805,7 +805,9 @@ function Grain({ children, style = {} }) {
 // Ordem das abas na barra — decide para que lado a tela desliza
 const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
 // Clube (continuo): os videos vem logo depois da Hoje, porque nao ha aula ao vivo
-const ORDEM_ABAS_CLUBE = [S.HOME, S.CT, S.FEED, S.TRAJ, S.JOR];
+// Sem Chat no Clube (decisão da Vitória, 27/10): a conversa entre as alunas
+// fica no grupo de WhatsApp. Ficam 4 abas.
+const ORDEM_ABAS_CLUBE = [S.HOME, S.CT, S.TRAJ, S.JOR];
 // Chave de prévia no aparelho ("1" = ver como Clube), para testar sem mexer na conta
 const previaClube = () => { try { return localStorage.getItem("auge_previa_clube") === "1"; } catch { return false; } };
 // Celular = tela cheia; computador = moldura de celular no meio da tela.
@@ -1339,6 +1341,9 @@ export default function App() {
  const modoClube = previaClube() || (planoConta !== "admin" && clubeAtivo && !jornadaEmCurso);
  const semAcessoClube = planoConta === "comunidade" && !clubeAtivo && !previaClube();
  modoClubeRef.current = modoClube;
+ // O Clube não tem Mural/Chat: se algum caminho levar para lá (notificação
+ // antiga, link ?open=mural), volta para a Hoje.
+ useEffect(() => { if (modoClube && [S.FEED, S.NOVO, S.VOZ].includes(tela)) setTela(S.HOME); }, [modoClube, tela]);
  // Carta para o Futuro é só da Jornada (decisão da Vitória, 26/10): no Clube o
  // primeiro acesso ignora a carta, e se só faltava ela, não abre.
  const primAcessoEf = !primAcesso ? null : modoClube
@@ -3039,7 +3044,6 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0, modoClube = false })
  const tabs = modoClube ? [
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.CT, label: "Dicas", icon: Ico.livro },
-    { id: S.FEED, label: "Chat", icon: Ico.comunidade },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
     { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
   ] : [
