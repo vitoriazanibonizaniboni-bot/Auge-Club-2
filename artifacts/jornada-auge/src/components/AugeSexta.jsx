@@ -123,7 +123,7 @@ function desenharMontanha(ctx, t, yBase) {
   ctx.shadowBlur = 0;
 }
 
-export function desenharPost(canvas, { t, semana, frase, nome, tags, corDe }) {
+export function desenharPost(canvas, { t, semana, frase, nome, tags, corDe, programa = "Jornada AUGE" }) {
   canvas.width = PW; canvas.height = PH;
   const ctx = canvas.getContext("2d");
   // céu creme, como o cabeçalho da Hoje
@@ -147,7 +147,7 @@ export function desenharPost(canvas, { t, semana, frase, nome, tags, corDe }) {
     ctx.fillStyle = "#9A4B36";
     ctx.font = `700 38px ${FONTE}`;
     y += 38;
-    if (desenhar) textoEspacado(ctx, `SEXTA DA VITÓRIA · SEMANA ${semana}`, PW / 2, y, 6);
+    if (desenhar) textoEspacado(ctx, semana ? `SEXTA DA VITÓRIA · SEMANA ${semana}` : "SEXTA DA VITÓRIA", PW / 2, y, 6);
     ctx.fillStyle = "#1F1A17";
     ctx.font = `700 76px ${FONTE}`;
     y += 110;
@@ -191,7 +191,7 @@ export function desenharPost(canvas, { t, semana, frase, nome, tags, corDe }) {
   ctx.fillText(selo, PW / 2, sy + 72);
   ctx.font = `600 38px ${FONTE}`;
   ctx.fillStyle = "#7E6038";
-  ctx.fillText(`Conheça a Jornada AUGE · ${ARROBA}`, PW / 2, sy + sh + 60);
+  ctx.fillText(`Conheça ${programa === "Clube do Auge" ? "o" : "a"} ${programa} · ${ARROBA}`, PW / 2, sy + sh + 60);
 }
 
 async function fontesProntas() {
@@ -222,18 +222,18 @@ const podeCompartilharArquivo = (arquivo) => {
 
 // ── Tela "Sexta da Vitória" ─────────────────────────────────────────────────
 // C: cores do app. Button: o botão dos componentes. corDe(nome): cor da pastilha.
-export function SextaDaVitoria({ C, Button, t, semana, fraseInicial, nome, tags = [], corDe, onFechar, tk }) {
+export function SextaDaVitoria({ C, Button, t, semana, programa = "Jornada AUGE", fraseInicial, nome, tags = [], corDe, onFechar, tk }) {
   const [frase, setFrase] = useState((fraseInicial || "").slice(0, LIMITE_FRASE));
   const [comHabitos, setComHabitos] = useState(false); // opcional, desligado de início
   const [ocupada, setOcupada] = useState(false);
   const previa = useRef(null);
-  const dados = { t, semana, frase, nome, tags: comHabitos ? tags : [], corDe };
+  const dados = { t, semana, programa, frase, nome, tags: comHabitos ? tags : [], corDe };
 
   useEffect(() => {
     let vivo = true;
     fontesProntas().then(() => { if (vivo && previa.current) desenharPost(previa.current, dados); });
     return () => { vivo = false; };
-  }, [frase, t, semana, nome, comHabitos]);
+  }, [frase, t, semana, programa, nome, comHabitos]);
 
   const postarStories = async () => {
     if (ocupada) return;

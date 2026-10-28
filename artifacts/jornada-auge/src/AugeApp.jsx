@@ -2927,7 +2927,8 @@ export default function App() {
  C={C}
  Button={Button}
  t={sexta.t}
- semana={sexta.semana}
+ semana={modoClube ? null : sexta.semana}
+ programa={modoClube ? "Clube do Auge" : "Jornada AUGE"}
  fraseInicial={sexta.frase}
  tags={sexta.tags}
  corDe={(nome) => COR_TAG[nome] || COR_TAG_PESSOAL}
@@ -5308,7 +5309,7 @@ function PastilhasSemana({ tags }) {
   );
 }
 
-function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafioFeitos = [], diasDaSemana = [], sem, segundaAtual, postTreino, tk, onFechar, onEnviada }) {
+function VitoriaSemana({ modoClube = false, habStats, habsPessoais = [], habsPessStats = {}, desafioFeitos = [], diasDaSemana = [], sem, segundaAtual, postTreino, tk, onFechar, onEnviada }) {
  const [passo, setPasso] = useState(1);
  const [resp, setResp] = useState("");
  const ativos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
@@ -5376,8 +5377,14 @@ function VitoriaSemana({ habStats, habsPessoais = [], habsPessStats = {}, desafi
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <Button onClick={() => salvar(true)}>Compartilhar no Mural</Button>
-            <Button variante="contorno" onClick={() => salvar(false)}>Só guardar para mim</Button>
+            {/* No Clube não há Mural: a vitória fica guardada para ela e vira o
+                post da semana para o Instagram (decisão da Vitória, 28/10) */}
+            {modoClube ? (
+              <Button onClick={() => salvar(false)}>Criar meu post da semana</Button>
+            ) : (<>
+              <Button onClick={() => salvar(true)}>Compartilhar no Mural</Button>
+              <Button variante="contorno" onClick={() => salvar(false)}>Só guardar para mim</Button>
+            </>)}
           </div>
         </div>
       )}
@@ -5778,6 +5785,7 @@ function Home({
         {/* Vitória da Semana — banner de sexta-feira (seção 4.11) */}
         {ehSexta && !vitSemOk && !vitDestaSemana && (
           <VitoriaSemana
+ modoClube={modoClube}
  habStats={habStats}
  habsPessoais={habsPessoais}
  habsPessStats={habsPessStats}
