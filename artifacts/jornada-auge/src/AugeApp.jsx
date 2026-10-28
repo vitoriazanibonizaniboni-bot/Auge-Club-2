@@ -12338,6 +12338,15 @@ function PainelMentora({ ir }) {
  const [pendentes, setPendentes] = useState([]);
  // Interessadas: pediram acesso sem estar na Jornada; saem de "Aguardando" (migração 023)
  const [interessadas, setInteressadas] = useState([]);
+  // Grupo do WhatsApp do Clube (migração 024): quem pode estar e quem deve sair
+ const [grupoLista, setGrupoLista] = useState(null); // null = migração ainda não rodada
+ const [verGrupo, setVerGrupo] = useState(false);
+ const carregarGrupo = () => supabase.rpc("admin_get_grupo").then(({ data, error }) => setGrupoLista(error ? null : (data || [])));
+ const marcarRemovida = async (a, removida = true) => {
+ const { error } = await supabase.rpc("admin_marcar_removida", { p_user_id: a.id, p_removida: removida });
+ if (error) { tk("Não deu para salvar."); return; }
+ carregarGrupo();
+  };
  const [verInteressadas, setVerInteressadas] = useState(false);
  const [alunaSel, setAlunaSel] = useState(null);
  const [habAlunaSel, setHabAlunaSel] = useState(null); // painel de um habito da aluna (secao 11)
@@ -12516,6 +12525,7 @@ function PainelMentora({ ir }) {
       });
  supabase.rpc("get_pendentes_admin").then(({ data }) => setPendentes(data || []));
  supabase.rpc("admin_get_interessadas").then(({ data, error }) => { if (!error) setInteressadas(data || []); });
+ carregarGrupo();
  supabase.from("turmas").select("*").order("ordem").then(({ data }) => setTurmas(data || []));
  supabase.from("desafios_semana").select("turma_id,semana,texto").then(({ data }) => {
  const porTurma = {};
@@ -13195,6 +13205,46 @@ function PainelMentora({ ir }) {
               </div>
               {grupoSalvo && grupoSalvo !== "✓ Salvo" && <div style={{ fontFamily: FB, fontSize: 13, color: C.atencao, marginTop: 8 }}>{grupoSalvo}</div>}
             </div>
+            {/* Grupo do WhatsApp: o app diz quem pode estar e quem sai (Clube vencido) */}
+            {grupoLista && (() => {
+ const fone = (t) => {
+ let d = String(t || "").replace(/\D/g, "");
+ if (d.length > 11 && d.startsWith("55")) d = d.slice(2);
+ if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+ if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+ return t || "sem telefone";
+            };
+ const wa = (t) => { const d = String(t || "").replace(/\D/g, ""); return d.length >= 10 ? `https://wa.me/${d.length <= 11 ? "55" + d : d}` : null; };
+ const podem = grupoLista.filter((a) => a.clube_ate && a.clube_ate >= TODAY);
+ const remover = grupoLista.filter((a) => a.clube_ate && a.clube_ate < TODAY && !a.grupo_removida_em);
+ const linha = (a, acao) => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: `1px solid ${C.ouro}15` }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: FB, fontSize: 15, color: C.obs }}>{a.nome || a.email}</div>
+                    <div style={{ fontFamily: FB, fontSize: 13, color: C.lt }}>
+                      {wa(a.telefone) ? <a href={wa(a.telefone)} target="_blank" rel="noopener noreferrer" style={{ color: C.ouroTxt }}>{fone(a.telefone)}</a> : fone(a.telefone)}
+                      {" · "}{a.clube_ate >= TODAY ? `até ${dataBR(a.clube_ate)}` : `venceu ${dataBR(a.clube_ate)}`}
+                      {a.clube_status && a.clube_status !== "ativa" ? ` · ${a.clube_status}` : ""}
+                    </div>
+                  </div>
+                  {acao}
+                </div>
+              );
+ return (
+                <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 12.5, color: C.ouroTxt, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>Grupo do WhatsApp</div>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 6, lineHeight: 1.5 }}>Quem deve sair do grupo porque o Clube acabou. Depois de remover no WhatsApp, toque em "Já removi".</div>
+                  <div style={{ fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs, margin: "10px 0 2px" }}>Remover do grupo ({remover.length})</div>
+                  {remover.length ? remover.map((a) => linha(a,
+                    <button onClick={() => marcarRemovida(a)} style={{ background: C.ouro, border: "none", borderRadius: 50, padding: "7px 14px", fontFamily: FB, fontWeight: 500, fontSize: 13, color: C.obs, cursor: "pointer", whiteSpace: "nowrap" }}>Já removi</button>
+                  )) : <div style={{ fontFamily: FB, fontSize: 13, color: C.lt, padding: "4px 0" }}>Ninguém para remover.</div>}
+                  <button onClick={() => setVerGrupo((v) => !v)} style={{ marginTop: 10, background: "none", border: "none", padding: 0, fontFamily: FB, fontSize: 14, fontWeight: 600, color: C.obs, cursor: "pointer" }}>
+                    Podem estar no grupo ({podem.length}) {verGrupo ? "▴" : "▾"}
+                  </button>
+                  {verGrupo && podem.map((a) => linha(a, null))}
+                </div>
+              );
+            })()}
             <div style={{ fontFamily: FS, fontSize: 18, fontWeight: 400, color: C.obs, marginBottom: 16 }}>Alunas ativas</div>
             {pendentesVis.length > 0 && (
               <div style={{ background: `${C.ouro}12`, border: `1px solid ${C.ouro}44`, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
