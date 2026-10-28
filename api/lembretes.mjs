@@ -118,6 +118,11 @@ function clubeVencido(a, hoje) {
   return a.plano === "comunidade" && !(a.clube_ate && String(a.clube_ate).slice(0, 10) >= hoje);
 }
 
+// Numero do dia (conta corrida): serve para revezar o habito do lembrete
+export function diaDoAno(iso) {
+  return Math.floor(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 864e5);
+}
+
 function semanaDaJornada(hoje, inicio) {
   if (!inicio) return 1;
   const a = new Date(segundaDe(hoje) + "T00:00:00Z");
@@ -196,8 +201,8 @@ async function alunasSemCheckin(supaUrl, serviceKey) {
 // Cobre os 3 angulares E os habitos que a aluna criou (habitos_pessoais).
 // Manda UM lembrete por aluna, sobre UM habito, mesmo que varios estejam
 // pendentes: notificacao com lista vira bloco de texto que o celular corta.
-// A escolha do habito prioriza quem tem sequencia ativa — celebrar o que ja
-// existe convida melhor do que apontar o que falta.
+// O habito reveza a cada noite entre os pendentes (28/10). Se o da vez tem
+// sequencia ativa, o texto celebra a sequencia.
 async function lembretesDoDia(supaUrl, serviceKey) {
   const h = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
   const hoje = hojeBR();
@@ -284,9 +289,10 @@ async function lembretesDoDia(supaUrl, serviceKey) {
     }
     if (!candidatos.length) continue; // fez tudo que estava liberado
 
-    // Maior sequencia primeiro; empatando, a ordem em que aparecem no app
-    candidatos.sort((x, y) => y.seq - x.seq);
-    const texto = textoLembrete(candidatos[0]);
+    // Um habito por noite, intercalando (pedido da Vitoria, 28/10): a cada dia
+    // a vez e do proximo habito pendente, na ordem do app. Antes ganhava
+    // sempre o de maior sequencia, e o mesmo habito se repetia toda noite.
+    const texto = textoLembrete(candidatos[diaDoAno(hoje) % candidatos.length]);
 
     if (!porTexto.has(texto)) porTexto.set(texto, []);
     porTexto.get(texto).push(a.id);
