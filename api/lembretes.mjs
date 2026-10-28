@@ -111,6 +111,13 @@ function segundaDe(iso) {
 
 // Semana da Jornada, igual ao calculo do app: semanas inteiras entre a segunda
 // de hoje e a segunda do inicio, limitado entre 1 e 12.
+// Clube do Auge (26/10): o acesso vale enquanto clube_ate for hoje ou depois.
+// Conta so do Clube (plano comunidade) com o Clube vencido nao entra no app,
+// entao tambem nao recebe lembrete de habito nem a Regra dos 2 Dias.
+function clubeVencido(a, hoje) {
+  return a.plano === "comunidade" && !(a.clube_ate && String(a.clube_ate).slice(0, 10) >= hoje);
+}
+
 function semanaDaJornada(hoje, inicio) {
   if (!inicio) return 1;
   const a = new Date(segundaDe(hoje) + "T00:00:00Z");
@@ -158,14 +165,14 @@ async function alunasSemCheckin(supaUrl, serviceKey) {
   const h = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
   const pRes = await fetch(
-    `${supaUrl}/rest/v1/profiles?select=id,plano&plano=in.(jornada,comunidade,admin)`,
+    `${supaUrl}/rest/v1/profiles?select=id,plano,clube_ate&plano=in.(jornada,comunidade,admin)`,
     { headers: h }
   );
   if (!pRes.ok) throw new Error("Falha ao ler profiles");
-  const alunas = await pRes.json();
+  const hoje = hojeBR();
+  const alunas = (await pRes.json()).filter((a) => !clubeVencido(a, hoje));
   if (!alunas.length) return [];
 
-  const hoje = hojeBR();
   const limite = menosDias(hoje, 1); // apareceu ontem ou hoje = não incomoda
 
   const [cRes, rRes] = await Promise.all([
@@ -199,7 +206,7 @@ async function lembretesDoDia(supaUrl, serviceKey) {
   const desde = menosDias(hoje, 60);
 
   const [pRes, cRes, rRes, hpRes, tRes] = await Promise.all([
-    fetch(`${supaUrl}/rest/v1/profiles?select=id,plano,data_cadastro,turma_id&plano=in.(jornada,comunidade,admin)`, { headers: h }),
+    fetch(`${supaUrl}/rest/v1/profiles?select=id,plano,data_cadastro,turma_id,clube_ate&plano=in.(jornada,comunidade,admin)`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/config?select=id,valor&id=eq.jornada_inicio`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/registros?select=user_id,habito,data&data=gte.${desde}`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/habitos_pessoais?select=id,user_id,nome,ativo&ativo=is.true`, { headers: h }),
@@ -208,7 +215,7 @@ async function lembretesDoDia(supaUrl, serviceKey) {
   if (!pRes.ok) throw new Error("Falha ao ler profiles");
   if (!rRes.ok) throw new Error("Falha ao ler registros");
 
-  const alunas = await pRes.json();
+  const alunas = (await pRes.json()).filter((a) => !clubeVencido(a, hoje));
   const cfg = cRes.ok ? await cRes.json() : [];
   const inicioTurma = cfg[0]?.valor || null;
   const registros = await rRes.json();
@@ -259,7 +266,10 @@ async function lembretesDoDia(supaUrl, serviceKey) {
 
     // A semana sai da turma dela; sem turma, da data geral; sem nenhuma das
     // duas, do dia em que ela se cadastrou — a mesma ordem que o app usa.
-    const sem = semanaDaJornada(hoje, inicioDaTurma.get(a.turma_id) || inicioTurma || a.data_cadastro);
+    // Aluna do Clube (plano comunidade) tem os 3 habitos liberados desde o
+    // primeiro dia, como no app: conta como semana 12.
+    const sem = a.plano === "comunidade" ? 12
+      : semanaDaJornada(hoje, inicioDaTurma.get(a.turma_id) || inicioTurma || a.data_cadastro);
 
     const candidatos = [];
     for (const hb of HABITOS) {
