@@ -12224,7 +12224,7 @@ function Conteudo({ modoClube, aulasTrancadas = false, perfil, videos: videosDB,
                             alt=""
                             loading="lazy"
                             onError={(e) => { e.currentTarget.style.display = "none"; }}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7", transform: "scale(1.03)", opacity: travado ? 0.45 : 1 }}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7", transform: "scale(1.03)" }}
                           />
                         ) : (
                           <span style={{ fontSize: 30, color: C.ouroTxt }}>{glifo}</span>

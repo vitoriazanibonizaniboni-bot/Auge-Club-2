@@ -209,7 +209,7 @@ export function ListaConteudo({ titulo, itens, vazio, onAbrir, ehFavorito, alter
                 {/* o item abre o conteúdo; o coração fica ao lado, como botão separado */}
                 <button onClick={() => onAbrir(item)}
                         style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: 0, textAlign: "left", cursor: "pointer", fontFamily: FONTE }}>
-                <span aria-hidden="true" style={{ width: 52, height: 52, borderRadius: 14, background: travado ? "#8A7A6D" : tipo.cor, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span aria-hidden="true" style={{ width: 52, height: 52, borderRadius: 14, background: tipo.cor, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {travado ? <Cadeado /> : <IconeMidia midia={tipo.midia} />}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, fontFamily: FONTE }}>
