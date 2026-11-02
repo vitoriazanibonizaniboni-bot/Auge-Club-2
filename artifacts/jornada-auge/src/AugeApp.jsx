@@ -12040,6 +12040,8 @@ function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais =
  // 7 dias grátis do Clube: aulas com cadeado; tocar mostra o aviso
  const [avisoTrava, setAvisoTrava] = useState(false);
  const trancado = (v) => aulasTrancadas && v.cat === "aulas";
+ // "Novo": publicado nos últimos 7 dias
+ const ehNovo = (v) => { const t = Date.parse(v.criado || ""); return !!t && Date.now() - t < 7 * 864e5; };
  // busca, filtro e favoritos (favoritos ficam no celular)
  const [busca, setBusca] = useState("");
  const [filtro, setFiltro] = useState("tudo");
@@ -12077,9 +12079,21 @@ function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais =
  const curta = (lista) => [...lista].sort((x, y) => minutos(x.dur) - minutos(y.dur))[0];
  const aulas = todos.filter((v) => v.cat === "aulas");
  const meditacoes = todos.filter((v) => v.cat === "meditacoes");
+ // Destaques que mudam com o que ela já viu (análise de UX, 03/11):
+ //  - NOVIDADE: o que entrou nos últimos 7 dias e ela ainda não viu
+ //  - PRÓXIMA AULA: a aula mais recente que ela ainda não viu
+ //  - PARA HOJE: a meditação mais curta que ela ainda não fez
+ // Quando ela já viu tudo, volta ao destaque fixo de antes.
+ const naoVisto = (lista) => lista.filter((v) => !jaAssistiu(v.id));
+ const novos = naoVisto(todos.filter((v) => ehNovo(v) && v.cat !== "podcast" && v.cat !== "curadoria" && !trancado(v)));
+ const novidade = novos.length ? recente(novos) : null;
+ const semRepetir = (lista) => lista.filter((v) => !novidade || v.id !== novidade.id); // o mesmo vídeo não aparece duas vezes
+ const aulaNova = naoVisto(semRepetir(aulas)).length ? recente(naoVisto(semRepetir(aulas))) : null;
+ const medNova = naoVisto(semRepetir(meditacoes)).length ? curta(naoVisto(semRepetir(meditacoes))) : null;
  const destaques = [
-    aulas.length && !aulasTrancadas && { etiqueta: "AULA DA SEMANA", item: recente(aulas) },
-    meditacoes.length && { etiqueta: "PARA RELAXAR", item: curta(meditacoes) },
+    novidade && { etiqueta: "NOVIDADE", item: novidade },
+    aulas.length && !aulasTrancadas && (aulaNova ? { etiqueta: "PRÓXIMA AULA", item: aulaNova } : semRepetir(aulas).length && { etiqueta: "AULA DA SEMANA", item: recente(semRepetir(aulas)) }),
+    meditacoes.length && (medNova ? { etiqueta: "PARA HOJE", item: medNova } : semRepetir(meditacoes).length && { etiqueta: "PARA RELAXAR", item: curta(semRepetir(meditacoes)) }),
   ].filter(Boolean).map((d) => ({ ...d, capa: ytThumb(d.item.url) }));
  const tiposExistentes = ORDEM_CHIPS.filter((id) => todos.some((v) => v.cat === id));
  const opcoesFiltro = [{ id: "tudo", rotulo: "Tudo" }, { id: "favoritas", rotulo: "♡ Favoritas" }, ...tiposExistentes.map((id) => ({ id, rotulo: TIPOS[id].chip }))];
@@ -12278,6 +12292,9 @@ function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais =
                           <span style={{ flexShrink: 0, width: 18, height: 18, borderRadius: "50%", background: C.oliva, display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {IcoH.checkCirc(C.creme, 12)}
                           </span>
+                        )}
+                        {!visto && !travado && ehNovo(v) && (
+                          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: "#FFFFFF", background: C.primary, borderRadius: 6, padding: "1px 6px" }}>Novo</span>
                         )}
                         <span>
                           {travado ? "Libera após o teste" : visto ? "Assistido" : formato}

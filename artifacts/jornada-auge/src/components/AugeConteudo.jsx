@@ -152,6 +152,8 @@ function CartaoDestaque({ etiqueta, item, capa, onAbrir }) {
     return (
       <button onClick={() => onAbrir(item)} aria-label={`${etiqueta}: ${item.titulo}`} style={{ ...base, background: tipo.cor }}>
         <img src={capa} alt="" onError={() => setSemCapa(true)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.03)" }} />
+        {/* etiqueta discreta no canto (03/11): diz por que este vídeo está em destaque */}
+        <span style={{ position: "absolute", top: 12, left: 12, background: "rgba(31,26,23,.72)", color: "#FFFFFF", borderRadius: 999, padding: "5px 11px", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em" }}>{etiqueta}</span>
       </button>
     );
   }
