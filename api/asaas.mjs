@@ -22,6 +22,7 @@
 const FOLGA_DIAS = 3;
 
 const EVENTOS_PAGO = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
+const EVENTO_CRIADA = "PAYMENT_CREATED";
 const EVENTOS_ATRASO = new Set(["PAYMENT_OVERDUE"]);
 const EVENTOS_ESTORNO = new Set(["PAYMENT_REFUNDED", "PAYMENT_CHARGEBACK_REQUESTED"]);
 const EVENTOS_CANCELA = new Set(["SUBSCRIPTION_DELETED", "SUBSCRIPTION_INACTIVATED"]);
@@ -45,9 +46,18 @@ export function hojeBR() {
 const maior = (a, b) => (!a ? b : !b ? a : a > b ? a : b);
 
 // O que cada aviso muda: { status, pagoAte }
-export function efeitoDoEvento(evento, hoje = hojeBR()) {
+// jaPagou: a assinatura já teve algum pagamento (vem da tabela assinaturas)
+export function efeitoDoEvento(evento, hoje = hojeBR(), jaPagou = false) {
   const tipo = evento?.event;
   const pg = evento?.payment;
+  // 7 dias grátis (02/11): a assinatura nasce com a primeira cobrança para
+  // daqui a alguns dias. Enquanto ela não é paga, o Clube vale como "teste"
+  // até o vencimento (+ folga) — e as aulas ficam com cadeado no app.
+  // Só na PRIMEIRA cobrança: as dos meses seguintes também chegam como
+  // "criada", e não podem rebaixar quem já paga.
+  if (tipo === EVENTO_CRIADA && pg?.subscription && pg?.dueDate && !jaPagou && pg.dueDate.slice(0, 10) > hoje) {
+    return { status: "teste", pagoAte: somaDias(pg.dueDate, FOLGA_DIAS) };
+  }
   if (EVENTOS_PAGO.has(tipo) && pg?.dueDate) {
     return { status: "ativa", pagoAte: somaDias(somaMeses(pg.dueDate, 1), FOLGA_DIAS) };
   }
@@ -87,10 +97,16 @@ export default async function handler(req, res) {
       if (ja.length) return res.status(200).json({ ok: true, repetido: true });
     }
 
-    const efeito = efeitoDoEvento(evento);
     const pg = evento.payment;
     const sub = evento.subscription;
     const customerId = pg?.customer || sub?.customer;
+    // Já houve pagamento nessa assinatura? (decide se "criada" é teste)
+    let antes = null;
+    if (customerId) {
+      [antes] = await rest("GET", `assinaturas?select=pago_ate,status&asaas_customer_id=eq.${encodeURIComponent(customerId)}`);
+    }
+    const jaPagou = !!antes && antes.status !== "teste" && !!antes.pago_ate;
+    const efeito = efeitoDoEvento(evento, hojeBR(), jaPagou);
     const subscriptionId = pg?.subscription || sub?.id || null;
 
     // Cobrança avulsa (fora de assinatura) ou aviso que não muda nada: só registra
@@ -107,7 +123,6 @@ export default async function handler(req, res) {
     const telefone = String(cli.mobilePhone || cli.phone || "").replace(/\D/g, "") || null;
 
     // Assinatura guardada (vale também para quem ainda não criou conta)
-    const [antes] = await rest("GET", `assinaturas?select=pago_ate&asaas_customer_id=eq.${encodeURIComponent(customerId)}`);
     const pagoAte = efeito.corta ? efeito.pagoAte : maior(antes?.pago_ate, efeito.pagoAte) || null;
     await rest("POST", "assinaturas?on_conflict=asaas_customer_id", {
       asaas_customer_id: customerId,
