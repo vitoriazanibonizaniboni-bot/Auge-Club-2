@@ -11955,21 +11955,24 @@ function FaixaHoje({ regs, habsPessoais = [], registrarHabito, desregistrarHabit
         <span style={{ fontFamily: FB, fontSize: 17, fontWeight: 700, color: C.obs }}>Seus hábitos hoje <span style={{ fontWeight: 400, color: C.lt, fontSize: 15, whiteSpace: "nowrap" }}>· {feitos} de {itens.length}</span></span>
         <button onClick={() => ir(S.HOME)} style={{ background: "none", border: "none", padding: "6px 0 6px 8px", fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.primary, cursor: "pointer", whiteSpace: "nowrap" }}>ver tudo ›</button>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {/* Um embaixo do outro, todos alinhados (pedido da Vitória, 03/11). Lado a
+          lado não cabia em celular estreito: "Movimento" quebrava no meio. */}
+      <div style={{ display: "grid", gap: 8 }}>
         {itens.map((h) => {
  const feito = !!regs[h.data]?.[h.id];
  return (
             <button key={h.id} aria-pressed={feito}
  aria-label={feito ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}${h.id === "sono" ? " (noite de ontem)" : ""}`}
  onClick={() => (feito ? desregistrarHabito(h.id, h.data) : registrarHabito(h.id, h.data, null))}
- style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 14px 0 10px", borderRadius: 999, cursor: "pointer",
- fontFamily: FB, fontSize: 16, fontWeight: 600, background: feito ? C.oliva : C.branco, color: feito ? "#FFFFFF" : C.obs,
+ style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 50, padding: "8px 14px", borderRadius: 14, cursor: "pointer",
+ fontFamily: FB, fontSize: 16, fontWeight: 600, lineHeight: 1.25, textAlign: "left", background: feito ? C.oliva : C.branco, color: feito ? "#FFFFFF" : C.obs,
  border: feito ? `1.5px solid ${C.oliva}` : `1.5px solid ${C.lineForte}` }}>
-              <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 11, display: "inline-flex", alignItems: "center", justifyContent: "center",
+              <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 14, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 15,
  background: feito ? "rgba(255,255,255,.22)" : "transparent", border: feito ? "none" : `1.5px solid ${C.lineForte}` }}>
                 {feito ? "✓" : ""}
               </span>
-              {h.nome}
+              <span style={{ flex: 1, minWidth: 0 }}>{h.nome}</span>
+              {h.id === "sono" && <span style={{ fontSize: 14, fontWeight: 400, color: feito ? "#FFFFFF" : C.lt, whiteSpace: "nowrap" }}>noite de ontem</span>}
             </button>
           );
         })}
