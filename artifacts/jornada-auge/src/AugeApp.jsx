@@ -11938,7 +11938,47 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
   );
 }
 
-function Conteudo({ modoClube, aulasTrancadas = false, perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
+// ─── Faixa "Hoje" no topo de Dicas (Clube, 03/11) ─────────────────────────────
+// O Clube abre em Dicas; para o hábito não ficar a uma aba de distância, os
+// hábitos do dia aparecem aqui como pastilhas de um toque (marca/desmarca).
+// Sono vale pela noite de ontem, como na Hoje.
+function FaixaHoje({ regs, habsPessoais = [], registrarHabito, desregistrarHabito, ir }) {
+ const ontem = addDaysStr(TODAY, -1);
+ const itens = [
+    ...HABS_FIXOS.map((h) => ({ id: h.id, nome: h.nome, data: h.id === "sono" ? ontem : TODAY })),
+    ...habsPessoais.filter((hp) => hp.ativo !== false).map((hp) => ({ id: hp.id, nome: hp.nome, data: TODAY })),
+  ];
+ const feitos = itens.filter((h) => regs[h.data]?.[h.id]).length;
+ return (
+    <div style={{ margin: "0 20px 18px", background: C.branco, border: `1px solid ${C.line}`, borderRadius: 18, padding: "14px 14px 12px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontFamily: FB, fontSize: 17, fontWeight: 700, color: C.obs }}>Seus hábitos hoje <span style={{ fontWeight: 400, color: C.lt, fontSize: 15, whiteSpace: "nowrap" }}>· {feitos} de {itens.length}</span></span>
+        <button onClick={() => ir(S.HOME)} style={{ background: "none", border: "none", padding: "6px 0 6px 8px", fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.primary, cursor: "pointer", whiteSpace: "nowrap" }}>ver tudo ›</button>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {itens.map((h) => {
+ const feito = !!regs[h.data]?.[h.id];
+ return (
+            <button key={h.id} aria-pressed={feito}
+ aria-label={feito ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}${h.id === "sono" ? " (noite de ontem)" : ""}`}
+ onClick={() => (feito ? desregistrarHabito(h.id, h.data) : registrarHabito(h.id, h.data, null))}
+ style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 14px 0 10px", borderRadius: 999, cursor: "pointer",
+ fontFamily: FB, fontSize: 16, fontWeight: 600, background: feito ? C.oliva : C.branco, color: feito ? "#FFFFFF" : C.obs,
+ border: feito ? `1.5px solid ${C.oliva}` : `1.5px solid ${C.lineForte}` }}>
+              <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 11, display: "inline-flex", alignItems: "center", justifyContent: "center",
+ background: feito ? "rgba(255,255,255,.22)" : "transparent", border: feito ? "none" : `1.5px solid ${C.lineForte}` }}>
+                {feito ? "✓" : ""}
+              </span>
+              {h.nome}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais = [], registrarHabito, desregistrarHabito, ir, perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  // Tela acesa enquanto a página do vídeo está aberta. Numa meditação a aluna
  // fica de olhos fechados, sem tocar no celular: depois de 30 s a 1 min o
@@ -12082,6 +12122,8 @@ function Conteudo({ modoClube, aulasTrancadas = false, perfil, videos: videosDB,
             </div>
           </div>
         )}
+        {/* Clube: os hábitos do dia em uma linha, sem sair de Dicas */}
+        {modoClube && registrarHabito && <FaixaHoje regs={regs} habsPessoais={habsPessoais} registrarHabito={registrarHabito} desregistrarHabito={desregistrarHabito} ir={ir} />}
         {/* busca → destaques → filtros → lista */}
         {secoes.length > 0 && (
           <>
