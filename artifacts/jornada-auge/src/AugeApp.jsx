@@ -10777,6 +10777,18 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
  const feitosNoMes = habSel
  ? Array.from({ length: diasNoMes }, (_, i) => dsDe(i + 1)).filter((ds) => regs[ds]?.[habSel.id]).length
  : 0;
+ // Desafio é semanal: a sequência conta SEMANAS seguidas com o desafio feito
+ // (a semana em curso não quebra a sequência enquanto não termina)
+ const semanasDesafio = (() => {
+ if (!habSel?.desafio) return 0;
+ const feitoNaSemana = (seg) => Array.from({ length: 7 }, (_, k) => addDaysStr(seg, k)).some((d) => regs[d]?.desafio);
+ const dow = (new Date(todayStr + "T12:00:00").getDay() + 6) % 7;
+ let seg = addDaysStr(todayStr, -dow);
+ if (!feitoNaSemana(seg)) seg = addDaysStr(seg, -7);
+ let n = 0;
+ while (feitoNaSemana(seg)) { n++; seg = addDaysStr(seg, -7); }
+ return n;
+  })();
  const sequencia = (() => {
  if (!habSel) return 0;
  let n = 0;
@@ -10840,7 +10852,9 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
 
       {habSel ? (
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-          <Numero valor={sequencia} rotulo={sequencia === 1 ? "dia seguido" : "dias seguidos"} />
+          {habSel.desafio
+            ? <Numero valor={semanasDesafio} rotulo={semanasDesafio === 1 ? "semana seguida" : "semanas seguidas"} />
+            : <Numero valor={sequencia} rotulo={sequencia === 1 ? "dia seguido" : "dias seguidos"} />}
           <Numero valor={feitosNoMes} rotulo={`${feitosNoMes === 1 ? "dia" : "dias"} em ${nomeMes}`} />
           <Numero valor={metaDoHabito(habSel)} rotulo="meta" menor />
         </div>
@@ -10853,8 +10867,9 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
 
 function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
  const hojeReal = new Date();
- const [habSel, setHabSel] = useState(modoClube ? null : (habProgresso || null)); // painel individual do hábito (seção 7)
- const [filtroInicial] = useState(modoClube && habProgresso ? habProgresso.id : null); // no Clube, o "ver progresso" abre o calendário já filtrado
+ const [habSel, setHabSel] = useState(null); // painel individual do hábito (não abre mais daqui desde 02/11)
+ // "ver progresso" da Hoje abre o calendário já filtrado naquele hábito
+ const [filtroInicial] = useState(habProgresso ? habProgresso.id : null);
  const [verDesafio, setVerDesafio] = useState(false); // painel das 12 semanas do desafio
   // Chegou pelo "ver progresso" da Hoje: abre o painel e limpa, para o
   // painel não reabrir sozinho na próxima vez que ela entrar na aba.
@@ -10885,12 +10900,19 @@ function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataC
  const diasDoMesFeitos = (habId) =>
  Object.keys(regs).filter((d) => d.startsWith(`${ano}-${String(mes + 1).padStart(2, "0")}`) && regs[d]?.[habId]).length;
  const metaDoHabito = (h) => {
+ if (h.desafio) return "1 por semana";
  if (h.pessoal) return h.metaTexto || `${h.meta || 3}x`;
  const m = metas?.[h.id];
  const freq = m?.freq ?? HABS_FIXOS.find((x) => x.id === h.id).freqDef;
  return m?.desc ? `${m.desc} ${freq}x` : `${freq}x`;
   };
   // Dias do mes em que ela cumpriu o desafio — mesma contagem dos habitos
+ // Os dias do desafio entram no calendário como se fossem mais um hábito
+ const regsComDesafio = (() => {
+ const r = { ...regs };
+ for (const d of desafioFeitos) r[d] = { ...(r[d] || {}), desafio: true };
+ return r;
+  })();
  const desafioNoMes = desafioFeitos.filter((d) =>
  d.startsWith(`${ano}-${String(mes + 1).padStart(2, "0")}`)
   ).length;
@@ -10932,51 +10954,18 @@ function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataC
           </svg>
         </div>}
 
-        {/* ── Clube: um calendário só, colorido por hábito ── */}
-        {modoClube && <CalendarioCores linhas={linhas.filter((h) => !h.bloqueado)} regs={regs} metaDoHabito={metaDoHabito} inicial={filtroInicial} />}
-
-        {!modoClube && <>
-        {/* ── Seus hábitos (seção 7) — contagem do mês, não sequência ── */}
-        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 13, color: C.ouroTxt, letterSpacing: "0.18em", textTransform: "uppercase", margin: "6px 0 10px" }}>
- Seus hábitos
-        </div>
-        {linhas.map((h) => (
-          <button
- key={h.id}
- onClick={() => !h.bloqueado && setHabSel(h)}
- style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: h.bloqueado ? `${C.linho}8C` : C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: h.bloqueado ? "default" : "pointer", textAlign: "left" }}
-          >
-            {h.bloqueado ? IcoH.cadeado(C.lt, 16) : (IcoH[h.id] || IcoH.meu)(C.terra)}
-            {/* nome em cima e a contagem embaixo: lado a lado, nomes como
-                "Beber 2L de água" quebravam em tres linhas */}
-            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: h.bloqueado ? alfa(C.lt, .66) : C.obs }}>{h.nome}</span>
-              <span style={{ fontFamily: FB, fontWeight: h.bloqueado ? 400 : 600, fontSize: 16, color: h.bloqueado ? alfa(C.lt, .66) : C.ouroTxt, whiteSpace: "nowrap" }}>
-                {h.bloqueado ? `desbloqueia na S${h.unlock}` : `${h.diasNoMes} ${h.diasNoMes === 1 ? "dia" : "dias"} em ${nomeMesCurto}`}
-              </span>
-            </span>
-            {!h.bloqueado && <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>}
-          </button>
-        ))}
-        {/* Desafio da semana — mesma linha dos habitos, mas abre as 12 semanas */}
-        {!modoClube && <button
- onClick={() => setVerDesafio(true)}
- style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: C.linho, border: "none", borderRadius: 14, padding: "14px 15px", marginBottom: 9, cursor: "pointer", textAlign: "left" }}
-        >
-          {IcoH.estrela(C.terra)}
-          <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Desafios</span>
-            <span style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.ouroTxt, whiteSpace: "nowrap" }}>
-              {desafioNoMes} {desafioNoMes === 1 ? "dia" : "dias"} em {nomeMesCurto}
-            </span>
-          </span>
-          <span style={{ fontFamily: FB, fontSize: 17, color: C.ouroDk }}>›</span>
-        </button>}
-
-        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, textAlign: "center", margin: "14px 0 4px" }}>
- toque num hábito<br />para ver o calendário completo
-        </div>
-        </>}
+        {/* ── Calendário colorido, um risco por hábito (Clube desde 26/10; Jornada
+            desde 02/11, a pedido da Vitória, com o arco em cima e o desafio
+            da semana como mais uma cor) ── */}
+        <CalendarioCores
+ linhas={[
+            ...linhas.filter((h) => !h.bloqueado),
+            ...(modoClube ? [] : [{ id: "desafio", nome: "Desafio da semana", desafio: true }]),
+          ]}
+ regs={modoClube ? regs : regsComDesafio}
+ metaDoHabito={metaDoHabito}
+ inicial={filtroInicial}
+        />
 
         {/* painel do desafio — as 12 semanas, com o texto de cada uma */}
         {verDesafio && (
