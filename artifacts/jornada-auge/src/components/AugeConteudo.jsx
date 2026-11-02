@@ -47,6 +47,13 @@ const ESTILOS = `
 const Svg = ({ children, tam = 22, cor = "currentColor", larg = 1.9, preench = "none" }) => (
   <svg width={tam} height={tam} viewBox="0 0 24 24" fill={preench} stroke={cor} strokeWidth={larg} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
 );
+// Cadeado das aulas nos 7 dias grátis do Clube
+const Cadeado = ({ cor = "#FFFFFF", tam = 22 }) => (
+  <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </svg>
+);
+
 export const IconeMidia = ({ midia, cor = "#FFFFFF", tam = 22 }) =>
   midia === "audio" ? (
     <Svg cor={cor} tam={tam}><path d="M4 15v-3a8 8 0 0 1 16 0v3" /><rect x="3" y="14" width="4" height="6" rx="1.5" /><rect x="17" y="14" width="4" height="6" rx="1.5" /></Svg>
@@ -183,7 +190,7 @@ export function Filtros({ opcoes, ativo, onEscolher }) {
 }
 
 // ── Lista vertical ───────────────────────────────────────────────────────────
-export function ListaConteudo({ titulo, itens, vazio, onAbrir, ehFavorito, alternarFavorito, jaVisto }) {
+export function ListaConteudo({ titulo, itens, vazio, onAbrir, ehFavorito, alternarFavorito, jaVisto, trancado = () => false }) {
   return (
     <div style={{ padding: "0 20px" }}>
       <style>{ESTILOS}</style>
@@ -195,19 +202,20 @@ export function ListaConteudo({ titulo, itens, vazio, onAbrir, ehFavorito, alter
           {itens.map((item) => {
             const tipo = TIPOS[item.cat] || TIPOS.aulas;
             const visto = jaVisto(item.id);
+            const travado = trancado(item);
             return (
               <div key={`${item.cat}-${item.id}`}
                    style={{ display: "flex", alignItems: "center", gap: 4, background: "#FFFFFF", border: "1px solid #E6DCCF", borderRadius: 16, padding: "10px 6px 10px 10px" }}>
                 {/* o item abre o conteúdo; o coração fica ao lado, como botão separado */}
                 <button onClick={() => onAbrir(item)}
                         style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: 0, textAlign: "left", cursor: "pointer", fontFamily: FONTE }}>
-                <span aria-hidden="true" style={{ width: 52, height: 52, borderRadius: 14, background: tipo.cor, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <IconeMidia midia={tipo.midia} />
+                <span aria-hidden="true" style={{ width: 52, height: 52, borderRadius: 14, background: travado ? "#8A7A6D" : tipo.cor, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {travado ? <Cadeado /> : <IconeMidia midia={tipo.midia} />}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, fontFamily: FONTE }}>
                   <span style={{ display: "block", fontSize: 16, fontWeight: 600, color: T.ink, lineHeight: 1.3 }}>{item.titulo}</span>
                   <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 4 }}>
-                    <span style={{ fontSize: 14, color: T.inkSoft }}>{tipo.nome}{tipo.midia !== "leitura" && item.dur ? ` · ${item.dur}` : ""}</span>
+                    <span style={{ fontSize: 14, color: T.inkSoft }}>{tipo.nome}{travado ? " · libera após o teste" : tipo.midia !== "leitura" && item.dur ? ` · ${item.dur}` : ""}</span>
                     {visto && <span style={{ fontSize: 13, fontWeight: 600, color: T.olive, background: "#EEF0E4", borderRadius: 8, padding: "1px 8px" }}>✓ Visto</span>}
                   </span>
                 </span>

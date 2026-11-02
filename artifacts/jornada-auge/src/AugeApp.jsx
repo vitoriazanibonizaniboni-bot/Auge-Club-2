@@ -810,7 +810,9 @@ const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.H
 // abre (decisão da Vitória, 02/11): no Clube o conteúdo é o centro.
 const ORDEM_ABAS_CLUBE = [S.CT, S.HOME, S.TRAJ, S.JOR];
 // Chave de prévia no aparelho ("1" = ver como Clube), para testar sem mexer na conta
-const previaClube = () => { try { return localStorage.getItem("auge_previa_clube") === "1"; } catch { return false; } };
+const previaClube = () => { try { return ["1", "teste"].includes(localStorage.getItem("auge_previa_clube")); } catch { return false; } };
+// Prévia dos 7 dias grátis ("teste"): Clube com as aulas trancadas
+const previaTeste = () => { try { return localStorage.getItem("auge_previa_clube") === "teste"; } catch { return false; } };
 // Celular = tela cheia; computador = moldura de celular no meio da tela.
 // Decide pelo LADO MENOR da tela (ou toque), não pela largura: com a largura,
 // virar o celular deitado (paisagem, 844px) trocava o app para a moldura do
@@ -1174,6 +1176,7 @@ export default function App() {
  // e até quando o Clube vale (null = sem Clube)
  const [planoConta, setPlanoConta] = useState(null);
  const [clubeAte, setClubeAte] = useState(null);
+ const [clubeStatus, setClubeStatus] = useState(null); // "teste" nos 7 dias grátis (vem do Asaas)
  const [dispensada, setDispensada] = useState(false); // pediu acesso sem estar na Jornada
  // Passo a passo de boas-vindas: uma vez só (primeiro acesso, ou primeira
  // abertura desta versão para quem já usava o app)
@@ -1872,6 +1875,7 @@ export default function App() {
  setPerfil(_acesso);
  setPlanoConta(p.plano || null);
  setClubeAte(p.clube_ate ? String(p.clube_ate).slice(0, 10) : null);
+ setClubeStatus(p.clube_status || null);
  setDispensada(!!p.dispensada_em);
  setUsuario({ nome: p.nome || "", email: p.email || "" });
  setLgpdOk(!!p.lgpd_aceito);
@@ -2257,6 +2261,7 @@ export default function App() {
  setPrimAcesso(null);
  setPlanoConta(null);
  setClubeAte(null);
+ setClubeStatus(null);
  setDispensada(false);
  abriuClubeRef.current = false;
  setTela(S.HOME);
@@ -2589,6 +2594,8 @@ export default function App() {
 
  const ctx = {
  modoClube,
+ // 7 dias grátis: as aulas aparecem com cadeado (decisão da Vitória, 02/11)
+ aulasTrancadas: modoClube && (clubeStatus === "teste" || previaTeste()),
  grupoClube,
  setSexta,
  perfil,
@@ -11942,7 +11949,7 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
   );
 }
 
-function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
+function Conteudo({ modoClube, aulasTrancadas = false, perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  // Tela acesa enquanto a página do vídeo está aberta. Numa meditação a aluna
  // fica de olhos fechados, sem tocar no celular: depois de 30 s a 1 min o
@@ -12001,6 +12008,9 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
  return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1` : null;
   };
  const [showConvite, setShowConvite] = useState(false);
+ // 7 dias grátis do Clube: aulas com cadeado; tocar mostra o aviso
+ const [avisoTrava, setAvisoTrava] = useState(false);
+ const trancado = (v) => aulasTrancadas && v.cat === "aulas";
  // busca, filtro e favoritos (favoritos ficam no celular)
  const [busca, setBusca] = useState("");
  const [filtro, setFiltro] = useState("tudo");
@@ -12039,7 +12049,7 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
  const aulas = todos.filter((v) => v.cat === "aulas");
  const meditacoes = todos.filter((v) => v.cat === "meditacoes");
  const destaques = [
-    aulas.length && { etiqueta: "AULA DA SEMANA", item: recente(aulas) },
+    aulas.length && !aulasTrancadas && { etiqueta: "AULA DA SEMANA", item: recente(aulas) },
     meditacoes.length && { etiqueta: "PARA RELAXAR", item: curta(meditacoes) },
   ].filter(Boolean).map((d) => ({ ...d, capa: ytThumb(d.item.url) }));
  const tiposExistentes = ORDEM_CHIPS.filter((id) => todos.some((v) => v.cat === id));
@@ -12051,7 +12061,7 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
  if (termo) lista = lista.filter((v) => normalizar(`${v.titulo} ${TIPOS[v.cat]?.nome || ""} ${TIPOS[v.cat]?.chip || ""}`).includes(termo));
  if (filtro === "meditacoes" || filtro === "yoga") lista = [...lista].sort((x, y) => minutos(x.dur) - minutos(y.dur));
  const mostrarFaixas = filtro === "tudo" && !termo;
- const abrirAbrivel = (v) => v.url && (v.cat === "podcast" ? abrirExterno(v.url) : v.cat === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
+ const abrirAbrivel = (v) => trancado(v) ? setAvisoTrava(true) : v.url && (v.cat === "podcast" ? abrirExterno(v.url) : v.cat === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
 
  const abrirExterno = (url) => {
  const a = document.createElement("a");
@@ -12070,6 +12080,19 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
           própria, uma embaixo da outra. */}
 
       <Grain style={{ padding: "0 0 24px" }}>
+        {/* Aviso das aulas trancadas (7 dias grátis). Sem preço nem link de
+            assinatura: a venda é fora do app (regra da Apple). */}
+        {avisoTrava && (
+          <div role="dialog" aria-modal="true" aria-label="Aulas liberadas depois do teste" onClick={() => setAvisoTrava(false)}
+ style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgba(31,26,23,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px 120px" }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: C.creme, borderRadius: 22, padding: "22px 20px 20px", fontFamily: FB, boxShadow: "0 8px 30px rgba(31,26,23,.18)" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 22, background: C.linho, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>{IcoH.cadeado(C.terra, 20)}</div>
+              <div style={{ fontSize: 21, fontWeight: 700, color: C.obs, marginBottom: 8 }}>As aulas chegam depois do teste</div>
+              <div style={{ fontSize: 17, color: C.terra, lineHeight: 1.5, marginBottom: 18 }}>Nos 7 dias grátis, as aulas ficam fechadas. Meditações, yoga, podcasts e indicações já estão liberados para você.</div>
+              <button onClick={() => setAvisoTrava(false)} style={{ width: "100%", minHeight: 52, borderRadius: 14, border: "none", background: C.primary, color: "#FFFFFF", fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>Entendi</button>
+            </div>
+          </div>
+        )}
         {/* busca → destaques → filtros → lista */}
         {secoes.length > 0 && (
           <>
@@ -12085,6 +12108,7 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
  ehFavorito={ehFavorito}
  alternarFavorito={alternarFavorito}
  jaVisto={jaAssistiu}
+ trancado={trancado}
               />
             )}
           </>
@@ -12162,7 +12186,8 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
                 {itens.map((v) => {
                   const thumb = ehLink ? null : ytThumb(v.url);
                   const visto = jaAssistiu(v.id);
-                  const abrir = () => v.url && (cat.id === "podcast" ? abrirExterno(v.url) : cat.id === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
+                  const travado = trancado({ ...v, cat: cat.id });
+                  const abrir = () => travado ? setAvisoTrava(true) : v.url && (cat.id === "podcast" ? abrirExterno(v.url) : cat.id === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
                   return (
                     <div key={v.id} style={{ flexShrink: 0, width: 168, position: "relative" }}>
                     {/* o coração fica fora do cartão clicável, no canto de cima à esquerda da capa */}
@@ -12199,15 +12224,15 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
                             alt=""
                             loading="lazy"
                             onError={(e) => { e.currentTarget.style.display = "none"; }}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7", transform: "scale(1.03)" }}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#e0d5c7", transform: "scale(1.03)", opacity: travado ? 0.45 : 1 }}
                           />
                         ) : (
                           <span style={{ fontSize: 30, color: C.ouroTxt }}>{glifo}</span>
                         )}
-                        {thumb && (
+                        {(thumb || travado) && (
                           <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: alfa(C.obs, .62), color: "#fff", fontSize: 15 }}>
-                              ▶
+                            <span aria-label={travado ? "Aula trancada" : undefined} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: alfa(C.obs, .62), color: "#fff", fontSize: 15 }}>
+                              {travado ? IcoH.cadeado("#FFFFFF", 16) : "▶"}
                             </span>
                           </span>
                         )}
@@ -12224,8 +12249,8 @@ function Conteudo({ modoClube, perfil, videos: videosDB, sem, guias, authUserId,
                           </span>
                         )}
                         <span>
-                          {visto ? "Assistido" : formato}
-                          {cat.id !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
+                          {travado ? "Libera após o teste" : visto ? "Assistido" : formato}
+                          {!travado && cat.id !== "curadoria" && v.dur ? ` · ${v.dur}` : ""}
                         </span>
                       </div>
                     </div>
