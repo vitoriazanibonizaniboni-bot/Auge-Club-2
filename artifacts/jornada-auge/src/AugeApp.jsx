@@ -806,8 +806,9 @@ function Grain({ children, style = {} }) {
 const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
 // Clube (continuo): os videos vem logo depois da Hoje, porque nao ha aula ao vivo
 // Sem Chat no Clube (decisão da Vitória, 27/10): a conversa entre as alunas
-// fica no grupo de WhatsApp. Ficam 4 abas.
-const ORDEM_ABAS_CLUBE = [S.HOME, S.CT, S.TRAJ, S.JOR];
+// fica no grupo de WhatsApp. Ficam 4 abas. Dicas vem primeiro e é onde o app
+// abre (decisão da Vitória, 02/11): no Clube o conteúdo é o centro.
+const ORDEM_ABAS_CLUBE = [S.CT, S.HOME, S.TRAJ, S.JOR];
 // Chave de prévia no aparelho ("1" = ver como Clube), para testar sem mexer na conta
 const previaClube = () => { try { return localStorage.getItem("auge_previa_clube") === "1"; } catch { return false; } };
 // Celular = tela cheia; computador = moldura de celular no meio da tela.
@@ -1344,7 +1345,18 @@ export default function App() {
  modoClubeRef.current = modoClube;
  // O Clube não tem Mural/Chat: se algum caminho levar para lá (notificação
  // antiga, link ?open=mural), volta para a Hoje.
- useEffect(() => { if (modoClube && [S.FEED, S.NOVO, S.VOZ].includes(tela)) setTela(S.HOME); }, [modoClube, tela]);
+ useEffect(() => { if (modoClube && [S.FEED, S.NOVO, S.VOZ].includes(tela)) setTela(S.CT); }, [modoClube, tela]);
+ // No Clube o app abre em Dicas: na primeira vez que a conta carrega como
+ // Clube, quem estaria na Hoje vai para Dicas (link de notificação para outra
+ // tela continua valendo).
+ const abriuClubeRef = useRef(false);
+ // Veio por notificação (?open=home, ?open=kit…): respeita o destino dela.
+ const veioDeLinkRef = useRef((() => { try { return !!new URLSearchParams(window.location.search).get("open"); } catch { return false; } })());
+ useEffect(() => {
+ if (!profileLoaded || abriuClubeRef.current) return;
+ abriuClubeRef.current = true;
+ if (modoClube && tela === S.HOME && !veioDeLinkRef.current) setTela(S.CT);
+  }, [profileLoaded, modoClube]); // eslint-disable-line react-hooks/exhaustive-deps
  // Carta para o Futuro é só da Jornada (decisão da Vitória, 26/10): no Clube o
  // primeiro acesso ignora a carta, e se só faltava ela, não abre.
  const primAcessoEf = !primAcesso ? null : modoClube
@@ -2246,6 +2258,7 @@ export default function App() {
  setPlanoConta(null);
  setClubeAte(null);
  setDispensada(false);
+ abriuClubeRef.current = false;
  setTela(S.HOME);
   };
 
@@ -2713,7 +2726,7 @@ export default function App() {
  const antiga = Object.entries(regs || {}).some(([d, hs]) => d < DATA_VERSAO_TOUR && hs && Object.keys(hs).length > 0);
  setTour({ antiga });
   }, [profileLoaded, authUser, perfil, primAcessoEf]);
- const fecharTour = () => { gravarFlag(CHAVE_TOUR); setTour(null); setTela(S.HOME); };
+ const fecharTour = () => { gravarFlag(CHAVE_TOUR); setTour(null); setTela(modoClubeRef.current ? S.CT : S.HOME); };
  // Passo a passo de cada aba: na primeira vez que ela abre a aba (depois do da Hoje)
  const ABA_DO_TOUR = { [S.TRAJ]: "trajetoria", [S.FEED]: "mural", [S.JOR]: "meumapa", [S.CT]: "conteudo" };
  const [tourAba, setTourAba] = useState(null);
@@ -2950,7 +2963,7 @@ export default function App() {
  salvarMinimos={salvarMinimos}
  setCarta={setCarta}
  tk={tk}
- onConcluir={() => { setPrimAcesso(null); setTela(S.HOME); }}
+ onConcluir={() => { setPrimAcesso(null); setTela(modoClube ? S.CT : S.HOME); }}
         />
       )}
       {!primAcessoEf && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
@@ -3049,8 +3062,8 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0, modoClube = false })
  aba = S.CX;
   }
  const tabs = modoClube ? [
-    { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.CT, label: "Dicas", icon: Ico.livro },
+    { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
     { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
   ] : [
