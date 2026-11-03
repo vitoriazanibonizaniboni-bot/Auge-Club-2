@@ -9904,7 +9904,7 @@ function Jornada({
         {/* Grupo do Clube no WhatsApp (decisão da Vitória, 27/10): a conversa entre as
             alunas do Clube fica no grupo, não no app. Só aparece com link salvo no Painel. */}
         {modoClube && /^https?:\/\//i.test(grupoClube.trim()) && (
-          <a href={grupoClube.trim()} target="_blank" rel="noopener noreferrer"
+          <a href={grupoClube.trim()} target="_blank" rel="noopener noreferrer" onClick={() => { try { localStorage.setItem("auge_grupo_aberto", "1"); } catch {} }}
  style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", background: C.oliva, borderRadius: 20, padding: "16px 18px", marginBottom: 20, fontFamily: FB }}>
             <span aria-hidden="true" style={{ width: 44, height: 44, borderRadius: 22, background: "rgba(255,255,255,.16)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <MessageCircle size={22} strokeWidth={1.75} color="#FFFFFF" />
@@ -11942,6 +11942,30 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
   );
 }
 
+// ─── Primeiros passos nos 7 dias grátis (Clube, 03/11) ────────────────────────
+// A aluna em teste entra sem saber o que experimentar — e é nesses dias que
+// ela decide se assina. Quatro passos curtos, cada um com um toque para
+// fazer; o cartão some quando tudo estiver feito.
+function PrimeirosPassos({ passos }) {
+ const feitos = passos.filter((p) => p.feito).length;
+ if (!passos.length || feitos === passos.length) return null;
+ return (
+    <div style={{ margin: "0 20px 14px", background: C.blushBg, borderRadius: 18, padding: "14px 14px 8px" }}>
+      <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 700, color: C.obs }}>Seus primeiros passos <span style={{ fontWeight: 400, color: C.terra, fontSize: 15, whiteSpace: "nowrap" }}>· {feitos} de {passos.length}</span></div>
+      <div style={{ fontFamily: FB, fontSize: 15, color: C.terra, margin: "2px 0 8px" }}>Para aproveitar bem os seus 7 dias grátis.</div>
+      {passos.map((p) => (
+        <button key={p.id} onClick={p.feito ? undefined : p.acao} disabled={p.feito}
+ style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, minHeight: 48, padding: "6px 2px", background: "none", border: "none", borderTop: `1px solid ${alfa(C.obs, .08)}`, cursor: p.feito ? "default" : "pointer", textAlign: "left", fontFamily: FB }}>
+          <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 13, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#FFFFFF",
+ background: p.feito ? C.oliva : "transparent", border: p.feito ? "none" : `1.5px solid ${C.lineForte}` }}>{p.feito ? "✓" : ""}</span>
+          <span style={{ flex: 1, fontSize: 16, fontWeight: 500, color: C.obs, textDecoration: p.feito ? "line-through" : "none", textDecorationColor: alfa(C.obs, .4) }}>{p.texto}</span>
+          {!p.feito && p.acao && <span aria-hidden="true" style={{ fontSize: 18, color: C.primary }}>›</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Faixa "Hoje" no topo de Dicas (Clube, 03/11) ─────────────────────────────
 // O Clube abre em Dicas; para o hábito não ficar a uma aba de distância, os
 // hábitos do dia aparecem aqui como pastilhas de um toque (marca/desmarca).
@@ -11985,7 +12009,7 @@ function FaixaHoje({ regs, habsPessoais = [], registrarHabito, desregistrarHabit
   );
 }
 
-function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais = [], registrarHabito, desregistrarHabito, ir, perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
+function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais = [], registrarHabito, desregistrarHabito, ir, anc = "", setEscT, grupoClube = "", perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  // Tela acesa enquanto a página do vídeo está aberta. Numa meditação a aluna
  // fica de olhos fechados, sem tocar no celular: depois de 30 s a 1 min o
@@ -12143,6 +12167,19 @@ function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais =
             </div>
           </div>
         )}
+        {/* 7 dias grátis: roteiro curto do que experimentar */}
+        {aulasTrancadas && (() => {
+ const linkGrupo = /^https?:\/\//i.test((grupoClube || "").trim()) ? grupoClube.trim() : null;
+ let abriuGrupo = false; try { abriuGrupo = localStorage.getItem("auge_grupo_aberto") === "1"; } catch {}
+ const idsMed = new Set(todos.filter((v) => v.cat === "meditacoes").map((v) => String(v.id)));
+ const passos = [
+              { id: "habito", texto: "Marque seu primeiro hábito", feito: Object.values(regs).some((d) => d && Object.keys(d).length > 0) },
+              { id: "medit", texto: "Faça uma meditação curta", feito: [...assistidos].some((id) => idsMed.has(String(id))), acao: () => setFiltro("meditacoes") },
+              { id: "ancora", texto: "Escreva a sua âncora", feito: !!anc && anc !== "Eu sou a mulher que volta.", acao: () => { setEscT && setEscT("ancora"); ir(S.ESC); } },
+              ...(linkGrupo ? [{ id: "grupo", texto: "Entre no grupo do WhatsApp", feito: abriuGrupo, acao: () => { try { localStorage.setItem("auge_grupo_aberto", "1"); } catch {} abrirExterno(linkGrupo); } }] : []),
+            ];
+ return <PrimeirosPassos passos={passos} />;
+        })()}
         {/* Clube: os hábitos do dia em uma linha, sem sair de Dicas */}
         {modoClube && registrarHabito && <FaixaHoje regs={regs} habsPessoais={habsPessoais} registrarHabito={registrarHabito} desregistrarHabito={desregistrarHabito} ir={ir} />}
         {/* busca → destaques → filtros → lista */}
