@@ -16,6 +16,8 @@
 //   0 22 * * 1-6  -> seg a sab 19h, so para quem esta presente mas nao marcou
 //                    algum habito liberado hoje
 //   0 23 * * *    -> todo dia 20h, so para quem sumiu ha 2+ dias
+//   0 13 * * *    -> todo dia 10h, so alunas do Clube: marco de meses,
+//                    retrospectiva do mes (dia 1) e 2o dia do teste gratis
 //
 // Os dois ultimos nunca alcancam a mesma aluna na mesma noite: o das 19h so
 // olha quem apareceu ontem ou hoje, e o das 20h so quem NAO apareceu. Cada
@@ -40,6 +42,7 @@ const AGENDAS = {
   "0 22 * * 0": "domingo",
   "0 22 * * 1-6": "diario",
   "0 23 * * *": "dois-dias",
+  "0 13 * * *": "clube",
 };
 
 // Os 3 habitos angulares, na ordem em que aparecem no app.
@@ -301,6 +304,88 @@ async function lembretesDoDia(supaUrl, serviceKey) {
   return [...porTexto].map(([texto, ids]) => ({ texto, ids }));
 }
 
+// ── Avisos do Clube (10h) ─────────────────────────────────────────────────────
+// Decisao da Vitoria (02/11): tres avisos so para quem esta no Clube, num
+// horario diferente dos lembretes de habito. No maximo UM por aluna por dia,
+// nesta ordem de prioridade:
+//   1. marco de meses — no dia em que completa 1, 3, 6 ou 12 meses de Clube
+//   2. retrospectiva  — dia 1 de cada mes, so para quem marcou algo no mes que passou
+//   3. teste gratis   — 2o dia do teste (clube_status 'teste', comecou ontem)
+// Todos abrem a aba Dicas, que e a primeira do Clube.
+const MARCOS_MESES = [1, 3, 6, 12];
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
+  "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+// Meses completos de Clube, igual ao app (mesesDeClube)
+export function mesesDeClube(desde, hoje) {
+  if (!desde) return 0;
+  const [a1, m1, d1] = String(desde).slice(0, 10).split("-").map(Number);
+  const [a2, m2, d2] = hoje.split("-").map(Number);
+  return (a2 - a1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0);
+}
+
+// Qual aviso do Clube esta aluna recebe hoje (ou null). `marcouMesPassado`:
+// ela tem algum registro no mes anterior.
+export function avisoClube(a, hoje, marcouMesPassado) {
+  const desde = a.clube_desde ? String(a.clube_desde).slice(0, 10) : null;
+  const m = mesesDeClube(desde, hoje);
+  if (desde && MARCOS_MESES.includes(m) && mesesDeClube(desde, menosDias(hoje, 1)) === m - 1) {
+    if (m === 12) return "1 ano de Clube. Um ano inteiro escolhendo você. Que caminho bonito.";
+    return `${m} ${m === 1 ? "mês" : "meses"} de Clube. Você continua aqui, cuidando de você.`;
+  }
+  if (hoje.slice(8, 10) === "01" && marcouMesPassado) {
+    const mes = MESES[(+hoje.slice(5, 7) + 10) % 12];
+    return `O seu ${mes} chegou. Veja tudo o que você cuidou em você.`;
+  }
+  if (a.clube_status === "teste" && desde === menosDias(hoje, 1)) {
+    return "Seus primeiros passos estão esperando por você. Comece pelo mais leve.";
+  }
+  return null;
+}
+
+async function avisosDoClube(supaUrl, serviceKey) {
+  const h = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+  const hoje = hojeBR();
+  const ini = `${hoje.slice(0, 8)}01`;
+  const iniAnterior = menosDias(ini, 1).slice(0, 8) + "01";
+
+  const [pRes, cRes, tRes, rRes] = await Promise.all([
+    fetch(`${supaUrl}/rest/v1/profiles?select=id,plano,data_cadastro,turma_id,clube_ate,clube_desde,clube_status&clube_ate=gte.${hoje}`, { headers: h }),
+    fetch(`${supaUrl}/rest/v1/config?select=id,valor&id=eq.jornada_inicio`, { headers: h }),
+    fetch(`${supaUrl}/rest/v1/turmas?select=id,inicio`, { headers: h }),
+    // So no dia 1 precisa saber quem marcou algo no mes que passou
+    hoje.slice(8, 10) === "01"
+      ? fetch(`${supaUrl}/rest/v1/registros?select=user_id&data=gte.${iniAnterior}&data=lt.${ini}`, { headers: h })
+      : Promise.resolve(null),
+  ]);
+  if (!pRes.ok) throw new Error("Falha ao ler profiles");
+  if (rRes && !rRes.ok) throw new Error("Falha ao ler registros");
+
+  const cfg = cRes.ok ? await cRes.json() : [];
+  const inicioGeral = cfg[0]?.valor || null;
+  const inicioDaTurma = new Map();
+  if (tRes.ok) for (const t of await tRes.json()) if (t.inicio) inicioDaTurma.set(t.id, String(t.inicio).slice(0, 10));
+  const marcaram = new Set();
+  if (rRes) for (const r of await rRes.json()) marcaram.add(r.user_id);
+
+  const porTexto = new Map();
+  for (const a of await pRes.json()) {
+    if (a.plano === "admin" || a.plano === "pendente" || !a.plano) continue;
+    // Aluna com a Jornada em curso usa o app da Jornada, nao o do Clube (igual ao app)
+    if (a.plano === "jornada") {
+      const ini = inicioDaTurma.get(a.turma_id) || inicioGeral || (a.data_cadastro ? String(a.data_cadastro).slice(0, 10) : null);
+      if (!ini) continue;
+      const corridas = Math.floor((new Date(segundaDe(hoje)) - new Date(segundaDe(String(ini).slice(0, 10)))) / (7 * 864e5)) + 1;
+      if (corridas <= 12) continue;
+    }
+    const texto = avisoClube(a, hoje, marcaram.has(a.id));
+    if (!texto) continue;
+    if (!porTexto.has(texto)) porTexto.set(texto, []);
+    porTexto.get(texto).push(a.id);
+  }
+  return [...porTexto].map(([texto, ids]) => ({ texto, ids }));
+}
+
 export default async function handler(req, res) {
   // A Vercel envia o CRON_SECRET no cabeçalho das tarefas agendadas.
   const segredo = process.env.CRON_SECRET;
@@ -340,8 +425,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  // ── Lembrete das 19h: quem esta presente mas nao marcou algum habito ────────
-  if (g === "diario") {
+  // ── Lembrete das 19h (habitos) e avisos do Clube (10h) ─────────────────────
+  if (g === "diario" || g === "clube") {
     const supaUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supaUrl || !serviceKey) {
@@ -351,13 +436,13 @@ export default async function handler(req, res) {
 
     let grupos;
     try {
-      grupos = await lembretesDoDia(supaUrl, serviceKey);
+      grupos = g === "clube" ? await avisosDoClube(supaUrl, serviceKey) : await lembretesDoDia(supaUrl, serviceKey);
     } catch (e) {
       res.status(502).json({ error: String(e.message || e) });
       return;
     }
     if (!grupos.length) {
-      res.json({ ok: true, gatilho: g, enviados: 0, motivo: "ninguem com habito pendente" });
+      res.json({ ok: true, gatilho: g, enviados: 0, motivo: g === "clube" ? "nenhum aviso do Clube hoje" : "ninguem com habito pendente" });
       return;
     }
 
@@ -369,7 +454,7 @@ export default async function handler(req, res) {
         include_aliases: { external_id: grupo.ids.map(String) },
         headings: { en: "Clube do Auge", pt: "Clube do Auge" },
         contents: { en: grupo.texto, pt: grupo.texto },
-        url: `${APP_URL}/?open=home`,
+        url: `${APP_URL}/?open=${g === "clube" ? "dicas" : "home"}`,
       });
       envios.push({ texto: grupo.texto, alvos: grupo.ids.length, ok: r.ok, erro: r.ok ? undefined : r.erro });
     }
@@ -413,5 +498,5 @@ export default async function handler(req, res) {
     return;
   }
 
-  res.status(400).json({ error: "Use ?g=sexta, ?g=domingo, ?g=diario ou ?g=dois-dias." });
+  res.status(400).json({ error: "Use ?g=sexta, ?g=domingo, ?g=diario, ?g=dois-dias ou ?g=clube." });
 }
