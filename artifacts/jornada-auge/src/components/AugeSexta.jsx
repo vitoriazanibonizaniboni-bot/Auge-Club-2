@@ -19,7 +19,21 @@ const PW = 1080, PH = 1920;
 // Título muda com a semana: completou tudo → auge; senão, a subida.
 export const tituloDoPost = (t) => (t >= 1 ? "Você chegou ao seu auge!" : "Que subida bonita!");
 
+// Quebra equilibrada (03/11, pedido da Vitória): com o mesmo número de linhas,
+// usa a menor largura possível, para as linhas ficarem parecidas e não sobrar
+// uma palavra sozinha embaixo ("Você chegou ao seu / auge!").
 function quebrarLinhas(ctx, texto, largura) {
+  const base = quebrarGuloso(ctx, texto, largura);
+  if (base.length < 2) return base;
+  let lo = 0, hi = largura, melhor = base;
+  for (let i = 0; i < 14; i++) {
+    const meio = (lo + hi) / 2;
+    const tent = quebrarGuloso(ctx, texto, meio);
+    if (tent.length <= base.length && tent.every((l) => ctx.measureText(l).width <= largura)) { melhor = tent; hi = meio; } else lo = meio;
+  }
+  return melhor;
+}
+function quebrarGuloso(ctx, texto, largura) {
   const palavras = texto.split(/\s+/).filter(Boolean);
   const linhas = [];
   let atual = "";

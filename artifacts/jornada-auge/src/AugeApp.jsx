@@ -2977,13 +2977,13 @@ export default function App() {
       )}
       {marco && !sexta && (
         <MarcoAlcancado n={marco} onFechar={() => setMarco(null)}
- onPost={() => { const n = marco; setMarco(null); setSexta({ frase: `${n} hábitos marcados, um de cada vez.`, tags: [], t: 1, semana: null,
- extra: { rotulo: "MARCO NO CLUBE", cabecalho: "Seu marco merece ser visto", rotuloTela: "MARCO", textoCompartilhar: `${n} hábitos marcados no Clube do Auge`, notaFrase: "Só muda o post." } }); }} />
+ onPost={() => { const n = marco; setMarco(null); setSexta({ frase: `${n} hábitos marcados`, tags: [], t: 1, semana: null,
+ extra: { rotulo: "MARCO NO CLUBE", tituloPost: "Marco alcançado!", cabecalho: "Seu marco merece ser visto", rotuloTela: "MARCO", textoCompartilhar: `${n} hábitos marcados no Clube do Auge`, notaFrase: "Só muda o post." } }); }} />
       )}
       {retroAberta && !sexta && (
         <Retrospectiva regs={regs} habsPessoais={habsPessoais} vit={vit} onFechar={() => setRetroAberta(false)}
  onPost={(d) => { setRetroAberta(false); setSexta({ frase: d.frase, tags: d.tags, t: d.t, semana: null,
- extra: { rotulo: `MEU ${d.nomeMes.toUpperCase()}`, tituloPost: "Um mês de cuidado comigo", cabecalho: "Seu mês merece ser visto", rotuloTela: "RETROSPECTIVA",
+ extra: { rotulo: `MEU ${d.nomeMes.toUpperCase()}`, tituloPost: "Meu mês de cuidado", cabecalho: "Seu mês merece ser visto", rotuloTela: "RETROSPECTIVA",
  textoCompartilhar: `Meu ${d.nomeMes} no Clube do Auge`, rotuloTags: "Mostrar meus hábitos do mês no post", notaFrase: "Só muda o post." } }); }} />
       )}
       {primAcessoEf && perfil !== "admin" && perfil !== "pendente" && (
@@ -12043,7 +12043,7 @@ function Retrospectiva({ regs, habsPessoais = [], vit = [], onPost, onFechar }) 
             <div style={{ fontSize: 18, fontWeight: 600, color: C.obs, lineHeight: 1.4, marginTop: 6 }}>"{vitoria}"</div>
           </div>
         )}
-        <button onClick={() => onPost({ nomeMes: mes.nome, t, frase: vitoria || `${diasCom} dias cuidando de mim em ${mes.nome}.`, tags: habs.filter((h) => h.n > 0).map((h) => ({ nome: h.nome, n: h.n })) })}
+        <button onClick={() => onPost({ nomeMes: mes.nome, t, frase: vitoria || `${diasCom} dias cuidando de mim`, tags: habs.filter((h) => h.n > 0).map((h) => ({ nome: h.nome, n: h.n })) })}
  style={{ width: "100%", minHeight: 52, border: "none", borderRadius: 14, background: C.primary, color: "#FFFFFF", fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>Criar post do meu mês</button>
       </div>
     </div>
