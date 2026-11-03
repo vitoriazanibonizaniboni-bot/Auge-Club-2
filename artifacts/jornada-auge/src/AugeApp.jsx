@@ -12587,6 +12587,16 @@ function PainelMentora({ ir }) {
   // ── estado vídeos ──
  const [videos, setVideos] = useState([]);
  const [loadingV, setLoadingV] = useState(true);
+ // A lista de vídeos do Painel tem que ser carregada aqui: o carregamento que
+ // existia foi removido em 20/09 (era do app das alunas, com filtro de turma),
+ // e desde então esta aba ficava em "Carregando..." para sempre. A mentora vê
+ // todos os vídeos, de todas as turmas e públicos.
+ useEffect(() => {
+ let vivo = true;
+ supabase.from("videos").select("*").order("ordem", { ascending: true }).order("created_at", { ascending: false })
+      .then(({ data }) => { if (vivo) { setVideos(data || []); setLoadingV(false); } }, () => { if (vivo) setLoadingV(false); });
+ return () => { vivo = false; };
+  }, []);
  const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "aulas", duracao: "30 min", descricao: "", turma_id: "" });
  const [salvandoV, setSalvandoV] = useState(false);
  const [mostrarForm, setMostrarForm] = useState(false);
