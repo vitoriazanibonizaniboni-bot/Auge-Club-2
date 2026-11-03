@@ -53,9 +53,9 @@ const AGENDAS = {
 // para todos. Habito criado pela aluna nao usa artigo, porque o nome e livre
 // e nao da para saber o genero de "Agua" ou "Alongamento" sem chutar.
 const HABITOS = [
-  { id: "movimento", nome: "Movimento", unlock: 1, ontem: false },
-  { id: "sono", nome: "Sono", unlock: 5, ontem: true },
-  { id: "tempo", nome: "Tempo para Si", unlock: 9, ontem: false },
+  { id: "movimento", nome: "Movimento", unlock: 1, ontem: false, col: "mov" },
+  { id: "sono", nome: "Sono", unlock: 5, ontem: true, col: "sono" },
+  { id: "tempo", nome: "Tempo para Si", unlock: 9, ontem: false, col: "tsi" },
 ];
 
 // Quantos dias seguidos ja contam como sequencia digna de comemorar.
@@ -126,12 +126,17 @@ export function diaDoAno(iso) {
   return Math.floor(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 864e5);
 }
 
-function semanaDaJornada(hoje, inicio) {
-  if (!inicio) return 1;
+// Semanas corridas desde o inicio, sem teto (13+ = Jornada terminada)
+function semanasCorridas(hoje, inicio) {
+  if (!inicio) return 0;
   const a = new Date(segundaDe(hoje) + "T00:00:00Z");
   const b = new Date(segundaDe(String(inicio).slice(0, 10)) + "T00:00:00Z");
-  const semanas = Math.floor((a - b) / (7 * 24 * 60 * 60 * 1000)) + 1;
-  return Math.min(12, Math.max(1, semanas));
+  return Math.floor((a - b) / (7 * 24 * 60 * 60 * 1000)) + 1;
+}
+
+function semanaDaJornada(hoje, inicio) {
+  if (!inicio) return 1;
+  return Math.min(12, Math.max(1, semanasCorridas(hoje, inicio)));
 }
 
 function menosDias(iso, n) {
@@ -213,15 +218,20 @@ async function lembretesDoDia(supaUrl, serviceKey) {
   // 60 dias bastam para qualquer sequencia que valha a pena comemorar
   const desde = menosDias(hoje, 60);
 
-  const [pRes, cRes, rRes, hpRes, tRes] = await Promise.all([
+  const [pRes, cRes, rRes, hpRes, tRes, mRes] = await Promise.all([
     fetch(`${supaUrl}/rest/v1/profiles?select=id,plano,data_cadastro,turma_id,clube_ate&plano=in.(jornada,comunidade,admin)`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/config?select=id,valor&id=eq.jornada_inicio`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/registros?select=user_id,habito,data&data=gte.${desde}`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/habitos_pessoais?select=id,user_id,nome,ativo&ativo=is.true`, { headers: h }),
     fetch(`${supaUrl}/rest/v1/turmas?select=id,inicio`, { headers: h }),
+    // Clube (03/11): a aluna pode tirar da lista ou renomear os 3 do metodo.
+    // Sem as colunas (migracao 027 ainda nao rodada), tudo segue como antes.
+    fetch(`${supaUrl}/rest/v1/habitos_metas?select=user_id,mov_nome,sono_nome,tsi_nome,mov_ativo,sono_ativo,tsi_ativo`, { headers: h }),
   ]);
   if (!pRes.ok) throw new Error("Falha ao ler profiles");
   if (!rRes.ok) throw new Error("Falha ao ler registros");
+  const escolhas = new Map();
+  if (mRes.ok) for (const m of await mRes.json()) escolhas.set(m.user_id, m);
 
   const alunas = (await pRes.json()).filter((a) => !clubeVencido(a, hoje));
   const cfg = cRes.ok ? await cRes.json() : [];
@@ -279,12 +289,22 @@ async function lembretesDoDia(supaUrl, serviceKey) {
     const sem = a.plano === "comunidade" ? 12
       : semanaDaJornada(hoje, inicioDaTurma.get(a.turma_id) || inicioTurma || a.data_cadastro);
 
+    // No Clube, os 3 do metodo seguem a lista dela: tirado da lista nao
+    // recebe lembrete, e o renomeado aparece com o nome que ela deu (sem
+    // artigo, como os habitos que ela cria). Na Jornada, sempre os 3 originais.
+    const noClube = a.plano === "comunidade" ||
+      (a.plano === "jornada" && a.clube_ate && String(a.clube_ate).slice(0, 10) >= hoje &&
+        semanasCorridas(hoje, inicioDaTurma.get(a.turma_id) || inicioTurma || a.data_cadastro) > 12);
+    const esc = noClube ? escolhas.get(a.id) : null;
+
     const candidatos = [];
     for (const hb of HABITOS) {
       if (sem < hb.unlock) continue; // habito ainda bloqueado para ela
+      if (esc && esc[`${hb.col}_ativo`] === false) continue; // tirou da lista
       const alvo = hb.ontem ? ontem : hoje;
       if (marcas.has(`${hb.id}|${alvo}`)) continue;
-      candidatos.push({ nome: hb.nome, pessoal: false, ontem: hb.ontem, seq: sequencia(marcas, hb.id, alvo) });
+      const nomeDela = esc ? String(esc[`${hb.col}_nome`] || "").trim() : "";
+      candidatos.push({ nome: nomeDela || hb.nome, pessoal: !!nomeDela, ontem: hb.ontem, seq: sequencia(marcas, hb.id, alvo) });
     }
     for (const hp of pessoaisDe.get(a.id) || []) {
       if (marcas.has(`${hp.id}|${hoje}`)) continue;
@@ -375,8 +395,7 @@ async function avisosDoClube(supaUrl, serviceKey) {
     if (a.plano === "jornada") {
       const ini = inicioDaTurma.get(a.turma_id) || inicioGeral || (a.data_cadastro ? String(a.data_cadastro).slice(0, 10) : null);
       if (!ini) continue;
-      const corridas = Math.floor((new Date(segundaDe(hoje)) - new Date(segundaDe(String(ini).slice(0, 10)))) / (7 * 864e5)) + 1;
-      if (corridas <= 12) continue;
+      if (semanasCorridas(hoje, ini) <= 12) continue;
     }
     const texto = avisoClube(a, hoje, marcaram.has(a.id));
     if (!texto) continue;
