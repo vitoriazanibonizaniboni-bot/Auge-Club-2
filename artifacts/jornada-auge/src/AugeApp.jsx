@@ -1177,6 +1177,8 @@ export default function App() {
  const [planoConta, setPlanoConta] = useState(null);
  const [clubeAte, setClubeAte] = useState(null);
  const [clubeStatus, setClubeStatus] = useState(null); // "teste" nos 7 dias grátis (vem do Asaas)
+ const [clubeDesde, setClubeDesde] = useState(null); // dia em que entrou no Clube (migração 026)
+ const [marcoMes, setMarcoMes] = useState(null); // 1, 3, 6 ou 12 meses de Clube
  const [dispensada, setDispensada] = useState(false); // pediu acesso sem estar na Jornada
  // Passo a passo de boas-vindas: uma vez só (primeiro acesso, ou primeira
  // abertura desta versão para quem já usava o app)
@@ -1354,6 +1356,20 @@ export default function App() {
  // No Clube o app abre em Dicas: na primeira vez que a conta carrega como
  // Clube, quem estaria na Hoje vai para Dicas (link de notificação para outra
  // tela continua valendo).
+ // Marcos de meses de Clube (03/11): ao abrir o app no dia em que completa
+ // 1, 3, 6 ou 12 meses (ou depois, se ela não abriu no dia), uma vez só.
+ useEffect(() => {
+ if (!modoClube || !clubeDesde) return;
+ const m = mesesDeClube(clubeDesde);
+ const alvo = [...MARCOS_MESES].reverse().find((x) => m >= x);
+ if (!alvo) return;
+ const chave = `auge_marco_mes_${alvo}_${clubeDesde}`;
+ let ja = false; try { ja = localStorage.getItem(chave) === "1"; } catch {}
+ if (ja) return;
+ try { localStorage.setItem(chave, "1"); } catch {}
+ const id = setTimeout(() => setMarcoMes(alvo), 1500);
+ return () => clearTimeout(id);
+  }, [modoClube, clubeDesde]);
  const abriuClubeRef = useRef(false);
  // Veio por notificação (?open=home, ?open=kit…): respeita o destino dela.
  const veioDeLinkRef = useRef((() => { try { return !!new URLSearchParams(window.location.search).get("open"); } catch { return false; } })());
@@ -1887,6 +1903,7 @@ export default function App() {
  setPlanoConta(p.plano || null);
  setClubeAte(p.clube_ate ? String(p.clube_ate).slice(0, 10) : null);
  setClubeStatus(p.clube_status || null);
+ setClubeDesde(p.clube_desde ? String(p.clube_desde).slice(0, 10) : null);
  setDispensada(!!p.dispensada_em);
  setUsuario({ nome: p.nome || "", email: p.email || "" });
  setLgpdOk(!!p.lgpd_aceito);
@@ -2273,6 +2290,7 @@ export default function App() {
  setPlanoConta(null);
  setClubeAte(null);
  setClubeStatus(null);
+ setClubeDesde(null);
  setDispensada(false);
  abriuClubeRef.current = false;
  setTela(S.HOME);
@@ -2974,6 +2992,13 @@ export default function App() {
  tk={tk}
  onFechar={() => setSexta(null)}
         />
+      )}
+      {marcoMes && !marco && !sexta && (
+        <MarcoAlcancado n={marcoMes} titulo={marcoMes === 1 ? "1 mês de Clube" : marcoMes === 12 ? "1 ano de Clube" : `${marcoMes} meses de Clube`}
+ texto={marcoMes === 12 ? "Um ano inteiro escolhendo você, um dia de cada vez. Que caminho bonito." : "Você continua aqui, cuidando de você mês após mês. Isso é o que transforma."}
+ onFechar={() => setMarcoMes(null)}
+ onPost={() => { const m = marcoMes; setMarcoMes(null); const t = m === 1 ? "1 mês de Clube" : m === 12 ? "1 ano de Clube" : `${m} meses de Clube`;
+ setSexta({ frase: t, tags: [], t: 1, semana: null, extra: { rotulo: "MARCO NO CLUBE", tituloPost: "Marco alcançado!", cabecalho: "Seu marco merece ser visto", rotuloTela: "MARCO", textoCompartilhar: `${t} do Auge`, notaFrase: "Só muda o post." } }); }} />
       )}
       {marco && !sexta && (
         <MarcoAlcancado n={marco} onFechar={() => setMarco(null)}
@@ -11969,17 +11994,25 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
 
 // ─── Marcos e retrospectiva do mês (Clube, 03/11) ───────────────────────────────
 const MARCOS = [10, 30, 50, 100, 200, 365, 500];
+const MARCOS_MESES = [1, 3, 6, 12];
+// Meses inteiros entre o início do Clube e hoje (03/11 → 03/12 = 1)
+function mesesDeClube(desde, hoje = TODAY) {
+ if (!desde) return 0;
+ const [a1, m1, d1] = desde.slice(0, 10).split("-").map(Number);
+ const [a2, m2, d2] = hoje.split("-").map(Number);
+ return (a2 - a1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0);
+}
 
-function MarcoAlcancado({ n, onPost, onFechar }) {
+function MarcoAlcancado({ n, titulo = `${n} hábitos marcados`, texto = `Um de cada vez, você já cuidou de você ${n} vezes. Isso é método, não sorte.`, onPost, onFechar }) {
  return (
-    <div role="dialog" aria-modal="true" aria-label={`${n} hábitos marcados`} onClick={onFechar}
+    <div role="dialog" aria-modal="true" aria-label={titulo} onClick={onFechar}
  style={{ position: "absolute", inset: 0, zIndex: 450, background: "rgba(31,26,23,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 18px 40px" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: C.creme, borderRadius: 24, padding: "22px 20px 16px", textAlign: "center", fontFamily: FB, boxShadow: "0 8px 30px rgba(31,26,23,.18)" }}>
         {/* a mesma montanha da Hoje, com a luz no topo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><CumeMini t={1} de={0.6} largura={240} altura={110} /></div>
         <div style={{ fontSize: 60, fontWeight: 800, color: C.oliva, lineHeight: 1 }}>{n}</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: C.obs, margin: "10px 0 6px" }}>{n} hábitos marcados</div>
-        <div style={{ fontSize: 17, color: C.terra, lineHeight: 1.5 }}>Um de cada vez, você já cuidou de você {n} vezes. Isso é método, não sorte.</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: C.obs, margin: "10px 0 6px" }}>{titulo}</div>
+        <div style={{ fontSize: 17, color: C.terra, lineHeight: 1.5 }}>{texto}</div>
         <button onClick={onPost} style={{ width: "100%", minHeight: 52, marginTop: 18, border: "none", borderRadius: 14, background: C.primary, color: "#FFFFFF", fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>Criar post para o Instagram</button>
         <button onClick={onFechar} style={{ width: "100%", minHeight: 48, marginTop: 4, border: "none", background: "none", color: C.terra, fontFamily: FB, fontSize: 16, cursor: "pointer" }}>Continuar</button>
       </div>
