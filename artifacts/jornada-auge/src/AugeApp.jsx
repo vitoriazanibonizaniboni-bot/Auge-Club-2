@@ -1350,6 +1350,14 @@ export default function App() {
  const modoClube = previaClube() || (planoConta !== "admin" && clubeAtivo && !jornadaEmCurso);
  const semAcessoClube = planoConta === "comunidade" && !clubeAtivo && !previaClube();
  modoClubeRef.current = modoClube;
+ // Clube (03/11): Movimento, Sono e Tempo para Si são opcionais e renomeáveis.
+ // habsFixos = os do método que estão na lista dela, com o nome que ela deu.
+ // Na Jornada é sempre a lista original, intocada.
+ const habsFixos = modoClube
+    ? HABS_FIXOS.filter((h) => metas?.[h.id]?.ativo !== false)
+        .map((h) => ({ ...h, nome: (metas?.[h.id]?.nome || "").trim() || h.nome, nomeMetodo: h.nome }))
+    : HABS_FIXOS;
+ const habsForaDaLista = modoClube ? HABS_FIXOS.filter((h) => metas?.[h.id]?.ativo === false) : [];
  // O Clube não tem Mural/Chat: se algum caminho levar para lá (notificação
  // antiga, link ?open=mural), volta para a Hoje.
  useEffect(() => { if (modoClube && [S.FEED, S.NOVO, S.VOZ].includes(tela)) setTela(S.CT); }, [modoClube, tela]);
@@ -1453,7 +1461,7 @@ export default function App() {
     };
   }
 
- const habsAlerta = HABS_FIXOS.filter(
+ const habsAlerta = habsFixos.filter(
     (h) => !habStats[h.id].bloqueado && habStats[h.id].feitas < habStats[h.id].meta &&
       (habStats[h.id].zona === "ajuste" || habStats[h.id].zona === "atencao"),
   );
@@ -1544,23 +1552,41 @@ export default function App() {
  setMetas((m) => { const n = { ...m }; Object.entries(porHabito).forEach(([id, txt]) => { n[id] = { ...(n[id] || {}), minimo: txt }; }); return n; });
  return true;
   };
- const editarHabMetodo = async (habId, freq, desc, minimo) => {
+ const editarHabMetodo = async (habId, freq, desc, minimo, nome) => {
  const antiga = metas?.[habId]?.freq ?? HABS_FIXOS.find((h) => h.id === habId).freqDef;
  const { data: { session } } = await supabase.auth.getSession();
  if (!session?.user) return false;
  const p = _colMeta[habId];
+ // Nome só vem do Clube; vazio ou igual ao original volta ao nome do método
+ const original = HABS_FIXOS.find((h) => h.id === habId).nome;
+ const nomeNovo = nome === undefined ? undefined : ((nome || "").trim() === original ? "" : (nome || "").trim());
     // mesma linha de habitos_metas que o Meu Mapa e o Kit leem: o mínimo não é duplicado
  const { error } = await supabase.from("habitos_metas").upsert(
-      { user_id: session.user.id, [`${p}_freq`]: freq, [`${p}_desc`]: desc, [`${p}_minimo`]: minimo, updated_at: new Date().toISOString() },
+      { user_id: session.user.id, [`${p}_freq`]: freq, [`${p}_desc`]: desc, [`${p}_minimo`]: minimo,
+        ...(nomeNovo !== undefined ? { [`${p}_nome`]: nomeNovo || null } : {}), updated_at: new Date().toISOString() },
       { onConflict: "user_id" },
     );
  if (error) return false;
- setMetas((m) => ({ ...m, [habId]: { ...(m[habId] || {}), freq, desc, minimo } }));
+ setMetas((m) => ({ ...m, [habId]: { ...(m[habId] || {}), freq, desc, minimo, ...(nomeNovo !== undefined ? { nome: nomeNovo } : {}) } }));
  if (freq !== antiga) {
  supabase.from("metas_historico").insert(
         { user_id: session.user.id, habito: habId, freq_antiga: antiga, freq_nova: freq },
       ).then(() => {});
     }
+ return true;
+  };
+
+ // Clube: tirar da lista / colocar de volta um hábito do método. O histórico fica.
+ const habMetodoNaLista = async (habId, ativo) => {
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session?.user) return false;
+ const p = _colMeta[habId];
+ const { error } = await supabase.from("habitos_metas").upsert(
+      { user_id: session.user.id, [`${p}_ativo`]: ativo, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" },
+    );
+ if (error) return false;
+ setMetas((m) => ({ ...m, [habId]: { ...(m[habId] || {}), ativo } }));
  return true;
   };
 
@@ -1818,9 +1844,9 @@ export default function App() {
  if (metasRes?.data && !metasRes.error) {
  const m = metasRes.data;
  setMetas({
- movimento: { freq: m.mov_freq ?? 3, desc: m.mov_desc || "", minimo: m.mov_minimo || "" },
- sono: { freq: m.sono_freq ?? 7, desc: m.sono_desc || "", minimo: m.sono_minimo || "" },
- tempo: { freq: m.tsi_freq ?? 3, desc: m.tsi_desc || "", minimo: m.tsi_minimo || "" },
+ movimento: { freq: m.mov_freq ?? 3, desc: m.mov_desc || "", minimo: m.mov_minimo || "", nome: m.mov_nome || "", ativo: m.mov_ativo !== false },
+ sono: { freq: m.sono_freq ?? 7, desc: m.sono_desc || "", minimo: m.sono_minimo || "", nome: m.sono_nome || "", ativo: m.sono_ativo !== false },
+ tempo: { freq: m.tsi_freq ?? 3, desc: m.tsi_desc || "", minimo: m.tsi_minimo || "", nome: m.tsi_nome || "", ativo: m.tsi_ativo !== false },
       });
     } else {
       // Primeira vez na v2: aproveita os hábitos escolhidos no cadastro antigo
@@ -2511,7 +2537,7 @@ export default function App() {
   // ── Reagenda notificações sempre que diasSemTreino muda (ou permissão é concedida)
  useEffect(() => {
  if (perfil === "jornada" && notifStatus === "granted") {
- scheduleAll(diasSemTreino < 0 ? 0 : diasSemTreino, HABS_FIXOS.filter((h) => !habStats[h.id]?.bloqueado).length);
+ scheduleAll(diasSemTreino < 0 ? 0 : diasSemTreino, habsFixos.filter((h) => !habStats[h.id]?.bloqueado).length);
     }
  if (notifStatus !== "granted") {
  clearAll();
@@ -2721,6 +2747,9 @@ export default function App() {
  editarHabPessoal,
  editarHabMetodo,
  habsAlerta,
+ habsFixos,
+ habsForaDaLista,
+ habMetodoNaLista,
  diasDaSemana,
  segundaAtual,
  diasRestantes,
@@ -2949,6 +2978,7 @@ export default function App() {
  case S.PF:
  return (
           <Perfil
+ habsFixos={habsFixos}
             {...ctx}
  habAngulares={habAngulares}
  setHabAngulares={setHabAngulares}
@@ -3006,7 +3036,7 @@ export default function App() {
  extra: { rotulo: "MARCO NO CLUBE", tituloPost: "Marco alcançado!", cabecalho: "Seu marco merece ser visto", rotuloTela: "MARCO", textoCompartilhar: `${n} hábitos marcados no Clube do Auge`, notaFrase: "Só muda o post." } }); }} />
       )}
       {retroAberta && !sexta && (
-        <Retrospectiva regs={regs} habsPessoais={habsPessoais} vit={vit} onFechar={() => setRetroAberta(false)}
+        <Retrospectiva regs={regs} habsFixos={habsFixos} habsPessoais={habsPessoais} vit={vit} onFechar={() => setRetroAberta(false)}
  onPost={(d) => { setRetroAberta(false); setSexta({ frase: d.frase, tags: d.tags, t: d.t, semana: null,
  extra: { rotulo: `MEU ${d.nomeMes.toUpperCase()}`, tituloPost: "Meu mês de cuidado", cabecalho: "Seu mês merece ser visto", rotuloTela: "RETROSPECTIVA",
  textoCompartilhar: `Meu ${d.nomeMes} no Clube do Auge`, rotuloTags: "Mostrar meus hábitos do mês no post", notaFrase: "Só muda o post." } }); }} />
@@ -5236,7 +5266,7 @@ function NovoHabito({ onCriar, onCancelar }) {
 }
 
 // Registro retroativo — até 7 dias corridos (seção 4.5)
-function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, habStats, desafiosSemana = {}, desafioFeitos = [], toggleDesafio, inicioJornada }) {
+function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, habStats, habsFixos = HABS_FIXOS, desafiosSemana = {}, desafioFeitos = [], toggleDesafio, inicioJornada }) {
  const dias = Array.from({ length: 7 }, (_, i) => addDaysStr(TODAY, -(i + 1)));
  const fmt = (ds) => {
  const d = new Date(ds + "T12:00:00");
@@ -5264,7 +5294,7 @@ function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, 
           <div key={ds} style={{ background: C.linho, borderRadius: 10, padding: "11px 13px", marginBottom: 9 }}>
             <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra, textTransform: "capitalize", marginBottom: 8 }}>{fmt(ds)}</div>
             <div style={{ display: "flex", gap: 7 }}>
-              {HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado).map((h) => {
+              {habsFixos.filter((h) => !habStats[h.id].bloqueado).map((h) => {
  const feito = !!regs[ds]?.[h.id];
  return (
                   <button key={h.id}
@@ -5383,10 +5413,10 @@ function PastilhasSemana({ tags }) {
   );
 }
 
-function VitoriaSemana({ modoClube = false, habStats, habsPessoais = [], habsPessStats = {}, desafioFeitos = [], diasDaSemana = [], sem, segundaAtual, postTreino, tk, onFechar, onEnviada }) {
+function VitoriaSemana({ modoClube = false, habStats, habsFixos = HABS_FIXOS, habsPessoais = [], habsPessStats = {}, desafioFeitos = [], diasDaSemana = [], sem, segundaAtual, postTreino, tk, onFechar, onEnviada }) {
  const [passo, setPasso] = useState(1);
  const [resp, setResp] = useState("");
- const ativos = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
+ const ativos = habsFixos.filter((h) => !habStats[h.id].bloqueado);
  const resumo = ativos
     .map((h) => {
  const st = habStats[h.id];
@@ -5534,6 +5564,9 @@ function Home({
  postTreino,
  metas,
  salvarMinimo,
+ habsFixos = HABS_FIXOS,
+ habsForaDaLista = [],
+ habMetodoNaLista,
 }) {
  const [legenda, setLegenda] = useState(false);
  const [retroAberto, setRetroAberto] = useState(false);
@@ -5551,14 +5584,14 @@ function Home({
  const ERRO_SALVAR = "Não conseguimos salvar agora. Tente de novo.";
  const salvarPainel = async (v) => {
  let ok = false;
- if (painel.modo === "metodo") ok = await editarHabMetodo(painel.hab.id, v.vezes, v.meta, v.minimo);
+ if (painel.modo === "metodo") ok = await editarHabMetodo(painel.hab.id, v.vezes, v.meta, v.minimo, modoClube ? v.nome : undefined);
  else if (painel.modo === "pessoal") ok = await editarHabPessoal(painel.hab.id, v.nome, v.vezes, v.meta);
  else ok = await criarHabPessoal(v.nome, v.meta, v.vezes);
  tk(ok ? (painel.modo === "criar" ? "Hábito criado! Ele aparece aqui a partir de hoje." : "Pronto! Sua meta foi atualizada.") : ERRO_SALVAR);
  return ok;
   };
  const tirarDoPainel = async () => {
- const ok = await removerHabPessoal(painel.hab.id);
+ const ok = painel.modo === "metodo" ? await habMetodoNaLista(painel.hab.id, false) : await removerHabPessoal(painel.hab.id);
  tk(ok ? "Hábito tirado da lista. O histórico fica guardado." : ERRO_SALVAR);
  return ok;
   };
@@ -5620,7 +5653,7 @@ function Home({
  // aparece na semana; fica no celular, como o dia mínimo.
  const chaveBase = `auge_cume_base_${segundaAtual}`;
  const metasAgora = {};
- HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado).forEach((h) => { metasAgora[h.id] = habStats[h.id].meta; });
+ habsFixos.filter((h) => !habStats[h.id].bloqueado).forEach((h) => { metasAgora[h.id] = habStats[h.id].meta; });
  habsPessoais
     .filter((hp) => habsPessStats[hp.id] && !(hp.created_at && localDateStr(new Date(hp.created_at)) >= segundaAtual))
     .forEach((hp) => { metasAgora[hp.id] = habsPessStats[hp.id].meta; });
@@ -5682,7 +5715,7 @@ function Home({
  tk("Pronto. Hoje suas metas são os seus mínimos.");
   };
  const [painelMinimos, setPainelMinimos] = useState(false);
- const habsLiberados = HABS_FIXOS.filter((h) => !habStats[h.id].bloqueado);
+ const habsLiberados = habsFixos.filter((h) => !habStats[h.id].bloqueado);
  const ativarDiaMinimo = () => {
  if (habsLiberados.some((h) => !(metas?.[h.id]?.minimo || "").trim())) setPainelMinimos(true);
  else ligarDiaMinimo();
@@ -5759,6 +5792,7 @@ function Home({
       </div>
       {retroAberto && (
         <RetroModal
+ habsFixos={habsFixos}
  onFechar={() => setRetroAberto(false)}
  regs={regs}
  sem={sem}
@@ -5860,6 +5894,7 @@ function Home({
         {ehSexta && !vitSemOk && !vitDestaSemana && (
           <VitoriaSemana
  modoClube={modoClube}
+ habsFixos={habsFixos}
  habStats={habStats}
  habsPessoais={habsPessoais}
  habsPessStats={habsPessStats}
@@ -5881,8 +5916,8 @@ function Home({
 
         {/* Cards dos 3 hábitos angulares (seção 4.2) */}
           <div>
-            <SectionHeader titulo="Hábitos angulares" style={{ marginTop: 0 }} />
-            {HABS_FIXOS.map((h) => (
+            {habsFixos.length > 0 && <SectionHeader titulo="Hábitos angulares" style={{ marginTop: 0 }} />}
+            {habsFixos.map((h) => (
               <HabCard
  key={h.id}
  h={h}
@@ -5899,7 +5934,7 @@ function Home({
  irProgresso={() => { setHabProgresso({ id: h.id, nome: h.nome, pessoal: false, unlock: h.unlock }); ir(S.TRAJ); }}
  convidarMural={modoClube ? null : convidarMural}
  minimoHoje={minimoDoDia(h.id)}
- onEditar={() => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome } })}
+ onEditar={() => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome, nomeMetodo: h.nomeMetodo || h.nome } })}
               />
             ))}
 
@@ -5939,6 +5974,22 @@ function Home({
  + Criar um hábito meu
             </button>
 
+            {/* Clube: hábitos do método que ela tirou da lista, para colocar de volta */}
+            {habsForaDaLista.length > 0 && (
+              <div style={{ background: C.linho, borderRadius: 16, padding: "14px 16px", marginBottom: 12 }}>
+                <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 10 }}>Fora da sua lista</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {habsForaDaLista.map((h) => (
+                    <button key={h.id}
+ onClick={async () => { const ok = await habMetodoNaLista(h.id, true); tk(ok ? `${(metas?.[h.id]?.nome || "").trim() || h.nome} voltou para a sua lista.` : ERRO_SALVAR); }}
+ style={{ minHeight: 44, borderRadius: 22, border: `1.5px solid ${C.primary}`, background: C.branco, padding: "8px 16px", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.primary, cursor: "pointer" }}>
+                      + {(metas?.[h.id]?.nome || "").trim() || h.nome}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <Button variante="texto" onClick={() => setRetroAberto(true)} style={{ margin: "4px 0 12px" }}>Preencher dias anteriores</Button>
 
             {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
@@ -5954,13 +6005,14 @@ function Home({
       {painel && (
         <PainelEditar
  modo={painel.modo}
+ clube={modoClube}
  inicial={painel.modo === "metodo"
-            ? { nome: painel.hab.nome, meta: habStats[painel.hab.id]?.descMeta || "", vezes: habStats[painel.hab.id]?.meta || 3, minimo: metas?.[painel.hab.id]?.minimo || "" }
+            ? { nome: painel.hab.nome, nomeMetodo: painel.hab.nomeMetodo, meta: habStats[painel.hab.id]?.descMeta || "", vezes: habStats[painel.hab.id]?.meta || 3, minimo: metas?.[painel.hab.id]?.minimo || "" }
             : painel.modo === "pessoal"
               ? (() => { const hp = habsPessoais.find((x) => x.id === painel.hab.id) || {}; return { nome: hp.nome || painel.hab.nome, meta: hp.meta_texto || "", vezes: hp.meta || 3 }; })()
               : { nome: "", meta: "", vezes: 3 }}
  onSalvar={salvarPainel}
- onTirar={painel.modo === "pessoal" ? tirarDoPainel : null}
+ onTirar={painel.modo === "pessoal" || (painel.modo === "metodo" && modoClube) ? tirarDoPainel : null}
  onFechar={() => setPainel(null)}
  focarMinimo={!!painel.focarMinimo}
         />
@@ -9535,7 +9587,7 @@ function VitJornada({ ir, onLogin }) {
 
 // Menu principal da Jornada (alunas)
 // ─── ABA MEU MAPA (seção 7) — o que é pessoal e intransferível ───────────────
-function MinimosInegociaveis({ metas, salvarMinimo, tk }) {
+function MinimosInegociaveis({ metas, salvarMinimo, tk, habsFixos = HABS_FIXOS }) {
  const [editando, setEditando] = useState(null);
  const [txt, setTxt] = useState("");
  return (
@@ -9546,7 +9598,7 @@ function MinimosInegociaveis({ metas, salvarMinimo, tk }) {
       <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginBottom: 10 }}>
  O mínimo que ainda conta num dia difícil, bem menor que a meta cheia. Editável por você.
       </div>
-      {HABS_FIXOS.map((h) => {
+      {habsFixos.map((h) => {
  const min = metas?.[h.id]?.minimo || "";
  const emEdicao = editando === h.id;
  return (
@@ -9857,6 +9909,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
 }
 
 function Jornada({
+ habsFixos,
  modoClube,
  grupoClube = "",
  sem,
@@ -9985,7 +10038,7 @@ function Jornada({
         {/* Roda AUGE, Perfil AUGE e o card de retomadas sairam em 26/10, a pedido da Vitoria:
             nao eram usados. As telas e os dados continuam no codigo e no banco. */}
         {/* Mínimos Inegociáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
-        <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
+        <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} habsFixos={habsFixos} />
 
         {/* Espaços de escrita — Âncora, Porquês e Carta */}
         <CartaoMapa icone={PenLine} titulo="Espaços de escrita" linha={modoClube ? "Âncora e Porquês" : "Âncora, Porquês e Carta"} onClick={() => ir(S.ESC)} />
@@ -10919,7 +10972,7 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
   );
 }
 
-function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
+function Trajetoria({ modoClube, regs, metas, habsFixos = HABS_FIXOS, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
  const hojeReal = new Date();
  const [habSel, setHabSel] = useState(null); // painel individual do hábito (não abre mais daqui desde 02/11)
  // "ver progresso" da Hoje abre o calendário já filtrado naquele hábito
@@ -10971,7 +11024,7 @@ function Trajetoria({ modoClube, regs, metas, kitUsos, sem, jornadaInicio, dataC
  d.startsWith(`${ano}-${String(mes + 1).padStart(2, "0")}`)
   ).length;
  const linhas = [
-    ...HABS_FIXOS.map((h) => ({
+    ...habsFixos.map((h) => ({
  id: h.id, nome: h.nome, unlock: h.unlock, pessoal: false,
  bloqueado: sem < h.unlock,
  diasNoMes: diasDoMesFeitos(h.id),
@@ -11568,6 +11621,7 @@ function Escritas({
 
 // ─── KIT DE EMERGÊNCIA ────────────────────────────────────────────────────────
 function Emergencia({
+ habsFixos = HABS_FIXOS,
  anc,
  back,
  tk,
@@ -11650,9 +11704,9 @@ function Emergencia({
           )}
         </Bloco>
 
-        {/* 5 · os 3 minimos, sempre os 3 */}
+        {/* 5 · os 3 minimos, sempre os 3 (no Clube, os que estão na lista dela) */}
         <Bloco titulo="Seus mínimos inegociáveis">
-          {HABS_FIXOS.map((h) => {
+          {habsFixos.map((h) => {
  const col = h.id === "movimento" ? "mov_minimo" : h.id === "sono" ? "sono_minimo" : "tsi_minimo";
  const txt = metas?.[h.id]?.minimo || "";
  return (
@@ -12027,7 +12081,7 @@ function mesAnterior(hoje = TODAY) {
  return { ini: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, nome: d.toLocaleString("pt-BR", { month: "long" }), dias: new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() };
 }
 
-function Retrospectiva({ regs, habsPessoais = [], vit = [], onPost, onFechar }) {
+function Retrospectiva({ regs, habsFixos = HABS_FIXOS, habsPessoais = [], vit = [], onPost, onFechar }) {
  const mes = mesAnterior();
  const datas = Object.keys(regs).filter((d) => d.startsWith(mes.ini));
  const diasCom = datas.filter((d) => Object.keys(regs[d] || {}).length > 0).length;
@@ -12035,7 +12089,7 @@ function Retrospectiva({ regs, habsPessoais = [], vit = [], onPost, onFechar }) 
  const vitMes = vit.filter((v) => String(v.data || "").startsWith(mes.ini));
  const vitoria = vitMes.length ? vitMes[vitMes.length - 1].texto : "";
  const habs = [
-    ...HABS_FIXOS.map((h) => ({ id: h.id, nome: h.nome })),
+    ...habsFixos.map((h) => ({ id: h.id, nome: h.nome })),
     ...habsPessoais.filter((hp) => hp.ativo !== false).map((hp) => ({ id: hp.id, nome: hp.nome })),
   ].map((h, i) => ({ ...h, cor: CORES_HAB_CLUBE[i % CORES_HAB_CLUBE.length], n: datas.filter((d) => regs[d]?.[h.id]).length }));
  const t = Math.min(1, diasCom / mes.dias);
@@ -12132,10 +12186,10 @@ function PrimeirosPassos({ passos }) {
 // O Clube abre em Dicas; para o hábito não ficar a uma aba de distância, os
 // hábitos do dia aparecem aqui como pastilhas de um toque (marca/desmarca).
 // Sono vale pela noite de ontem, como na Hoje.
-function FaixaHoje({ regs, habsPessoais = [], registrarHabito, desregistrarHabito, ir }) {
+function FaixaHoje({ regs, habsFixos = HABS_FIXOS, habsPessoais = [], registrarHabito, desregistrarHabito, ir }) {
  const ontem = addDaysStr(TODAY, -1);
  const itens = [
-    ...HABS_FIXOS.map((h) => ({ id: h.id, nome: h.nome, data: h.id === "sono" ? ontem : TODAY })),
+    ...habsFixos.map((h) => ({ id: h.id, nome: h.nome, data: h.id === "sono" ? ontem : TODAY })),
     ...habsPessoais.filter((hp) => hp.ativo !== false).map((hp) => ({ id: hp.id, nome: hp.nome, data: TODAY })),
   ];
  const feitos = itens.filter((h) => regs[h.data]?.[h.id]).length;
@@ -12171,7 +12225,7 @@ function FaixaHoje({ regs, habsPessoais = [], registrarHabito, desregistrarHabit
   );
 }
 
-function Conteudo({ modoClube, abrirRetro, aulasTrancadas = false, regs = {}, habsPessoais = [], registrarHabito, desregistrarHabito, ir, anc = "", setEscT, grupoClube = "", perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
+function Conteudo({ modoClube, habsFixos, abrirRetro, aulasTrancadas = false, regs = {}, habsPessoais = [], registrarHabito, desregistrarHabito, ir, anc = "", setEscT, grupoClube = "", perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  // Tela acesa enquanto a página do vídeo está aberta. Numa meditação a aluna
  // fica de olhos fechados, sem tocar no celular: depois de 30 s a 1 min o
@@ -12348,7 +12402,7 @@ function Conteudo({ modoClube, abrirRetro, aulasTrancadas = false, regs = {}, ha
  return <PrimeirosPassos passos={passos} />;
         })()}
         {/* Clube: os hábitos do dia em uma linha, sem sair de Dicas */}
-        {modoClube && registrarHabito && <FaixaHoje regs={regs} habsPessoais={habsPessoais} registrarHabito={registrarHabito} desregistrarHabito={desregistrarHabito} ir={ir} />}
+        {modoClube && registrarHabito && <FaixaHoje regs={regs} habsFixos={habsFixos} habsPessoais={habsPessoais} registrarHabito={registrarHabito} desregistrarHabito={desregistrarHabito} ir={ir} />}
         {/* busca → destaques → filtros → lista */}
         {secoes.length > 0 && (
           <>
@@ -13742,6 +13796,7 @@ function PainelMentora({ ir }) {
 }
 
 function Perfil({
+ habsFixos,
  perfil,
  matches,
  pontos,
@@ -14217,7 +14272,7 @@ function Perfil({
         </div>
 
         {/* Objetivos dos hábitos (Mínimos Inegociáveis) — mesma fonte da Hoje e do Meu Mapa */}
-        <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} />
+        <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} tk={tk} habsFixos={habsFixos} />
 
         {/* Pessoa de Referência (Kit de Emergência) */}
         <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>

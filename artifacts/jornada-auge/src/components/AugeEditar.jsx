@@ -66,7 +66,8 @@ function Vezes({ valor, onMudar }) {
 // modo: "metodo" | "pessoal" | "criar"
 // inicial: { nome, meta, vezes, minimo }
 // onSalvar(valores) e onTirar() devolvem uma Promise<boolean> (true = salvou)
-export function PainelEditar({ modo, inicial = {}, onSalvar, onTirar, onFechar, focarMinimo = false }) {
+// clube: no Clube os hábitos do método também podem ser renomeados e tirados da lista
+export function PainelEditar({ modo, inicial = {}, onSalvar, onTirar, onFechar, focarMinimo = false, clube = false }) {
   const [nome, setNome] = useState(inicial.nome || "");
   const [meta, setMeta] = useState(inicial.meta || "");
   const [vezes, setVezes] = useState(inicial.vezes || 3);
@@ -97,6 +98,7 @@ export function PainelEditar({ modo, inicial = {}, onSalvar, onTirar, onFechar, 
   // campo com foco: rola até ele e deixa o botão de salvar à vista
   const aoFocar = (e) => { const el = e.target; setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300); };
 
+  const nomeEditavel = modo !== "metodo" || clube;
   const podeSalvar = !salvando && (modo === "metodo" || nome.trim().length > 0);
   const salvar = async () => {
     if (!podeSalvar) return;
@@ -130,7 +132,7 @@ export function PainelEditar({ modo, inicial = {}, onSalvar, onTirar, onFechar, 
           {confirmarTirar ? (
             <>
               <p style={{ margin: "0 0 24px", fontSize: 17, lineHeight: 1.5, color: T.ink }}>
-                Tirar <b>{inicial.nome}</b> da sua lista? O histórico fica guardado.
+                Tirar <b>{inicial.nome}</b> da sua lista? O histórico fica guardado{modo === "metodo" ? " e você pode colocar de volta quando quiser" : ""}.
               </p>
               <div style={{ display: "grid", gap: 10 }}>
                 <button onClick={tirar} disabled={salvando} style={botaoPrincipal(!salvando)}>{salvando ? "Salvando…" : "Sim, tirar da lista"}</button>
@@ -141,16 +143,25 @@ export function PainelEditar({ modo, inicial = {}, onSalvar, onTirar, onFechar, 
             <>
               {modo === "metodo" && (
                 <div style={{ background: "#F4EDE3", borderRadius: 14, padding: "12px 14px", marginBottom: 20, ...apoio, color: T.ink }}>
-                  Este é um hábito do método AUGE. Você pode ajustar a sua meta e o seu mínimo.
+                  {clube
+                    ? "Este hábito vem do método AUGE. No Clube ele é seu: pode mudar o nome, a meta e o mínimo, ou tirar da lista."
+                    : "Este é um hábito do método AUGE. Você pode ajustar a sua meta e o seu mínimo."}
                 </div>
               )}
 
               <div style={{ display: "grid", gap: 20 }}>
-                {modo !== "metodo" && (
+                {nomeEditavel && (
                   <label style={{ display: "block" }}>
                     <span style={rotulo}>Nome do hábito</span>
                     {/* 25 caracteres: o nome entra no lembrete das 19h e nome comprido é cortado */}
-                    <input value={nome} onChange={(e) => setNome(e.target.value)} onFocus={aoFocar} maxLength={25} placeholder="ex: Água" style={campo} />
+                    <input value={nome} onChange={(e) => setNome(e.target.value)} onFocus={aoFocar} maxLength={25}
+                           placeholder={modo === "metodo" ? (inicial.nomeMetodo || "") : "ex: Água"} style={campo} />
+                    {modo === "metodo" && inicial.nomeMetodo && nome.trim() !== inicial.nomeMetodo && (
+                      <button type="button" onClick={() => setNome(inicial.nomeMetodo)}
+                              style={{ marginTop: 6, minHeight: 44, background: "none", border: "none", padding: 0, fontFamily: FONTE, fontSize: 15, color: T.primary, textDecoration: "underline", cursor: "pointer" }}>
+                        Voltar ao nome original ({inicial.nomeMetodo})
+                      </button>
+                    )}
                   </label>
                 )}
                 <label style={{ display: "block" }}>
@@ -177,7 +188,7 @@ export function PainelEditar({ modo, inicial = {}, onSalvar, onTirar, onFechar, 
                 <button onClick={onFechar} disabled={salvando} style={botaoContorno}>Cancelar</button>
               </div>
 
-              {modo === "pessoal" && onTirar && (
+              {(modo === "pessoal" || (modo === "metodo" && clube)) && onTirar && (
                 <button onClick={() => setConfirmarTirar(true)}
                         style={{ display: "block", margin: "18px auto 0", minHeight: 44, background: "none", border: "none", fontFamily: FONTE,
                                  fontSize: 16, fontWeight: 600, color: T.primary, textDecoration: "underline", cursor: "pointer" }}>
