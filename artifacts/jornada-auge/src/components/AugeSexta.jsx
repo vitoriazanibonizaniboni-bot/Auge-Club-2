@@ -123,7 +123,7 @@ function desenharMontanha(ctx, t, yBase) {
   ctx.shadowBlur = 0;
 }
 
-export function desenharPost(canvas, { t, semana, frase, nome, tags, corDe, programa = "Jornada AUGE" }) {
+export function desenharPost(canvas, { t, semana, frase, nome, tags, corDe, programa = "Jornada AUGE", rotulo = null, titulo = null }) {
   canvas.width = PW; canvas.height = PH;
   const ctx = canvas.getContext("2d");
   // céu creme, como o cabeçalho da Hoje
@@ -147,11 +147,11 @@ export function desenharPost(canvas, { t, semana, frase, nome, tags, corDe, prog
     ctx.fillStyle = "#9A4B36";
     ctx.font = `700 38px ${FONTE}`;
     y += 38;
-    if (desenhar) textoEspacado(ctx, semana ? `SEXTA DA VITÓRIA · SEMANA ${semana}` : "SEXTA DA VITÓRIA", PW / 2, y, 6);
+    if (desenhar) textoEspacado(ctx, rotulo || (semana ? `SEXTA DA VITÓRIA · SEMANA ${semana}` : "SEXTA DA VITÓRIA"), PW / 2, y, 6);
     ctx.fillStyle = "#1F1A17";
     ctx.font = `700 76px ${FONTE}`;
     y += 110;
-    const tit = quebrarLinhas(ctx, tituloDoPost(t), 960);
+    const tit = quebrarLinhas(ctx, titulo || tituloDoPost(t), 960);
     tit.forEach((l, i) => { escreve(l, PW / 2, y); if (i < tit.length - 1) y += 92; });
     const limpa = (frase || "").trim();
     if (limpa) {
@@ -222,18 +222,22 @@ const podeCompartilharArquivo = (arquivo) => {
 
 // ── Tela "Sexta da Vitória" ─────────────────────────────────────────────────
 // C: cores do app. Button: o botão dos componentes. corDe(nome): cor da pastilha.
-export function SextaDaVitoria({ C, Button, t, semana, programa = "Jornada AUGE", fraseInicial, nome, tags = [], corDe, onFechar, tk }) {
+// O mesmo post serve para a Sexta, para os marcos e para a retrospectiva do mês
+// (03/11): os textos mudam pelas props; sem elas, é a Sexta de sempre.
+export function SextaDaVitoria({ C, Button, t, semana, programa = "Jornada AUGE", fraseInicial, nome, tags = [], corDe, onFechar, tk,
+  rotulo = null, tituloPost = null, cabecalho = "Sua vitória merece ser vista", rotuloTela = "SEXTA DA VITÓRIA",
+  textoCompartilhar = "Minha vitória da semana #SextaDaVitória", rotuloTags = "Mostrar meus hábitos da semana no post", notaFrase = "Só muda o post. A sua vitória salva continua igual." }) {
   const [frase, setFrase] = useState((fraseInicial || "").slice(0, LIMITE_FRASE));
   const [comHabitos, setComHabitos] = useState(false); // opcional, desligado de início
   const [ocupada, setOcupada] = useState(false);
   const previa = useRef(null);
-  const dados = { t, semana, programa, frase, nome, tags: comHabitos ? tags : [], corDe };
+  const dados = { t, semana, programa, rotulo, titulo: tituloPost, frase, nome, tags: comHabitos ? tags : [], corDe };
 
   useEffect(() => {
     let vivo = true;
     fontesProntas().then(() => { if (vivo && previa.current) desenharPost(previa.current, dados); });
     return () => { vivo = false; };
-  }, [frase, t, semana, programa, nome, comHabitos]);
+  }, [frase, t, semana, programa, rotulo, tituloPost, nome, comHabitos]);
 
   const postarStories = async () => {
     if (ocupada) return;
@@ -252,7 +256,7 @@ export function SextaDaVitoria({ C, Button, t, semana, programa = "Jornada AUGE"
   const enviarWhats = async () => {
     if (ocupada) return;
     setOcupada(true);
-    const texto = "Minha vitória da semana #SextaDaVitória";
+    const texto = textoCompartilhar;
     try {
       const arq = await gerarArquivo(dados);
       if (podeCompartilharArquivo(arq)) await navigator.share({ files: [arq], text: texto });
@@ -264,11 +268,11 @@ export function SextaDaVitoria({ C, Button, t, semana, programa = "Jornada AUGE"
   };
 
   return (
-    <div role="dialog" aria-label="Sexta da Vitória"
+    <div role="dialog" aria-label={cabecalho}
       style={{ position: "absolute", inset: 0, zIndex: 400, background: C.creme, overflowY: "auto", fontFamily: FONTE }}>
       <div style={{ padding: "24px 20px calc(24px + env(safe-area-inset-bottom))", maxWidth: 480, margin: "0 auto" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: C.primary }}>SEXTA DA VITÓRIA</div>
-        <h1 style={{ margin: "6px 0 0", fontSize: 28, fontWeight: 700, lineHeight: 1.2, color: C.obs }}>Sua vitória merece ser vista</h1>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: C.primary }}>{rotuloTela}</div>
+        <h1 style={{ margin: "6px 0 0", fontSize: 28, fontWeight: 700, lineHeight: 1.2, color: C.obs }}>{cabecalho}</h1>
         <p style={{ margin: "8px 0 0", fontSize: 17, lineHeight: 1.5, color: C.lt }}>
           Inspire outras mulheres. Quem vê o seu story pode te perguntar como começar.
         </p>
@@ -286,7 +290,7 @@ export function SextaDaVitoria({ C, Button, t, semana, programa = "Jornada AUGE"
           placeholder="Escreva a sua vitória da semana"
           style={{ width: "100%", minHeight: 96, boxSizing: "border-box", background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: 12, fontSize: 17, lineHeight: 1.45, fontFamily: FONTE, color: C.obs, resize: "none" }} />
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 15, color: C.lt, marginTop: 6, lineHeight: 1.45 }}>
-          <span>Só muda o post. A sua vitória salva continua igual.</span>
+          <span>{notaFrase}</span>
           <span style={{ flexShrink: 0 }}>{frase.length}/{LIMITE_FRASE}</span>
         </div>
 
@@ -294,7 +298,7 @@ export function SextaDaVitoria({ C, Button, t, semana, programa = "Jornada AUGE"
           <label style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16, minHeight: 48, cursor: "pointer", fontSize: 17, color: C.obs }}>
             <input type="checkbox" checked={comHabitos} onChange={(e) => setComHabitos(e.target.checked)}
               style={{ width: 24, height: 24, accentColor: C.primary, flexShrink: 0 }} />
-            Mostrar meus hábitos da semana no post
+            {rotuloTags}
           </label>
         )}
 

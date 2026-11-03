@@ -1203,7 +1203,9 @@ export default function App() {
  const [tela, setTela] = useState(S.HOME);
  // Sexta da Vitória — fica no App, e não na Hoje: ao compartilhar no Mural o
  // app vai para a aba Mural e a Hoje sai da tela, levando a Sexta junto.
- const [sexta, setSexta] = useState(null); // { frase, tags, t, semana }
+ const [sexta, setSexta] = useState(null); // { frase, tags, t, semana, extra } — extra: textos do post (marco, retrospectiva)
+ const [marco, setMarco] = useState(null); // nº de hábitos marcados que acabou de virar marco (Clube)
+ const [retroAberta, setRetroAberta] = useState(false); // retrospectiva do mês anterior (Clube)
  // ── Transicao entre abas ────────────────────────────────────────────────
  // Cada tela guarda onde a aluna parou de rolar; ao voltar para uma das 5
  // abas, ela continua dali. Tela que nao e aba (Roda, Kit, Escritas...)
@@ -1443,6 +1445,15 @@ export default function App() {
   // ── Ações Jornada v2 ────────────────────────────────────────────────────────
  const _colMeta = { movimento: "mov", sono: "sono", tempo: "tsi" };
  const registrarHabito = async (habId, dataStr, dif = null) => {
+    // Marcos do Clube (03/11): 10, 30, 50, 100… hábitos marcados. Aparece uma
+    // vez só por marco (guardado no celular).
+ if (modoClubeRef.current && !regs[dataStr]?.[habId]) {
+ const total = Object.values(regs).reduce((n, d) => n + Object.keys(d || {}).length, 0) + 1;
+ if (MARCOS.includes(total)) {
+ let ja = false; try { ja = localStorage.getItem(`auge_marco_${total}`) === "1"; } catch {}
+ if (!ja) { try { localStorage.setItem(`auge_marco_${total}`, "1"); } catch {} setTimeout(() => setMarco(total), 900); }
+      }
+    }
  setRegs((r) => ({ ...r, [dataStr]: { ...(r[dataStr] || {}), [habId]: { dif } } }));
  const { data: { session } } = await supabase.auth.getSession();
  if (!session?.user) return;
@@ -2598,6 +2609,8 @@ export default function App() {
 
  const ctx = {
  modoClube,
+ abrirRetro: () => setRetroAberta(true),
+ vit,
  // 7 dias grátis: as aulas aparecem com cadeado (decisão da Vitória, 02/11)
  aulasTrancadas: modoClube && (clubeStatus === "teste" || previaTeste()),
  grupoClube,
@@ -2948,6 +2961,7 @@ export default function App() {
       </div>
       {sexta && (
         <SextaDaVitoria
+ {...(sexta.extra || {})}
  C={C}
  Button={Button}
  t={sexta.t}
@@ -2960,6 +2974,17 @@ export default function App() {
  tk={tk}
  onFechar={() => setSexta(null)}
         />
+      )}
+      {marco && !sexta && (
+        <MarcoAlcancado n={marco} onFechar={() => setMarco(null)}
+ onPost={() => { const n = marco; setMarco(null); setSexta({ frase: `${n} hábitos marcados, um de cada vez.`, tags: [], t: 1, semana: null,
+ extra: { rotulo: "MARCO NO CLUBE", cabecalho: "Seu marco merece ser visto", rotuloTela: "MARCO", textoCompartilhar: `${n} hábitos marcados no Clube do Auge`, notaFrase: "Só muda o post." } }); }} />
+      )}
+      {retroAberta && !sexta && (
+        <Retrospectiva regs={regs} habsPessoais={habsPessoais} vit={vit} onFechar={() => setRetroAberta(false)}
+ onPost={(d) => { setRetroAberta(false); setSexta({ frase: d.frase, tags: d.tags, t: d.t, semana: null,
+ extra: { rotulo: `MEU ${d.nomeMes.toUpperCase()}`, tituloPost: "Um mês de cuidado comigo", cabecalho: "Seu mês merece ser visto", rotuloTela: "RETROSPECTIVA",
+ textoCompartilhar: `Meu ${d.nomeMes} no Clube do Auge`, rotuloTags: "Mostrar meus hábitos do mês no post", notaFrase: "Só muda o post." } }); }} />
       )}
       {primAcessoEf && perfil !== "admin" && perfil !== "pendente" && (
         <PrimeiroAcesso
@@ -11942,6 +11967,110 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
   );
 }
 
+// ─── Marcos e retrospectiva do mês (Clube, 03/11) ───────────────────────────────
+const MARCOS = [10, 30, 50, 100, 200, 365, 500];
+
+function MarcoAlcancado({ n, onPost, onFechar }) {
+ return (
+    <div role="dialog" aria-modal="true" aria-label={`${n} hábitos marcados`} onClick={onFechar}
+ style={{ position: "absolute", inset: 0, zIndex: 450, background: "rgba(31,26,23,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 18px 40px" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: C.creme, borderRadius: 24, padding: "22px 20px 16px", textAlign: "center", fontFamily: FB, boxShadow: "0 8px 30px rgba(31,26,23,.18)" }}>
+        {/* a mesma montanha da Hoje, com a luz no topo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><CumeMini t={1} de={0.6} largura={240} altura={110} /></div>
+        <div style={{ fontSize: 60, fontWeight: 800, color: C.oliva, lineHeight: 1 }}>{n}</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: C.obs, margin: "10px 0 6px" }}>{n} hábitos marcados</div>
+        <div style={{ fontSize: 17, color: C.terra, lineHeight: 1.5 }}>Um de cada vez, você já cuidou de você {n} vezes. Isso é método, não sorte.</div>
+        <button onClick={onPost} style={{ width: "100%", minHeight: 52, marginTop: 18, border: "none", borderRadius: 14, background: C.primary, color: "#FFFFFF", fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>Criar post para o Instagram</button>
+        <button onClick={onFechar} style={{ width: "100%", minHeight: 48, marginTop: 4, border: "none", background: "none", color: C.terra, fontFamily: FB, fontSize: 16, cursor: "pointer" }}>Continuar</button>
+      </div>
+    </div>
+  );
+}
+
+// Mês anterior ao de hoje: { ini: "YYYY-MM", nome: "outubro", dias }
+function mesAnterior(hoje = TODAY) {
+ const [a, m] = hoje.split("-").map(Number);
+ const d = new Date(a, m - 2, 1);
+ return { ini: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, nome: d.toLocaleString("pt-BR", { month: "long" }), dias: new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() };
+}
+
+function Retrospectiva({ regs, habsPessoais = [], vit = [], onPost, onFechar }) {
+ const mes = mesAnterior();
+ const datas = Object.keys(regs).filter((d) => d.startsWith(mes.ini));
+ const diasCom = datas.filter((d) => Object.keys(regs[d] || {}).length > 0).length;
+ const marcacoes = datas.reduce((n, d) => n + Object.keys(regs[d] || {}).length, 0);
+ const vitMes = vit.filter((v) => String(v.data || "").startsWith(mes.ini));
+ const vitoria = vitMes.length ? vitMes[vitMes.length - 1].texto : "";
+ const habs = [
+    ...HABS_FIXOS.map((h) => ({ id: h.id, nome: h.nome })),
+    ...habsPessoais.filter((hp) => hp.ativo !== false).map((hp) => ({ id: hp.id, nome: hp.nome })),
+  ].map((h, i) => ({ ...h, cor: CORES_HAB_CLUBE[i % CORES_HAB_CLUBE.length], n: datas.filter((d) => regs[d]?.[h.id]).length }));
+ const t = Math.min(1, diasCom / mes.dias);
+ const Mes = mes.nome.charAt(0).toUpperCase() + mes.nome.slice(1);
+ const Kpi = ({ v, r }) => (
+    <div style={{ flex: 1, background: C.linho, borderRadius: 14, padding: "10px 6px", textAlign: "center" }}>
+      <div style={{ fontSize: 24, fontWeight: 700, color: C.obs }}>{v}</div>
+      <div style={{ fontSize: 13, color: C.lt }}>{r}</div>
+    </div>
+  );
+ return (
+    <div role="dialog" aria-label={`Retrospectiva de ${mes.nome}`} style={{ position: "absolute", inset: 0, zIndex: 400, background: C.creme, overflowY: "auto", fontFamily: FB }}>
+      <div style={{ padding: "16px 18px calc(28px + env(safe-area-inset-bottom))", maxWidth: 520, margin: "0 auto" }}>
+        <button onClick={onFechar} style={{ background: "none", border: "none", padding: "6px 0", fontFamily: FB, fontSize: 17, color: C.primary, cursor: "pointer" }}>‹ Voltar</button>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: C.ouroTxt, marginTop: 6 }}>SUA RETROSPECTIVA</div>
+        <h1 style={{ margin: "2px 0 0", fontSize: 30, fontWeight: 700, color: C.obs }}>{Mes}</h1>
+        <div style={{ fontSize: 16, color: C.lt, marginBottom: 14 }}>Um mês de cuidado com você</div>
+        <div style={{ borderRadius: 18, overflow: "hidden", marginBottom: 14 }}><CumeMini t={t} de={0} largura={520} altura={130} /></div>
+        <div style={{ background: C.branco, border: `1px solid ${C.line}`, borderRadius: 20, padding: 16, marginBottom: 14 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Kpi v={diasCom} r={diasCom === 1 ? "dia com hábito" : "dias com hábito"} />
+            <Kpi v={marcacoes} r="marcações" />
+            <Kpi v={vitMes.length} r={vitMes.length === 1 ? "sexta" : "sextas"} />
+          </div>
+          {habs.map((h) => (
+            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
+              <span style={{ width: 112, fontSize: 15, color: C.obs, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.nome}</span>
+              <span style={{ flex: 1, height: 12, borderRadius: 6, background: "#F1EBE2", position: "relative", overflow: "hidden" }}>
+                <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.round((h.n / mes.dias) * 100)}%`, background: h.cor, borderRadius: 6 }} />
+              </span>
+              <span style={{ width: 40, textAlign: "right", fontSize: 15, fontWeight: 600, color: C.obs }}>{h.n}x</span>
+            </div>
+          ))}
+        </div>
+        {vitoria && (
+          <div style={{ background: C.branco, border: `1px solid ${C.line}`, borderRadius: 20, padding: 16, marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", color: C.ouroTxt }}>SUA VITÓRIA DO MÊS</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: C.obs, lineHeight: 1.4, marginTop: 6 }}>"{vitoria}"</div>
+          </div>
+        )}
+        <button onClick={() => onPost({ nomeMes: mes.nome, t, frase: vitoria || `${diasCom} dias cuidando de mim em ${mes.nome}.`, tags: habs.filter((h) => h.n > 0).map((h) => ({ nome: h.nome, n: h.n })) })}
+ style={{ width: "100%", minHeight: 52, border: "none", borderRadius: 14, background: C.primary, color: "#FFFFFF", fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>Criar post do meu mês</button>
+      </div>
+    </div>
+  );
+}
+
+// Convite da retrospectiva no topo de Dicas: do dia 1 ao 7, até ela abrir
+function ConviteRetro({ regs, onAbrir }) {
+ const mes = mesAnterior();
+ const chave = `auge_retro_${mes.ini}`;
+ const [visto, setVisto] = useState(() => { try { return localStorage.getItem(chave) === "1"; } catch { return false; } });
+ const dia = Number(TODAY.slice(8, 10));
+ const diasCom = Object.keys(regs).filter((d) => d.startsWith(mes.ini) && Object.keys(regs[d] || {}).length > 0).length;
+ if (visto || dia > 7 || diasCom === 0) return null;
+ const abrir = () => { try { localStorage.setItem(chave, "1"); } catch {} setVisto(true); onAbrir(); };
+ return (
+    <button onClick={abrir} style={{ display: "flex", alignItems: "center", gap: 12, width: "calc(100% - 40px)", margin: "0 20px 14px", background: C.blushBg, border: "none", borderRadius: 18, padding: "14px 16px", cursor: "pointer", textAlign: "left", fontFamily: FB }}>
+      <span aria-hidden="true" style={{ width: 44, height: 44, borderRadius: 22, background: C.primary, color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 17, flexShrink: 0 }}>{diasCom}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 17, fontWeight: 700, color: C.obs }}>O seu {mes.nome} chegou</span>
+        <span style={{ display: "block", fontSize: 15, color: C.terra }}>Veja tudo o que você fez no mês</span>
+      </span>
+      <span aria-hidden="true" style={{ fontSize: 20, color: C.primary }}>›</span>
+    </button>
+  );
+}
+
 // ─── Primeiros passos nos 7 dias grátis (Clube, 03/11) ────────────────────────
 // A aluna em teste entra sem saber o que experimentar — e é nesses dias que
 // ela decide se assina. Quatro passos curtos, cada um com um toque para
@@ -12009,7 +12138,7 @@ function FaixaHoje({ regs, habsPessoais = [], registrarHabito, desregistrarHabit
   );
 }
 
-function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais = [], registrarHabito, desregistrarHabito, ir, anc = "", setEscT, grupoClube = "", perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
+function Conteudo({ modoClube, abrirRetro, aulasTrancadas = false, regs = {}, habsPessoais = [], registrarHabito, desregistrarHabito, ir, anc = "", setEscT, grupoClube = "", perfil, videos: videosDB, sem, guias, authUserId, usuario, minhaFoto }) {
  const [videoAberto, setVideoAberto] = useState(null); // vídeo tocando dentro do app
  // Tela acesa enquanto a página do vídeo está aberta. Numa meditação a aluna
  // fica de olhos fechados, sem tocar no celular: depois de 30 s a 1 min o
@@ -12167,6 +12296,8 @@ function Conteudo({ modoClube, aulasTrancadas = false, regs = {}, habsPessoais =
             </div>
           </div>
         )}
+        {/* Do dia 1 ao 7: convite para a retrospectiva do mês que passou */}
+        {modoClube && abrirRetro && <ConviteRetro regs={regs} onAbrir={abrirRetro} />}
         {/* 7 dias grátis: roteiro curto do que experimentar */}
         {aulasTrancadas && (() => {
  const linkGrupo = /^https?:\/\//i.test((grupoClube || "").trim()) ? grupoClube.trim() : null;
