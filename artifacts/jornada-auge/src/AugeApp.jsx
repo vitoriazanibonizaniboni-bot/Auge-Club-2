@@ -12223,11 +12223,14 @@ function Conteudo({ modoClube, abrirRetro, aulasTrancadas = false, regs = {}, ha
  criado: v.created_at || "",
  ordem: v.ordem ?? 0,
   });
+ // Onde aparece (migração 025): "clube" só no Clube, "jornada" só na Jornada,
+ // vazio nos dois. A mentora vê tudo. O banco também corta.
+ const doMeuApp = (v) => perfil === "admin" || !v.publico || v.publico === (modoClube ? "clube" : "jornada");
  const secoes = CATS
     .map((cat) => ({
  cat,
  itens: videosDB?.length
-        ? videosDB.filter((v) => (CAT_LEGADO[cat.id] || [cat.id]).includes(v.categoria)).map(mapearVideo)
+        ? videosDB.filter((v) => doMeuApp(v) && (CAT_LEGADO[cat.id] || [cat.id]).includes(v.categoria)).map(mapearVideo)
         : (VIDS[cat.id] || []),
     }))
     .filter((s) => s.itens.length > 0);
@@ -12597,7 +12600,7 @@ function PainelMentora({ ir }) {
       .then(({ data }) => { if (vivo) { setVideos(data || []); setLoadingV(false); } }, () => { if (vivo) setLoadingV(false); });
  return () => { vivo = false; };
   }, []);
- const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "aulas", duracao: "30 min", descricao: "", turma_id: "" });
+ const [formV, setFormV] = useState({ titulo: "", url: "", categoria: "aulas", duracao: "30 min", descricao: "", turma_id: "", publico: "" });
  const [salvandoV, setSalvandoV] = useState(false);
  const [mostrarForm, setMostrarForm] = useState(false);
  const [upIndicMsg, setUpIndicMsg] = useState(""); // status do upload de HTML da indicacao
@@ -12953,6 +12956,8 @@ function PainelMentora({ ir }) {
  duracao: formV.duracao.trim() || "30 min",
  descricao: formV.descricao.trim(),
  turma_id: formV.turma_id || null,
+ // onde aparece (migração 025): vazio = Clube e Jornada; só vai no envio quando escolhido
+ ...(formV.publico ? { publico: formV.publico } : {}),
  ativo: true,
  ordem: videos.length + 1,
  plano_minimo: "comunidade",
@@ -12961,7 +12966,7 @@ function PainelMentora({ ir }) {
  setVideos((v) => [data, ...v]);
  // Conteúdo para todas: oferece preparar o aviso (a mentora revisa e envia)
  if (!data.turma_id) setNovoParaAvisar(data);
- setFormV({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "", turma_id: "" });
+ setFormV({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "", turma_id: "", publico: "" });
  setUpIndicMsg("");
  setMostrarForm(false);
     }
@@ -12985,6 +12990,12 @@ function PainelMentora({ ir }) {
  setEditV(null);
     }
  setSalvandoEdV(false);
+  };
+ const trocarPublicoVideo = async (id, publico) => {
+ const antes = videos;
+ setVideos((v) => v.map((x) => (x.id === id ? { ...x, publico: publico || null } : x)));
+ const { error } = await supabase.from("videos").update({ publico: publico || null }).eq("id", id);
+ if (error) { setVideos(antes); tk("Não deu para salvar. A migração 025 já foi rodada?"); }
   };
  const trocarTurmaVideo = async (id, turmaId) => {
  const antes = videos;
@@ -13115,6 +13126,21 @@ function PainelMentora({ ir }) {
                     Gravação de encontro é de uma turma só. Meditação, yoga, indicação e podcast normalmente ficam em "Todas as turmas".
                   </div>
                 </div>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 5 }}>Onde aparece</div>
+                  <select
+                    value={formV.publico}
+                    onChange={(e) => setFormV((f) => ({ ...f, publico: e.target.value }))}
+                    style={{ width: "100%", background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 8, padding: "7px 8px", fontFamily: FB, fontWeight: 400, fontSize: 15, color: C.obs, cursor: "pointer" }}
+                  >
+                    <option value="">Clube e Jornada</option>
+                    <option value="clube">Só no Clube</option>
+                    <option value="jornada">Só na Jornada</option>
+                  </select>
+                  <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 5, lineHeight: 1.45 }}>
+                    Sem escolha, aparece para as duas, como sempre.
+                  </div>
+                </div>
                 <BtnPill onClick={adicionarVideo} style={{ opacity: formV.titulo && formV.url ? 1 : 0.4, fontSize: 16 }}>
                   {salvandoV ? "Salvando..." : (formV.categoria === "podcast" ? "Salvar podcast" : formV.categoria === "curadoria" ? "Salvar indicação" : "Salvar vídeo")}
                 </BtnPill>
@@ -13166,6 +13192,16 @@ function PainelMentora({ ir }) {
                     {turmas.map((t) => (
                       <option key={t.id} value={t.id}>Só a {t.nome}</option>
                     ))}
+                  </select>
+                  <select
+                    value={v.publico || ""}
+                    onChange={(e) => trocarPublicoVideo(v.id, e.target.value)}
+                    aria-label="Onde aparece"
+                    style={{ display: "block", marginTop: 6, background: "transparent", border: `1px solid ${C.ouro}44`, borderRadius: 7, padding: "4px 6px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.obs2, cursor: "pointer", maxWidth: "100%" }}
+                  >
+                    <option value="">Clube e Jornada</option>
+                    <option value="clube">Só no Clube</option>
+                    <option value="jornada">Só na Jornada</option>
                   </select>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
