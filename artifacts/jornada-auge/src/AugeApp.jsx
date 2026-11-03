@@ -2470,6 +2470,10 @@ export default function App() {
  if (param === "home") {
  ir(S.HOME);
     }
+ // aviso de conteúdo novo (03/11): abre Dicas (Clube) / Conteúdo (Jornada)
+ if (param === "dicas") {
+ ir(S.CT);
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── OneSignal nativo (apps das lojas) — no-op no navegador
@@ -12562,6 +12566,20 @@ function PainelMentora({ ir }) {
  const [pushQuando, setPushQuando] = useState("");
  const [pushLoad, setPushLoad] = useState(false);
  const [pushStatus, setPushStatus] = useState(null);
+ const [pushUrl, setPushUrl] = useState(null); // aviso de conteúdo novo abre direto em Dicas/Conteúdo
+ // Conteúdo novo (análise de UX, 03/11): depois de cadastrar, a mentora pode
+ // preparar um aviso. Nada é enviado sozinho: o texto vai para a aba Avisos,
+ // onde ela revisa e toca em enviar.
+ const [novoParaAvisar, setNovoParaAvisar] = useState(null);
+ const prepararAvisoConteudo = (v) => {
+ const tipo = { aulas: "Aula nova", meditacoes: "Meditação nova", yoga: "Aula de yoga nova", podcast: "Episódio novo", curadoria: "Indicação nova" }[v.categoria] || "Conteúdo novo";
+ setPushTit("Novidade no app");
+ setPushMsg(`${tipo}: ${v.titulo}. Já está esperando por você.`);
+ setPushUrl("/?open=dicas");
+ setPushModo("agora"); setPushStatus(null);
+ setNovoParaAvisar(null);
+ setAba("avisos");
+  };
  const enviarPush = async () => {
  if (!pushMsg.trim()) { setPushStatus({ ok: false, txt: "Escreva a mensagem." }); return; }
  let sendAt = null;
@@ -12577,12 +12595,12 @@ function PainelMentora({ ir }) {
  const r = await fetch(`${import.meta.env.BASE_URL}api/push`, {
  method: "POST",
  headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ title: pushTit.trim() || "Clube do Auge", message: pushMsg.trim(), sendAt, token: session?.access_token }),
+ body: JSON.stringify({ title: pushTit.trim() || "Clube do Auge", message: pushMsg.trim(), sendAt, url: pushUrl, token: session?.access_token }),
       });
  const d = await r.json().catch(() => ({}));
  if (r.ok && d.ok) {
  setPushStatus({ ok: true, txt: sendAt ? "Notificação agendada para todas as alunas!" : "Notificação enviada para todas as alunas!" });
- setPushMsg(""); setPushQuando("");
+ setPushMsg(""); setPushQuando(""); setPushUrl(null);
       } else {
  setPushStatus({ ok: false, txt: d.error || "Não consegui enviar agora." });
       }
@@ -12763,6 +12781,8 @@ function PainelMentora({ ir }) {
     }).select().single();
  if (!error && data) {
  setVideos((v) => [data, ...v]);
+ // Conteúdo para todas: oferece preparar o aviso (a mentora revisa e envia)
+ if (!data.turma_id) setNovoParaAvisar(data);
  setFormV({ titulo: "", url: "", categoria: "yoga", duracao: "30 min", descricao: "", turma_id: "" });
  setUpIndicMsg("");
  setMostrarForm(false);
@@ -12836,6 +12856,17 @@ function PainelMentora({ ir }) {
               </button>
             </div>
 
+            {/* Acabou de cadastrar: oferece o aviso de conteúdo novo */}
+            {novoParaAvisar && !mostrarForm && (
+              <div style={{ background: C.blushBg, borderRadius: 12, padding: "14px 15px", marginBottom: 20 }}>
+                <div style={{ fontFamily: FB, fontSize: 15, fontWeight: 600, color: C.obs, marginBottom: 4 }}>Publicado: {novoParaAvisar.titulo}</div>
+                <div style={{ fontFamily: FB, fontSize: 14, color: C.terra, lineHeight: 1.5, marginBottom: 10 }}>Quer avisar as alunas? O texto fica pronto na aba Avisos para você revisar antes de enviar.</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => prepararAvisoConteudo(novoParaAvisar)} style={{ background: C.ouro, border: "none", borderRadius: 50, padding: "8px 16px", fontFamily: FB, fontWeight: 500, fontSize: 14, color: C.obs, cursor: "pointer" }}>Preparar aviso</button>
+                  <button onClick={() => setNovoParaAvisar(null)} style={{ background: "none", border: "none", padding: "8px 6px", fontFamily: FB, fontSize: 14, color: C.terra, cursor: "pointer", textDecoration: "underline" }}>Agora não</button>
+                </div>
+              </div>
+            )}
             {/* Formulário de novo vídeo */}
             {mostrarForm && (
               <div style={{ background: alfa(C.obs, .04), border: `1px solid ${C.ouro}18`, borderRadius: 12, padding: "16px 14px", marginBottom: 20, animation: "fadeUp .25s ease" }}>

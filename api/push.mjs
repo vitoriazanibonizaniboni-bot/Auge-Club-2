@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { title, message, sendAt, token } = req.body || {};
+  const { title, message, sendAt, token, url } = req.body || {};
   if (!message || typeof message !== "string" || !message.trim()) {
     res.status(400).json({ error: "Escreva a mensagem." });
     return;
@@ -76,6 +76,8 @@ export default async function handler(req, res) {
     contents: { en: corpo, pt: corpo },
   };
   if (sendAt) base.send_after = sendAt; // ISO 8601 (UTC) — agendamento
+  // Endereço que a notificação abre: só caminhos do próprio app (ex.: "/?open=dicas")
+  if (typeof url === "string" && /^\/\?open=[a-z-]+$/.test(url)) base.url = `https://auge-club-2.vercel.app${url}`;
 
   // Tenta os nomes de segmento possiveis (contas novas usam "Total Subscriptions")
   const SEGMENTOS = [["Total Subscriptions"], ["Subscribed Users"], ["Active Subscriptions"]];
