@@ -354,14 +354,42 @@ export const ROTULO_ABA = { trajetoria: "Como usar a Trajetória", mural: "Como 
 export const CHAVE_TOUR_CLUBE = "auge_tour_clube";
 const CORES = ["#A3B07E", "#B4A2D6", "#E2BE85"];
 
+// As ilustrações do Clube se mexem (pedido da Vitória, 04/11): cada uma mostra
+// o gesto que explica, em loop calmo. Com "reduzir movimento" ligado no
+// celular, aparecem paradas no estado final.
+const ANIM_CLUBE = `
+@keyframes augeCSobe{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes augeCToque{0%{opacity:0;transform:scale(1.6)}30%{opacity:.9;transform:scale(1)}60%{opacity:0;transform:scale(.85)}100%{opacity:0}}
+@keyframes augeCBrilho{0%,100%{box-shadow:0 0 0 0 rgba(181,86,60,0)}50%{box-shadow:0 0 0 6px rgba(181,86,60,.22)}}
+@keyframes augeCCursor{0%,49%{opacity:1}50%,100%{opacity:0}}
+`;
+
+// relógio simples: devolve um passo 0..n-1 que avança a cada `ms`
+function useCiclo(n, ms) {
+  const parado = reduzMovimento();
+  const [i, setI] = useState(parado ? n - 1 : 0);
+  useEffect(() => {
+    if (parado) return;
+    const t = setInterval(() => setI((x) => (x + 1) % n), ms);
+    return () => clearInterval(t);
+  }, [n, ms, parado]);
+  return i;
+}
+
 function IlustraDicas() {
   const itens = [["Meditação", "Respirar antes de dormir", "#6E5A8A"], ["Aula", "Movimento depois dos 40", "#B5563C"], ["Podcast", "Sono e hormônios", "#5E6340"]];
+  const parado = reduzMovimento();
   return (
     <Ilustracao fundo="#F4EDE3" padding={16}>
+      <style>{ANIM_CLUBE}</style>
       <div style={{ display: "grid", gap: 10, width: "92%", maxWidth: 300 }}>
         {itens.map(([tipo, titulo, cor], i) => (
-          <div key={titulo} style={{ display: "flex", alignItems: "center", gap: 12, background: "#FFFFFF", borderRadius: 14, padding: 10, fontFamily: FONTE, boxShadow: i === 0 ? ANEL : "0 2px 8px rgba(31,26,23,.06)" }}>
-            <span style={{ width: 46, height: 46, borderRadius: 10, background: cor, flexShrink: 0 }} />
+          <div key={titulo} style={{ display: "flex", alignItems: "center", gap: 12, background: "#FFFFFF", borderRadius: 14, padding: 10, fontFamily: FONTE,
+                                     boxShadow: "0 2px 8px rgba(31,26,23,.06)",
+                                     animation: parado ? "none" : `augeCSobe .5s ${0.15 + i * 0.25}s ease-out both${i === 0 ? ", augeCBrilho 2.4s 1.2s ease-in-out infinite" : ""}` }}>
+            <span style={{ width: 46, height: 46, borderRadius: 10, background: cor, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+            </span>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: T.inkSoft }}>{tipo}</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>{titulo}</div>
@@ -374,20 +402,31 @@ function IlustraDicas() {
 }
 
 function IlustraFaixa() {
-  const habs = [["Movimento", true], ["Sono", false], ["Leitura", false]];
+  // 0: nada · 1: toque no Movimento · 2: Movimento feito · 3: toque no Sono · 4–5: os dois feitos
+  const f = useCiclo(6, 900);
+  const feito = [f >= 2, f >= 4];
+  const toque = f === 1 ? 0 : f === 3 ? 1 : -1;
+  const habs = ["Movimento", "Sono", "Leitura"];
+  const n = feito.filter(Boolean).length;
   return (
     <Ilustracao fundo="#F2E4DC">
+      <style>{ANIM_CLUBE}</style>
       <Cartao>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Seus hábitos hoje</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Seus hábitos hoje <span style={{ fontWeight: 400, color: T.inkSoft }}>· {n} de 3</span></div>
         <div style={{ display: "grid", gap: 8 }}>
-          {habs.map(([n, feito], i) => (
-            <div key={n} style={{ display: "flex", alignItems: "center", gap: 12, height: 46, borderRadius: 12, border: `1.5px solid ${feito ? T.olive : "#8A7A6D"}`, background: feito ? T.olive : "#FFFFFF", padding: "0 12px", boxShadow: i === 0 ? ANEL : "none" }}>
-              <span style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${feito ? "#FFFFFF" : "#8A7A6D"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {feito && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
-              </span>
-              <span style={{ fontSize: 16, fontWeight: 600, color: feito ? "#FFFFFF" : T.ink }}>{n}</span>
-            </div>
-          ))}
+          {habs.map((nome, i) => {
+            const ok = !!feito[i];
+            return (
+              <div key={nome} style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, height: 46, borderRadius: 12, border: `1.5px solid ${ok ? T.olive : "#8A7A6D"}`,
+                                       background: ok ? T.olive : "#FFFFFF", padding: "0 12px", transition: "background .3s, border-color .3s" }}>
+                <span style={{ position: "relative", width: 24, height: 24, borderRadius: 12, border: `2px solid ${ok ? "#FFFFFF" : "#8A7A6D"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color .3s" }}>
+                  {ok && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
+                  {toque === i && <span key={f} style={{ position: "absolute", width: 40, height: 40, borderRadius: 20, background: "rgba(181,86,60,.35)", animation: "augeCToque .9s ease-out both" }} />}
+                </span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: ok ? "#FFFFFF" : T.ink, transition: "color .3s" }}>{nome}</span>
+              </div>
+            );
+          })}
         </div>
       </Cartao>
     </Ilustracao>
@@ -395,22 +434,34 @@ function IlustraFaixa() {
 }
 
 function IlustraEditar() {
+  // apaga "Movimento" e escreve "Caminhada", letra por letra
+  const DE = "Movimento", PARA = "Caminhada";
+  const quadros = [...Array(6).fill(DE), ...Array.from({ length: DE.length }, (_, k) => DE.slice(0, DE.length - 1 - k)),
+                   ...Array.from({ length: PARA.length }, (_, k) => PARA.slice(0, k + 1)), ...Array(10).fill(PARA)];
+  const f = useCiclo(quadros.length, 130);
+  const texto = quadros[f];
+  const pronto = texto === PARA && f >= quadros.length - 10;
   return (
     <Ilustracao fundo="#EEF0E4">
+      <style>{ANIM_CLUBE}</style>
       <Cartao>
         <div style={{ fontSize: 15, fontWeight: 600, color: T.inkSoft }}>Nome do hábito</div>
-        <div style={{ marginTop: 6, height: 46, borderRadius: 12, border: `1.5px solid ${T.primary}`, boxShadow: ANEL, display: "flex", alignItems: "center", padding: "0 12px", fontSize: 17, color: T.ink }}>Caminhada</div>
+        <div style={{ marginTop: 6, height: 46, borderRadius: 12, border: `1.5px solid ${T.primary}`, boxShadow: ANEL, display: "flex", alignItems: "center", padding: "0 12px", fontSize: 17, color: T.ink }}>
+          {texto}<span style={{ width: 2, height: 22, background: T.primary, marginLeft: 1, animation: reduzMovimento() ? "none" : "augeCCursor 1s steps(1) infinite" }} />
+        </div>
         <div style={{ marginTop: 14, fontSize: 15, fontWeight: 600, color: T.primary, textDecoration: "underline", textUnderlineOffset: 3 }}>Tirar este hábito da lista</div>
-        <div style={{ marginTop: 12, height: 44, borderRadius: 12, border: `1.5px dashed ${T.primary}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: T.primary }}>+ Criar um hábito meu</div>
+        <div style={{ marginTop: 12, height: 44, borderRadius: 12, border: `1.5px dashed ${T.primary}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: T.primary,
+                      background: pronto ? "#F2E4DC" : "transparent", transition: "background .4s" }}>+ Criar um hábito meu</div>
       </Cartao>
     </Ilustracao>
   );
 }
 
 function IlustraCalendario() {
-  // 3 semanas de exemplo: quem fez o quê em cada dia
+  // 2 semanas de exemplo; os riscos aparecem dia a dia
   const feito = [[1, 1, 0], [0, 1, 1], [1, 1, 0], [0, 1, 0], [1, 1, 1], [0, 0, 1], [1, 1, 0],
                  [0, 1, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1], [0, 1, 0], [1, 1, 0], [0, 1, 1]];
+  const f = useCiclo(feito.length + 8, 260); // 8 quadros parados no fim antes de recomeçar
   return (
     <Ilustracao fundo="#F4EDE3">
       <Cartao estilo={{ padding: "14px 12px" }}>
@@ -418,9 +469,14 @@ function IlustraCalendario() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "10px 6px" }}>
           {feito.map((d, i) => (
             <div key={i} style={{ display: "grid", gap: 3 }}>
-              <span style={{ fontSize: 13, color: T.inkSoft, textAlign: "center" }}>{i + 1}</span>
-              {d.map((f, h) => <span key={h} style={{ height: 5, borderRadius: 3, background: f ? CORES[h] : "#F1EBE2" }} />)}
+              <span style={{ fontSize: 13, color: i === Math.min(f, feito.length - 1) && f < feito.length ? T.ink : T.inkSoft, fontWeight: i === f ? 700 : 400, textAlign: "center" }}>{i + 1}</span>
+              {d.map((x, h) => <span key={h} style={{ height: 5, borderRadius: 3, background: x && i <= f ? CORES[h] : "#F1EBE2", transition: "background .3s" }} />)}
             </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12, fontSize: 13, color: T.inkSoft }}>
+          {["Movimento", "Sono", "Leitura"].map((n, h) => (
+            <span key={n} style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 14, height: 5, borderRadius: 3, background: CORES[h] }} />{n}</span>
           ))}
         </div>
       </Cartao>
