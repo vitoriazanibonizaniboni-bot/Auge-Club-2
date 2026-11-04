@@ -74,6 +74,9 @@ function IlustraMinimo() {
 export function PassoAPasso({ antiga = false, onFechar, passos = null, rotulo = "Como funciona o app" }) {
   const [passo, setPasso] = useState(0);
   const [dir, setDir] = useState(1);
+  // passo com ação própria no botão grande (ex.: ligar lembretes): o que aconteceu
+  const [resultado, setResultado] = useState(null);
+  const [agindo, setAgindo] = useState(false);
   const tituloRef = useRef(null);
   const toque = useRef(null);
   const PASSOS = passos || [
@@ -125,9 +128,27 @@ export function PassoAPasso({ antiga = false, onFechar, passos = null, rotulo = 
           <div key={passo} style={{ "--dx": `${24 * dir}px`, animation: reduz ? "none" : "augeTourEntra .25s ease-out" }}>
             {p.ilustra}
             <h2 ref={tituloRef} tabIndex={-1} style={{ margin: "24px 0 10px", fontSize: 28, fontWeight: 700, letterSpacing: "-0.3px", lineHeight: 1.2, color: T.ink, outline: "none" }}>{p.titulo}</h2>
-            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.5, color: T.inkSoft }}>{p.texto}</p>
+            <div style={{ margin: 0, fontSize: 18, lineHeight: 1.5, color: T.inkSoft }}>{typeof p.texto === "function" ? p.texto(resultado) : p.texto}</div>
           </div>
         </div>
+        {p.principal && !(resultado && resultado !== "granted") ? (
+          // Passo com ação: o botão grande faz a ação E fecha; "Agora não" só fecha
+          <div style={{ padding: "12px 20px 8px", flexShrink: 0, background: "#FBF7F1" }}>
+            <button disabled={agindo} onClick={async () => {
+              setAgindo(true);
+              const r = await p.principal.acao();
+              setAgindo(false);
+              if (r === "granted" || r === "unsupported") fechar(); else setResultado(r || "default");
+            }}
+              style={{ width: "100%", minHeight: 56, borderRadius: 16, border: "none", background: T.primary, color: "#FFFFFF", fontFamily: FONTE, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>
+              {agindo ? "Um instante…" : p.principal.rotulo}
+            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              <button onClick={() => ir(passo - 1)} style={{ minHeight: 48, padding: "0 8px", background: "none", border: "none", fontFamily: FONTE, fontSize: 16, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>Voltar</button>
+              <button onClick={fechar} style={{ minHeight: 48, padding: "0 8px", background: "none", border: "none", fontFamily: FONTE, fontSize: 16, fontWeight: 600, color: T.primary, cursor: "pointer" }}>{p.principal.recusar || "Agora não"}</button>
+            </div>
+          </div>
+        ) : (
         <div style={{ display: "flex", gap: 10, padding: "12px 20px 16px", flexShrink: 0, background: "#FBF7F1" }}>
           {passo > 0 && (
             <button onClick={() => ir(passo - 1)}
@@ -140,6 +161,7 @@ export function PassoAPasso({ antiga = false, onFechar, passos = null, rotulo = 
             {ultimo ? "Começar" : "Próximo"}
           </button>
         </div>
+        )}
       </div>
     </div>
   );
@@ -534,28 +556,6 @@ function IlustraLembrete() {
   );
 }
 
-// Botão de verdade dentro do passo: pede a permissão na hora.
-// ativar() devolve "granted" | "denied" | "default" | "unsupported"
-function AtivarLembretes({ status, ativar }) {
-  const [st, setSt] = useState(status);
-  const [pedindo, setPedindo] = useState(false);
-  if (st === "granted") {
-    return <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 14, minHeight: 48, padding: "0 16px", borderRadius: 14, background: T.olive, color: "#FFFFFF", fontSize: 17, fontWeight: 600 }}>✓ Lembretes ligados</span>;
-  }
-  if (st === "denied") {
-    return <span style={{ display: "block", marginTop: 14, padding: "12px 14px", borderRadius: 14, background: "#F2E4DC", color: T.ink, fontSize: 16, lineHeight: 1.5 }}>
-      O celular está bloqueando. Para liberar, abra os {forte("Ajustes")} do celular, toque em {forte("Notificações")} e ligue o {forte("Clube do Auge")}.
-    </span>;
-  }
-  return (
-    <button type="button" disabled={pedindo}
-            onClick={async () => { setPedindo(true); const r = await ativar(); setPedindo(false); setSt(r === "granted" ? "granted" : r === "denied" ? "denied" : st); }}
-            style={{ marginTop: 14, minHeight: 52, padding: "0 22px", borderRadius: 14, border: `1.5px solid ${T.primary}`, background: "#FFFFFF", color: T.primary, fontFamily: FONTE, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>
-      {pedindo ? "Um instante…" : "Ligar lembretes agora"}
-    </button>
-  );
-}
-
 // notif: { status, ativar } — status atual e a função que pede a permissão
 export function passosClube(notif) {
   return [
@@ -586,13 +586,20 @@ export function passosClube(notif) {
     },
     {
       titulo: "Um lembrete gentil",
-      texto: (
+      texto: (res) => (
         <>
           Mensagens curtas e gentis, como um lembrete no fim do dia se ainda faltar algum hábito. Nunca cobrança.
-          {notif?.ativar && <><br /><AtivarLembretes status={notif.status} ativar={notif.ativar} /></>}
+          {notif?.status === "granted" && <><br /><span role="status" style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 14, minHeight: 44, padding: "0 14px", borderRadius: 12, background: T.olive, color: "#FFFFFF", fontSize: 16, fontWeight: 600 }}>✓ Seus lembretes já estão ligados</span></>}
+          {res === "denied" && (
+            <span role="alert" style={{ display: "block", marginTop: 14, padding: "12px 14px", borderRadius: 14, background: "#F2E4DC", color: T.ink, fontSize: 16, lineHeight: 1.5 }}>
+              O celular está bloqueando. Para liberar, abra os {forte("Ajustes")} do celular, toque em {forte("Notificações")} e ligue o {forte("Clube do Auge")}.
+            </span>
+          )}
           <span style={{ display: "block", marginTop: 12, fontSize: 16 }}>Dá para ligar ou desligar quando quiser no seu {forte("Perfil")}.</span>
         </>
       ),
+      // Já ligados: fica o "Começar" de sempre. Senão, o botão grande liga e fecha.
+      principal: notif?.ativar && notif.status !== "granted" ? { rotulo: "Ligar lembretes e começar", acao: notif.ativar } : null,
       ilustra: <IlustraLembrete />,
     },
   ];
