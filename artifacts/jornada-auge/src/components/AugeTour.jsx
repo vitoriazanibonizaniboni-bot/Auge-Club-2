@@ -345,3 +345,119 @@ export const PASSOS_ABA = {
   ],
 };
 export const ROTULO_ABA = { trajetoria: "Como usar a Trajetória", mural: "Como usar o Mural", meumapa: "Como usar o Meu Mapa", conteudo: "Como usar o Conteúdo" };
+
+// ── Passo a passo do Clube (04/11) ───────────────────────────────────────────
+// O do Clube é outro: o app abre em Dicas, não há 12 semanas nem encontro, e
+// os hábitos do método podem ser tirados ou renomeados. Chave própria no
+// celular, para quem veio da Jornada (e já viu o passo a passo dela) também
+// ver este quando passar para o Clube.
+export const CHAVE_TOUR_CLUBE = "auge_tour_clube";
+const CORES = ["#A3B07E", "#B4A2D6", "#E2BE85"];
+
+function IlustraDicas() {
+  const itens = [["Meditação", "Respirar antes de dormir", "#6E5A8A"], ["Aula", "Movimento depois dos 40", "#B5563C"], ["Podcast", "Sono e hormônios", "#5E6340"]];
+  return (
+    <Ilustracao fundo="#F4EDE3" padding={16}>
+      <div style={{ display: "grid", gap: 10, width: "92%", maxWidth: 300 }}>
+        {itens.map(([tipo, titulo, cor], i) => (
+          <div key={titulo} style={{ display: "flex", alignItems: "center", gap: 12, background: "#FFFFFF", borderRadius: 14, padding: 10, fontFamily: FONTE, boxShadow: i === 0 ? ANEL : "0 2px 8px rgba(31,26,23,.06)" }}>
+            <span style={{ width: 46, height: 46, borderRadius: 10, background: cor, flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.inkSoft }}>{tipo}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>{titulo}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Ilustracao>
+  );
+}
+
+function IlustraFaixa() {
+  const habs = [["Movimento", true], ["Sono", false], ["Leitura", false]];
+  return (
+    <Ilustracao fundo="#F2E4DC">
+      <Cartao>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Seus hábitos hoje</div>
+        <div style={{ display: "grid", gap: 8 }}>
+          {habs.map(([n, feito], i) => (
+            <div key={n} style={{ display: "flex", alignItems: "center", gap: 12, height: 46, borderRadius: 12, border: `1.5px solid ${feito ? T.olive : "#8A7A6D"}`, background: feito ? T.olive : "#FFFFFF", padding: "0 12px", boxShadow: i === 0 ? ANEL : "none" }}>
+              <span style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${feito ? "#FFFFFF" : "#8A7A6D"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {feito && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
+              </span>
+              <span style={{ fontSize: 16, fontWeight: 600, color: feito ? "#FFFFFF" : T.ink }}>{n}</span>
+            </div>
+          ))}
+        </div>
+      </Cartao>
+    </Ilustracao>
+  );
+}
+
+function IlustraEditar() {
+  return (
+    <Ilustracao fundo="#EEF0E4">
+      <Cartao>
+        <div style={{ fontSize: 15, fontWeight: 600, color: T.inkSoft }}>Nome do hábito</div>
+        <div style={{ marginTop: 6, height: 46, borderRadius: 12, border: `1.5px solid ${T.primary}`, boxShadow: ANEL, display: "flex", alignItems: "center", padding: "0 12px", fontSize: 17, color: T.ink }}>Caminhada</div>
+        <div style={{ marginTop: 14, fontSize: 15, fontWeight: 600, color: T.primary, textDecoration: "underline", textUnderlineOffset: 3 }}>Tirar este hábito da lista</div>
+        <div style={{ marginTop: 12, height: 44, borderRadius: 12, border: `1.5px dashed ${T.primary}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: T.primary }}>+ Criar um hábito meu</div>
+      </Cartao>
+    </Ilustracao>
+  );
+}
+
+function IlustraCalendario() {
+  // 3 semanas de exemplo: quem fez o quê em cada dia
+  const feito = [[1, 1, 0], [0, 1, 1], [1, 1, 0], [0, 1, 0], [1, 1, 1], [0, 0, 1], [1, 1, 0],
+                 [0, 1, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1], [0, 1, 0], [1, 1, 0], [0, 1, 1]];
+  return (
+    <Ilustracao fundo="#F4EDE3">
+      <Cartao estilo={{ padding: "14px 12px" }}>
+        <div style={{ textAlign: "center", fontSize: 16, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Novembro</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "10px 6px" }}>
+          {feito.map((d, i) => (
+            <div key={i} style={{ display: "grid", gap: 3 }}>
+              <span style={{ fontSize: 13, color: T.inkSoft, textAlign: "center" }}>{i + 1}</span>
+              {d.map((f, h) => <span key={h} style={{ height: 5, borderRadius: 3, background: f ? CORES[h] : "#F1EBE2" }} />)}
+            </div>
+          ))}
+        </div>
+      </Cartao>
+    </Ilustracao>
+  );
+}
+
+export const PASSOS_CLUBE = [
+  {
+    titulo: "Bem-vinda ao Clube",
+    texto: <>Em {forte("Dicas")} chegam aulas, meditações e podcasts novos. O app abre sempre por aqui.</>,
+    ilustra: <IlustraDicas />,
+  },
+  {
+    titulo: "Fez o seu hábito? Um toque.",
+    texto: <>No alto das Dicas ficam os {forte("seus hábitos de hoje")}. Toque no círculo para marcar. Só isso.</>,
+    ilustra: <IlustraFaixa />,
+  },
+  {
+    titulo: "Os hábitos são seus",
+    texto: <>Em {forte("Hoje")}, toque em {forte("Editar")} para mudar o nome e a meta, tirar da lista ou criar um hábito seu.</>,
+    ilustra: <IlustraEditar />,
+  },
+  {
+    titulo: "Veja o seu mês ganhar cor",
+    texto: <>Na {forte("Trajetória")}, cada hábito tem uma cor no calendário. Toque no nome de um hábito para ver só ele.</>,
+    ilustra: <IlustraCalendario />,
+  },
+];
+
+// Meu Mapa no Clube: sem a Carta para o Futuro (ela é só da Jornada)
+PASSOS_ABA.meumapa_clube = [
+  PASSOS_ABA.meumapa[0],
+  {
+    ...PASSOS_ABA.meumapa[1],
+    texto: <>Os seus {forte("mínimos inegociáveis")} e os seus {forte("Porquês")}, para lembrar por que você começou.</>,
+  },
+  PASSOS_ABA.meumapa[2],
+];
+ROTULO_ABA.meumapa_clube = ROTULO_ABA.meumapa;

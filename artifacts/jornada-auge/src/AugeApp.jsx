@@ -7,7 +7,7 @@ import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo }
 import { SextaDaVitoria } from "./components/AugeSexta.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
 import { TituloEntrada, CampoEntrada, BotaoEntrada, LinkEntrada, AvisoEntrada, AceiteEntrada } from "./components/AugeEntrada.jsx";
-import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
+import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, CHAVE_TOUR_CLUBE, PASSOS_CLUBE, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
 import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
 import { Target, UserRound, PenLine, MessageCircle } from "lucide-react";
 
@@ -2792,20 +2792,30 @@ export default function App() {
 
   // Quem já tinha hábito marcado antes desta versão vê "O que mudou no app"
  const DATA_VERSAO_TOUR = "2026-10-01";
+ // Clube (04/11): passo a passo próprio, com chave própria — quem passa da
+ // Jornada para o Clube também vê, mesmo já tendo visto o da Jornada.
+ const chaveTour = modoClube ? CHAVE_TOUR_CLUBE : CHAVE_TOUR;
  useEffect(() => {
- if (!profileLoaded || !authUser || tour || primAcessoEf || lerFlag(CHAVE_TOUR)) return;
+ if (!profileLoaded || !authUser || tour || primAcessoEf || lerFlag(chaveTour)) return;
  if (perfil === "pendente" || perfil === "admin" || !perfil) return;
  const antiga = Object.entries(regs || {}).some(([d, hs]) => d < DATA_VERSAO_TOUR && hs && Object.keys(hs).length > 0);
- setTour({ antiga });
-  }, [profileLoaded, authUser, perfil, primAcessoEf]);
- const fecharTour = () => { gravarFlag(CHAVE_TOUR); setTour(null); setTela(modoClubeRef.current ? S.CT : S.HOME); };
+ setTour({ antiga, clube: modoClube });
+  }, [profileLoaded, authUser, perfil, primAcessoEf, modoClube]);
+ const fecharTour = () => {
+ if (tour?.clube) {
+ gravarFlag(CHAVE_TOUR_CLUBE);
+ // O do Clube já explica Dicas e Trajetória: não repetir ao abrir essas abas
+ gravarFlag("auge_tour_conteudo"); gravarFlag("auge_tour_trajetoria");
+    } else gravarFlag(CHAVE_TOUR);
+ setTour(null); setTela(modoClubeRef.current ? S.CT : S.HOME);
+  };
  // Passo a passo de cada aba: na primeira vez que ela abre a aba (depois do da Hoje)
  const ABA_DO_TOUR = { [S.TRAJ]: "trajetoria", [S.FEED]: "mural", [S.JOR]: "meumapa", [S.CT]: "conteudo" };
  const [tourAba, setTourAba] = useState(null);
  useEffect(() => {
  const aba = ABA_DO_TOUR[tela];
  if (!aba || tour || !authUser || perfil === "admin" || perfil === "pendente") return;
- if (!lerFlag(CHAVE_TOUR) || lerFlag(`auge_tour_${aba}`)) return;
+ if (!lerFlag(chaveTour) || lerFlag(`auge_tour_${aba}`)) return;
  setTourAba(aba);
   }, [tela, tour]);
  const fecharTourAba = () => { gravarFlag(`auge_tour_${tourAba}`); setTourAba(null); };
@@ -3058,8 +3068,8 @@ export default function App() {
  onConcluir={() => { setPrimAcesso(null); setTela(modoClube ? S.CT : S.HOME); }}
         />
       )}
-      {!primAcessoEf && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} />}
-      {!primAcessoEf && !tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
+      {!primAcessoEf && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} {...(tour.clube ? { passos: PASSOS_CLUBE, rotulo: "Como funciona o Clube" } : {})} />}
+      {!primAcessoEf && !tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[modoClube && tourAba === "meumapa" ? "meumapa_clube" : tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
       {!SEM_NAV.includes(tela) && (
         <NavBar
  tela={tela}
