@@ -484,28 +484,119 @@ function IlustraCalendario() {
   );
 }
 
-export const PASSOS_CLUBE = [
-  {
-    titulo: "Bem-vinda ao Clube",
-    texto: <>Em {forte("Dicas")} chegam aulas, meditações e podcasts novos. O app abre sempre por aqui.</>,
-    ilustra: <IlustraDicas />,
-  },
-  {
-    titulo: "Fez o seu hábito? Um toque.",
-    texto: <>No alto das Dicas ficam os {forte("seus hábitos de hoje")}. Toque no círculo para marcar. Só isso.</>,
-    ilustra: <IlustraFaixa />,
-  },
-  {
-    titulo: "Os hábitos são seus",
-    texto: <>Em {forte("Hoje")}, toque em {forte("Editar")} para mudar o nome e a meta, tirar da lista ou criar um hábito seu.</>,
-    ilustra: <IlustraEditar />,
-  },
-  {
-    titulo: "Veja o seu mês ganhar cor",
-    texto: <>Na {forte("Trajetória")}, cada hábito tem uma cor no calendário. Toque no nome de um hábito para ver só ele.</>,
-    ilustra: <IlustraCalendario />,
-  },
-];
+function IlustraMinimoClube() {
+  // 0–2: dia normal (meta cheia) · 3: toque no "Dia difícil?" · 4–7: dia de mínimo
+  const f = useCiclo(8, 900);
+  const minimo = f >= 4;
+  return (
+    <Ilustracao fundo="#EEF0E4" padding={16}>
+      <style>{ANIM_CLUBE}</style>
+      <div style={{ width: "92%", maxWidth: 300, display: "grid", gap: 10, fontFamily: FONTE }}>
+        <div style={{ position: "relative", borderRadius: 16, padding: "12px 14px", background: minimo ? "#FFFFFF" : "#F4EDE3", border: "1px solid #E6DCCF", transition: "background .3s" }}>
+          {minimo
+            ? <div style={{ fontSize: 16, color: T.ink }}><b>Hoje é dia de mínimo.</b> Conta igual.</div>
+            : <div style={{ fontSize: 16, color: T.ink }}><b>Dia difícil?</b> Faça só o mínimo hoje ›</div>}
+          {f === 3 && <span key={f} style={{ position: "absolute", left: "45%", top: "50%", width: 40, height: 40, marginTop: -20, borderRadius: 20, background: "rgba(181,86,60,.35)", animation: "augeCToque .9s ease-out both" }} />}
+        </div>
+        <div style={{ background: "#FFFFFF", borderRadius: 16, padding: "12px 14px", boxShadow: "0 2px 8px rgba(31,26,23,.06)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 17, fontWeight: 600, color: T.ink }}>Movimento</span>
+            {minimo && <span style={{ fontSize: 14, fontWeight: 600, color: "#FFFFFF", background: T.olive, borderRadius: 8, padding: "2px 8px", animation: "augeCSobe .35s ease-out both" }}>mínimo</span>}
+          </div>
+          <div key={minimo ? "m" : "c"} style={{ fontSize: 16, color: T.inkSoft, marginTop: 4, animation: "augeCSobe .35s ease-out both" }}>
+            {minimo ? "10 minutos de caminhada" : "40 minutos de caminhada"}
+          </div>
+        </div>
+      </div>
+    </Ilustracao>
+  );
+}
+
+function IlustraLembrete() {
+  // a notificação desce do alto da tela, fica um pouco e sobe
+  const f = useCiclo(6, 800);
+  const visivel = f >= 1 && f <= 4;
+  return (
+    <Ilustracao fundo="#F2E4DC">
+      <div style={{ position: "relative", width: 210, height: "92%", maxHeight: 260, borderRadius: 30, background: "#2A2420", padding: 8, boxSizing: "border-box" }}>
+        <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 23, overflow: "hidden", background: "linear-gradient(160deg,#D8B79C,#B5563C)" }}>
+          <div style={{ position: "absolute", top: 18, width: "100%", textAlign: "center", fontFamily: FONTE, fontSize: 34, fontWeight: 300, color: "#FFFFFF" }}>19:00</div>
+          <div style={{ position: "absolute", left: 8, right: 8, top: 74, borderRadius: 14, background: "rgba(255,255,255,.94)", padding: "9px 10px", fontFamily: FONTE,
+                        transform: visivel ? "translateY(0)" : "translateY(-90px)", opacity: visivel ? 1 : 0, transition: "transform .45s cubic-bezier(.2,.8,.2,1), opacity .45s" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: T.inkSoft }}>
+              <span style={{ width: 16, height: 16, borderRadius: 4, background: T.primary }} />Clube do Auge
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.35, color: T.ink, marginTop: 4 }}>Seu Movimento ainda não foi hoje. Ainda dá tempo, mesmo que seja o mínimo.</div>
+          </div>
+        </div>
+      </div>
+    </Ilustracao>
+  );
+}
+
+// Botão de verdade dentro do passo: pede a permissão na hora.
+// ativar() devolve "granted" | "denied" | "default" | "unsupported"
+function AtivarLembretes({ status, ativar }) {
+  const [st, setSt] = useState(status);
+  const [pedindo, setPedindo] = useState(false);
+  if (st === "granted") {
+    return <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 14, minHeight: 48, padding: "0 16px", borderRadius: 14, background: T.olive, color: "#FFFFFF", fontSize: 17, fontWeight: 600 }}>✓ Lembretes ligados</span>;
+  }
+  if (st === "denied") {
+    return <span style={{ display: "block", marginTop: 14, padding: "12px 14px", borderRadius: 14, background: "#F2E4DC", color: T.ink, fontSize: 16, lineHeight: 1.5 }}>
+      O celular está bloqueando. Para liberar, abra os {forte("Ajustes")} do celular, toque em {forte("Notificações")} e ligue o {forte("Clube do Auge")}.
+    </span>;
+  }
+  return (
+    <button type="button" disabled={pedindo}
+            onClick={async () => { setPedindo(true); const r = await ativar(); setPedindo(false); setSt(r === "granted" ? "granted" : r === "denied" ? "denied" : st); }}
+            style={{ marginTop: 14, minHeight: 52, padding: "0 22px", borderRadius: 14, border: `1.5px solid ${T.primary}`, background: "#FFFFFF", color: T.primary, fontFamily: FONTE, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>
+      {pedindo ? "Um instante…" : "Ligar lembretes agora"}
+    </button>
+  );
+}
+
+// notif: { status, ativar } — status atual e a função que pede a permissão
+export function passosClube(notif) {
+  return [
+    {
+      titulo: "Bem-vinda ao Clube",
+      texto: <>Em {forte("Dicas")} chegam aulas, meditações e podcasts novos. O app abre sempre por aqui.</>,
+      ilustra: <IlustraDicas />,
+    },
+    {
+      titulo: "Fez o seu hábito? Um toque.",
+      texto: <>No alto das Dicas ficam os {forte("seus hábitos de hoje")}. Toque no círculo para marcar. Só isso.</>,
+      ilustra: <IlustraFaixa />,
+    },
+    {
+      titulo: "Dia difícil? Vale o mínimo.",
+      texto: <>Em {forte("Hoje")}, toque em {forte("Dia difícil?")} e as metas viram os seus {forte("mínimos inegociáveis")}: o pouco que ainda conta num dia pesado.</>,
+      ilustra: <IlustraMinimoClube />,
+    },
+    {
+      titulo: "Os hábitos são seus",
+      texto: <>Em {forte("Hoje")}, toque em {forte("Editar")} para mudar o nome e a meta, tirar da lista ou criar um hábito seu.</>,
+      ilustra: <IlustraEditar />,
+    },
+    {
+      titulo: "Veja o seu mês ganhar cor",
+      texto: <>Na {forte("Trajetória")}, cada hábito tem uma cor no calendário. Toque no nome de um hábito para ver só ele.</>,
+      ilustra: <IlustraCalendario />,
+    },
+    {
+      titulo: "Um lembrete gentil",
+      texto: (
+        <>
+          Mensagens curtas e gentis, como um lembrete no fim do dia se ainda faltar algum hábito. Nunca cobrança.
+          {notif?.ativar && <><br /><AtivarLembretes status={notif.status} ativar={notif.ativar} /></>}
+          <span style={{ display: "block", marginTop: 12, fontSize: 16 }}>Dá para ligar ou desligar quando quiser no seu {forte("Perfil")}.</span>
+        </>
+      ),
+      ilustra: <IlustraLembrete />,
+    },
+  ];
+}
 
 // Meu Mapa no Clube: sem a Carta para o Futuro (ela é só da Jornada)
 PASSOS_ABA.meumapa_clube = [

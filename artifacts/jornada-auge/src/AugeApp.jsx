@@ -7,7 +7,7 @@ import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo }
 import { SextaDaVitoria } from "./components/AugeSexta.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
 import { TituloEntrada, CampoEntrada, BotaoEntrada, LinkEntrada, AvisoEntrada, AceiteEntrada } from "./components/AugeEntrada.jsx";
-import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, CHAVE_TOUR_CLUBE, PASSOS_CLUBE, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
+import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, CHAVE_TOUR_CLUBE, passosClube, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
 import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
 import { Target, UserRound, PenLine, MessageCircle } from "lucide-react";
 
@@ -3068,7 +3068,11 @@ export default function App() {
  onConcluir={() => { setPrimAcesso(null); setTela(modoClube ? S.CT : S.HOME); }}
         />
       )}
-      {!primAcessoEf && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} {...(tour.clube ? { passos: PASSOS_CLUBE, rotulo: "Como funciona o Clube" } : {})} />}
+      {!primAcessoEf && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} {...(tour.clube ? { passos: passosClube({ status: notifStatus, ativar: async () => {
+ const r = await requestPermission();
+ setNotifStatus(r === "granted" ? "granted" : r === "denied" ? "denied" : notifStatus);
+ return r;
+      } }), rotulo: "Como funciona o Clube" } : {})} />}
       {!primAcessoEf && !tour && tourAba && <PassoAPasso key={tourAba} passos={PASSOS_ABA[modoClube && tourAba === "meumapa" ? "meumapa_clube" : tourAba]} rotulo={ROTULO_ABA[tourAba]} onFechar={fecharTourAba} />}
       {!SEM_NAV.includes(tela) && (
         <NavBar
