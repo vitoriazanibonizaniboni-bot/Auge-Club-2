@@ -6,6 +6,7 @@ import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componen
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
 import { SextaDaVitoria } from "./components/AugeSexta.jsx";
 import { PainelEditar, PainelMinimos, AvisoHoje } from "./components/AugeEditar.jsx";
+import { TituloEntrada, CampoEntrada, BotaoEntrada, LinkEntrada, AvisoEntrada, AceiteEntrada } from "./components/AugeEntrada.jsx";
 import { PassoAPasso, PASSOS_ABA, ROTULO_ABA, DicaHoje, CHAVE_TOUR, CHAVE_DICA, lerFlag, gravarFlag } from "./components/AugeTour.jsx";
 import { TIPOS, ORDEM_CHIPS, normalizar, minutos, useFavoritos, Coracao, BuscaConteudo, Destaques, Filtros, ListaConteudo } from "./components/AugeConteudo.jsx";
 import { Target, UserRound, PenLine, MessageCircle } from "lucide-react";
@@ -4128,505 +4129,112 @@ function TelaAuth({ onAuth }) {
  setEnviado(true);
   };
 
- const inp = {
- background: "transparent",
- border: "none",
- borderBottom: `1px solid ${alfa(C.obs, .82)}`,
- color: C.obs,
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 17,
- padding: "8px 0",
- width: "100%",
- outline: "none",
+  // Visual reescrito em 04/11 (pedido da Vitória): mesma linguagem da Hoje.
+ // Botão nunca fica "apagado" sem explicação: tocar com algo faltando diz o quê.
+ const falta = (msg) => setErro(msg);
+ const entrar = () => {
+ if (!email.trim() || !senha) { falta("Preencha seu e-mail e sua senha."); return; }
+ handleLogin();
   };
- const lbl = {
- fontFamily: FB,
- fontWeight: 300,
- fontSize: 15,
- color: C.lt,
- marginBottom: 7,
+ const cadastrar = () => {
+ if (!nome.trim()) { falta("Escreva seu nome."); return; }
+ if (!email.trim()) { falta("Escreva seu e-mail."); return; }
+ if (senha.length < 6) { falta("A senha precisa ter pelo menos 6 caracteres."); return; }
+ if (!lgpd) { falta("Para continuar, marque que aceita os termos de uso."); return; }
+ handleCadastro();
   };
+ const recuperar = () => {
+ if (!email.trim()) { falta("Escreva o e-mail da sua conta."); return; }
+ handleEsqueci();
+  };
+ const trocar = (m) => { setMode(m); setErro(null); setEnviado(false); };
+
+ const tela = (conteudo) => (
+    <div style={{ minHeight: "100%", background: T.bg, fontFamily: FONTE, animation: "fadeUp .4s ease" }}>
+      <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px 20px 40px" }}>
+        {/* Sem a montanha (pedido da Vitória, 04/11): o logo sozinho no alto */}
+        <div style={{ marginTop: mode === "login" ? 48 : 24 }}><Logo width={mode === "login" ? 250 : 210} fundo="claro" /></div>
+        {conteudo}
+      </div>
+    </div>
+  );
 
  if (mode === "esqueci")
- return (
-      <Grain
- style={{
- minHeight: 760,
- display: "flex",
- flexDirection: "column",
- alignItems: "center",
- justifyContent: "center",
- padding: "40px 32px",
- animation: "fadeUp .4s ease",
-        }}
-      >
-        <Logo width={220} fundo="claro" />
-        <div
- style={{
- fontFamily: FS,
- fontSize: 20,
- fontWeight: 300,
- color: C.obs,
- marginTop: 24,
- marginBottom: 8,
-          }}
-        >
- Recuperar senha
-        </div>
+ return tela(
+      <>
+        <TituloEntrada titulo="Recuperar senha" subtitulo={enviado ? null : "Enviamos um link para você criar uma senha nova."} />
         {enviado ? (
-          <div
- style={{
- background: `${C.augeZ}14`,
- border: `1px solid ${C.augeZ}33`,
- borderRadius: 10,
- padding: "18px 16px",
- marginTop: 16,
- textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: 28, marginBottom: 8 }}></div>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.obs,
- lineHeight: 1.7,
-              }}
-            >
- Link enviado para <strong>{email}</strong>.<br />
- Verifique sua caixa de entrada.
-            </div>
-          </div>
+          <AvisoEntrada tom="ok" titulo="Link enviado">
+ Enviamos para <strong>{email}</strong>. Abra o e-mail e toque no link. Se não aparecer, olhe também a caixa de spam.
+          </AvisoEntrada>
         ) : (
-          <div style={{ width: "100%", marginTop: 32 }}>
-            <div style={lbl}>E-mail da sua conta</div>
-            <input
- type="email"
- value={email}
- onChange={(e) => setEmail(e.target.value)}
- style={inp}
- placeholder="seu@email.com"
- onKeyDown={(e) => e.key === "Enter" && handleEsqueci()}
-            />
-            {erro && (
-              <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: C.atencao,
- marginTop: 8,
-                }}
-              >
-                {erro}
-              </div>
-            )}
-            <BtnPill
- onClick={handleEsqueci}
- style={{
- marginTop: 28,
- opacity: loading || !email.trim() ? 0.45 : 1,
-              }}
-            >
-              {loading ? "Enviando..." : "Enviar link de redefinição"}
-            </BtnPill>
-          </div>
+          <>
+            <CampoEntrada id="rec-email" rotulo="E-mail da sua conta" tipo="email" autoComplete="email" valor={email} onMudar={setEmail} onEnter={recuperar} placeholder="seu@email.com" />
+            {erro && <AvisoEntrada>{erro}</AvisoEntrada>}
+            <BotaoEntrada onClick={recuperar} carregando={loading}>{loading ? "Enviando…" : "Enviar link"}</BotaoEntrada>
+          </>
         )}
-        <button
- onClick={() => {
- setMode("login");
- setErro(null);
- setEnviado(false);
-          }}
- style={{
- marginTop: 24,
- background: "none",
- border: "none",
- color: C.obs,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- cursor: "pointer",
-          }}
-        >
-          ← Voltar para o login
-        </button>
-      </Grain>
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <LinkEntrada onClick={() => trocar("login")}>Voltar para o login</LinkEntrada>
+        </div>
+      </>
     );
 
  if (mode === "cadastro")
- return (
-      <Grain
- style={{
- minHeight: 760,
- display: "flex",
- flexDirection: "column",
- alignItems: "center",
- padding: "40px 32px 48px",
- animation: "fadeUp .4s ease",
-        }}
-      >
-        <Logo width={220} fundo="claro" />
-        <div
- style={{
- fontFamily: FS,
- fontSize: 20,
- fontWeight: 300,
- color: C.obs,
- marginTop: 16,
- marginBottom: 6,
- textAlign: "center",
-          }}
-        >
- Criar conta
-        </div>
-        <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: C.obs,
- marginBottom: 28,
- textAlign: "center",
-          }}
-        >
- Bem-vinda {IS_CLUBE ? "ao Clube do Auge" : "à Jornada AUGE"}
-        </div>
-        {aguardandoConfirmacao && (
-          <div
- style={{
- background: `${C.augeZ}14`,
- border: `1px solid ${C.augeZ}33`,
- borderRadius: 12,
- padding: "22px 18px",
- width: "100%",
- textAlign: "center",
- marginBottom: 24,
-            }}
-          >
-            <div style={{ fontSize: 32, marginBottom: 10 }}></div>
-            <div
- style={{
- fontFamily: FB, fontWeight: 400,
- fontSize: 17,
- color: C.obs,
- lineHeight: 1.6,
- marginBottom: 8,
-              }}
-            >
- Confirme seu e-mail
-            </div>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: C.lt,
- lineHeight: 1.7,
-              }}
-            >
- Enviamos um link de confirmação para{" "}
-              <strong style={{ color: C.obs }}>{email}</strong>
-              . Clique no link e depois faça login.
-            </div>
-            <button
- onClick={() => {
- setAguardandoConfirmacao(false);
- setMode("login");
-              }}
- style={{
- marginTop: 16,
- background: "none",
- border: `1px solid ${C.ouro}33`,
- borderRadius: 20,
- padding: "6px 18px",
- color: C.ouroTxt,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- cursor: "pointer",
-              }}
-            >
- Ir para o login
-            </button>
-          </div>
-        )}
-        <div style={{ width: "100%", marginBottom: 22 }}>
-          <div style={lbl}>Seu nome</div>
-          <input
- value={nome}
- onChange={(e) => setNome(e.target.value)}
- placeholder="Como você se chama?"
- style={inp}
- onKeyDown={(e) =>
- e.key === "Enter" && document.getElementById("cad-email")?.focus()
-            }
-          />
-        </div>
-        <div style={{ width: "100%", marginBottom: 22 }}>
-          <div style={lbl}>E-mail</div>
-          <input
- id="cad-email"
- type="email"
- value={email}
- onChange={(e) => setEmail(e.target.value)}
- placeholder="seu@email.com"
- style={inp}
- onKeyDown={(e) =>
- e.key === "Enter" && document.getElementById("cad-senha")?.focus()
-            }
-          />
-        </div>
-        <div style={{ width: "100%", marginBottom: 24 }}>
-          <div style={lbl}>Senha (mínimo 6 caracteres)</div>
-          <input
- id="cad-senha"
- type="password"
- value={senha}
- onChange={(e) => setSenha(e.target.value)}
- placeholder="••••••••"
- style={inp}
- onKeyDown={(e) => e.key === "Enter" && handleCadastro()}
-          />
-        </div>
+ return tela(
+      <>
         {showTermos && (
           <ModalTermos
- onAceitar={() => {
- setLeuTermos(true);
- setLgpd(true);
- setShowTermos(false);
-            }}
+ onAceitar={() => { setLeuTermos(true); setLgpd(true); setShowTermos(false); setErro(null); }}
  onFechar={() => setShowTermos(false)}
           />
         )}
-        <div
- style={{
- width: "100%",
- marginBottom: 28,
- display: "flex",
- alignItems: "flex-start",
- gap: 10,
-          }}
-        >
-          <div
- onClick={() => setLgpd((v) => !v)}
- style={{
- width: 18,
- height: 18,
- borderRadius: 4,
- border: `1.5px solid ${lgpd ? C.ouro : alfa(C.obs, .92)}`,
- background: lgpd ? `${C.ouro}22` : "transparent",
- flexShrink: 0,
- display: "flex",
- alignItems: "center",
- justifyContent: "center",
- marginTop: 1,
- cursor: "pointer",
-            }}
-          >
-            {lgpd && <span style={{ color: C.ouroTxt, fontSize: 14.5 }}>✓</span>}
-          </div>
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: C.lt,
- lineHeight: 1.6,
-            }}
-          >
- Aceito os{" "}
-            <span
- onClick={() => setShowTermos(true)}
- style={{
- color: C.ouroTxt,
- textDecoration: "underline",
- cursor: "pointer",
-              }}
-            >
- termos de uso
-            </span>{" "}
- e a política de privacidade. Meus dados serão usados apenas para
- personalizar minha experiência no app.
-          </div>
-        </div>
-        {erro && (
-          <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: C.atencao,
- marginBottom: 12,
- width: "100%",
-            }}
-          >
-            {erro}
-          </div>
+        {aguardandoConfirmacao ? (
+          <>
+            <TituloEntrada titulo="Falta só confirmar" />
+            <AvisoEntrada tom="ok" titulo="Confirme seu e-mail">
+ Enviamos um link para <strong>{email}</strong>. Toque nele e depois volte aqui para entrar. Se não aparecer, olhe a caixa de spam.
+            </AvisoEntrada>
+            <BotaoEntrada onClick={() => { setAguardandoConfirmacao(false); trocar("login"); }}>Ir para o login</BotaoEntrada>
+          </>
+        ) : (
+          <>
+            <TituloEntrada titulo="Criar sua conta" subtitulo={`Bem-vinda ${IS_CLUBE ? "ao Clube do Auge" : "à Jornada AUGE"}.`} />
+            <CampoEntrada id="cad-nome" rotulo="Seu nome" autoComplete="name" valor={nome} onMudar={setNome} onEnter={() => document.getElementById("cad-email")?.focus()} placeholder="Como você gosta de ser chamada?" />
+            <CampoEntrada id="cad-email" rotulo="E-mail" tipo="email" autoComplete="email" valor={email} onMudar={setEmail} onEnter={() => document.getElementById("cad-senha")?.focus()} placeholder="seu@email.com" />
+            <CampoEntrada id="cad-senha" rotulo="Crie uma senha" tipo="senha" autoComplete="new-password" ajuda="Pelo menos 6 caracteres." valor={senha} onMudar={setSenha} onEnter={cadastrar} />
+            <AceiteEntrada marcado={lgpd} onMudar={(v) => { setLgpd(v); if (v) setErro(null); }}>
+ Li e aceito os{" "}
+              <span role="button" tabIndex={0} onClick={() => setShowTermos(true)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setShowTermos(true)}
+ style={{ cursor: "pointer", fontWeight: 600, color: T.primary, textDecoration: "underline", textUnderlineOffset: 3 }}>
+ termos de uso e a política de privacidade
+              </span>.
+            </AceiteEntrada>
+            {erro && <AvisoEntrada>{erro}</AvisoEntrada>}
+            <BotaoEntrada onClick={cadastrar} carregando={loading}>{loading ? "Criando sua conta…" : "Criar minha conta"}</BotaoEntrada>
+            <div style={{ textAlign: "center", marginTop: 20, fontSize: 16, color: T.inkSoft }}>
+ Já tem conta? <LinkEntrada onClick={() => trocar("login")}>Entrar</LinkEntrada>
+            </div>
+          </>
         )}
-        <BtnPill
- onClick={handleCadastro}
- style={{
- opacity:
- loading ||
-              !nome.trim() ||
-              !email.trim() ||
- senha.length < 6 ||
-              !lgpd
-                ? 0.45
-                : 1,
-          }}
-        >
-          {loading ? "Criando conta..." : "Criar minha conta"}
-        </BtnPill>
-        <button
- onClick={() => {
- setMode("login");
- setErro(null);
-          }}
- style={{
- marginTop: 20,
- background: "none",
- border: "none",
- color: C.obs,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- cursor: "pointer",
-          }}
-        >
- Já tenho conta → Entrar
-        </button>
-      </Grain>
+      </>
     );
 
- return (
-    <Grain
- style={{
- minHeight: 760,
- display: "flex",
- flexDirection: "column",
- alignItems: "center",
- justifyContent: "center",
- padding: "40px 32px 48px",
- animation: "fadeUp .4s ease",
-      }}
-    >
-      <Logo width={260} fundo="claro" />
-      <div
- style={{
- fontFamily: FS,
- fontSize: 22,
- fontWeight: 300,
- color: C.obs,
- marginTop: 20,
- marginBottom: 8,
- textAlign: "center",
-        }}
- className="text-center"
-      >
- Bem-vinda
+ return tela(
+    <>
+      <TituloEntrada titulo="Que bom te ver" subtitulo="Entre com seu e-mail e senha." />
+      <CampoEntrada id="ln-email" rotulo="E-mail" tipo="email" autoComplete="email" valor={email} onMudar={setEmail} onEnter={() => document.getElementById("ln-senha")?.focus()} placeholder="seu@email.com" />
+      <CampoEntrada id="ln-senha" rotulo="Senha" tipo="senha" autoComplete="current-password" valor={senha} onMudar={setSenha} onEnter={entrar} />
+      <div style={{ margin: "-10px 0 14px", textAlign: "right" }}>
+        <LinkEntrada onClick={() => trocar("esqueci")}>Esqueci minha senha</LinkEntrada>
       </div>
-      <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.obs,
- marginBottom: 40,
- textAlign: "center",
-        }}
-      >
- Entre com seu e-mail e senha
+      {erro && <AvisoEntrada>{erro}</AvisoEntrada>}
+      <BotaoEntrada onClick={entrar} carregando={loading}>{loading ? "Entrando…" : "Entrar"}</BotaoEntrada>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "28px 0 16px", color: T.inkSoft, fontSize: 15 }}>
+        <span style={{ flex: 1, height: 1, background: T.line }} />primeira vez aqui?<span style={{ flex: 1, height: 1, background: T.line }} />
       </div>
-      <div style={{ width: "100%", marginBottom: 28 }}>
-        <div style={lbl}>E-mail</div>
-        <input
- type="email"
- value={email}
- onChange={(e) => setEmail(e.target.value)}
- placeholder="seu@email.com"
- style={inp}
- onKeyDown={(e) =>
- e.key === "Enter" && document.getElementById("ln-senha")?.focus()
-          }
-        />
-      </div>
-      <div style={{ width: "100%", marginBottom: 28 }}>
-        <div style={lbl}>Senha</div>
-        <input
- id="ln-senha"
- type="password"
- value={senha}
- onChange={(e) => setSenha(e.target.value)}
- placeholder="••••••••"
- style={inp}
- onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-        />
-      </div>
-      {erro && (
-        <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- color: C.atencao,
- marginBottom: 12,
- width: "100%",
-          }}
-        >
-          {erro}
-        </div>
-      )}
-      <button
- onClick={() => {
- setMode("esqueci");
- setErro(null);
-        }}
- style={{
- background: "none",
- border: "none",
- color: C.lt,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 15,
- cursor: "pointer",
- marginBottom: 20,
- alignSelf: "flex-start",
-        }}
-      >
- Esqueceu sua senha?
-      </button>
-      <BtnPill
- onClick={handleLogin}
- style={{
- marginBottom: 14,
- opacity: loading || !email.trim() || !senha ? 0.45 : 1,
-        }}
-      >
-        {loading ? "Entrando..." : "Entrar"}
-      </BtnPill>
-      <button
- onClick={() => {
- setMode("cadastro");
- setErro(null);
-        }}
- style={{
- background: "none",
- border: "none",
- color: C.ouroTxt,
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- cursor: "pointer",
- letterSpacing: "0.05em",
-        }}
-      >
- Ainda não tenho conta → Criar cadastro
-      </button>
-    </Grain>
+      <BotaoEntrada contorno onClick={() => trocar("cadastro")}>Criar minha conta</BotaoEntrada>
+    </>
   );
 }
 
