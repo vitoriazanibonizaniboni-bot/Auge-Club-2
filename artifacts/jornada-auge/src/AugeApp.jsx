@@ -2807,7 +2807,6 @@ export default function App() {
  if (!profileLoaded || !authUser || tour || primAcessoEf || lerFlag(chaveTour)) return;
  if (perfil === "pendente" || perfil === "admin" || !perfil) return;
  // Conta criada antes deste corte já usava o app: marca o passo a passo como visto
- if (dataCadastro && localDateStr(dataCadastro) < "2026-11-15") { gravarFlag(chaveTour); return; }
  const antiga = Object.entries(regs || {}).some(([d, hs]) => d < DATA_VERSAO_TOUR && hs && Object.keys(hs).length > 0);
  setTour({ antiga, clube: modoClube });
   }, [profileLoaded, authUser, perfil, primAcessoEf, modoClube]);

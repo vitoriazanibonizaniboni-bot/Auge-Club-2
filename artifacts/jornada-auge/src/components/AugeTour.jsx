@@ -30,12 +30,27 @@ function Ilustracao({ fundo, children, padding = 0 }) {
 function IlustraFeito() {
   return (
     <Ilustracao fundo="#F2E4DC">
-      <div style={{ width: "82%", maxWidth: 300, background: "#FFFFFF", borderRadius: 18, boxShadow: "0 6px 20px rgba(31,26,23,.10)", padding: "16px 16px 18px", fontFamily: FONTE }}>
-        <div style={{ fontSize: 17, fontWeight: 600, color: T.ink }}>Movimento</div>
-        <div style={{ fontSize: 15, color: T.inkSoft, marginTop: 4 }}>Meta: 60 min de academia</div>
-        <div style={{ marginTop: 14, height: 48, borderRadius: 14, background: T.primary, color: "#FFFFFF", fontSize: 16, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: ANEL }}>
-          Feito hoje
+      <div style={{ width: "82%", maxWidth: 300, background: "#FFFFFF", borderRadius: 18, boxShadow: "0 6px 20px rgba(31,26,23,.10)", padding: "16px 16px 18px", fontFamily: FONTE, display: "flex", alignItems: "center", gap: 14, boxSizing: "border-box" }}>
+        <span style={{ width: 44, height: 44, borderRadius: 22, background: "#626442", color: "#FAF6EE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, boxShadow: ANEL, flexShrink: 0 }}>✓</span>
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: T.ink }}>Movimento</div>
+          <div style={{ fontSize: 15, color: T.inkSoft, marginTop: 4 }}>Meta: 60 min de academia</div>
         </div>
+      </div>
+    </Ilustracao>
+  );
+}
+
+function IlustraConteudos() {
+  return (
+    <Ilustracao fundo="#F4EDE3">
+      <div style={{ width: "86%", maxWidth: 300, display: "flex", gap: 12 }}>
+        {[["Para dormir", "#3E4650", "#FFFFFF"], ["Leitura", "#E8DCC8", T.ink], ["Yoga", "#B5563C", "#FFFFFF"]].map(([nome, cor, texto]) => (
+          <div key={nome} style={{ flex: 1, height: 150, borderRadius: 18, background: cor, boxShadow: "0 6px 20px rgba(31,26,23,.12)", padding: 10, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "flex-end", color: texto, fontFamily: FONTE }}>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>{nome}</div>
+            <div style={{ fontSize: 14, marginTop: 2 }}>0 de 3 assistidas</div>
+          </div>
+        ))}
       </div>
     </Ilustracao>
   );
@@ -81,19 +96,24 @@ export function PassoAPasso({ antiga = false, onFechar, passos = null, rotulo = 
   const toque = useRef(null);
   const PASSOS = passos || [
     {
-      titulo: antiga ? "O que mudou no app" : "Fez o seu hábito? Marque aqui.",
-      texto: <>Na tela {forte("Hoje")} ficam os seus hábitos. Depois de fazer, toque no botão {forte("Feito hoje")}. Só isso.</>,
+      titulo: antiga ? "O que mudou no app" : "Seus hábitos ficam no alto da Hoje",
+      texto: <>Toque no {forte("círculo")} ao lado de cada hábito para marcar o que você fez. Toque de novo para desmarcar. Só isso.</>,
       ilustra: <IlustraFeito />,
     },
     {
-      titulo: "Cada dia feito, você sobe a montanha",
-      texto: <>No topo da tela Hoje, uma luz sobe a trilha até o seu {forte("auge")}. Toda segunda, uma nova subida começa. Sem cobrança, no seu ritmo.</>,
-      ilustra: <IlustraMontanha />,
+      titulo: "Os conteúdos estão na Hoje",
+      texto: <>Logo abaixo dos hábitos ficam as {forte("aulas, meditações, yoga, podcasts e indicações")}. Toque numa capa para ver a lista e marque o que já assistiu.</>,
+      ilustra: <IlustraConteudos />,
     },
     {
       titulo: "Dia difícil? Vale o mínimo.",
-      texto: <>Nos dias pesados, troque as metas pelos seus {forte("mínimos")} com um toque. Aqui ninguém começa do zero.</>,
+      texto: <>Toque em {forte("Dia difícil?")} e as metas viram os seus {forte("mínimos")}. Aqui ninguém começa do zero.</>,
       ilustra: <IlustraMinimo />,
+    },
+    {
+      titulo: "Cada dia feito, você sobe a montanha",
+      texto: <>No topo da Hoje, uma luz sobe a trilha até o seu {forte("auge")}. Toda segunda, uma nova subida começa. Sem cobrança, no seu ritmo.</>,
+      ilustra: <IlustraMontanha />,
     },
   ];
   const ultimo = passo === PASSOS.length - 1;
@@ -187,9 +207,10 @@ export function DicaHoje({ onEntendi }) {
       </button>
       {aberta && (<>
       {linha(1, "Faça o seu hábito no seu tempo.")}
-      {linha(2, <>Toque em <b>Feito hoje</b>.</>)}
+      {linha(2, <>Toque no <b>círculo</b> ao lado do hábito.</>)}
       {linha(3, "Sua luz sobe a trilha da montanha.")}
-      {linha(4, <>Quando bater a preguiça, toque em <b>bateu a preguiça?</b>, no canto de baixo.</>)}
+      {linha(4, "Aulas e meditações ficam logo abaixo dos hábitos.")}
+      {linha(5, <>Quando bater a preguiça, toque em <b>bateu a preguiça?</b>, no canto de baixo.</>)}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button onClick={() => { setSaindo(true); setTimeout(onEntendi, 250); }}
           style={{ minHeight: 44, padding: "0 10px", background: "none", border: "none", fontFamily: FONTE, fontSize: 16, fontWeight: 600, color: T.primary, cursor: "pointer" }}>
@@ -231,7 +252,7 @@ export const PASSOS_ABA = {
     },
     {
       titulo: "Cada hábito no seu mês",
-      texto: <>Veja quantos dias você fez cada hábito {forte("neste mês")}. Toque num hábito para ver o {forte("calendário")} dele.</>,
+      texto: <>Veja quantos dias você fez cada hábito {forte("neste mês")}. Toque no nome de um hábito para ver só ele no {forte("calendário")}.</>,
       ilustra: (
         <Ilustracao fundo="#F2E4DC">
           <Cartao estilo={{ boxShadow: ANEL }}>
@@ -305,12 +326,12 @@ export const PASSOS_ABA = {
       ),
     },
     {
-      titulo: "O seu mapa completo",
-      texto: <>Os seus {forte("mínimos inegociáveis")} e os {forte("Espaços de escrita")}, com os seus Porquês.</>,
+      titulo: "Metas e mínimos",
+      texto: <>Em {forte("Meu Mapa")} você edita a {forte("meta")} e o {forte("mínimo")} de cada hábito. Os que você criou também saem da lista por aqui.</>,
       ilustra: (
         <Ilustracao fundo="#F2E4DC">
           <div style={{ display: "grid", gap: 10, width: "86%", maxWidth: 300 }}>
-            {["Seus mínimos", "Espaços de escrita"].map((t) => (
+            {["Metas e mínimos", "Espaços de escrita"].map((t) => (
               <div key={t} style={{ background: "#FFFFFF", borderRadius: 14, padding: "12px 14px", fontFamily: FONTE, fontSize: 16, fontWeight: 600, color: T.ink, display: "flex", justifyContent: "space-between" }}>
                 {t}<span style={{ color: T.inkSoft }}>›</span>
               </div>
@@ -583,7 +604,7 @@ export function passosClube(notif) {
     },
     {
       titulo: "Os hábitos são seus",
-      texto: <>Em {forte("Hoje")}, toque em {forte("Editar")} para mudar o nome e a meta, tirar da lista ou criar um hábito seu.</>,
+      texto: <>Crie os seus hábitos em {forte("Meus hábitos")}, na {forte("Hoje")}. Para mudar a meta ou tirar um da lista, vá ao {forte("Meu Mapa")}.</>,
       ilustra: <IlustraEditar />,
     },
     {
@@ -617,7 +638,7 @@ PASSOS_ABA.meumapa_clube = [
   PASSOS_ABA.meumapa[0],
   {
     ...PASSOS_ABA.meumapa[1],
-    texto: <>Os seus {forte("mínimos inegociáveis")} e os seus {forte("Porquês")}, para lembrar por que você começou.</>,
+    texto: <>Em {forte("Meu Mapa")} você edita a {forte("meta")} e o {forte("mínimo")} de cada hábito, e tira da lista os que criou.</>,
   },
   PASSOS_ABA.meumapa[2],
 ];
