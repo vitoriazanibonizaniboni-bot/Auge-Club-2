@@ -210,7 +210,7 @@ export function DicaHoje({ onEntendi }) {
       {linha(2, <>Toque no <b>círculo</b> ao lado do hábito.</>)}
       {linha(3, "Sua luz sobe a trilha da montanha.")}
       {linha(4, "Aulas e meditações ficam logo abaixo dos hábitos.")}
-      {linha(5, <>Quando bater a preguiça, toque em <b>bateu a preguiça?</b>, no canto de baixo.</>)}
+      {linha(5, <>Quando bater a preguiça, toque em <b>bateu a preguiça?</b>, na aba Trajetória.</>)}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button onClick={() => { setSaindo(true); setTimeout(onEntendi, 250); }}
           style={{ minHeight: 44, padding: "0 10px", background: "none", border: "none", fontFamily: FONTE, fontSize: 16, fontWeight: 600, color: T.primary, cursor: "pointer" }}>
