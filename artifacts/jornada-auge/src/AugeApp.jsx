@@ -5844,6 +5844,7 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
       <Button onClick={compartilhar}>Postar no Instagram</Button>
       <Button variante="contorno" onClick={baixar}>Salvar imagem</Button>
       <Button variante="texto" onClick={() => fotoRef.current?.click()}>Trocar foto</Button>
+      <Button variante="texto" onClick={onFechar}>Fechar</Button>
      </div>
     )}
     {erro && <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginTop: 10 }}>{erro}</div>}
