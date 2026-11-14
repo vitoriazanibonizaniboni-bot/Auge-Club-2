@@ -315,8 +315,8 @@ export const PASSOS_ABA = {
       ),
     },
     {
-      titulo: "Torça pelas colegas",
-      texto: <>{forte("Curta")} e {forte("comente")} as vitórias das colegas da sua turma.</>,
+      titulo: "Torça pelas suas amigas",
+      texto: <>{forte("Curta")} e {forte("comente")} as vitórias das suas amigas da turma.</>,
       ilustra: (
         <Ilustracao fundo="#F4EDE3">
           <Cartao>
