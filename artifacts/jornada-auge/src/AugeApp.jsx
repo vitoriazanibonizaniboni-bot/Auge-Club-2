@@ -5369,6 +5369,17 @@ function Home({ videos, authUserId,
  const tCume = progressoSemana([...idsCume].map((id) => ({ feitos: feitosNaSemana(id), meta: baseCume[id] ?? metasAgora[id] })));
  const [ajudaAberta, setAjudaAberta] = useState(false);
  const [postHojeOk, setPostHojeOk] = useState(false);
+ // "Agora não", "Postar" ou "Criar arte" fecham o convite do dia (por conta). Antes era só
+ // estado da tela: ao abrir o app de novo, o convite voltava.
+ const conviteKey = authUserId ? `auge_convite_hoje_${authUserId}_${TODAY}` : null;
+ useEffect(() => {
+  if (!conviteKey) return;
+  try { setPostHojeOk(localStorage.getItem(conviteKey) === "1"); } catch {}
+ }, [conviteKey]);
+ const fecharConviteHoje = () => {
+  setPostHojeOk(true);
+  try { if (conviteKey) localStorage.setItem(conviteKey, "1"); } catch {}
+ };
  const [arteAberta, setArteAberta] = useState(false);
  const chaveDica = authUserId ? `${CHAVE_DICA}:${authUserId}` : CHAVE_DICA;
  const [dicaVista, setDicaVista] = useState(() => lerFlag(chaveDica));
@@ -5664,9 +5675,9 @@ function Home({ videos, authUserId,
                   {modoClube ? "Quer mostrar seu dia no Instagram?" : "Quer mostrar seu dia no Mural ou no Instagram?"}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {!modoClube && <Button icone={IcoH.camera(C.creme)} onClick={() => convidarMural(null)}>Postar no Mural</Button>}
-                  <Button variante={modoClube ? undefined : "contorno"} onClick={() => setArteAberta(true)}>Criar arte para o Instagram</Button>
-                  <Button variante="texto" onClick={() => setPostHojeOk(true)}>Agora não</Button>
+                  {!modoClube && <Button icone={IcoH.camera(C.creme)} onClick={() => { fecharConviteHoje(); convidarMural(null); }}>Postar no Mural</Button>}
+                  <Button variante={modoClube ? undefined : "contorno"} onClick={() => { fecharConviteHoje(); setArteAberta(true); }}>Criar arte para o Instagram</Button>
+                  <Button variante="texto" onClick={fecharConviteHoje}>Agora não</Button>
                 </div>
               </Card>
             )}
