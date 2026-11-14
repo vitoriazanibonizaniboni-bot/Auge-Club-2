@@ -223,11 +223,11 @@ export function DiaDificil({ ativo, onAtivar, onDesfazer }) {
   if (!ativo) {
     return (
       <button onClick={onAtivar} aria-label="Ativar dia mínimo"
-        style={{ width: "100%", minHeight: 56, borderRadius: 18, border: "1px solid #E6DCCF",
-                 background: "#F4EDE3", color: T.ink, display: "flex", alignItems: "center",
-                 gap: 10, padding: "0 16px", textAlign: "left", fontFamily: FONTE, cursor: "pointer", marginBottom: 16 }}>
-        <span style={{ flex: 1, fontSize: 16, lineHeight: 1.35, padding: "10px 0" }}><b>Dia difícil?</b> Faça só o mínimo hoje</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.primary} strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
+        style={{ width: "100%", minHeight: 44, border: "none", background: "transparent", color: "#5C4F47",
+                 display: "flex", alignItems: "center", gap: 8, padding: "0 2px", marginBottom: 6,
+                 textAlign: "left", fontFamily: FONTE, cursor: "pointer" }}>
+        <span style={{ flex: 1, fontSize: 16, lineHeight: 1.35 }}><b style={{ color: T.ink, fontWeight: 600 }}>Dia difícil?</b> Faça só o mínimo hoje</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.primary} strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
           <path d="M9 6l6 6-6 6" />
         </svg>
       </button>

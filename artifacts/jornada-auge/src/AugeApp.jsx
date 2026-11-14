@@ -5580,6 +5580,9 @@ function Home({ videos, authUserId,
           />
         )}
 
+                {/* Dia difícil? Faça só o mínimo — no topo, discreto */}
+          <DiaDificil ativo={diaMinimo} onAtivar={ativarDiaMinimo} onDesfazer={desfazerDiaMinimo} />
+
                 {/* Cards dos 3 hábitos angulares (seção 4.2) */}
           <div>
             {habsFixos.map((h) => (
@@ -5647,11 +5650,6 @@ function Home({ videos, authUserId,
                 </div>
               </div>
             )}
-
-            {/* Dia difícil? Faça só o mínimo — depois dos hábitos */}
-            <div style={{ marginTop: 8 }}>
-              <DiaDificil ativo={diaMinimo} onAtivar={ativarDiaMinimo} onDesfazer={desfazerDiaMinimo} />
-            </div>
 
             {/* Ao final dos hábitos: postar o dia (Mural na Jornada; arte para o Instagram nos dois) */}
             {!postHojeOk && (habsFixos.some((h) => regDoDia(h)) || habsPessoais.some((hp) => regs[TODAY]?.[hp.id])) && (
