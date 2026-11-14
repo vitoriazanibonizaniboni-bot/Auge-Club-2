@@ -2817,10 +2817,10 @@ export default function App() {
  // O do Clube já explica Dicas e Trajetória: não repetir ao abrir essas abas
  gravarFlag(chaveDaConta("auge_tour_conteudo")); gravarFlag(chaveDaConta("auge_tour_trajetoria"));
     } else gravarFlag(chaveDaConta(CHAVE_TOUR));
- setTour(null); setTela(modoClubeRef.current ? S.CT : S.HOME);
+ setTour(null); setTela(S.HOME);
   };
  // Passo a passo de cada aba: na primeira vez que ela abre a aba (depois do da Hoje)
- const ABA_DO_TOUR = { [S.TRAJ]: "trajetoria", [S.FEED]: "mural", [S.JOR]: "meumapa", [S.CT]: "conteudo" };
+ const ABA_DO_TOUR = { [S.TRAJ]: "trajetoria", [S.FEED]: "mural", [S.JOR]: "meumapa" };
  const [tourAba, setTourAba] = useState(null);
  useEffect(() => {
  const aba = ABA_DO_TOUR[tela];
