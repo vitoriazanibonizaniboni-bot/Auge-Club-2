@@ -5992,8 +5992,13 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
         return (
          <button key={v.id} onClick={() => abrirItem(v)} aria-label={v.titulo}
           style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 96, padding: 12, boxSizing: "border-box", background: "none", border: "none", borderTop: i ? `1px solid ${C.linho}` : "none", cursor: "pointer", textAlign: "left" }}>
-          <div style={{ position: "relative", width: 120, height: 72, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: C.obs }}>
+          <div style={{ position: "relative", width: 120, height: 72, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: img || v.categoria !== "podcast" ? C.obs : C.linho }}>
            {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+           {!img && v.categoria === "podcast" && (
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke={C.primary} strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
+             <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
+            </svg>
+           )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
            <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.25 }}>{v.titulo}</div>
