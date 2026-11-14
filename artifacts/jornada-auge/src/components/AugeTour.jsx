@@ -306,7 +306,7 @@ export const PASSOS_ABA = {
     },
     {
       titulo: "O seu mapa completo",
-      texto: <>Os seus {forte("mínimos inegociáveis")} e os {forte("Espaços de escrita")}, com os seus Porquês e a Carta para o Futuro.</>,
+      texto: <>Os seus {forte("mínimos inegociáveis")} e os {forte("Espaços de escrita")}, com os seus Porquês.</>,
       ilustra: (
         <Ilustracao fundo="#F2E4DC">
           <div style={{ display: "grid", gap: 10, width: "86%", maxWidth: 300 }}>
