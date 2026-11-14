@@ -5978,7 +5978,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
     const pct = serie.itens.length ? Math.round((feitas / serie.itens.length) * 100) : 0;
     return (
      <div role="dialog" aria-modal="true" aria-label={serie.titulo}
- style={{ position: "fixed", inset: 0, zIndex: 400, background: C.creme, overflowY: "auto", padding: "16px 20px 32px", boxSizing: "border-box" }}>
+ style={{ position: "fixed", inset: 0, zIndex: 400, background: C.creme, overflowY: "auto", padding: "calc(16px + env(safe-area-inset-top)) 20px 32px", boxSizing: "border-box" }}>
       <button onClick={() => setSerie(null)} style={{ background: "none", border: "none", minHeight: 48, padding: 0, color: C.primary, fontFamily: FB, fontWeight: 600, fontSize: 17, cursor: "pointer" }}>‹ Voltar</button>
       <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 600, color: C.obs, marginTop: 12 }}>{serie.titulo}</div>
       <div style={{ fontFamily: FB, fontSize: 16, color: "#5C4F47", marginTop: 6 }}>{feitas} de {serie.itens.length} assistidas</div>
