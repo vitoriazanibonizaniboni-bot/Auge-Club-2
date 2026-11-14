@@ -10056,7 +10056,7 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
 }
 
 // Hábitos criados pela aluna: a meta se edita aqui, no Meu Mapa
-function MetasPessoais({ habsPessoais = [], salvarMetaPessoal, tk }) {
+function MetasPessoais({ habsPessoais = [], salvarMetaPessoal, removerHabPessoal, tk }) {
  const [metaEd, setMetaEd] = useState(null);
  const [metaTxt, setMetaTxt] = useState("");
  const [metaFreq, setMetaFreq] = useState(3);
@@ -10076,9 +10076,13 @@ function MetasPessoais({ habsPessoais = [], salvarMetaPessoal, tk }) {
      <div key={hp.id} style={{ borderTop: `1px solid ${C.ouro}18`, padding: "9px 0" }}>
       <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.obs2, marginBottom: 2 }}>{hp.nome}</div>
       {!emMeta ? (
-       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>Meta: {desc ? `${desc}, ` : ""}{freq}x na semana</div>
-        <button onClick={() => { setMetaEd(hp.id); setMetaTxt(desc); setMetaFreq(freq); }} style={linkBtn}>editar meta</button>
+       <div>
+        <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>Meta: {desc ? `${desc}, ` : ""}{freq}x na semana</div>
+        <div style={{ display: "flex", gap: 18, marginTop: 4 }}>
+         <button onClick={() => { setMetaEd(hp.id); setMetaTxt(desc); setMetaFreq(freq); }} style={linkBtn}>editar meta</button>
+         <button onClick={async () => { if (!window.confirm(`Tirar "${hp.nome}" da sua lista? O histórico fica guardado.`)) return; const ok = await removerHabPessoal?.(hp.id); tk(ok ? "Hábito tirado da sua lista" : "Não consegui tirar agora. Tente de novo."); }}
+          style={{ ...linkBtn, color: C.terra }}>tirar da minha lista</button>
+        </div>
        </div>
       ) : (
        <div>
@@ -10108,6 +10112,7 @@ function Jornada({
  habsFixos,
  habsPessoais = [],
  salvarMetaPessoal,
+ removerHabPessoal,
  modoClube,
  grupoClube = "",
  sem,
@@ -10237,7 +10242,7 @@ function Jornada({
             nao eram usados. As telas e os dados continuam no codigo e no banco. */}
         {/* Mínimos Inegociáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} salvarMeta={salvarMeta} tk={tk} habsFixos={habsFixos} />
-        <MetasPessoais habsPessoais={habsPessoais} salvarMetaPessoal={salvarMetaPessoal} tk={tk} />
+        <MetasPessoais habsPessoais={habsPessoais} salvarMetaPessoal={salvarMetaPessoal} removerHabPessoal={removerHabPessoal} tk={tk} />
 
         {/* Espaços de escrita — Âncora e Porquês */}
         <CartaoMapa icone={PenLine} titulo="Espaços de escrita" linha="Âncora e Porquês" onClick={() => ir(S.ESC)} />
