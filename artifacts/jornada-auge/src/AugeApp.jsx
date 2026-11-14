@@ -5420,20 +5420,26 @@ function Home({ videos, authUserId,
  const minimoDoDia = (id) => (diaMinimo ? (metas?.[id]?.minimo || "").trim() || null : null);
  const msgPendente = useRef(null);
  const [conquista, setConquista] = useState(null);
- // Desafio da semana: ao marcar (não ao desmarcar), também aparece o aviso
+ // Mostra o aviso de vitória agora (usado quando a marcação não muda as "regs")
+ const avisar = (msg) => {
+ const id = (avisoSeq.current += 1);
+ setCumeAviso({ de: tCume, para: tCume, msg, id });
+ setTimeout(() => setCumeAviso((a) => (a && a.id === id ? null : a)), 5000);
+ };
+ // Desafio da semana: ao marcar (não ao desmarcar), aparece o aviso
  const marcarDesafio = (dia = TODAY) => {
- if (!desafioFeitos.includes(dia)) {
-  cumePendente.current = tCume;
-  msgPendente.current = "Desafio da semana feito. Mudar um padrão automático é coragem.";
- }
- return toggleDesafio(dia);
+ const marcando = !desafioFeitos.includes(dia);
+ const r = toggleDesafio(dia);
+ if (marcando) avisar("Desafio da semana feito. Mudar um padrão automático é coragem.");
+ return r;
  };
  const registrarNaHoje = (id, data, dif) => {
  cumePendente.current = tCume;
  const hab = habsFixos.find((h) => h.id === id);
  const metaBatida = !!hab && !habStats[id]?.bloqueado && feitosNaSemana(id) + 1 === habStats[id]?.meta;
  const fixosAtivos = habsFixos.filter((h) => !habStats[h.id]?.bloqueado);
- const todosHoje = fixosAtivos.length > 0 && fixosAtivos.every((h) => h.id === id || regDoDia(h));
+ // todos = os fixos liberados + os hábitos criados pela aluna (ativos)
+ const todosHoje = fixosAtivos.length > 0 && [...fixosAtivos, ...habsPessoais].every((h) => h.id === id || regDoDia(h));
  const marcasSemana = diasDaSemana.reduce((soma, d) => soma + Object.values(regs[d] || {}).filter(Boolean).length, 0) + 1;
  const marcoSemana = [5, 10, 15, 20].includes(marcasSemana);
  const kPrimeira = `auge_primeira_marca_${authUserId || "x"}`;
