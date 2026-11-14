@@ -237,33 +237,32 @@ const Coracao = ({ cheio, tam = 26 }) => (
 export const PASSOS_ABA = {
   trajetoria: [
     {
-      titulo: "As suas 12 semanas",
-      texto: <>A linha mostra em que {forte("semana da Jornada")} você está. Cada semana, um passo a mais.</>,
-      ilustra: (
-        <Ilustracao fundo="#F4EDE3">
-          <svg width="86%" viewBox="0 0 380 158" fill="none" aria-hidden="true">
-            <path d="M 35 126 C 110 142 272 46 350 38" stroke="#C4A882" strokeWidth="3" fill="none" strokeLinecap="round" />
-            <circle cx="350" cy="38" r="5" fill="#C4A882" />
-            <circle cx="236" cy="78" r="12" fill={T.primary} style={{ filter: "drop-shadow(0 0 6px rgba(181,86,60,.45))" }} />
-            <text x="236" y="56" textAnchor="middle" fontFamily="Inter, sans-serif" fontWeight="700" fontSize="20" fill={T.ink}>S9</text>
-          </svg>
-        </Ilustracao>
-      ),
-    },
-    {
       titulo: "Cada hábito no seu mês",
-      texto: <>Veja quantos dias você fez cada hábito {forte("neste mês")}. Toque no nome de um hábito para ver só ele no {forte("calendário")}.</>,
+      texto: <>Na aba {forte("Trajetória")} você vê quantos dias fez cada hábito {forte("neste mês")}, incluindo os que você criou.</>,
       ilustra: (
         <Ilustracao fundo="#F2E4DC">
           <Cartao estilo={{ boxShadow: ANEL }}>
             <div style={{ display: "flex", alignItems: "center" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 600, color: T.ink }}>Movimento</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#7E6038", marginTop: 2 }}>11 dias em outubro</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#7E6038", marginTop: 2 }}>11 dias neste mês</div>
               </div>
               <span style={{ fontSize: 24, color: T.inkSoft }}>›</span>
             </div>
           </Cartao>
+        </Ilustracao>
+      ),
+    },
+    {
+      titulo: "Veja o calendário de um hábito",
+      texto: <>Toque no {forte("nome de um hábito")} para ver só ele no calendário do mês. Cada dia feito fica marcado.</>,
+      ilustra: (
+        <Ilustracao fundo="#F4EDE3">
+          <div style={{ width: "86%", maxWidth: 300, background: "#FFFFFF", borderRadius: 18, boxShadow: "0 6px 20px rgba(31,26,23,.10)", padding: 16, boxSizing: "border-box", display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+            {Array.from({ length: 14 }, (_, i) => (
+              <span key={i} style={{ height: 22, borderRadius: 11, background: [0, 1, 3, 4, 6, 8, 9, 11, 12].includes(i) ? "#626442" : "#EFE7DC" }} />
+            ))}
+          </div>
         </Ilustracao>
       ),
     },
@@ -609,7 +608,7 @@ export function passosClube(notif) {
     },
     {
       titulo: "Veja o seu mês ganhar cor",
-      texto: <>Na {forte("Trajetória")}, cada hábito tem uma cor no calendário. Toque no nome de um hábito para ver só ele.</>,
+      texto: <>Na aba {forte("Trajetória")}, cada hábito tem uma cor no calendário. Toque no nome de um hábito para ver só ele.</>,
       ilustra: <IlustraCalendario />,
     },
     {
