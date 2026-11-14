@@ -96,12 +96,12 @@ export function PassoAPasso({ antiga = false, onFechar, passos = null, rotulo = 
   const toque = useRef(null);
   const PASSOS = passos || [
     {
-      titulo: antiga ? "O que mudou no app" : "Seus hábitos ficam no alto da Hoje",
+      titulo: antiga ? "O que mudou no app" : "Seus hábitos ficam no alto da aba Hoje",
       texto: <>Toque no {forte("círculo")} ao lado de cada hábito para marcar o que você fez. Toque de novo para desmarcar. Só isso.</>,
       ilustra: <IlustraFeito />,
     },
     {
-      titulo: "Os conteúdos estão na Hoje",
+      titulo: "Os conteúdos estão na aba Hoje",
       texto: <>Logo abaixo dos hábitos ficam as {forte("aulas, meditações, yoga, podcasts e indicações")}. Toque numa capa para ver a lista e marque o que já assistiu.</>,
       ilustra: <IlustraConteudos />,
     },
@@ -112,7 +112,7 @@ export function PassoAPasso({ antiga = false, onFechar, passos = null, rotulo = 
     },
     {
       titulo: "Cada dia feito, você sobe a montanha",
-      texto: <>No topo da Hoje, uma luz sobe a trilha até o seu {forte("auge")}. Toda segunda, uma nova subida começa. Sem cobrança, no seu ritmo.</>,
+      texto: <>No topo da aba Hoje, uma luz sobe a trilha até o seu {forte("auge")}. Toda segunda, uma nova subida começa. Sem cobrança, no seu ritmo.</>,
       ilustra: <IlustraMontanha />,
     },
   ];
@@ -202,7 +202,7 @@ export function DicaHoje({ onEntendi }) {
                   opacity: saindo ? 0 : 1, transition: "opacity .25s ease" }}>
       <button onClick={() => setAberta((v) => !v)} aria-expanded={aberta}
         style={{ width: "100%", minHeight: 44, background: "none", border: "none", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: FONTE, fontSize: 17, fontWeight: 600, color: T.ink, cursor: "pointer" }}>
-        <span>Como usar a tela Hoje</span>
+        <span>Como usar a aba Hoje</span>
         <span aria-hidden="true" style={{ fontSize: 22, color: T.primary, transform: aberta ? "rotate(90deg)" : "none", transition: "transform .2s" }}>›</span>
       </button>
       {aberta && (<>
@@ -589,22 +589,22 @@ export function passosClube(notif) {
   return [
     {
       titulo: "Bem-vinda ao Clube",
-      texto: <>Na {forte("Hoje")} chegam aulas, meditações e podcasts novos, logo abaixo dos seus hábitos. O app abre sempre por aqui.</>,
+      texto: <>Na aba {forte("Hoje")} chegam aulas, meditações e podcasts novos, logo abaixo dos seus hábitos. O app abre sempre por aqui.</>,
       ilustra: <IlustraDicas />,
     },
     {
       titulo: "Fez o seu hábito? Um toque.",
-      texto: <>No alto da {forte("Hoje")} ficam os {forte("seus hábitos de hoje")}. Toque no círculo para marcar. Só isso.</>,
+      texto: <>No alto da aba {forte("Hoje")} ficam os {forte("seus hábitos de hoje")}. Toque no círculo para marcar. Só isso.</>,
       ilustra: <IlustraFaixa />,
     },
     {
       titulo: "Dia difícil? Vale o mínimo.",
-      texto: <>Em {forte("Hoje")}, toque em {forte("Dia difícil?")} e as metas viram os seus {forte("mínimos inegociáveis")}: o pouco que ainda conta num dia pesado.</>,
+      texto: <>Na aba {forte("Hoje")}, toque em {forte("Dia difícil?")} e as metas viram os seus {forte("mínimos inegociáveis")}: o pouco que ainda conta num dia pesado.</>,
       ilustra: <IlustraMinimoClube />,
     },
     {
       titulo: "Os hábitos são seus",
-      texto: <>Crie os seus hábitos em {forte("Meus hábitos")}, na {forte("Hoje")}. Para mudar a meta ou tirar um da lista, vá ao {forte("Meu Mapa")}.</>,
+      texto: <>Crie os seus hábitos em {forte("Meus hábitos")}, na aba {forte("Hoje")}. Para mudar a meta ou tirar um da lista, vá ao {forte("Meu Mapa")}.</>,
       ilustra: <IlustraEditar />,
     },
     {
