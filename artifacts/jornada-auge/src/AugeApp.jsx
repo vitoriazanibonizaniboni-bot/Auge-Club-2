@@ -5723,7 +5723,7 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
  const camRef = useRef(null);
  const [fotosMural, setFotosMural] = useState([]);
  useEffect(() => {
-  if (!authUserId) return;
+  if (!authUserId || modoClube) return; // o Clube não tem Mural: não busca fotos dele
   let vivo = true;
   supabase.from("feed").select("id, img_url, created_at").eq("user_id", authUserId).not("img_url", "is", null)
    .order("created_at", { ascending: false }).limit(24)
@@ -5827,7 +5827,7 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Button icone={IcoH.camera(C.creme)} onClick={() => camRef.current?.click()}>Tirar foto agora</Button>
       <Button variante="contorno" onClick={() => fotoRef.current?.click()}>Escolher da galeria</Button>
-      {fotosMural.length > 0 && (
+      {!modoClube && fotosMural.length > 0 && (
        <>
         <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginTop: 6 }}>Ou use uma foto do seu Mural</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
@@ -5845,7 +5845,7 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Button onClick={compartilhar}>Postar no Instagram</Button>
       <Button variante="contorno" onClick={baixar}>Salvar imagem</Button>
-      <Button variante="texto" onClick={() => fotoRef.current?.click()}>Trocar foto</Button>
+      <Button variante="texto" onClick={() => setTemFoto(false)}>Trocar foto</Button>
       <Button variante="texto" onClick={onFechar}>Fechar</Button>
      </div>
     )}
@@ -5857,6 +5857,17 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
 
 // Conteúdos na Hoje (mockup 14/11): "Comece por aqui" + uma fileira de capas verticais por categoria.
 // Toque numa capa leva à biblioteca (aba Conteúdo, que sai da barra da Jornada).
+// Item que a Hoje escolheu (ex.: uma leitura da série). A Biblioteca abre esse item
+// sozinha assim que monta, em vez de deixar a aluna procurar de novo na lista.
+let itemParaAbrirNaBiblioteca = null;
+
+// Abre um link em outra aba (mesmo gesto do toque, para o navegador não bloquear)
+const abrirLinkExterno = (url) => {
+ const a = document.createElement("a");
+ a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+ document.body.appendChild(a); a.click(); a.remove();
+};
+
 function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  const [assistidos, setAssistidos] = useState(() => new Set());
  const [serie, setSerie] = useState(null); // série aberta: { titulo, itens }
@@ -5921,7 +5932,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
        {serie.itens.map((v, i) => {
         const ok = assistidos.has(String(v.id));
         return (
-         <button key={v.id} onClick={() => { setSerie(null); ir(S.CT); }} aria-label={v.titulo}
+         <button key={v.id} onClick={() => { setSerie(null); if (v.categoria === "podcast" && v.url_youtube) { abrirLinkExterno(v.url_youtube); } else { itemParaAbrirNaBiblioteca = v; ir(S.CT); } }} aria-label={v.titulo}
           style={{ position: "relative", width: "100%", height: 220, borderRadius: 20, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: C.obs, textAlign: "left" }}>
           {ytThumb(v.url_youtube) && <img src={ytThumb(v.url_youtube)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(28,26,23,0) 35%, rgba(28,26,23,.88) 100%)" }} />
@@ -12115,6 +12126,13 @@ function Conteudo({ modoClube, habsFixos, abrirRetro, aulasTrancadas = false, re
  if (filtro === "meditacoes" || filtro === "yoga") lista = [...lista].sort((x, y) => minutos(x.dur) - minutos(y.dur));
  const mostrarFaixas = filtro === "tudo" && !termo;
  const abrirAbrivel = (v) => trancado(v) ? setAvisoTrava(true) : v.url && (v.cat === "podcast" ? abrirExterno(v.url) : v.cat === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
+ // Veio da Hoje com um item escolhido (leitura, guia ou vídeo): abre direto
+ useEffect(() => {
+  const pedido = itemParaAbrirNaBiblioteca;
+  itemParaAbrirNaBiblioteca = null;
+  const achado = pedido && todos.find((x) => String(x.id) === String(pedido.id));
+  if (achado) abrirAbrivel(achado);
+ }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
  const abrirExterno = (url) => {
  const a = document.createElement("a");
