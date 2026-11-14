@@ -8867,7 +8867,7 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
               <button onClick={() => setFq((x) => ({ ...x, [h.id]: { ...x[h.id], freq: Math.min(7, x[h.id].freq + 1) } }))} aria-label={`Aumentar ${h.nome}`}
  style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 20 }}>+</button>
             </div>
-            <input value={fq[h.id].desc} onChange={(e) => { const v = e.target.value; setFq((x) => ({ ...x, [h.id]: { ...x[h.id], desc: v } })); }} placeholder={({ movimento: "Ex.: academia", sono: "Ex.: 1 hora sem celular", tempo: "Ex.: ler" })[h.id] || "Ex.: caminhada"} style={{ ...campo, minHeight: 50 }} />
+            <input value={fq[h.id].desc} onChange={(e) => { const v = e.target.value; setFq((x) => ({ ...x, [h.id]: { ...x[h.id], desc: v } })); }} placeholder={({ movimento: "Ex.: academia, 3x na semana", sono: "Ex.: 1 hora sem celular antes de dormir", tempo: "Ex.: ler 20 minutos" })[h.id] || "Ex.: 20 minutos, 3x na semana"} style={{ ...campo, minHeight: 50 }} />
           </div>
         ))}
 
