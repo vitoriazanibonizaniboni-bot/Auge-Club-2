@@ -2801,6 +2801,8 @@ export default function App() {
  useEffect(() => {
  if (!profileLoaded || !authUser || tour || primAcessoEf || lerFlag(chaveTour)) return;
  if (perfil === "pendente" || perfil === "admin" || !perfil) return;
+ // Conta criada antes deste corte já usava o app: marca o passo a passo como visto
+ if (dataCadastro && localDateStr(dataCadastro) < "2026-11-15") { gravarFlag(chaveTour); return; }
  const antiga = Object.entries(regs || {}).some(([d, hs]) => d < DATA_VERSAO_TOUR && hs && Object.keys(hs).length > 0);
  setTour({ antiga, clube: modoClube });
   }, [profileLoaded, authUser, perfil, primAcessoEf, modoClube]);
@@ -5389,7 +5391,7 @@ function Home({ videos, authUserId,
  const msg = tCume >= 1 ? "Você chegou ao seu auge!" : (msgPendente.current || "Feito! Você subiu mais um pouco.");
  // Aviso com a montanha pequena: só quando a montanha grande saiu da tela.
  // Com ela à vista, a própria luz grande subindo já é o aviso.
- if (cumeNaTela()) return;
+ // o aviso aparece sempre (antes sumia com a montanha grande na tela)
  const id = (avisoSeq.current += 1);
  setCumeAviso({ de, para: tCume, msg, id });
  // some depois de 3s, a não ser que outro aviso já tenha tomado o lugar
