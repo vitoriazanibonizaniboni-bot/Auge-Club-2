@@ -5946,20 +5946,21 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
       <div style={{ height: 6, borderRadius: 3, background: C.linho, marginTop: 10, overflow: "hidden" }}>
        <div style={{ width: `${pct}%`, height: 6, borderRadius: 3, background: C.oliva }} />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 18 }}>
-       {serie.itens.map((v) => {
+      <div style={{ marginTop: 18, background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 18, overflow: "hidden" }}>
+       {serie.itens.map((v, i) => {
         const ok = assistidos.has(String(v.id));
+        const img = ytThumb(v.url_youtube);
         return (
          <button key={v.id} onClick={() => abrirItem(v)} aria-label={v.titulo}
-          style={{ position: "relative", width: "100%", height: 220, borderRadius: 20, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: C.obs, textAlign: "left" }}>
-          {ytThumb(v.url_youtube) && <img src={ytThumb(v.url_youtube)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(28,26,23,0) 35%, rgba(28,26,23,.88) 100%)" }} />
-          {ok && <span style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>✓</span>}
-          <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, color: C.creme }}>
-           <div style={{ display: "inline-block", background: "rgba(255,255,255,.85)", color: C.obs, borderRadius: 50, padding: "2px 9px", fontFamily: FB, fontSize: 13, fontWeight: 600 }}>{tipoDe(v.categoria)}</div>
-           <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2, marginTop: 8 }}>{v.titulo}</div>
-           <div style={{ fontFamily: FB, fontSize: 14, marginTop: 4 }}>{v.duracao || ""}</div>
+          style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 96, padding: 12, boxSizing: "border-box", background: "none", border: "none", borderTop: i ? `1px solid ${C.linho}` : "none", cursor: "pointer", textAlign: "left" }}>
+          <div style={{ position: "relative", width: 120, height: 72, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: C.obs }}>
+           {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
           </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+           <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.25 }}>{v.titulo}</div>
+           <div style={{ fontFamily: FB, fontSize: 14, color: "#5C4F47", marginTop: 4 }}>{tipoDe(v.categoria)}{v.duracao ? ` · ${v.duracao}` : ""}</div>
+          </div>
+          {ok && <span aria-label="Assistida" style={{ width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>✓</span>}
          </button>
         );
        })}
