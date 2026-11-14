@@ -5652,7 +5652,7 @@ function Home({ videos, authUserId,
                 </div>
               </Card>
             )}
-            {arteAberta && createPortal(<ArtePostagem onFechar={() => setArteAberta(false)} tk={tk} modoClube={modoClube} />, document.body)}
+            {arteAberta && createPortal(<ArtePostagem onFechar={() => setArteAberta(false)} tk={tk} modoClube={modoClube} authUserId={authUserId} />, document.body)}
             {conquista && createPortal(<ImagemConquista dados={conquista} modoClube={modoClube} tk={tk} onFechar={() => setConquista(null)} />, document.body)}
 
             {/* Conteúdos da Hoje (mockup 14/11) */}
@@ -5715,9 +5715,19 @@ async function notificarInteracao(targetUserId, tipo, nome) {
 
 // Arte para o Instagram: a aluna escolhe uma foto, ela entra na moldura da marca,
 // e a imagem vai para o compartilhar do celular (Instagram aparece na lista).
-function ArtePostagem({ onFechar, tk, modoClube }) {
+function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
  const canvasRef = useRef(null);
  const fotoRef = useRef(null);
+ const camRef = useRef(null);
+ const [fotosMural, setFotosMural] = useState([]);
+ useEffect(() => {
+  if (!authUserId) return;
+  let vivo = true;
+  supabase.from("feed").select("id, img_url, created_at").eq("user_id", authUserId).not("img_url", "is", null)
+   .order("created_at", { ascending: false }).limit(24)
+   .then(({ data }) => { if (vivo) setFotosMural((data || []).filter((f) => f.img_url)); }, () => {});
+  return () => { vivo = false; };
+ }, [authUserId]);
  const [temFoto, setTemFoto] = useState(false);
  const [erro, setErro] = useState("");
  // Story 1080×1920: foto em tela cheia e a moldura (PNG com transparência) por cima.
@@ -5759,6 +5769,13 @@ function ArtePostagem({ onFechar, tk, modoClube }) {
   g.letterSpacing = "0px";
   g.fillStyle = "#626442"; g.font = "600 40px Inter, sans-serif";
   g.fillText("@isadorageriatra", W / 2, 1870);
+ };
+ const usarImagem = (src) => {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => { setErro(""); setTemFoto(true); requestAnimationFrame(() => desenhar(img)); };
+  img.onerror = () => setErro("Não consegui abrir essa foto do Mural. Tente outra.");
+  img.src = src;
  };
  const escolherFoto = (e) => {
   const f = e.target.files?.[0];
@@ -5802,9 +5819,26 @@ function ArtePostagem({ onFechar, tk, modoClube }) {
      Escolha uma foto sua. Ela entra na moldura, e a imagem vai para o compartilhar do celular.
     </div>
     <input ref={fotoRef} type="file" accept="image/*" onChange={escolherFoto} style={{ display: "none" }} />
+    <input ref={camRef} type="file" accept="image/*" capture="user" onChange={escolherFoto} style={{ display: "none" }} />
     <canvas ref={canvasRef} style={{ display: temFoto ? "block" : "none", width: "100%", height: "auto", borderRadius: 16, marginBottom: 14 }} />
     {!temFoto ? (
-     <Button icone={IcoH.camera(C.creme)} onClick={() => fotoRef.current?.click()}>Escolher foto</Button>
+     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <Button icone={IcoH.camera(C.creme)} onClick={() => camRef.current?.click()}>Tirar foto agora</Button>
+      <Button variante="contorno" onClick={() => fotoRef.current?.click()}>Escolher da galeria</Button>
+      {fotosMural.length > 0 && (
+       <>
+        <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginTop: 6 }}>Ou use uma foto do seu Mural</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+         {fotosMural.map((f) => (
+          <button key={f.id} onClick={() => usarImagem(f.img_url)} aria-label="Usar esta foto do Mural"
+           style={{ padding: 0, border: "none", background: "none", cursor: "pointer", borderRadius: 12, overflow: "hidden", aspectRatio: "1 / 1" }}>
+           <img src={f.img_url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </button>
+         ))}
+        </div>
+       </>
+      )}
+     </div>
     ) : (
      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Button onClick={compartilhar}>Postar no Instagram</Button>
