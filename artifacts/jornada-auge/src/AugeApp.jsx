@@ -5879,6 +5879,23 @@ const abrirLinkExterno = (url) => {
  document.body.appendChild(a); a.click(); a.remove();
 };
 
+// Capas prontas (public/capas), ligadas pelo nome do tema (sem acento, minúsculo).
+// Quando há capa pronta, o título já vem na imagem e o app só mostra o progresso.
+const CAPA_DO_TEMA = {
+ "aulas ao vivo": "/capas/aulas-ao-vivo.jpg",
+ "aulas mensais": "/capas/aulas-mensais.jpg",
+ "comece por aqui": "/capas/boas-vindas.jpg",
+ "leitura": "/capas/leitura.jpg",
+ "nutricao": "/capas/nutricao.jpg",
+ "para acalmar": "/capas/para-acalmar.jpg",
+ "para dormir": "/capas/para-dormir.jpg",
+ "para se reencontrar": "/capas/para-se-reencontrar.jpg",
+ "podcast": "/capas/podcast.jpg",
+ "yoga para alivio de dores": "/capas/yoga-alivio-de-dores.jpg",
+ "yoga para iniciantes": "/capas/yoga-para-iniciantes.jpg",
+};
+const chaveTema = (t) => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
 function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  const [assistidos, setAssistidos] = useState(() => new Set());
  const [serie, setSerie] = useState(null); // conteúdo aberto: { titulo, itens }
@@ -5915,7 +5932,8 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  // Uma capa por conteúdo (tema). Toque abre a página do conteúdo, com as aulas e o progresso.
  const capaGrupo = (grupo, largura) => {
   const capaItem = grupo.itens.find((v) => ytThumb(v.url_youtube)) || grupo.itens[0];
-  const img = ytThumb(capaItem?.url_youtube);
+  const capaPronta = CAPA_DO_TEMA[chaveTema(grupo.titulo)];
+  const img = capaPronta || ytThumb(capaItem?.url_youtube);
   const feitas = grupo.itens.filter((v) => assistidos.has(String(v.id))).length;
   return (
    <button key={grupo.titulo} onClick={() => setSerie(grupo)} aria-label={grupo.titulo}
@@ -5923,7 +5941,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
     {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(28,26,23,0) 35%, rgba(28,26,23,.88) 100%)" }} />
     <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, color: C.creme }}>
-     <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>{grupo.titulo}</div>
+     {!capaPronta && <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>{grupo.titulo}</div>}
      <div style={{ fontFamily: FB, fontSize: 14, marginTop: 4 }}>{feitas} de {grupo.itens.length} assistidas</div>
      <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,.35)", marginTop: 8, overflow: "hidden" }}>
       <div style={{ width: `${grupo.itens.length ? Math.round((feitas / grupo.itens.length) * 100) : 0}%`, height: 4, background: C.creme }} />
