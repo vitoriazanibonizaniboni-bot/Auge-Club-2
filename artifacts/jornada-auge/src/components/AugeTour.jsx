@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { T, FONTE } from "../tokens.js";
 import { CumeMini, DiaDificil } from "./AugeCume.jsx";
 
-export const CHAVE_TOUR = "auge_tour_visto";
+export const CHAVE_TOUR = "auge_tour_visto_v2";
 export const CHAVE_DICA = "auge_dica_hoje";
 export const lerFlag = (k) => { try { return localStorage.getItem(k) === "1"; } catch { return false; } };
 export const gravarFlag = (k) => { try { localStorage.setItem(k, "1"); } catch {} };
@@ -401,7 +401,7 @@ export const ROTULO_ABA = { trajetoria: "Como usar a Trajetória", mural: "Como 
 // os hábitos do método podem ser tirados ou renomeados. Chave própria no
 // celular, para quem veio da Jornada (e já viu o passo a passo dela) também
 // ver este quando passar para o Clube.
-export const CHAVE_TOUR_CLUBE = "auge_tour_clube";
+export const CHAVE_TOUR_CLUBE = "auge_tour_clube_v2";
 const CORES = ["#A3B07E", "#B4A2D6", "#E2BE85"];
 
 // As ilustrações do Clube se mexem (pedido da Vitória, 04/11): cada uma mostra
