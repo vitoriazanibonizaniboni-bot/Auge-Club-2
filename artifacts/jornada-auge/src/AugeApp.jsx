@@ -2573,7 +2573,12 @@ export default function App() {
  else if (event === "SIGNED_IN" && session?.user) {
  setAuthUser(session.user);
  setOneSignalUser(session.user.id);
- loadUserData(session.user.id);
+ // Entrada pelo login (não pela abertura): segura a tela de carregamento até o perfil
+ // chegar. Sem isso, o app aparecia sem o plano carregado e piscava a tela de espera.
+ setLoadingAuth(true);
+ const _tLogin = setTimeout(() => setLoadingAuth(false), 8000);
+ const _liberarLogin = () => { clearTimeout(_tLogin); setLoadingAuth(false); };
+ loadUserData(session.user.id, _liberarLogin).finally(_liberarLogin);
       }
  else if (event === "SIGNED_OUT") {
  setAuthUser(null);
