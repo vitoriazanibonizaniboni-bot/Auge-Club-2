@@ -568,12 +568,12 @@ export function passosClube(notif) {
   return [
     {
       titulo: "Bem-vinda ao Clube",
-      texto: <>Em {forte("Dicas")} chegam aulas, meditações e podcasts novos. O app abre sempre por aqui.</>,
+      texto: <>Na {forte("Hoje")} chegam aulas, meditações e podcasts novos, logo abaixo dos seus hábitos. O app abre sempre por aqui.</>,
       ilustra: <IlustraDicas />,
     },
     {
       titulo: "Fez o seu hábito? Um toque.",
-      texto: <>No alto das Dicas ficam os {forte("seus hábitos de hoje")}. Toque no círculo para marcar. Só isso.</>,
+      texto: <>No alto da {forte("Hoje")} ficam os {forte("seus hábitos de hoje")}. Toque no círculo para marcar. Só isso.</>,
       ilustra: <IlustraFaixa />,
     },
     {
