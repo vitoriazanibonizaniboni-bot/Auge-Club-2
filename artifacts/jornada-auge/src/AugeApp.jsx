@@ -4931,9 +4931,9 @@ function DesafioCard({ texto, desafioFeitos, toggleDesafio }) {
  onClick={() => toggleDesafio(TODAY)}
  aria-label={feitoHoje ? "Desmarcar desafio da semana" : "Marcar desafio da semana"}
  aria-pressed={feitoHoje}
- style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: `2px solid ${feitoHoje ? C.oliva : C.lt}`, background: feitoHoje ? C.oliva : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: C.creme }}
+ style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", border: `1.5px solid ${feitoHoje ? C.oliva : C.lt}`, background: feitoHoje ? C.oliva : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: C.creme }}
         >
- {feitoHoje && <span aria-hidden="true" style={{ fontSize: 20, lineHeight: 1 }}>✓</span>}
+ {feitoHoje && <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1 }}>✓</span>}
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Desafio da semana</div>
@@ -5502,7 +5502,6 @@ function Home({ videos, authUserId,
  onAjuda={() => setAjudaAberta((a) => !a)}
         />
         {ajudaAberta && <ComoUsarHoje onFechar={() => setAjudaAberta(false)} />}
-        {!ajudaAberta && !dicaVista && <DicaHoje onEntendi={() => { gravarFlag(chaveDica); setDicaVista(true); }} />}
       </div>
       {retroAberto && (
         <RetroModal
