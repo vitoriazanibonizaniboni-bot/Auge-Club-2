@@ -5887,6 +5887,7 @@ const CAPA_DO_TEMA = {
  "aulas semanais": "/capas/aulas-semanais.jpg",
  "semanais": "/capas/aulas-semanais.jpg",
  "iniciante": "/capas/yoga-para-iniciantes.jpg",
+ "iniciantes": "/capas/yoga-para-iniciantes.jpg",
  "alivio de dor": "/capas/yoga-alivio-de-dores.jpg",
  "yoga intermediario": "/capas/yoga-intermediario.jpg",
  "intermediario": "/capas/yoga-intermediario.jpg",
