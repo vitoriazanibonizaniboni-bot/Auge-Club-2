@@ -5893,23 +5893,26 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
   if (comeceTema(v) || v.id === comece?.id) return;
   const t = (v.tema || "").trim();
   const chave = t ? `tema:${t}` : `cat:${cat}`;
-  if (!grupos.has(chave)) grupos.set(chave, { titulo: t || TITULO_CAT[cat], itens: [] });
+  if (!grupos.has(chave)) grupos.set(chave, { titulo: t || TITULO_CAT[cat], itens: [], cat });
   grupos.get(chave).itens.push(v);
  }));
  const secoes = [...grupos.values()];
- const capa = (v, largura, grupo) => {
-  const img = ytThumb(v.url_youtube);
-  const feito = assistidos.has(String(v.id));
+ // Uma capa por conteúdo (tema). Toque abre a página do conteúdo, com as aulas e o progresso.
+ const capaGrupo = (grupo, largura) => {
+  const capaItem = grupo.itens.find((v) => ytThumb(v.url_youtube)) || grupo.itens[0];
+  const img = ytThumb(capaItem?.url_youtube);
+  const feitas = grupo.itens.filter((v) => assistidos.has(String(v.id))).length;
   return (
-   <button key={v.id} onClick={() => setSerie(grupo)} aria-label={v.titulo}
+   <button key={grupo.titulo} onClick={() => setSerie(grupo)} aria-label={grupo.titulo}
  style={{ position: "relative", width: largura, height: 220, flexShrink: 0, borderRadius: 20, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: C.obs, textAlign: "left" }}>
     {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(28,26,23,0) 35%, rgba(28,26,23,.88) 100%)" }} />
-    {feito && <span aria-label="Assistido" style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>✓</span>}
     <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, color: C.creme }}>
-     <div style={{ display: "inline-block", background: "rgba(255,255,255,.85)", color: C.obs, borderRadius: 50, padding: "2px 9px", fontFamily: FB, fontSize: 13, fontWeight: 600 }}>{tipoDe(v.categoria)}</div>
-     <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2, marginTop: 8 }}>{v.titulo}</div>
-     <div style={{ fontFamily: FB, fontSize: 14, marginTop: 4 }}>{v.duracao || ""}</div>
+     <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>{grupo.titulo}</div>
+     <div style={{ fontFamily: FB, fontSize: 14, marginTop: 4 }}>{feitas} de {grupo.itens.length} assistidas</div>
+     <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,.35)", marginTop: 8, overflow: "hidden" }}>
+      <div style={{ width: `${grupo.itens.length ? Math.round((feitas / grupo.itens.length) * 100) : 0}%`, height: 4, background: C.creme }} />
+     </div>
     </div>
    </button>
   );
@@ -5957,15 +5960,19 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
    {comece && (
     <div style={{ marginBottom: 16 }}>
      <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 8 }}>Comece por aqui</div>
-     <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{capa(comece, 170, { titulo: "Comece por aqui", itens: [comece] })}</div>
+     <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{capaGrupo({ titulo: "Comece por aqui", itens: [comece] }, 170)}</div>
     </div>
    )}
-   {secoes.map((x) => (
-    <div key={x.titulo} style={{ marginBottom: 16 }}>
-     <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 8 }}>{x.titulo}</div>
-     <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{x.itens.map((v) => capa(v, 150, x))}</div>
-    </div>
-   ))}
+   {Object.keys(TITULO_CAT).map((cat) => {
+    const deCategoria = secoes.filter((x) => x.cat === cat);
+    if (!deCategoria.length) return null;
+    return (
+     <div key={cat} style={{ marginBottom: 16 }}>
+      <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 8 }}>{TITULO_CAT[cat]}</div>
+      <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{deCategoria.map((x) => capaGrupo(x, 150))}</div>
+     </div>
+    );
+   })}
   </div>
  );
 }
