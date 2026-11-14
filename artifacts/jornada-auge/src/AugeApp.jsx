@@ -5884,6 +5884,10 @@ const abrirLinkExterno = (url) => {
 const CAPA_DO_TEMA = {
  "aulas ao vivo": "/capas/aulas-ao-vivo.jpg",
  "aulas mensais": "/capas/aulas-mensais.jpg",
+ "aulas semanais": "/capas/aulas-semanais.jpg",
+ "semanais": "/capas/aulas-semanais.jpg",
+ "iniciante": "/capas/yoga-para-iniciantes.jpg",
+ "alivio de dor": "/capas/yoga-alivio-de-dores.jpg",
  "comece por aqui": "/capas/boas-vindas.jpg",
  "leitura": "/capas/leitura.jpg",
  "nutricao": "/capas/nutricao.jpg",
