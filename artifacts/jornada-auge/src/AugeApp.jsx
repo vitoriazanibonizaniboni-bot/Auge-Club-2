@@ -5895,9 +5895,9 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  if (!visiveis.length) return null;
  const ordenar = (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || String(a.created_at || "").localeCompare(String(b.created_at || ""));
  const daCategoria = (id) => visiveis.filter((v) => (CAT_LEGADO[id] || [id]).includes(v.categoria)).sort(ordenar);
- const tipoDe = (cat) => ({ aulas: "AULA", yoga: "YOGA", meditacoes: "MEDITAÇÃO", meditacao: "MEDITAÇÃO", curadoria: "INDICAÇÃO", podcast: "PODCAST" }[cat] || "CONTEÚDO");
+ const tipoDe = (cat) => ({ aulas: "AULA", yoga: "YOGA", meditacoes: "MEDITAÇÃO", meditacao: "MEDITAÇÃO", curadoria: "CURADORIA", podcast: "PODCAST" }[cat] || "CONTEÚDO");
  const ytThumb = (url) => { const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1]; return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null; };
- const TITULO_CAT = { aulas: "Aulas", yoga: "Aulas de yoga", meditacoes: "Meditação", curadoria: "Indicações", podcast: "Podcast" };
+ const TITULO_CAT = { aulas: "Aulas", yoga: "Yoga", meditacoes: "Meditação", curadoria: "Curadoria", podcast: "Podcast" };
  const comeceTema = (v) => (v.tema || "").trim().toLowerCase() === "comece por aqui";
  const comece = visiveis.filter(comeceTema).sort(ordenar)[0] || daCategoria("aulas")[0];
  // Uma capa por tema (coleção), dentro da seção da categoria. Sem tema: capa com o nome da categoria.
