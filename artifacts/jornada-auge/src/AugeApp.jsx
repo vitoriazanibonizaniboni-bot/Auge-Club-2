@@ -5597,8 +5597,7 @@ function Home({ videos, authUserId,
  diasDaSemana={diasDaSemana}
             />}
 
-            {/* Meus hábitos — criados pela aluna (seção 5) */}
-            <SectionHeader titulo="Meus hábitos" style={{ marginTop: 0 }} />
+            {/* Hábitos criados pela aluna (seção 5), sem título: ficam juntos aos fixos */}
             {habsPessoais.map((hp) => (
               <HabCard
  key={hp.id}
