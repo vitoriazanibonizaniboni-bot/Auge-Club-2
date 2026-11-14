@@ -5618,8 +5618,7 @@ function Home({ videos, authUserId, aulasTrancadas = false,
  irProgresso={() => { setHabProgresso({ id: h.id, nome: h.nome, pessoal: false, unlock: h.unlock }); ir(S.TRAJ); }}
  convidarMural={modoClube ? null : convidarMural}
  minimoHoje={minimoDoDia(h.id)}
- onEditar={() => setPainel({ modo: "metodo", hab: { id: h.id, nome: h.nome, nomeMetodo: h.nomeMetodo || h.nome } })}
-              />
+               />
             ))}
 
             {/* Desafio da Semana (seção 4.10) — contido no card, sem zona nem alerta */}
@@ -5646,8 +5645,7 @@ function Home({ videos, authUserId, aulasTrancadas = false,
  regs={regs}
  diasDaSemana={diasDaSemana}
  irProgresso={() => { setHabProgresso({ id: hp.id, nome: hp.nome, pessoal: true, meta: hp.meta, metaTexto: hp.meta_texto }); ir(S.TRAJ); }}
- onEditar={() => setPainel({ modo: "pessoal", hab: { id: hp.id, nome: hp.nome } })}
- convidarMural={modoClube ? null : convidarMural}
+  convidarMural={modoClube ? null : convidarMural}
               />
             ))}
 
@@ -10057,8 +10055,59 @@ function PerfilAugeQ({ perfilAuge, setPerfilAuge, back, tk }) {
   );
 }
 
+// Hábitos criados pela aluna: a meta se edita aqui, no Meu Mapa
+function MetasPessoais({ habsPessoais = [], salvarMetaPessoal, tk }) {
+ const [metaEd, setMetaEd] = useState(null);
+ const [metaTxt, setMetaTxt] = useState("");
+ const [metaFreq, setMetaFreq] = useState(3);
+ const linkBtn = { background: "none", border: "none", fontFamily: FB, fontSize: 14, color: C.lt, cursor: "pointer", textDecoration: "underline", padding: "4px 0", minHeight: 36 };
+ const passo = { width: 40, height: 40, borderRadius: 20, border: `1px solid ${C.ouro}40`, background: C.creme, fontFamily: FB, fontSize: 20, color: C.obs, cursor: "pointer" };
+ const campo = { width: "100%", background: C.creme, border: `1px solid ${C.ouro}30`, borderRadius: 8, padding: "8px 10px", fontFamily: FB, fontSize: 16, color: C.obs, boxSizing: "border-box" };
+ if (!habsPessoais.length || !salvarMetaPessoal) return null;
+ return (
+  <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12 }}>
+   <div style={{ fontFamily: FB, fontSize: 16.5, fontWeight: 600, color: C.obs, marginBottom: 2 }}>Seus hábitos</div>
+   <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs, marginBottom: 10 }}>Os que você criou. Ajuste a meta quando quiser.</div>
+   {habsPessoais.map((hp) => {
+    const desc = (hp.meta_texto || "").trim();
+    const freq = hp.meta || 3;
+    const emMeta = metaEd === hp.id;
+    return (
+     <div key={hp.id} style={{ borderTop: `1px solid ${C.ouro}18`, padding: "9px 0" }}>
+      <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.obs2, marginBottom: 2 }}>{hp.nome}</div>
+      {!emMeta ? (
+       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ flex: 1, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>Meta: {desc ? `${desc}, ` : ""}{freq}x na semana</div>
+        <button onClick={() => { setMetaEd(hp.id); setMetaTxt(desc); setMetaFreq(freq); }} style={linkBtn}>editar meta</button>
+       </div>
+      ) : (
+       <div>
+        <input value={metaTxt} onChange={(e) => setMetaTxt(e.target.value)} placeholder="ex: 20 minutos de leitura" aria-label="Descrição da meta" style={{ ...campo, marginBottom: 8 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+         <span style={{ fontFamily: FB, fontSize: 16, color: C.obs2, flex: 1 }}>Vezes na semana</span>
+         <button onClick={() => setMetaFreq((f) => Math.max(1, f - 1))} aria-label="Diminuir" style={passo}>−</button>
+         <span style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, minWidth: 24, textAlign: "center", color: C.obs }}>{metaFreq}</span>
+         <button onClick={() => setMetaFreq((f) => Math.min(7, f + 1))} aria-label="Aumentar" style={passo}>+</button>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+         <button onClick={() => { salvarMetaPessoal(hp.id, metaFreq, metaTxt.trim()); setMetaEd(null); tk("Meta atualizada"); }}
+          style={{ flex: 1, background: C.ouro, border: "none", borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 17, color: C.obs2, cursor: "pointer" }}>Salvar</button>
+         <button onClick={() => setMetaEd(null)}
+          style={{ flex: 1, background: "none", border: `1px solid ${C.ouro}40`, borderRadius: 20, padding: "7px", fontFamily: FB, fontSize: 17, color: C.terra, cursor: "pointer" }}>Cancelar</button>
+        </div>
+       </div>
+      )}
+     </div>
+    );
+   })}
+  </div>
+ );
+}
+
 function Jornada({
  habsFixos,
+ habsPessoais = [],
+ salvarMetaPessoal,
  modoClube,
  grupoClube = "",
  sem,
@@ -10188,6 +10237,7 @@ function Jornada({
             nao eram usados. As telas e os dados continuam no codigo e no banco. */}
         {/* Mínimos Inegociáveis — mesma fonte de dados dos cards da Hoje (seção 9) */}
         <MinimosInegociaveis metas={metas} salvarMinimo={salvarMinimo} salvarMeta={salvarMeta} tk={tk} habsFixos={habsFixos} />
+        <MetasPessoais habsPessoais={habsPessoais} salvarMetaPessoal={salvarMetaPessoal} tk={tk} />
 
         {/* Espaços de escrita — Âncora e Porquês */}
         <CartaoMapa icone={PenLine} titulo="Espaços de escrita" linha="Âncora e Porquês" onClick={() => ir(S.ESC)} />
