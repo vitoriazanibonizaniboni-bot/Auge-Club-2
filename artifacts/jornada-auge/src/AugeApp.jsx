@@ -5839,17 +5839,17 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
  };
  return (
   <div role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(28,26,23,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-   <div style={{ width: "100%", maxWidth: 420, maxHeight: "92vh", overflowY: "auto", background: C.creme, borderRadius: "24px 24px 0 0", padding: "18px 20px 28px", boxSizing: "border-box" }}>
+   <div style={{ width: "100%", maxWidth: 420, maxHeight: "92dvh", overflowY: "auto", background: C.creme, borderRadius: "24px 24px 0 0", padding: "18px 20px calc(24px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
      <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 600, color: C.obs }}>Sua arte</div>
      <button onClick={onFechar} aria-label="Fechar" style={{ width: 48, height: 48, background: "none", border: "none", fontSize: 26, color: C.obs, cursor: "pointer" }}>×</button>
     </div>
-    <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, marginBottom: 14 }}>
+    {!temFoto && <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, marginBottom: 14 }}>
      Escolha uma foto sua. Ela entra na moldura, e a imagem vai para o compartilhar do celular.
-    </div>
+    </div>}
     <input ref={fotoRef} type="file" accept="image/*" onChange={escolherFoto} style={{ display: "none" }} />
     <input ref={camRef} type="file" accept="image/*" capture="user" onChange={escolherFoto} style={{ display: "none" }} />
-    <canvas ref={canvasRef} style={{ display: temFoto ? "block" : "none", width: "100%", height: "auto", borderRadius: 16, marginBottom: 14 }} />
+    <canvas ref={canvasRef} style={{ display: temFoto ? "block" : "none", height: "min(calc(100dvh - 400px), 58vh)", width: "auto", maxWidth: "100%", margin: "0 auto 14px", borderRadius: 16 }} />
     {!temFoto ? (
      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <Button icone={IcoH.camera(C.creme)} onClick={() => camRef.current?.click()}>Tirar foto agora</Button>
@@ -5999,7 +5999,6 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir, aulasTr
  }));
  const secoes = [...grupos.values()];
  const abrirItem = (v) => {
-  setSerie(null);
   if (v.categoria === "podcast" && v.url_youtube) { abrirLinkExterno(v.url_youtube); return; }
   if (trancado(v)) { setAvisoTrava(true); return; }
   if (v.categoria === "curadoria") { if (v.url_youtube) setGuiaAberto(v.url_youtube); return; }
@@ -6046,22 +6045,28 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir, aulasTr
         const ok = assistidos.has(String(v.id));
         const img = CAPA_DO_ITEM[chaveTema(v.titulo)] || ytThumb(v.url_youtube);
         return (
-         <button key={v.id} onClick={() => abrirItem(v)} aria-label={v.titulo}
-          style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 96, padding: 12, boxSizing: "border-box", background: "none", border: "none", borderTop: i ? `1px solid ${C.linho}` : "none", cursor: "pointer", textAlign: "left" }}>
-          <div style={{ position: "relative", width: 120, height: 72, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: img || v.categoria !== "podcast" ? C.obs : C.linho }}>
-           {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
-           {!img && v.categoria === "podcast" && (
-            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke={C.primary} strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
-             <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
-            </svg>
-           )}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-           <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.25 }}>{v.titulo}</div>
-           <div style={{ fontFamily: FB, fontSize: 14, color: "#5C4F47", marginTop: 4 }}>{tipoDe(v.categoria)}{v.duracao ? ` · ${v.duracao}` : ""}</div>
-          </div>
-          {ok && <span aria-label="Assistida" style={{ width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>✓</span>}
-         </button>
+         <div key={v.id} style={{ display: "flex", alignItems: "center", borderTop: i ? `1px solid ${C.linho}` : "none" }}>
+          <button onClick={() => abrirItem(v)} aria-label={v.titulo}
+           style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, minHeight: 96, padding: 12, boxSizing: "border-box", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+           <div style={{ position: "relative", width: 120, height: 72, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: img || v.categoria !== "podcast" ? C.obs : C.linho }}>
+            {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+            {!img && v.categoria === "podcast" && (
+             <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke={C.primary} strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
+              <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
+             </svg>
+            )}
+           </div>
+           <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.25 }}>{v.titulo}</div>
+            <div style={{ fontFamily: FB, fontSize: 14, color: "#5C4F47", marginTop: 4 }}>{tipoDe(v.categoria)}{v.duracao ? ` · ${v.duracao}` : ""}</div>
+           </div>
+          </button>
+          <button onClick={() => marcarAssistido(v.id)} aria-pressed={ok}
+           aria-label={ok ? `Desmarcar ${v.titulo} como assistido` : `Marcar ${v.titulo} como assistido`}
+           style={{ width: 56, minHeight: 96, flexShrink: 0, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ width: 30, height: 30, borderRadius: 15, border: `1.5px solid ${ok ? C.oliva : C.ouro + "88"}`, background: ok ? C.oliva : "transparent", color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{ok ? "✓" : ""}</span>
+          </button>
+         </div>
         );
        })}
       </div>
