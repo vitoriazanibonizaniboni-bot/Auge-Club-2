@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { requestPermission, scheduleAll, clearAll, initOneSignalNative, setOneSignalUser } from "./notifications.js";
 import { supabase } from "./supabase.js";
+import { createPortal } from "react-dom";
 import { T, FONTE, alfa, cssVars } from "./tokens.js";
 import { EstilosUI, Button, Card, SectionHeader, ProgressDots } from "./componentes.jsx";
 import { Cume, CumeMini, ComoUsarHoje, progressoSemana, DiaDificil, SeloMinimo } from "./components/AugeCume.jsx";
@@ -4767,7 +4768,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
  onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
  aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
  aria-pressed={marcado}
- style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: `2px solid ${marcado ? C.oliva : C.lt}`, background: marcado ? C.oliva : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: C.creme }}
+ style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", border: `1.5px solid ${marcado ? C.oliva : C.lt}`, background: marcado ? C.oliva : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: C.creme }}
         >
  {marcado && <span aria-hidden="true" style={{ fontSize: 20, lineHeight: 1 }}>✓</span>}
         </button>
@@ -5512,64 +5513,6 @@ function Home({ videos, authUserId,
 
         {/* Próximo encontro foi removido — info será enviada por WhatsApp */}
 
-        {/* Banner carta semana 12 */}
-        {carta && sem >= 12 && !modoClube && (
-          <div
- style={{
- background: `${C.ouro}12`,
- border: `1px solid ${C.ouro}44`,
- borderRadius: 12,
- padding: "16px 16px 14px",
- marginBottom: 16,
-            }}
-          >
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.ouroTxt,
- marginBottom: 4,
-              }}
-            >
- Você tem uma carta esperando por você 
-            </div>
-            <div
- style={{
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 16,
- color: C.lt,
- lineHeight: 1.5,
- marginBottom: 12,
-              }}
-            >
- escrita por você mesma na Semana 1
-            </div>
-            <button
- onClick={() => {
- setEscT("carta");
- ir(S.ESC);
-              }}
- style={{
- background: C.ouro,
- border: "none",
- borderRadius: 50,
- padding: "10px",
- width: "100%",
- fontFamily: FB,
- fontWeight: 400,
- fontSize: 17,
- color: C.obs2,
- cursor: "pointer",
- letterSpacing: "0.02em",
-              }}
-            >
- Abrir minha carta →
-            </button>
-          </div>
-        )}
-
         {/* Card de permissão de notificações (Jornada, primeira vez) */}
         {perfil === "jornada" && notifStatus === "pending" && (
           <Card tom="suave" style={{ marginBottom: 16, position: "relative" }}>
@@ -5610,7 +5553,6 @@ function Home({ videos, authUserId,
 
                 {/* Cards dos 3 hábitos angulares (seção 4.2) */}
           <div>
-            {habsFixos.length > 0 && <SectionHeader titulo="Hábitos angulares" style={{ marginTop: 0 }} />}
             {habsFixos.map((h) => (
               <HabCard
  key={h.id}
@@ -5641,7 +5583,7 @@ function Home({ videos, authUserId,
             />}
 
             {/* Meus hábitos — criados pela aluna (seção 5) */}
-            <SectionHeader titulo="Meus hábitos" />
+            <SectionHeader titulo="Meus hábitos" style={{ marginTop: 0 }} />
             {habsPessoais.map((hp) => (
               <HabCard
  key={hp.id}
@@ -5697,8 +5639,8 @@ function Home({ videos, authUserId,
                 </div>
               </Card>
             )}
-            {arteAberta && <ArtePostagem onFechar={() => setArteAberta(false)} tk={tk} modoClube={modoClube} />}
-            {conquista && <ImagemConquista dados={conquista} modoClube={modoClube} tk={tk} onFechar={() => setConquista(null)} />}
+            {arteAberta && createPortal(<ArtePostagem onFechar={() => setArteAberta(false)} tk={tk} modoClube={modoClube} />, document.body)}
+            {conquista && createPortal(<ImagemConquista dados={conquista} modoClube={modoClube} tk={tk} onFechar={() => setConquista(null)} />, document.body)}
 
             {/* Conteúdos da Hoje (mockup 14/11) */}
             <ConteudosHoje videos={videos} modoClube={modoClube} perfil={perfil} authUserId={authUserId} ir={ir} />
@@ -5887,7 +5829,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  // Uma fileira por tema (série); aula sem tema cai na fileira da categoria.
  const grupos = new Map();
  Object.keys(TITULO_CAT).forEach((cat) => daCategoria(cat).forEach((v) => {
-  if (comeceTema(v)) return;
+  if (comeceTema(v) || v.id === comece?.id) return;
   const t = (v.tema || "").trim();
   const chave = t ? `tema:${t}` : `cat:${cat}`;
   if (!grupos.has(chave)) grupos.set(chave, { titulo: t || TITULO_CAT[cat], itens: [] });
@@ -5925,17 +5867,20 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
       <div style={{ height: 6, borderRadius: 3, background: C.linho, marginTop: 10, overflow: "hidden" }}>
        <div style={{ width: `${pct}%`, height: 6, borderRadius: 3, background: C.oliva }} />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 18 }}>
        {serie.itens.map((v, i) => {
         const ok = assistidos.has(String(v.id));
         return (
-         <button key={v.id} onClick={() => { setSerie(null); ir(S.CT); }}
- style={{ display: "flex", alignItems: "center", gap: 12, background: C.branco, border: `1px solid ${C.ouro}55`, borderRadius: 16, padding: 12, minHeight: 72, cursor: "pointer", textAlign: "left", fontFamily: FB, color: C.obs }}>
-          <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 16, background: ok ? C.oliva : C.linho, color: ok ? C.creme : C.obs, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600 }}>{ok ? "✓" : i + 1}</span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-           <span style={{ display: "block", fontSize: 17, fontWeight: 600, lineHeight: 1.25 }}>{v.titulo}</span>
-           <span style={{ display: "block", fontSize: 14, color: "#5C4F47", marginTop: 2 }}>{v.duracao || ""}</span>
-          </span>
+         <button key={v.id} onClick={() => { setSerie(null); ir(S.CT); }} aria-label={v.titulo}
+          style={{ position: "relative", width: "100%", height: 220, borderRadius: 20, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: C.obs, textAlign: "left" }}>
+          {ytThumb(v.url_youtube) && <img src={ytThumb(v.url_youtube)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(28,26,23,0) 35%, rgba(28,26,23,.88) 100%)" }} />
+          {ok && <span style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>✓</span>}
+          <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, color: C.creme }}>
+           <div style={{ display: "inline-block", background: "rgba(255,255,255,.85)", color: C.obs, borderRadius: 50, padding: "2px 9px", fontFamily: FB, fontSize: 13, fontWeight: 600 }}>{tipoDe(v.categoria)}</div>
+           <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2, marginTop: 8 }}>{v.titulo}</div>
+           <div style={{ fontFamily: FB, fontSize: 14, marginTop: 4 }}>{v.duracao || ""}</div>
+          </div>
          </button>
         );
        })}
@@ -10981,19 +10926,6 @@ function Trajetoria({ modoClube, criarHabPessoal, registrarHabito, desregistrarH
 
         {/* Ações da Trajetória: adicionar hábito e marcar um dia que faltou (saíram da Hoje) */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-          {novoHabAberto ? (
-            <NovoHabito
- onCriar={async (nome, metaTexto, freq) => { await criarHabPessoal(nome, metaTexto, freq); setNovoHabAberto(false); }}
- onCancelar={() => setNovoHabAberto(false)}
-            />
-          ) : (
-            <button
- onClick={() => setNovoHabAberto(true)}
- style={{ width: "100%", minHeight: 56, background: "none", border: `1.5px dashed ${C.primary}`, borderRadius: 16, padding: "12px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.primary, cursor: "pointer" }}
-            >
- + Adicionar hábito
-            </button>
-          )}
           <Button variante="contorno" onClick={() => setRetroT(true)}>Marcar um dia que faltou</Button>
         </div>
         {retroT && (
@@ -11060,6 +10992,22 @@ function Trajetoria({ modoClube, criarHabPessoal, registrarHabito, desregistrarH
           />
         )}
 
+
+        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          {novoHabAberto ? (
+            <NovoHabito
+ onCriar={async (nome, metaTexto, freq) => { await criarHabPessoal(nome, metaTexto, freq); setNovoHabAberto(false); }}
+ onCancelar={() => setNovoHabAberto(false)}
+            />
+          ) : (
+            <button
+ onClick={() => setNovoHabAberto(true)}
+ style={{ width: "100%", minHeight: 56, background: "none", border: `1.5px dashed ${C.primary}`, borderRadius: 16, padding: "12px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.primary, cursor: "pointer" }}
+            >
+ + Adicionar hábito
+            </button>
+          )}
+        </div>
       </Grain>
         {/* "bateu a preguiça?" mora na Trajetória (decisão 14/11) */}
         <button
