@@ -10788,7 +10788,7 @@ function PainelDesafio({ onFechar, desafiosSemana = {}, desafioFeitos = [], inic
   );
 }
 
-function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
+function PainelHabito({ h, onFechar, regs, anc, metaTexto, onRemover }) {
  const hojeReal = new Date();
  const [offset, setOffset] = useState(0);
  const vizData = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + offset, 1);
@@ -10882,6 +10882,9 @@ function PainelHabito({ h, onFechar, regs, anc, metaTexto }) {
           </span>
         </div>
       </div>
+      {onRemover && (
+        <button onClick={onRemover} style={{ width: "100%", minHeight: 52, marginTop: 18, background: "none", border: `1px solid ${C.linho}`, borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>Tirar da minha lista</button>
+      )}
     </div>
   );
 }
@@ -11004,7 +11007,7 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
   );
 }
 
-function Trajetoria({ modoClube, criarHabPessoal, registrarHabito, desregistrarHabito, toggleDesafio, habStats, regs, metas, habsFixos = HABS_FIXOS, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
+function Trajetoria({ modoClube, criarHabPessoal, removerHabPessoal, registrarHabito, desregistrarHabito, toggleDesafio, habStats, regs, metas, habsFixos = HABS_FIXOS, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
  const [novoHabAberto, setNovoHabAberto] = useState(false);
  const [retroT, setRetroT] = useState(false);
  const hojeReal = new Date();
@@ -11137,6 +11140,7 @@ function Trajetoria({ modoClube, criarHabPessoal, registrarHabito, desregistrarH
  regs={regs}
  anc={anc}
  metaTexto={metaDoHabito(habSel)}
+ onRemover={habSel?.pessoal ? async () => { if (await removerHabPessoal(habSel.id)) setHabSel(null); } : null}
           />
         )}
 
