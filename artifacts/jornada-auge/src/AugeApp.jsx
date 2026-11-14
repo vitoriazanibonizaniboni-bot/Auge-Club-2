@@ -2527,9 +2527,9 @@ export default function App() {
  if (param === "home") {
  ir(S.HOME);
     }
- // aviso de conteúdo novo (03/11): abre Dicas (Clube) / Conteúdo (Jornada)
+ // aviso de conteúdo novo (03/11): abre a Hoje (conteúdos novos aparecem lá)
  if (param === "dicas") {
- ir(S.CT);
+ ir(S.HOME);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -5190,7 +5190,7 @@ function ImagemConquista({ dados, modoClube, tk, onFechar }) {
  );
 }
 
-function Home({ videos, authUserId,
+function Home({ videos, authUserId, aulasTrancadas = false,
  modoClube,
  setSexta,
  perfil,
@@ -5685,7 +5685,7 @@ function Home({ videos, authUserId,
             {conquista && createPortal(<ImagemConquista dados={conquista} modoClube={modoClube} tk={tk} onFechar={() => setConquista(null)} />, document.body)}
 
             {/* Conteúdos da Hoje (mockup 14/11) */}
-            <ConteudosHoje videos={videos} modoClube={modoClube} perfil={perfil} authUserId={authUserId} ir={ir} />
+            <ConteudosHoje videos={videos} modoClube={modoClube} perfil={perfil} authUserId={authUserId} ir={ir} aulasTrancadas={aulasTrancadas} />
 
             {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
             <div style={{ height: 100 }} />
@@ -5928,9 +5928,50 @@ const CAPA_DO_ITEM = {
  "romances bobinhos favoritos": "/capas/romances-bobinhos-favoritos.jpg",
 };
 
-function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
+function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir, aulasTrancadas = false }) {
  const [assistidos, setAssistidos] = useState(() => new Set());
  const [serie, setSerie] = useState(null); // conteúdo aberto: { titulo, itens }
+ // Aula e guia tocam aqui, sem sair da Hoje
+ const [videoAberto, setVideoAberto] = useState(null);
+ const [guiaAberto, setGuiaAberto] = useState(null);
+ const [guiaHtml, setGuiaHtml] = useState("");
+ const [avisoTrava, setAvisoTrava] = useState(false);
+ // Tela acesa enquanto a aula está aberta (mesma regra da aba Conteúdo)
+ useEffect(() => {
+  if (!videoAberto || typeof navigator === "undefined" || !navigator.wakeLock) return;
+  let trava = null, vivo = true;
+  const pedir = async () => { try { if (vivo && document.visibilityState === "visible") trava = await navigator.wakeLock.request("screen"); } catch {} };
+  const aoVoltar = () => { if (document.visibilityState === "visible") pedir(); };
+  pedir();
+  document.addEventListener("visibilitychange", aoVoltar);
+  return () => { vivo = false; document.removeEventListener("visibilitychange", aoVoltar); try { trava && trava.release(); } catch {} };
+ }, [videoAberto]);
+ useEffect(() => {
+  if (!guiaAberto) { setGuiaHtml(""); return; }
+  let vivo = true;
+  setGuiaHtml("");
+  fetch(guiaAberto)
+   .then((r) => r.text())
+   .then((t) => { if (vivo) setGuiaHtml(t || ""); })
+   .catch(() => { if (vivo) setGuiaHtml("<div style='font-family:Inter,sans-serif;padding:32px 20px;color:#5A4B43;line-height:1.6'>Não foi possível abrir o conteúdo agora. Tente novamente em instantes.</div>"); });
+  return () => { vivo = false; };
+ }, [guiaAberto]);
+ const trancado = (v) => aulasTrancadas && v.categoria === "aulas";
+ const ytEmbedHoje = (url) => {
+  const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1];
+  return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1` : null;
+ };
+ const jaAssistiu = (id) => assistidos.has(String(id));
+ const marcarAssistido = async (id) => {
+  if (!id || !authUserId) return;
+  const chave = String(id);
+  const tinha = assistidos.has(chave);
+  setAssistidos((s) => { const n = new Set(s); if (tinha) n.delete(chave); else n.add(chave); return n; });
+  try {
+   if (tinha) await supabase.from("videos_assistidos").delete().eq("user_id", authUserId).eq("video_id", chave);
+   else await supabase.from("videos_assistidos").upsert({ user_id: authUserId, video_id: chave }, { onConflict: "user_id,video_id" });
+  } catch {}
+ };
  useEffect(() => {
   if (!authUserId) return;
   let vivo = true;
@@ -5959,7 +6000,10 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  const secoes = [...grupos.values()];
  const abrirItem = (v) => {
   setSerie(null);
-  if (v.categoria === "podcast" && v.url_youtube) { abrirLinkExterno(v.url_youtube); } else { itemParaAbrirNaBiblioteca = v; ir(S.CT); }
+  if (v.categoria === "podcast" && v.url_youtube) { abrirLinkExterno(v.url_youtube); return; }
+  if (trancado(v)) { setAvisoTrava(true); return; }
+  if (v.categoria === "curadoria") { if (v.url_youtube) setGuiaAberto(v.url_youtube); return; }
+  if (v.url_youtube) setVideoAberto({ id: v.id, titulo: v.titulo, sub: v.descricao || "", dur: v.duracao || "", url: v.url_youtube });
  };
  // Uma capa por conteúdo (tema). Toque abre a página do conteúdo, com as aulas e o progresso.
  const capaGrupo = (grupo, largura) => {
@@ -6027,7 +6071,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
 
    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
     <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 600, color: C.obs }}>Conteúdos</div>
-    <button onClick={() => ir(S.CT)} style={{ background: "none", border: "none", minHeight: 44, color: C.primary, fontFamily: FB, fontWeight: 600, fontSize: 16, cursor: "pointer" }}>Ver todos ›</button>
+    
    </div>
    {comece && (
     <div style={{ marginBottom: 16 }}>
@@ -6045,6 +6089,63 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
      </div>
     );
    })}
+   {avisoTrava && (
+    <div role="dialog" aria-modal="true" aria-label="Aulas liberadas depois do teste" onClick={() => setAvisoTrava(false)}
+     style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgba(31,26,23,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px 120px" }}>
+     <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: C.creme, borderRadius: 22, padding: "22px 20px 20px", fontFamily: FB, boxShadow: "0 8px 30px rgba(31,26,23,.18)" }}>
+      <div style={{ fontSize: 21, fontWeight: 700, color: C.obs, marginBottom: 8 }}>As aulas chegam depois do teste</div>
+      <div style={{ fontSize: 17, color: C.terra, lineHeight: 1.5, marginBottom: 18 }}>Nos 7 dias grátis, as aulas ficam fechadas. Meditações, yoga, podcasts e indicações já estão liberados para você.</div>
+      <button onClick={() => setAvisoTrava(false)} style={{ width: "100%", minHeight: 52, borderRadius: 14, border: "none", background: C.primary, color: "#FFFFFF", fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>Entendi</button>
+     </div>
+    </div>
+   )}
+   {guiaAberto && (
+    <div style={{ position: "fixed", inset: 0, zIndex: 600, background: C.creme, display: "flex", flexDirection: "column", paddingTop: "env(safe-area-inset-top)" }}>
+     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${C.linho}`, background: C.creme, flexShrink: 0 }}>
+      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 17, color: C.ouroTxt }}>Guia</div>
+      <button onClick={() => setGuiaAberto(null)} style={{ background: "none", border: `1px solid ${C.ouro}66`, borderRadius: 50, padding: "6px 16px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt, cursor: "pointer" }}>Fechar ✕</button>
+     </div>
+     <iframe srcDoc={guiaHtml} title="Guia" style={{ flex: 1, width: "100%", border: "none", background: C.creme }} />
+    </div>
+   )}
+   {videoAberto && (
+    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: C.creme, overflowY: "auto" }}>
+     <div style={{ position: "sticky", top: 0, zIndex: 2, background: C.creme, padding: "calc(12px + env(safe-area-inset-top)) 16px 10px" }}>
+      <button onClick={() => setVideoAberto(null)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.ouroTxt }}>
+       <span style={{ fontSize: 22, lineHeight: 1 }}>‹</span> Voltar
+      </button>
+     </div>
+     <div style={{ padding: "0 16px 40px" }}>
+      <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", borderRadius: 14, overflow: "hidden" }}>
+       {ytEmbedHoje(videoAberto.url) ? (
+        <iframe src={ytEmbedHoje(videoAberto.url)} title={videoAberto.titulo} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
+         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+       ) : (
+        <video src={videoAberto.url} controls autoPlay playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+       )}
+      </div>
+      <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 20, color: C.obs, lineHeight: 1.32, marginTop: 16 }}>
+       {videoAberto.dur ? `${videoAberto.dur} | ${videoAberto.titulo}` : videoAberto.titulo}
+      </div>
+      {videoAberto.id && (
+       <button onClick={() => marcarAssistido(videoAberto.id)} aria-pressed={jaAssistiu(videoAberto.id)}
+        style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, background: jaAssistiu(videoAberto.id) ? C.oliva : "transparent", border: `1.5px solid ${jaAssistiu(videoAberto.id) ? C.oliva : C.ouro + "88"}`, borderRadius: 50, padding: "9px 16px", fontFamily: FB, fontWeight: jaAssistiu(videoAberto.id) ? 600 : 400, fontSize: 16, color: jaAssistiu(videoAberto.id) ? C.creme : C.ouroTxt, cursor: "pointer" }}>
+        {IcoH.checkCirc(jaAssistiu(videoAberto.id) ? C.creme : C.ouroTxt, 18)}
+        {jaAssistiu(videoAberto.id) ? "Assistido" : "Marcar como assistido"}
+       </button>
+      )}
+      {videoAberto.sub && (
+       <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2, lineHeight: 1.6, marginTop: 10 }}>{videoAberto.sub}</div>
+      )}
+      {videoAberto.id && (
+       <>
+        <div style={{ height: 1, background: `${C.ouro}22`, margin: "20px 0 0" }} />
+        <ComentariosVideo videoId={videoAberto.id} authUserId={authUserId} usuario={usuario} minhaFoto={minhaFoto} />
+       </>
+      )}
+     </div>
+    </div>
+   )}
   </div>
  );
 }
