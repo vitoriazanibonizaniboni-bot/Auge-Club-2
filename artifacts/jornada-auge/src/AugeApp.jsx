@@ -5420,6 +5420,14 @@ function Home({ videos, authUserId,
  const minimoDoDia = (id) => (diaMinimo ? (metas?.[id]?.minimo || "").trim() || null : null);
  const msgPendente = useRef(null);
  const [conquista, setConquista] = useState(null);
+ // Desafio da semana: ao marcar (não ao desmarcar), também aparece o aviso
+ const marcarDesafio = (dia = TODAY) => {
+ if (!desafioFeitos.includes(dia)) {
+  cumePendente.current = tCume;
+  msgPendente.current = "Desafio da semana feito. Mudar um padrão automático é coragem.";
+ }
+ return toggleDesafio(dia);
+ };
  const registrarNaHoje = (id, data, dif) => {
  cumePendente.current = tCume;
  const hab = habsFixos.find((h) => h.id === id);
@@ -5516,7 +5524,7 @@ function Home({ videos, authUserId,
  habStats={habStats}
  desafiosSemana={desafiosSemana}
  desafioFeitos={desafioFeitos}
- toggleDesafio={toggleDesafio}
+ toggleDesafio={marcarDesafio}
  inicioJornada={jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : null)}
         />
       )}
