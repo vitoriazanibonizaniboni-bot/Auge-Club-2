@@ -5884,7 +5884,6 @@ const abrirLinkExterno = (url) => {
 function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  const [assistidos, setAssistidos] = useState(() => new Set());
  const [serie, setSerie] = useState(null); // conteúdo aberto: { titulo, itens }
- const [fechados, setFechados] = useState({}); // subseções recolhidas, pela chave do tema
  useEffect(() => {
   if (!authUserId) return;
   let vivo = true;
@@ -5901,23 +5900,16 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  const TITULO_CAT = { aulas: "Aulas", yoga: "Aulas de yoga", meditacoes: "Meditação", curadoria: "Indicações", podcast: "Podcast" };
  const comeceTema = (v) => (v.tema || "").trim().toLowerCase() === "comece por aqui";
  const comece = visiveis.filter(comeceTema).sort(ordenar)[0] || daCategoria("aulas")[0];
- // Um conteúdo por categoria (Aulas, Meditação…). Dentro dele, as subseções são os temas.
- const secoes = Object.keys(TITULO_CAT).map((cat) => ({
-  titulo: TITULO_CAT[cat], cat,
-  itens: daCategoria(cat).filter((v) => !comeceTema(v) && v.id !== comece?.id),
- })).filter((g) => g.itens.length);
- // Subseções do conteúdo: uma por tema. Sem tema nenhum, uma lista só, sem cabeçalho.
- const blocosDoConteudo = (grupo) => {
-  const mapa = new Map();
-  grupo.itens.forEach((v) => {
-   const t = (v.tema || "").trim();
-   if (!mapa.has(t)) mapa.set(t, { chave: `${grupo.cat}:${t}`, titulo: t, itens: [] });
-   mapa.get(t).itens.push(v);
-  });
-  const lista = [...mapa.values()];
-  if (lista.length === 1 && !lista[0].titulo) return [{ ...lista[0], titulo: "" }];
-  return lista.map((b) => ({ ...b, titulo: b.titulo || "Outras aulas" }));
- };
+ // Uma capa por tema (coleção), dentro da seção da categoria. Sem tema: capa com o nome da categoria.
+ const grupos = new Map();
+ Object.keys(TITULO_CAT).forEach((cat) => daCategoria(cat).forEach((v) => {
+  if (comeceTema(v) || v.id === comece?.id) return;
+  const t = (v.tema || "").trim();
+  const chave = t ? `tema:${t}` : `cat:${cat}`;
+  if (!grupos.has(chave)) grupos.set(chave, { titulo: t || TITULO_CAT[cat], itens: [], cat });
+  grupos.get(chave).itens.push(v);
+ }));
+ const secoes = [...grupos.values()];
  const abrirItem = (v) => {
   setSerie(null);
   if (v.categoria === "podcast" && v.url_youtube) { abrirLinkExterno(v.url_youtube); } else { itemParaAbrirNaBiblioteca = v; ir(S.CT); }
@@ -5956,45 +5948,24 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
       <div style={{ height: 6, borderRadius: 3, background: C.linho, marginTop: 10, overflow: "hidden" }}>
        <div style={{ width: `${pct}%`, height: 6, borderRadius: 3, background: C.oliva }} />
       </div>
-      {blocosDoConteudo(serie).map((b) => {
-       const aberto = !fechados[b.chave];
-       const feitasB = b.itens.filter((v) => assistidos.has(String(v.id))).length;
-       return (
-        <div key={b.chave} style={{ marginTop: 20 }}>
-         {b.titulo && (
-          <button onClick={() => setFechados((f) => ({ ...f, [b.chave]: aberto }))} aria-expanded={aberto}
-           style={{ width: "100%", minHeight: 64, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 16, padding: "12px 16px", boxSizing: "border-box", cursor: "pointer", textAlign: "left" }}>
-           <span>
-            <span style={{ display: "block", fontFamily: FB, fontSize: 18, fontWeight: 600, color: C.obs }}>{b.titulo}</span>
-            <span style={{ display: "block", fontFamily: FB, fontSize: 16, color: "#5C4F47", marginTop: 4 }}>{feitasB} de {b.itens.length} assistidas</span>
-           </span>
-           <span style={{ fontFamily: FB, fontSize: 24, color: C.obs }}>{aberto ? "−" : "+"}</span>
-          </button>
-         )}
-         {aberto && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: b.titulo ? 10 : 0 }}>
-           {b.itens.map((v) => {
-            const ok = assistidos.has(String(v.id));
-            const img = ytThumb(v.url_youtube);
-            return (
-             <button key={v.id} onClick={() => abrirItem(v)} aria-label={v.titulo}
-              style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 88, background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 16, padding: 10, boxSizing: "border-box", cursor: "pointer", textAlign: "left" }}>
-              <div style={{ position: "relative", width: 96, height: 68, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: C.obs }}>
-               {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-               <div style={{ fontFamily: FB, fontSize: 16, fontWeight: 600, color: C.obs, lineHeight: 1.25 }}>{v.titulo}</div>
-               <div style={{ fontFamily: FB, fontSize: 14, color: "#5C4F47", marginTop: 4 }}>{tipoDe(v.categoria)}{v.duracao ? ` · ${v.duracao}` : ""}{ok ? " · Assistida" : ""}</div>
-              </div>
-              {ok && <span aria-label="Assistida" style={{ width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>✓</span>}
-             </button>
-            );
-           })}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 18 }}>
+       {serie.itens.map((v) => {
+        const ok = assistidos.has(String(v.id));
+        return (
+         <button key={v.id} onClick={() => abrirItem(v)} aria-label={v.titulo}
+          style={{ position: "relative", width: "100%", height: 220, borderRadius: 20, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: C.obs, textAlign: "left" }}>
+          {ytThumb(v.url_youtube) && <img src={ytThumb(v.url_youtube)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(28,26,23,0) 35%, rgba(28,26,23,.88) 100%)" }} />
+          {ok && <span style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>✓</span>}
+          <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, color: C.creme }}>
+           <div style={{ display: "inline-block", background: "rgba(255,255,255,.85)", color: C.obs, borderRadius: 50, padding: "2px 9px", fontFamily: FB, fontSize: 13, fontWeight: 600 }}>{tipoDe(v.categoria)}</div>
+           <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2, marginTop: 8 }}>{v.titulo}</div>
+           <div style={{ fontFamily: FB, fontSize: 14, marginTop: 4 }}>{v.duracao || ""}</div>
           </div>
-         )}
-        </div>
-       );
-      })}
+         </button>
+        );
+       })}
+      </div>
      </div>
     );
    })()}
@@ -6009,7 +5980,16 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
      <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{capaGrupo({ titulo: "Comece por aqui", itens: [comece] }, 170)}</div>
     </div>
    )}
-   <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{secoes.map((x) => capaGrupo(x, 150))}</div>
+   {Object.keys(TITULO_CAT).map((cat) => {
+    const deCategoria = secoes.filter((x) => x.cat === cat);
+    if (!deCategoria.length) return null;
+    return (
+     <div key={cat} style={{ marginBottom: 16 }}>
+      <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 8 }}>{TITULO_CAT[cat]}</div>
+      <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{deCategoria.map((x) => capaGrupo(x, 150))}</div>
+     </div>
+    );
+   })}
   </div>
  );
 }
