@@ -5946,7 +5946,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
       <div style={{ height: 6, borderRadius: 3, background: C.linho, marginTop: 10, overflow: "hidden" }}>
        <div style={{ width: `${pct}%`, height: 6, borderRadius: 3, background: C.oliva }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 18 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 18 }}>
        {serie.itens.map((v) => {
         const ok = assistidos.has(String(v.id));
         return (
