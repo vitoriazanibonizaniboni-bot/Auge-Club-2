@@ -5102,6 +5102,10 @@ const MSG_SUBIDA = [
   "Cada marca é prova de que você voltou.",
   "Hoje você escolheu você.",
   "Pequeno e feito vale mais que perfeito e adiado.",
+  "Você está cuidando de si, e isso aparece.",
+  "Que orgulho desse passo. Continue.",
+  "Constância é isso: voltar, de novo e de novo.",
+  "Mais uma vez, você fez a sua parte.",
 ];
 const msgSubida = (id) => MSG_SUBIDA[(new Date().getDate() + [...id].reduce((soma, c) => soma + c.charCodeAt(0), 0)) % MSG_SUBIDA.length];
 
@@ -5418,8 +5422,18 @@ function Home({ videos, authUserId,
  cumePendente.current = tCume;
  const hab = habsFixos.find((h) => h.id === id);
  const metaBatida = !!hab && !habStats[id]?.bloqueado && feitosNaSemana(id) + 1 === habStats[id]?.meta;
+ const fixosAtivos = habsFixos.filter((h) => !habStats[h.id]?.bloqueado);
+ const todosHoje = fixosAtivos.length > 0 && fixosAtivos.every((h) => h.id === id || regDoDia(h));
+ const marcasSemana = diasDaSemana.reduce((soma, d) => soma + Object.values(regs[d] || {}).filter(Boolean).length, 0) + 1;
+ const marcoSemana = [5, 10, 15, 20].includes(marcasSemana);
+ const kPrimeira = `auge_primeira_marca_${authUserId || "x"}`;
+ let primeiraVez = false;
+ try { primeiraVez = localStorage.getItem(kPrimeira) !== "1"; if (primeiraVez) localStorage.setItem(kPrimeira, "1"); } catch {}
  msgPendente.current = minimoDoDia(id) ? "Mínimo feito. Você subiu mais um pouco."
   : metaBatida ? `Meta da semana batida em ${hab.nome}. Celebre isso.`
+  : todosHoje ? "Todos os seus hábitos de hoje estão feitos. Hoje você cuidou de você inteira."
+  : marcoSemana ? `${marcasSemana} marcas nesta semana. Isso já é constância.`
+  : primeiraVez ? "Primeira marca registrada. Esse é o começo que conta."
   : msgSubida(id);
  if (metaBatida) {
   const kc = `auge_conquista_${authUserId || "x"}_${segundaAtual}_${id}`;
