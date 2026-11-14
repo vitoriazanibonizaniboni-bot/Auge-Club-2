@@ -5895,6 +5895,14 @@ const CAPA_DO_TEMA = {
  "yoga para iniciantes": "/capas/yoga-para-iniciantes.jpg",
 };
 const chaveTema = (t) => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+// Capas próprias de cada leitura da Curadoria, pelo título do item.
+const CAPA_DO_ITEM = {
+ "leituras que acendem a chama": "/capas/leituras-acendem-a-chama.jpg",
+ "leituras que constroem habitos": "/capas/leituras-constroem-habitos.jpg",
+ "meus livros favoritos": "/capas/meus-livros-favoritos.jpg",
+ "meus suspenses favoritos": "/capas/meus-suspenses-favoritos.jpg",
+ "romances bobinhos favoritos": "/capas/romances-bobinhos-favoritos.jpg",
+};
 
 function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  const [assistidos, setAssistidos] = useState(() => new Set());
@@ -5967,7 +5975,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
       <div style={{ marginTop: 18, background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 18, overflow: "hidden" }}>
        {serie.itens.map((v, i) => {
         const ok = assistidos.has(String(v.id));
-        const img = ytThumb(v.url_youtube);
+        const img = CAPA_DO_ITEM[chaveTema(v.titulo)] || ytThumb(v.url_youtube);
         return (
          <button key={v.id} onClick={() => abrirItem(v)} aria-label={v.titulo}
           style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 96, padding: 12, boxSizing: "border-box", background: "none", border: "none", borderTop: i ? `1px solid ${C.linho}` : "none", cursor: "pointer", textAlign: "left" }}>
@@ -12339,7 +12347,7 @@ function Conteudo({ modoClube, habsFixos, abrirRetro, aulasTrancadas = false, re
                 }}
               >
                 {itens.map((v) => {
-                  const thumb = ehLink ? null : ytThumb(v.url);
+                  const thumb = CAPA_DO_ITEM[chaveTema(v.titulo)] || (ehLink ? null : ytThumb(v.url));
                   const visto = jaAssistiu(v.id);
                   const travado = trancado({ ...v, cat: cat.id });
                   const abrir = () => travado ? setAvisoTrava(true) : v.url && (cat.id === "podcast" ? abrirExterno(v.url) : cat.id === "curadoria" ? setGuiaAberto(v.url) : setVideoAberto(v));
