@@ -10909,7 +10909,7 @@ function PainelHabito({ h, onFechar, regs, anc, metaTexto, onRemover }) {
 const CORES_HAB_CLUBE = ["#A3B07E", "#B4A2D6", "#E2BE85", "#87C2BC", "#E7AE98", "#9DB7D9", "#C9B79C"];
 const RISCO_VAZIO = "#F1EBE2";
 
-function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
+function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null, onTirar }) {
  const hojeReal = new Date();
  const [offset, setOffset] = useState(0);
  const [sel, setSel] = useState(inicial);
@@ -11004,6 +11004,7 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
       </div>
 
       {habSel ? (
+        <>
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
           {habSel.desafio
             ? <Numero valor={semanasDesafio} rotulo={semanasDesafio === 1 ? "semana seguida" : "semanas seguidas"} />
@@ -11011,6 +11012,13 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
           <Numero valor={feitosNoMes} rotulo={`${feitosNoMes === 1 ? "dia" : "dias"} em ${nomeMes}`} />
           <Numero valor={metaDoHabito(habSel)} rotulo="meta" menor />
         </div>
+        {habSel.pessoal && onTirar && (
+          <button onClick={() => { if (window.confirm(`Tirar "${habSel.nome}" da sua lista? O histórico fica guardado.`)) onTirar(habSel); }}
+            style={{ width: "100%", minHeight: 52, marginTop: 14, background: "none", border: `1px solid ${C.linho}`, borderRadius: 50, padding: "10px", fontFamily: FB, fontSize: 16, color: C.terra, cursor: "pointer" }}>
+            Tirar da minha lista
+          </button>
+        )}
+        </>
       ) : (
         <div style={{ fontFamily: FB, fontSize: 13, color: C.lt, margin: "10px 2px 0" }}>Toque num hábito para ver só ele</div>
       )}
@@ -11130,6 +11138,7 @@ function Trajetoria({ modoClube, criarHabPessoal, removerHabPessoal, registrarHa
  regs={modoClube ? regs : regsComDesafio}
  metaDoHabito={metaDoHabito}
  inicial={filtroInicial}
+  onTirar={(h) => removerHabPessoal(h.id)}
         />
 
         {/* painel do desafio — as 12 semanas, com o texto de cada uma */}
