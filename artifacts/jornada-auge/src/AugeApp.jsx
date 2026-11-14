@@ -11030,17 +11030,6 @@ function Trajetoria({ modoClube, criarHabPessoal, registrarHabito, desregistrarH
         )}
 
 
-        {/* ── Trajetória semanal (seção 5.2) — o arco das 12 semanas é só da Jornada ── */}
-        {!modoClube && <div style={{ padding: "4px 2px 8px", marginBottom: 6 }}>
-          <svg width="100%" viewBox="0 0 380 158" fill="none" style={{ display: "block", marginBottom: 6 }}>
-            <path d="M 35 126 C 110 142 272 46 350 38" stroke={`${C.ouro}55`} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-            <circle cx="350" cy="38" r="2.2" fill={`${C.ouro}88`} />
-            <circle cx={mx} cy={my} r="5" fill={C.ouro} />
-            <text x={mx} y={my - 12} textAnchor="middle" fontFamily="'Inter',sans-serif" fontWeight="400" fontSize="11" letterSpacing="2" fill={C.ouroDk}>
- S{sem}
-            </text>
-          </svg>
-        </div>}
 
         {/* ── Calendário colorido, um risco por hábito (Clube desde 26/10; Jornada
             desde 02/11, a pedido da Vitória, com o arco em cima e o desafio
