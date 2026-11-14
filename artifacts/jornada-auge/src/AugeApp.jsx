@@ -5942,7 +5942,7 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
   if (comeceTema(v) || v.id === comece?.id) return;
   const t = (v.tema || "").trim();
   const chave = t ? `tema:${t}` : `cat:${cat}`;
-  if (!grupos.has(chave)) grupos.set(chave, { titulo: t || TITULO_CAT[cat], itens: [], cat });
+  if (!grupos.has(chave)) grupos.set(chave, { titulo: t || TITULO_CAT[cat], itens: [], cat, semTema: !t });
   grupos.get(chave).itens.push(v);
  }));
  const secoes = [...grupos.values()];
@@ -5953,7 +5953,8 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
  // Uma capa por conteúdo (tema). Toque abre a página do conteúdo, com as aulas e o progresso.
  const capaGrupo = (grupo, largura) => {
   const capaItem = grupo.itens.find((v) => ytThumb(v.url_youtube)) || grupo.itens[0];
-  const capaPronta = CAPA_DO_TEMA[chaveTema(grupo.titulo)];
+  // Curadoria sem tema usa a capa de Leitura (todas as leituras de hoje são Leitura)
+  const capaPronta = CAPA_DO_TEMA[chaveTema(grupo.titulo)] || (grupo.semTema && grupo.cat === "curadoria" ? "/capas/leitura.jpg" : null);
   const img = capaPronta || ytThumb(capaItem?.url_youtube);
   const feitas = grupo.itens.filter((v) => assistidos.has(String(v.id))).length;
   return (
