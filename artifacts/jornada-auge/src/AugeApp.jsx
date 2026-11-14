@@ -10080,8 +10080,6 @@ function MetasPessoais({ habsPessoais = [], salvarMetaPessoal, removerHabPessoal
         <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.obs2 }}>Meta: {desc ? `${desc}, ` : ""}{freq}x na semana</div>
         <div style={{ display: "flex", gap: 18, marginTop: 4 }}>
          <button onClick={() => { setMetaEd(hp.id); setMetaTxt(desc); setMetaFreq(freq); }} style={linkBtn}>editar meta</button>
-         <button onClick={async () => { if (!window.confirm(`Tirar "${hp.nome}" da sua lista? O histórico fica guardado.`)) return; const ok = await removerHabPessoal?.(hp.id); tk(ok ? "Hábito tirado da sua lista" : "Não consegui tirar agora. Tente de novo."); }}
-          style={{ ...linkBtn, color: C.terra }}>tirar da minha lista</button>
         </div>
        </div>
       ) : (
@@ -10101,6 +10099,10 @@ function MetasPessoais({ habsPessoais = [], salvarMetaPessoal, removerHabPessoal
         </div>
        </div>
       )}
+      <div style={{ marginTop: 6 }}>
+       <button onClick={async () => { if (!window.confirm(`Tirar "${hp.nome}" da sua lista? O histórico fica guardado.`)) return; const ok = await removerHabPessoal?.(hp.id); tk(ok ? "Hábito tirado da sua lista" : "Não consegui tirar agora. Tente de novo."); }}
+          style={{ ...linkBtn, color: C.terra }}>tirar da minha lista</button>
+      </div>
      </div>
     );
    })}
