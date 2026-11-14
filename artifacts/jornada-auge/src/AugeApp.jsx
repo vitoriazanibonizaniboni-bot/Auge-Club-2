@@ -809,7 +809,7 @@ const ORDEM_ABAS = IS_CLUBE ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT] : [S.H
 // Sem Chat no Clube (decisão da Vitória, 27/10): a conversa entre as alunas
 // fica no grupo de WhatsApp. Ficam 4 abas. Dicas vem primeiro e é onde o app
 // abre (decisão da Vitória, 02/11): no Clube o conteúdo é o centro.
-const ORDEM_ABAS_CLUBE = [S.CT, S.HOME, S.TRAJ, S.JOR];
+const ORDEM_ABAS_CLUBE = [S.HOME, S.TRAJ, S.JOR];
 // Chave de prévia no aparelho ("1" = ver como Clube), para testar sem mexer na conta
 const previaClube = () => { try { return ["1", "teste"].includes(localStorage.getItem("auge_previa_clube")); } catch { return false; } };
 // Prévia dos 7 dias grátis ("teste"): Clube com as aulas trancadas
@@ -1361,7 +1361,7 @@ export default function App() {
  const habsForaDaLista = modoClube ? HABS_FIXOS.filter((h) => metas?.[h.id]?.ativo === false) : [];
  // O Clube não tem Mural/Chat: se algum caminho levar para lá (notificação
  // antiga, link ?open=mural), volta para a Hoje.
- useEffect(() => { if (modoClube && [S.FEED, S.NOVO, S.VOZ].includes(tela)) setTela(S.CT); }, [modoClube, tela]);
+ useEffect(() => { if (modoClube && [S.FEED, S.NOVO, S.VOZ].includes(tela)) setTela(S.HOME); }, [modoClube, tela]);
  // No Clube o app abre em Dicas: na primeira vez que a conta carrega como
  // Clube, quem estaria na Hoje vai para Dicas (link de notificação para outra
  // tela continua valendo).
@@ -1385,7 +1385,6 @@ export default function App() {
  useEffect(() => {
  if (!profileLoaded || abriuClubeRef.current) return;
  abriuClubeRef.current = true;
- if (modoClube && tela === S.HOME && !veioDeLinkRef.current) setTela(S.CT);
   }, [profileLoaded, modoClube]); // eslint-disable-line react-hooks/exhaustive-deps
  // Carta para o Futuro é só da Jornada (decisão da Vitória, 26/10): no Clube o
  // primeiro acesso ignora a carta, e se só faltava ela, não abre.
@@ -1897,11 +1896,12 @@ export default function App() {
  const faltam = {
  porques: semLinha(porquesRes) || ![pqP.p1, pqP.p2, pqP.p3].every((t) => (t || "").trim()),
  ancora: semLinha(ancRes) || !(ancRes.data.texto || "").trim(),
+ metas: semLinha(metasRes) || [mtP.mov_freq, mtP.sono_freq, mtP.tsi_freq].some((v) => v == null),
  minimos: semLinha(metasRes) || ![mtP.mov_minimo, mtP.sono_minimo, mtP.tsi_minimo].every((t) => (t || "").trim()),
       };
- faltam.carta = semLinha(cartaRes) || !(cartaRes.data.texto || "").trim();
+ faltam.carta = false; // carta para daqui 12 semanas saiu da primeira vez (14/11)
  const liberada = ["jornada", "comunidade"].includes(planoPA);
- setPrimAcesso(liberada && !falhou && (faltam.porques || faltam.ancora || faltam.minimos) ? faltam : null);
+ setPrimAcesso(liberada && !falhou && (faltam.porques || faltam.ancora || faltam.metas || faltam.minimos) ? faltam : null);
     }
 
     // habitos_angulares tem prioridade sobre profiles.habito_1/2/3
@@ -2794,7 +2794,9 @@ export default function App() {
  const DATA_VERSAO_TOUR = "2026-10-01";
  // Clube (04/11): passo a passo próprio, com chave própria — quem passa da
  // Jornada para o Clube também vê, mesmo já tendo visto o da Jornada.
- const chaveTour = modoClube ? CHAVE_TOUR_CLUBE : CHAVE_TOUR;
+ // Passo a passo é por CONTA (não por aparelho): conta nova no mesmo celular também vê.
+ const chaveDaConta = (k) => (authUser?.id ? `${k}:${authUser.id}` : k);
+ const chaveTour = chaveDaConta(modoClube ? CHAVE_TOUR_CLUBE : CHAVE_TOUR);
  useEffect(() => {
  if (!profileLoaded || !authUser || tour || primAcessoEf || lerFlag(chaveTour)) return;
  if (perfil === "pendente" || perfil === "admin" || !perfil) return;
@@ -2803,10 +2805,10 @@ export default function App() {
   }, [profileLoaded, authUser, perfil, primAcessoEf, modoClube]);
  const fecharTour = () => {
  if (tour?.clube) {
- gravarFlag(CHAVE_TOUR_CLUBE);
+ gravarFlag(chaveDaConta(CHAVE_TOUR_CLUBE));
  // O do Clube já explica Dicas e Trajetória: não repetir ao abrir essas abas
- gravarFlag("auge_tour_conteudo"); gravarFlag("auge_tour_trajetoria");
-    } else gravarFlag(CHAVE_TOUR);
+ gravarFlag(chaveDaConta("auge_tour_conteudo")); gravarFlag(chaveDaConta("auge_tour_trajetoria"));
+    } else gravarFlag(chaveDaConta(CHAVE_TOUR));
  setTour(null); setTela(modoClubeRef.current ? S.CT : S.HOME);
   };
  // Passo a passo de cada aba: na primeira vez que ela abre a aba (depois do da Hoje)
@@ -2815,10 +2817,10 @@ export default function App() {
  useEffect(() => {
  const aba = ABA_DO_TOUR[tela];
  if (!aba || tour || !authUser || perfil === "admin" || perfil === "pendente") return;
- if (!lerFlag(chaveTour) || lerFlag(`auge_tour_${aba}`)) return;
+ if (!lerFlag(chaveTour) || lerFlag(chaveDaConta(`auge_tour_${aba}`))) return;
  setTourAba(aba);
   }, [tela, tour]);
- const fecharTourAba = () => { gravarFlag(`auge_tour_${tourAba}`); setTourAba(null); };
+ const fecharTourAba = () => { gravarFlag(chaveDaConta(`auge_tour_${tourAba}`)); setTourAba(null); };
 
   // Aguardando verificação de sessão Supabase
  if (loadingAuth)
@@ -3009,7 +3011,7 @@ export default function App() {
       <div
  ref={rolarRef}
  onScroll={(e) => { rolagem.current[telaRolando.current] = e.currentTarget.scrollTop; }}
- style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
+ style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 120 }}
       >
         {/* SEM position neste invólucro: o botão "bateu a preguiça?" e os
             painéis das telas usam position:absolute/fixed presos ao app
@@ -3063,9 +3065,10 @@ export default function App() {
  salvarPorques={([a, b, c]) => { setPq1(a); setPq2(b); setPq3(c); syncDB("porques", { p1: a, p2: b, p3: c }, { onConflict: "user_id" }); }}
  salvarAncora={(t) => { setAnc(t); syncDB("ancora", { texto: t }, { onConflict: "user_id" }); }}
  salvarMinimos={salvarMinimos}
+ salvarMeta={salvarMeta}
  setCarta={setCarta}
  tk={tk}
- onConcluir={() => { setPrimAcesso(null); setTela(modoClube ? S.CT : S.HOME); }}
+ onConcluir={() => { setPrimAcesso(null); setTela(S.HOME); }}
         />
       )}
       {!primAcessoEf && tour && <PassoAPasso antiga={tour.antiga} onFechar={fecharTour} {...(tour.clube ? { passos: passosClube({ status: notifStatus, ativar: async () => {
@@ -3158,7 +3161,7 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0, modoClube = false })
   // Configurações fica fora da barra, acessada por ícone (seção 9)
  const mainAbas = modoClube ? ORDEM_ABAS_CLUBE : IS_CLUBE
     ? [S.HOME, S.TRAJ, S.FEED, S.CX, S.JOR, S.CT]
-    : [S.HOME, S.TRAJ, S.FEED, S.JOR, S.CT];
+    : [S.HOME, S.TRAJ, S.FEED, S.JOR];
  let aba = ABA_ORIGEM[tela] || S.HOME;
  if (!mainAbas.includes(aba)) {
  aba = ABA_ORIGEM[aba] || S.HOME;
@@ -3168,7 +3171,6 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0, modoClube = false })
  aba = S.CX;
   }
  const tabs = modoClube ? [
-    { id: S.CT, label: "Dicas", icon: Ico.livro },
     { id: S.HOME, label: "Hoje", icon: Ico.hoje },
     { id: S.TRAJ, label: "Trajetória", icon: Ico.traj },
     { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
@@ -3178,7 +3180,6 @@ function NavBar({ tela, ir, mc, perfil, ckOk, msgCount = 0, modoClube = false })
     { id: S.FEED, label: "Mural", icon: Ico.mural, msgCount: IS_CLUBE ? 0 : msgCount },
     ...(IS_CLUBE ? [{ id: S.CX, label: "Amigas", icon: Ico.cx, msgCount }] : []),
     { id: S.JOR, label: "Meu Mapa", icon: Ico.mapa },
-    { id: S.CT, label: "Conteúdo", icon: Ico.livro },
   ];
   // Nota: Jornada aparece para todos — Comunidade vê vitrine, Jornada vê conteúdo
   // ── A bolinha ──────────────────────────────────────────────────────────
@@ -4760,43 +4761,31 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
 
  return (
     <Card style={{ marginBottom: 12 }}>
-      {/* nome + atalho para o progresso (a seta leva à Jornada) */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {(IcoH[h.id] || IcoH.meu)(C.lt)}
-        <div style={{ flex: 1, minWidth: 0, fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          {h.nome}{minimoHoje && <SeloMinimo />}
-        </div>
-        <button onClick={irProgresso} aria-label={`Ver progresso de ${h.nome}`}
- style={{ width: 48, height: 48, margin: "-12px -12px -12px 0", background: "none", border: "none", cursor: "pointer", color: C.lt, fontSize: 24, lineHeight: 1 }}>
-          ›
-        </button>
-      </div>
-
-      {/* meta (a edição fica no painel "Editar") */}
-      {/* a meta com o lápis: tocar abre o painel "Editar" */}
-      {onEditar ? (
-        <button onClick={onEditar} aria-label={`Editar ${h.nome}`} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "8px 0", minHeight: 44, margin: "-6px 0 4px", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.45, cursor: "pointer" }}>
-          {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""}{" "}<span style={{ display: "inline-block", verticalAlign: "-3px", marginLeft: 4, color: C.primary }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z" /><path d="M13.5 6.5l4 4" /></svg></span>
-        </button>
-      ) : (
-      <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, margin: "2px 0 10px", lineHeight: 1.45 }}>
-          {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""}
-      </div>
-      )}
-
-      {/* a semana, de segunda a domingo */}
-      <ProgressDots dias={diasDaSemana} feitos={feitosSemana} hoje={dataAlvo} />
-
-      {/* Feito hoje — contorno antes, oliva depois */}
-      <div style={{ marginTop: 14 }}>
-        <Button
- variante={marcado ? "feito" : "contorno"}
- icone={marcado ? <span aria-hidden="true" style={{ fontSize: 17 }}>✓</span> : null}
+      {/* A bolinha: um toque marca, outro desmarca. Sem botão largo. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <button
  onClick={() => (marcado ? desregistrarHabito(h.id, dataAlvo) : marcar())}
  aria-label={marcado ? `Desmarcar ${h.nome}` : `Marcar ${h.nome}`}
+ aria-pressed={marcado}
+ style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: `2px solid ${marcado ? C.oliva : C.lt}`, background: marcado ? C.oliva : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: C.creme }}
         >
- Feito hoje
-        </Button>
+ {marcado && <span aria-hidden="true" style={{ fontSize: 20, lineHeight: 1 }}>✓</span>}
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {h.nome}{minimoHoje && <SeloMinimo />}
+          </div>
+          {/* a meta: tocar abre o painel "Editar" */}
+          {onEditar ? (
+            <button onClick={onEditar} aria-label={`Editar ${h.nome}`} style={{ display: "block", background: "none", border: "none", padding: "2px 0 0", fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.45, cursor: "pointer", textAlign: "left" }}>
+              {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""}
+            </button>
+          ) : (
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.45 }}>
+              {minimoHoje ? <>Mínimo: {minimoHoje}</> : metaTexto}{h.id === "sono" ? " · a noite de ontem" : ""}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* sugestão de progressão / redução de meta (seção 4.8) — decisão sempre dela */}
@@ -4830,24 +4819,7 @@ function HabCard({ h, st, regAlvo, dataAlvo, registrarHabito, desregistrarHabito
         </div>
       )}
 
-      {/* convite pro Mural — logo depois de marcar, uma vez por check-in */}
-      {marcado && convite && (
-        <div style={{ background: C.linho, borderRadius: 12, padding: "12px", marginTop: 12 }}>
-          <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginBottom: 10 }}>Postar no Mural do 1%?</div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <Button icone={IcoH.camera(C.creme)} onClick={() => { fecharConvite(); convidarMural(h.nome); }}>Postar</Button>
-            <Button variante="contorno" onClick={fecharConvite}>Agora não</Button>
-          </div>
-        </div>
-      )}
-
-      {/* confirmação de check-in — só depois de fechar o convite do Mural */}
-      {marcado && !convite && (
-        <div style={{ marginTop: 10, textAlign: "center", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.oliva }}>
- Mais 1% hoje!
-        </div>
-      )}
-    </Card>
+          </Card>
   );
 }
 
@@ -4871,9 +4843,9 @@ function NovoHabito({ onCriar, onCancelar }) {
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
         <span style={{ fontFamily: FB, fontSize: 16, color: C.lt }}>Quantos dias por semana:</span>
-        <button onClick={() => setFreq((f) => Math.max(1, f - 1))} style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 18 }}>−</button>
+        <button onClick={() => setFreq((f) => Math.max(1, f - 1))} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 18 }}>−</button>
         <span style={{ fontFamily: FB, fontSize: 18, color: C.obs, minWidth: 18, textAlign: "center" }}>{freq}</span>
-        <button onClick={() => setFreq((f) => Math.min(7, f + 1))} style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 18 }}>+</button>
+        <button onClick={() => setFreq((f) => Math.min(7, f + 1))} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 18 }}>+</button>
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>
@@ -4948,21 +4920,24 @@ function RetroModal({ onFechar, regs, sem, registrarHabito, desregistrarHabito, 
 }
 
 // Desafio da Semana — micro-meta da turma, contida no card (seção 4.10)
-function DesafioCard({ texto, desafioFeitos, toggleDesafio, diasDaSemana }) {
+function DesafioCard({ texto, desafioFeitos, toggleDesafio }) {
  if (!texto) return null;
  const feitoHoje = desafioFeitos.includes(TODAY);
  return (
-    <Card style={{ marginBottom: 12, border: `1.5px dashed ${C.ouro}`, boxShadow: "none" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {IcoH.estrela(C.ouroDk)}
-        <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Desafio da semana</div>
-      </div>
-      <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, margin: "2px 0 12px" }}>{texto}</div>
-      <ProgressDots dias={diasDaSemana} feitos={desafioFeitos} hoje={TODAY} />
-      <div style={{ marginTop: 14 }}>
-        <Button variante={feitoHoje ? "feito" : "contorno"} icone={feitoHoje ? <span aria-hidden="true" style={{ fontSize: 17 }}>✓</span> : null} onClick={() => toggleDesafio(TODAY)}>
- Feito hoje
-        </Button>
+    <Card style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <button
+ onClick={() => toggleDesafio(TODAY)}
+ aria-label={feitoHoje ? "Desmarcar desafio da semana" : "Marcar desafio da semana"}
+ aria-pressed={feitoHoje}
+ style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: `2px solid ${feitoHoje ? C.oliva : C.lt}`, background: feitoHoje ? C.oliva : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: C.creme }}
+        >
+ {feitoHoje && <span aria-hidden="true" style={{ fontSize: 20, lineHeight: 1 }}>✓</span>}
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs }}>Desafio da semana</div>
+          <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.lt, lineHeight: 1.45 }}>{texto}</div>
+        </div>
       </div>
     </Card>
   );
@@ -5118,7 +5093,92 @@ function VitoriaSemana({ modoClube = false, habStats, habsFixos = HABS_FIXOS, ha
   );
 }
 
-function Home({
+// Mensagens de incentivo ao marcar um hábito: convite e celebração, nunca culpa ou perda.
+const MSG_SUBIDA = [
+  "Feito! Você subiu mais um pouco.",
+  "Mais um passo, e ele conta.",
+  "Isso é método, não sorte.",
+  "Cada marca é prova de que você voltou.",
+  "Hoje você escolheu você.",
+  "Pequeno e feito vale mais que perfeito e adiado.",
+];
+const msgSubida = (id) => MSG_SUBIDA[(new Date().getDate() + [...id].reduce((soma, c) => soma + c.charCodeAt(0), 0)) % MSG_SUBIDA.length];
+
+// Arte da conquista: a aluna bateu a meta da semana de um hábito. Sai uma vez por hábito e por semana.
+function ImagemConquista({ dados, modoClube, tk, onFechar }) {
+ const canvasRef = useRef(null);
+ const [erro, setErro] = useState("");
+ const W = 1080, H = 1920;
+ const desenhar = () => {
+  const cv = canvasRef.current;
+  if (!cv) return;
+  cv.width = W; cv.height = H;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#FAF6EE"; g.fillRect(0, 0, W, H);
+  g.textAlign = "center";
+  g.fillStyle = "#1C1A17"; g.font = "600 40px Inter, sans-serif";
+  g.letterSpacing = "10px";
+  g.fillText(modoClube ? "CLUBE DO AUGE" : "JORNADA AUGE", W / 2, 200);
+  g.letterSpacing = "0px";
+  // montanha como na marca, com a luz no topo
+  g.fillStyle = "#A65B43";
+  g.beginPath(); g.moveTo(140, 1000); g.lineTo(540, 520); g.lineTo(940, 1000); g.closePath(); g.fill();
+  g.fillStyle = "#FFF6E5"; g.beginPath(); g.arc(540, 500, 24, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#1C1A17"; g.font = "700 64px Inter, sans-serif";
+  g.fillText("Meta da semana batida", W / 2, 1180);
+  // nome do hábito encolhe até caber na largura
+  let tamanho = 96;
+  g.font = `700 ${tamanho}px Inter, sans-serif`;
+  while (g.measureText(dados.nome).width > 920 && tamanho > 56) { tamanho -= 4; g.font = `700 ${tamanho}px Inter, sans-serif`; }
+  g.fillText(dados.nome, W / 2, 1300);
+  g.fillStyle = "#5C4F47"; g.font = "400 48px Inter, sans-serif";
+  g.fillText(`${dados.feitas} de ${dados.meta} dias nesta semana`, W / 2, 1400);
+  if (!modoClube) g.fillText(`Semana ${dados.sem} de 12`, W / 2, 1470);
+  g.fillStyle = "#626442"; g.font = "600 44px Inter, sans-serif";
+  g.fillText("@isadorageriatra", W / 2, 1800);
+ };
+ useEffect(() => { desenhar(); }, []);
+ const gerarArquivo = () => new Promise((res) => canvasRef.current.toBlob((b) => res(b), "image/jpeg", 0.92));
+ const baixar = async () => {
+  const blob = await gerarArquivo();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "meta-da-semana.jpg";
+  document.body.appendChild(a); a.click(); a.remove();
+  tk && tk("Imagem salva. Agora é só compartilhar.");
+ };
+ const compartilhar = async () => {
+  const blob = await gerarArquivo();
+  const arquivo = new File([blob], "meta-da-semana.jpg", { type: "image/jpeg" });
+  try {
+   if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+    await navigator.share({ files: [arquivo], title: "Meta da semana batida" });
+    return;
+   }
+  } catch (err) {
+   if (err && err.name === "AbortError") return;
+  }
+  baixar();
+ };
+ return (
+  <div role="dialog" aria-modal="true" aria-label="Meta da semana batida" style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(28,26,23,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+   <div style={{ width: "100%", maxWidth: 420, maxHeight: "92vh", overflowY: "auto", background: C.creme, borderRadius: "24px 24px 0 0", padding: "18px 20px 28px", boxSizing: "border-box" }}>
+    <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 600, color: C.obs, marginBottom: 6 }}>Meta batida!</div>
+    <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, marginBottom: 14 }}>
+     Celebre com a sua arte e compartilhe com as suas amigas.
+    </div>
+    <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "auto", borderRadius: 16, marginBottom: 14 }} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+     <Button onClick={compartilhar}>Compartilhar com as amigas</Button>
+     <Button variante="contorno" onClick={baixar}>Salvar imagem</Button>
+     <Button variante="texto" onClick={onFechar}>Agora não</Button>
+    </div>
+    {erro && <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginTop: 10 }}>{erro}</div>}
+   </div>
+  </div>
+ );
+}
+
+function Home({ videos, authUserId,
  modoClube,
  setSexta,
  perfil,
@@ -5296,7 +5356,10 @@ function Home({
  const idsCume = new Set([...Object.keys(baseCume), ...Object.keys(metasAgora)]);
  const tCume = progressoSemana([...idsCume].map((id) => ({ feitos: feitosNaSemana(id), meta: baseCume[id] ?? metasAgora[id] })));
  const [ajudaAberta, setAjudaAberta] = useState(false);
- const [dicaVista, setDicaVista] = useState(() => lerFlag(CHAVE_DICA));
+ const [postHojeOk, setPostHojeOk] = useState(false);
+ const [arteAberta, setArteAberta] = useState(false);
+ const chaveDica = authUserId ? `${CHAVE_DICA}:${authUserId}` : CHAVE_DICA;
+ const [dicaVista, setDicaVista] = useState(() => lerFlag(chaveDica));
  // Toast só ao MARCAR (desmarcar não fala nada): espera o t novo ser calculado
  const cumePendente = useRef(null); // t de antes da marcação
  const [cumeAviso, setCumeAviso] = useState(null);
@@ -5349,9 +5412,23 @@ function Home({
  // hábito do método com mínimo cadastrado, com o modo ligado → mostra o mínimo
  const minimoDoDia = (id) => (diaMinimo ? (metas?.[id]?.minimo || "").trim() || null : null);
  const msgPendente = useRef(null);
+ const [conquista, setConquista] = useState(null);
  const registrarNaHoje = (id, data, dif) => {
  cumePendente.current = tCume;
- msgPendente.current = minimoDoDia(id) ? "Mínimo feito. Você subiu mais um pouco." : null;
+ const hab = habsFixos.find((h) => h.id === id);
+ const metaBatida = !!hab && !habStats[id]?.bloqueado && feitosNaSemana(id) + 1 === habStats[id]?.meta;
+ msgPendente.current = minimoDoDia(id) ? "Mínimo feito. Você subiu mais um pouco."
+  : metaBatida ? `Meta da semana batida em ${hab.nome}. Celebre isso.`
+  : msgSubida(id);
+ if (metaBatida) {
+  const kc = `auge_conquista_${authUserId || "x"}_${segundaAtual}_${id}`;
+  let ja = false; try { ja = localStorage.getItem(kc) === "1"; } catch {}
+  if (!ja) {
+   try { localStorage.setItem(kc, "1"); } catch {}
+   const dados = { nome: hab.nome, feitas: Math.min(feitosNaSemana(id) + 1, habStats[id].meta), meta: habStats[id].meta, sem };
+   setTimeout(() => setConquista(dados), 1200);
+  }
+ }
  return registrarHabito(id, data, dif);
   };
   // Sono registrado de manhã é referente à noite anterior (seção 4.3)
@@ -5410,7 +5487,7 @@ function Home({
  onAjuda={() => setAjudaAberta((a) => !a)}
         />
         {ajudaAberta && <ComoUsarHoje onFechar={() => setAjudaAberta(false)} />}
-        {!ajudaAberta && !dicaVista && <DicaHoje onEntendi={() => { gravarFlag(CHAVE_DICA); setDicaVista(true); }} />}
+        {!ajudaAberta && !dicaVista && <DicaHoje onEntendi={() => { gravarFlag(chaveDica); setDicaVista(true); }} />}
       </div>
       {retroAberto && (
         <RetroModal
@@ -5531,12 +5608,7 @@ function Home({
           />
         )}
 
-        {/* Dia difícil? Faça só o mínimo — logo antes dos hábitos */}
-        <div style={{ marginTop: 8 }}>
-          <DiaDificil ativo={diaMinimo} onAtivar={ativarDiaMinimo} onDesfazer={desfazerDiaMinimo} />
-        </div>
-
-        {/* Cards dos 3 hábitos angulares (seção 4.2) */}
+                {/* Cards dos 3 hábitos angulares (seção 4.2) */}
           <div>
             {habsFixos.length > 0 && <SectionHeader titulo="Hábitos angulares" style={{ marginTop: 0 }} />}
             {habsFixos.map((h) => (
@@ -5589,12 +5661,6 @@ function Home({
  convidarMural={modoClube ? null : convidarMural}
               />
             ))}
-            <button
- onClick={() => setPainel({ modo: "criar", hab: null })}
- style={{ width: "100%", minHeight: 56, background: "none", border: `1.5px dashed ${C.primary}`, borderRadius: 16, padding: "12px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.primary, cursor: "pointer", marginBottom: 12 }}
-            >
- + Criar um hábito meu
-            </button>
 
             {/* Clube: hábitos do método que ela tirou da lista, para colocar de volta */}
             {habsForaDaLista.length > 0 && (
@@ -5612,7 +5678,30 @@ function Home({
               </div>
             )}
 
-            <Button variante="texto" onClick={() => setRetroAberto(true)} style={{ margin: "4px 0 12px" }}>Preencher dias anteriores</Button>
+            {/* Dia difícil? Faça só o mínimo — depois dos hábitos */}
+            <div style={{ marginTop: 8 }}>
+              <DiaDificil ativo={diaMinimo} onAtivar={ativarDiaMinimo} onDesfazer={desfazerDiaMinimo} />
+            </div>
+
+            {/* Ao final dos hábitos: postar o dia (Mural na Jornada; arte para o Instagram nos dois) */}
+            {!postHojeOk && (habsFixos.some((h) => regDoDia(h)) || habsPessoais.some((hp) => regs[TODAY]?.[hp.id])) && (
+              <Card style={{ marginBottom: 12, background: C.linho, boxShadow: "none", border: "none" }}>
+                <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 4 }}>Mais um dia registrado</div>
+                <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, marginBottom: 12 }}>
+                  {modoClube ? "Quer mostrar seu dia no Instagram?" : "Quer mostrar seu dia no Mural ou no Instagram?"}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {!modoClube && <Button icone={IcoH.camera(C.creme)} onClick={() => convidarMural(null)}>Postar no Mural</Button>}
+                  <Button variante={modoClube ? undefined : "contorno"} onClick={() => setArteAberta(true)}>Criar arte para o Instagram</Button>
+                  <Button variante="texto" onClick={() => setPostHojeOk(true)}>Agora não</Button>
+                </div>
+              </Card>
+            )}
+            {arteAberta && <ArtePostagem onFechar={() => setArteAberta(false)} tk={tk} modoClube={modoClube} />}
+            {conquista && <ImagemConquista dados={conquista} modoClube={modoClube} tk={tk} onFechar={() => setConquista(null)} />}
+
+            {/* Conteúdos da Hoje (mockup 14/11) */}
+            <ConteudosHoje videos={videos} modoClube={modoClube} perfil={perfil} authUserId={authUserId} ir={ir} />
 
             {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
             <div style={{ height: 100 }} />
@@ -5652,15 +5741,6 @@ function Home({
       )}
       {avisoHoje && <AvisoHoje key={avisoHoje.id} aviso={avisoHoje} />}
 
-      {/* Kit de Emergência — pastilha fixa (voltou a flutuar a pedido da Vitória, 29/09) */}
-      <button
- onClick={() => ir(S.EM)}
- style={{ position: "absolute", right: 16, bottom: 112, zIndex: 60, minHeight: 48, background: C.blushDk, border: "none", borderRadius: 50, padding: "12px 20px", cursor: "pointer", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.creme, boxShadow: "0 6px 18px rgba(28,26,23,.28)", display: "flex", alignItems: "center", gap: 9 }}
-      >
-        {IcoH.kit(C.creme)}
- bateu a preguiça?
-      </button>
-
     </div>
   );
 }
@@ -5676,6 +5756,212 @@ async function notificarInteracao(targetUserId, tipo, nome) {
     if (!token) return;
     await fetch("/api/notificar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, targetUserId, tipo, nome: nome || "Uma amiga" }) });
   } catch {}
+}
+
+// Arte para o Instagram: a aluna escolhe uma foto, ela entra na moldura da marca,
+// e a imagem vai para o compartilhar do celular (Instagram aparece na lista).
+function ArtePostagem({ onFechar, tk, modoClube }) {
+ const canvasRef = useRef(null);
+ const fotoRef = useRef(null);
+ const [temFoto, setTemFoto] = useState(false);
+ const [erro, setErro] = useState("");
+ // Story 1080×1920: foto em tela cheia e a moldura (PNG com transparência) por cima.
+ // Enquanto a moldura não existir em public/molduras, desenha um texto provisório.
+ const MOLDURA = { jornada: "/molduras/story-jornada.png", clube: "/molduras/story-clube.png" };
+ const carregarMoldura = (src) => new Promise((res) => {
+  const im = new Image();
+  im.onload = () => res(im);
+  im.onerror = () => res(null);
+  im.src = src;
+ });
+ const desenhar = async (img) => {
+  const W = 1080, H = 1920;
+  const cv = canvasRef.current;
+  if (!cv) return;
+  cv.width = W; cv.height = H;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#FAF6EE"; g.fillRect(0, 0, W, H);
+  const esc = Math.max(W / img.width, H / img.height);
+  const iw = img.width * esc, ih = img.height * esc;
+  g.drawImage(img, (W - iw) / 2, (H - ih) / 2, iw, ih);
+  const moldura = await carregarMoldura(MOLDURA[modoClube ? "clube" : "jornada"]);
+  if (moldura) {
+   g.drawImage(moldura, 0, 0, W, H);
+   return;
+  }
+  const deg = g.createLinearGradient(0, 1380, 0, H);
+  deg.addColorStop(0, "rgba(250,246,238,0)");
+  deg.addColorStop(0.35, "rgba(250,246,238,1)");
+  g.fillStyle = deg; g.fillRect(0, 1380, W, H - 1380);
+  g.textAlign = "center";
+  g.fillStyle = "#1C1A17"; g.font = "700 96px Inter, sans-serif";
+  g.fillText("Mais 1% hoje!", W / 2, 1640);
+  g.fillStyle = "#5C4F47"; g.font = "400 40px Inter, sans-serif";
+  g.fillText(dataLonga(TODAY), W / 2, 1720);
+  g.fillStyle = "#1C1A17"; g.font = "600 40px Inter, sans-serif";
+  g.letterSpacing = "10px";
+  g.fillText(modoClube ? "CLUBE DO AUGE" : "JORNADA AUGE", W / 2, 1800);
+  g.letterSpacing = "0px";
+  g.fillStyle = "#626442"; g.font = "600 40px Inter, sans-serif";
+  g.fillText("@isadorageriatra", W / 2, 1870);
+ };
+ const escolherFoto = (e) => {
+  const f = e.target.files?.[0];
+  e.target.value = "";
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  const img = new Image();
+  img.onload = () => { setErro(""); setTemFoto(true); requestAnimationFrame(() => desenhar(img)); URL.revokeObjectURL(url); };
+  img.onerror = () => setErro("Não consegui abrir essa foto. Tente outra.");
+  img.src = url;
+ };
+ const gerarArquivo = () => new Promise((res) => canvasRef.current.toBlob((b) => res(b), "image/jpeg", 0.92));
+ const baixar = async () => {
+  const blob = await gerarArquivo();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "mais-1-por-cento.jpg";
+  document.body.appendChild(a); a.click(); a.remove();
+  tk && tk("Imagem salva. Agora é só postar no Instagram.");
+ };
+ const compartilhar = async () => {
+  const blob = await gerarArquivo();
+  const arquivo = new File([blob], "mais-1-por-cento.jpg", { type: "image/jpeg" });
+  try {
+   if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+    await navigator.share({ files: [arquivo], title: "Mais 1% hoje" });
+    return;
+   }
+  } catch (err) {
+   if (err && err.name === "AbortError") return;
+  }
+  baixar();
+ };
+ return (
+  <div role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(28,26,23,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+   <div style={{ width: "100%", maxWidth: 420, maxHeight: "92vh", overflowY: "auto", background: C.creme, borderRadius: "24px 24px 0 0", padding: "18px 20px 28px", boxSizing: "border-box" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+     <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 600, color: C.obs }}>Sua arte</div>
+     <button onClick={onFechar} aria-label="Fechar" style={{ width: 48, height: 48, background: "none", border: "none", fontSize: 26, color: C.obs, cursor: "pointer" }}>×</button>
+    </div>
+    <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, marginBottom: 14 }}>
+     Escolha uma foto sua. Ela entra na moldura, e a imagem vai para o compartilhar do celular.
+    </div>
+    <input ref={fotoRef} type="file" accept="image/*" onChange={escolherFoto} style={{ display: "none" }} />
+    <canvas ref={canvasRef} style={{ display: temFoto ? "block" : "none", width: "100%", height: "auto", borderRadius: 16, marginBottom: 14 }} />
+    {!temFoto ? (
+     <Button icone={IcoH.camera(C.creme)} onClick={() => fotoRef.current?.click()}>Escolher foto</Button>
+    ) : (
+     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <Button onClick={compartilhar}>Postar no Instagram</Button>
+      <Button variante="contorno" onClick={baixar}>Salvar imagem</Button>
+      <Button variante="texto" onClick={() => fotoRef.current?.click()}>Trocar foto</Button>
+     </div>
+    )}
+    {erro && <div style={{ fontFamily: FB, fontSize: 16, color: C.obs, marginTop: 10 }}>{erro}</div>}
+   </div>
+  </div>
+ );
+}
+
+// Conteúdos na Hoje (mockup 14/11): "Comece por aqui" + uma fileira de capas verticais por categoria.
+// Toque numa capa leva à biblioteca (aba Conteúdo, que sai da barra da Jornada).
+function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir }) {
+ const [assistidos, setAssistidos] = useState(() => new Set());
+ const [serie, setSerie] = useState(null); // série aberta: { titulo, itens }
+ useEffect(() => {
+  if (!authUserId) return;
+  let vivo = true;
+  supabase.from("videos_assistidos").select("video_id").eq("user_id", authUserId)
+   .then(({ data }) => { if (vivo) setAssistidos(new Set((data || []).map((r) => String(r.video_id)))); }, () => {});
+  return () => { vivo = false; };
+ }, [authUserId]);
+ const visiveis = (videos || []).filter((v) => perfil === "admin" || !v.publico || v.publico === (modoClube ? "clube" : "jornada"));
+ if (!visiveis.length) return null;
+ const ordenar = (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || String(a.created_at || "").localeCompare(String(b.created_at || ""));
+ const daCategoria = (id) => visiveis.filter((v) => (CAT_LEGADO[id] || [id]).includes(v.categoria)).sort(ordenar);
+ const tipoDe = (cat) => ({ aulas: "AULA", yoga: "YOGA", meditacoes: "MEDITAÇÃO", meditacao: "MEDITAÇÃO", curadoria: "INDICAÇÃO", podcast: "PODCAST" }[cat] || "CONTEÚDO");
+ const ytThumb = (url) => { const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1]; return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null; };
+ const TITULO_CAT = { aulas: "Aulas", yoga: "Aulas de yoga", meditacoes: "Meditação", curadoria: "Indicações", podcast: "Podcast" };
+ const comeceTema = (v) => (v.tema || "").trim().toLowerCase() === "comece por aqui";
+ const comece = visiveis.filter(comeceTema).sort(ordenar)[0] || daCategoria("aulas")[0];
+ // Uma fileira por tema (série); aula sem tema cai na fileira da categoria.
+ const grupos = new Map();
+ Object.keys(TITULO_CAT).forEach((cat) => daCategoria(cat).forEach((v) => {
+  if (comeceTema(v)) return;
+  const t = (v.tema || "").trim();
+  const chave = t ? `tema:${t}` : `cat:${cat}`;
+  if (!grupos.has(chave)) grupos.set(chave, { titulo: t || TITULO_CAT[cat], itens: [] });
+  grupos.get(chave).itens.push(v);
+ }));
+ const secoes = [...grupos.values()];
+ const capa = (v, largura, grupo) => {
+  const img = ytThumb(v.url_youtube);
+  const feito = assistidos.has(String(v.id));
+  return (
+   <button key={v.id} onClick={() => setSerie(grupo)} aria-label={v.titulo}
+ style={{ position: "relative", width: largura, height: 220, flexShrink: 0, borderRadius: 20, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", background: C.obs, textAlign: "left" }}>
+    {img && <img src={img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(28,26,23,0) 35%, rgba(28,26,23,.88) 100%)" }} />
+    {feito && <span aria-label="Assistido" style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, borderRadius: 14, background: C.oliva, color: C.creme, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>✓</span>}
+    <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, color: C.creme }}>
+     <div style={{ display: "inline-block", background: "rgba(255,255,255,.85)", color: C.obs, borderRadius: 50, padding: "2px 9px", fontFamily: FB, fontSize: 13, fontWeight: 600 }}>{tipoDe(v.categoria)}</div>
+     <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, lineHeight: 1.2, marginTop: 8 }}>{v.titulo}</div>
+     <div style={{ fontFamily: FB, fontSize: 14, marginTop: 4 }}>{v.duracao || ""}</div>
+    </div>
+   </button>
+  );
+ };
+ return (
+  <div style={{ marginTop: 8 }}>
+   {serie && (() => {
+    const feitas = serie.itens.filter((v) => assistidos.has(String(v.id))).length;
+    const pct = serie.itens.length ? Math.round((feitas / serie.itens.length) * 100) : 0;
+    return (
+     <div role="dialog" aria-modal="true" aria-label={serie.titulo}
+ style={{ position: "fixed", inset: 0, zIndex: 400, background: C.creme, overflowY: "auto", padding: "16px 20px 32px", boxSizing: "border-box" }}>
+      <button onClick={() => setSerie(null)} style={{ background: "none", border: "none", minHeight: 48, padding: 0, color: C.primary, fontFamily: FB, fontWeight: 600, fontSize: 17, cursor: "pointer" }}>‹ Voltar</button>
+      <div style={{ fontFamily: FB, fontSize: 26, fontWeight: 600, color: C.obs, marginTop: 12 }}>{serie.titulo}</div>
+      <div style={{ fontFamily: FB, fontSize: 16, color: "#5C4F47", marginTop: 6 }}>{feitas} de {serie.itens.length} assistidas</div>
+      <div style={{ height: 6, borderRadius: 3, background: C.linho, marginTop: 10, overflow: "hidden" }}>
+       <div style={{ width: `${pct}%`, height: 6, borderRadius: 3, background: C.oliva }} />
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
+       {serie.itens.map((v, i) => {
+        const ok = assistidos.has(String(v.id));
+        return (
+         <button key={v.id} onClick={() => { setSerie(null); ir(S.CT); }}
+ style={{ display: "flex", alignItems: "center", gap: 12, background: C.branco, border: `1px solid ${C.ouro}55`, borderRadius: 16, padding: 12, minHeight: 72, cursor: "pointer", textAlign: "left", fontFamily: FB, color: C.obs }}>
+          <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 16, background: ok ? C.oliva : C.linho, color: ok ? C.creme : C.obs, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600 }}>{ok ? "✓" : i + 1}</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+           <span style={{ display: "block", fontSize: 17, fontWeight: 600, lineHeight: 1.25 }}>{v.titulo}</span>
+           <span style={{ display: "block", fontSize: 14, color: "#5C4F47", marginTop: 2 }}>{v.duracao || ""}</span>
+          </span>
+         </button>
+        );
+       })}
+      </div>
+     </div>
+    );
+   })()}
+
+   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+    <div style={{ fontFamily: FB, fontSize: 20, fontWeight: 600, color: C.obs }}>Conteúdos</div>
+    <button onClick={() => ir(S.CT)} style={{ background: "none", border: "none", minHeight: 44, color: C.primary, fontFamily: FB, fontWeight: 600, fontSize: 16, cursor: "pointer" }}>Ver todos ›</button>
+   </div>
+   {comece && (
+    <div style={{ marginBottom: 16 }}>
+     <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 8 }}>Comece por aqui</div>
+     <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{capa(comece, 170, { titulo: "Comece por aqui", itens: [comece] })}</div>
+    </div>
+   )}
+   {secoes.map((x) => (
+    <div key={x.titulo} style={{ marginBottom: 16 }}>
+     <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 8 }}>{x.titulo}</div>
+     <div style={{ display: "flex", gap: 12, overflowX: "auto" }}>{x.itens.map((v) => capa(v, 150, x))}</div>
+    </div>
+   ))}
+  </div>
+ );
 }
 
 function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto }) {
@@ -8291,22 +8577,23 @@ function Chat({ selM, setMatches, back, authUserId, marcarLidas }) {
 // Cada passo grava ao continuar: se ela fechar o app no meio, o que já
 // escreveu fica salvo e o app volta só nos passos que faltam.
 const PA_PORQUES = [
-  "Por que isso importa para você de verdade?",
-  "O que você está perdendo hoje por estar onde está?",
-  "Como você quer se sentir daqui a 5 anos?",
+  "Por que você quis começar esta jornada?",
+  "O que você quer deixar para trás?",
+  "Como você quer se sentir daqui a 12 semanas?",
 ];
 const PA_MIN_EX = { movimento: "ex: caminhar 10 minutos", sono: "ex: 30 min sem celular", tempo: "ex: ler 1 página" };
-function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarPorques, salvarAncora, salvarMinimos, setCarta, tk, onConcluir }) {
+function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarPorques, salvarAncora, salvarMinimos, salvarMeta, setCarta, tk, onConcluir }) {
   const passos = [
     faltam.porques && "porques",
     faltam.ancora && "ancora",
+    faltam.metas && "metas",
     faltam.minimos && "minimos",
-    faltam.carta && "carta",
   ].filter(Boolean);
   const [i, setI] = useState(0);
   const [p, setP] = useState(pqs);
   const [a, setA] = useState(anc);
   const [m, setM] = useState({ movimento: metas?.movimento?.minimo || "", sono: metas?.sono?.minimo || "", tempo: metas?.tempo?.minimo || "" });
+  const [fq, setFq] = useState(() => Object.fromEntries(HABS_FIXOS.map((h) => [h.id, { freq: metas?.[h.id]?.freq ?? h.freqDef, desc: metas?.[h.id]?.desc || "" }])));
   const [salvando, setSalvando] = useState(false);
   const passo = passos[i];
   const ultimo = i === passos.length - 1;
@@ -8314,12 +8601,16 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
   const pronto =
     passo === "porques" ? p.every((t) => t.trim()) :
     passo === "ancora" ? !!a.trim() :
+    passo === "metas" ? true :
     passo === "minimos" ? HABS_FIXOS.every((h) => (m[h.id] || "").trim()) : true;
   const continuar = async () => {
     if (!pronto || salvando) return;
     setSalvando(true);
     if (passo === "porques") salvarPorques(p.map((t) => t.trim()));
     if (passo === "ancora") salvarAncora(a.trim());
+    if (passo === "metas") {
+      for (const h of HABS_FIXOS) await salvarMeta(h.id, fq[h.id].freq, fq[h.id].desc.trim());
+    }
     if (passo === "minimos") {
       const ok = await salvarMinimos({ movimento: m.movimento.trim(), sono: m.sono.trim(), tempo: m.tempo.trim() });
       if (!ok) { setSalvando(false); tk("Não conseguimos salvar agora. Tente de novo."); return; }
@@ -8330,9 +8621,10 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
   const campo = { width: "100%", background: C.branco, border: `1px solid ${C.lineForte}`, borderRadius: 12, padding: "12px 14px", fontFamily: FB, fontSize: 17, color: C.obs, lineHeight: 1.5, resize: "none" };
   const pergunta = { fontFamily: FB, fontWeight: 500, fontSize: 17, color: C.obs, lineHeight: 1.45, marginBottom: 8 };
   const titulos = {
-    porques: ["Por que você começou", "Antes de tudo, o seu motivo. É ele que te traz de volta quando a vontade some."],
-    ancora: ["Quem você quer ser", "Uma frase curta sobre a mulher que você está se tornando. Ela aparece para você nos dias difíceis."],
-    minimos: ["Seus mínimos inegociáveis", "O mínimo que ainda conta num dia difícil, bem menor que a meta cheia. Pense num dia em que tudo deu errado."],
+    porques: ["Por que você começou", "Responda com as suas palavras. Quando a vontade sumir, é isso que você vai reler."],
+    ancora: ["Quem você quer ser", "Complete a frase com uma ou duas linhas. Ex.: “Eu sou a mulher que cuida de si sem se cobrar.”"],
+    metas: ["Suas metas da semana", "Quantas vezes por semana você quer fazer cada hábito. Pode mudar depois, no Perfil."],
+    minimos: ["Seus mínimos inegociáveis", "É a versão pequena de cada hábito, para um dia em que você está cansada. Ex.: 10 minutos de caminhada."],
     carta: ["Uma carta para você", "Escreva para a mulher que vai terminar a Jornada. Você lê esta carta na Semana 12. Se preferir, deixe para depois."],
   };
   if (!passo) return null;
@@ -8375,6 +8667,20 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
             <div style={{ fontSize: 16, color: C.terra, lineHeight: 1.5, marginTop: 10 }}>Exemplos: "Eu sou a mulher que volta." · "Eu sou a mulher que cuida de si sem pedir licença."</div>
           </div>
         )}
+
+        {passo === "metas" && HABS_FIXOS.map((h) => (
+          <div key={h.id} style={{ marginBottom: 18 }}>
+            <div style={pergunta}>{h.nome}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <button onClick={() => setFq((x) => ({ ...x, [h.id]: { ...x[h.id], freq: Math.max(1, x[h.id].freq - 1) } }))} aria-label={`Diminuir ${h.nome}`}
+ style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 20 }}>−</button>
+              <div style={{ fontFamily: FB, fontSize: 17, color: C.obs, minWidth: 150, textAlign: "center" }}>{fq[h.id].freq} {fq[h.id].freq === 1 ? "vez" : "vezes"} por semana</div>
+              <button onClick={() => setFq((x) => ({ ...x, [h.id]: { ...x[h.id], freq: Math.min(7, x[h.id].freq + 1) } }))} aria-label={`Aumentar ${h.nome}`}
+ style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 20 }}>+</button>
+            </div>
+            <input value={fq[h.id].desc} onChange={(e) => { const v = e.target.value; setFq((x) => ({ ...x, [h.id]: { ...x[h.id], desc: v } })); }} placeholder="Ex.: 20 minutos, 3x na semana" style={{ ...campo, minHeight: 50 }} />
+          </div>
+        ))}
 
         {passo === "minimos" && HABS_FIXOS.map((h) => (
           <div key={h.id} style={{ marginBottom: 18 }}>
@@ -10594,7 +10900,9 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null }) {
   );
 }
 
-function Trajetoria({ modoClube, regs, metas, habsFixos = HABS_FIXOS, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
+function Trajetoria({ modoClube, criarHabPessoal, registrarHabito, desregistrarHabito, toggleDesafio, habStats, regs, metas, habsFixos = HABS_FIXOS, kitUsos, sem, jornadaInicio, dataCadastro, historico = {}, ir, habsPessoais = [], anc, habProgresso, setHabProgresso, desafiosSemana = {}, desafioFeitos = [] }) {
+ const [novoHabAberto, setNovoHabAberto] = useState(false);
+ const [retroT, setRetroT] = useState(false);
  const hojeReal = new Date();
  const [habSel, setHabSel] = useState(null); // painel individual do hábito (não abre mais daqui desde 02/11)
  // "ver progresso" da Hoje abre o calendário já filtrado naquele hábito
@@ -10671,6 +10979,40 @@ function Trajetoria({ modoClube, regs, metas, habsFixos = HABS_FIXOS, kitUsos, s
       </div>
       <Grain style={{ padding: "18px 18px 32px" }}>
 
+        {/* Ações da Trajetória: adicionar hábito e marcar um dia que faltou (saíram da Hoje) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+          {novoHabAberto ? (
+            <NovoHabito
+ onCriar={async (nome, metaTexto, freq) => { await criarHabPessoal(nome, metaTexto, freq); setNovoHabAberto(false); }}
+ onCancelar={() => setNovoHabAberto(false)}
+            />
+          ) : (
+            <button
+ onClick={() => setNovoHabAberto(true)}
+ style={{ width: "100%", minHeight: 56, background: "none", border: `1.5px dashed ${C.primary}`, borderRadius: 16, padding: "12px", fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.primary, cursor: "pointer" }}
+            >
+ + Adicionar hábito
+            </button>
+          )}
+          <Button variante="contorno" onClick={() => setRetroT(true)}>Marcar um dia que faltou</Button>
+        </div>
+        {retroT && (
+          <RetroModal
+ habsFixos={HABS_FIXOS}
+ onFechar={() => setRetroT(false)}
+ regs={regs}
+ sem={sem}
+ registrarHabito={registrarHabito}
+ desregistrarHabito={desregistrarHabito}
+ habStats={habStats || {}}
+ desafiosSemana={desafiosSemana}
+ desafioFeitos={desafioFeitos}
+ toggleDesafio={toggleDesafio}
+ inicioJornada={jornadaInicio || (dataCadastro ? localDateStr(dataCadastro) : null)}
+          />
+        )}
+
+
         {/* ── Trajetória semanal (seção 5.2) — o arco das 12 semanas é só da Jornada ── */}
         {!modoClube && <div style={{ padding: "4px 2px 8px", marginBottom: 6 }}>
           <svg width="100%" viewBox="0 0 380 158" fill="none" style={{ display: "block", marginBottom: 6 }}>
@@ -10719,6 +11061,14 @@ function Trajetoria({ modoClube, regs, metas, habsFixos = HABS_FIXOS, kitUsos, s
         )}
 
       </Grain>
+        {/* "bateu a preguiça?" mora na Trajetória (decisão 14/11) */}
+        <button
+ onClick={() => ir(S.EM)}
+ style={{ position: "absolute", right: 16, bottom: 112, zIndex: 60, minHeight: 48, background: C.blushDk, border: "none", borderRadius: 50, padding: "12px 20px", cursor: "pointer", fontFamily: FB, fontWeight: 600, fontSize: 16, color: C.creme, boxShadow: "0 6px 18px rgba(28,26,23,.28)", display: "flex", alignItems: "center", gap: 9 }}
+        >
+        {IcoH.kit(C.creme)}
+ bateu a preguiça?
+        </button>
     </div>
   );
 }
@@ -11651,7 +12001,7 @@ function ComentariosVideo({ videoId, authUserId, usuario, minhaFoto }) {
       {resp && <div style={{ fontFamily: FB, fontSize: 13, color: C.terra, marginBottom: 4 }}>Respondendo a {resp.autor}</div>}
       <div style={{ display: "flex", gap: 7, marginTop: 6 }}>
         <input value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={resp ? "Escreva sua resposta..." : "Escreva um comentário..."} onKeyDown={(e) => { if (e.key === "Enter") enviar(); }} style={{ flex: 1, background: alfa(C.obs, .06), border: "none", borderRadius: 20, padding: "9px 13px", fontSize: 16, fontFamily: FB, color: C.obs }} />
-        <button onClick={enviar} style={{ background: C.obs2, border: `1px solid ${C.ouro}33`, borderRadius: "50%", width: 38, height: 38, cursor: "pointer", color: C.ouro, fontSize: 17, flexShrink: 0 }}>→</button>
+        <button onClick={enviar} style={{ background: C.obs2, border: `1px solid ${C.ouro}33`, borderRadius: "50%", width: 44, height: 44, cursor: "pointer", color: C.ouro, fontSize: 17, flexShrink: 0 }}>→</button>
       </div>
       {confDel && (
         <div onClick={() => setConfDel(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: alfa(C.obs, .6), display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
@@ -11988,7 +12338,7 @@ function Conteudo({ modoClube, habsFixos, abrirRetro, aulasTrancadas = false, re
     <div style={{ animation: "fadeUp .35s ease" }}>
       {/* Título (a logo saiu daqui a pedido da Vitória, 30/09) */}
       <div style={{ background: C.creme, padding: "20px 20px 14px" }}>
-        <h1 style={{ margin: 0, fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em" }}>{modoClube ? "Dicas" : "Conteúdo"}</h1>
+        <h1 style={{ margin: 0, fontFamily: FB, fontSize: 28, fontWeight: 700, color: C.obs, letterSpacing: "-0.01em" }}>{"Conteúdo"}</h1>
       </div>
 
       {/* As pastilhas de categoria saíram: cada categoria agora é uma faixa
@@ -12692,8 +13042,12 @@ function PainelMentora({ ir }) {
  titulo: (editV.titulo || "").trim(),
  descricao: (editV.descricao || "").trim(),
  duracao: (editV.duracao || "").trim() || "30 min",
-    };
+
+    tema: (editV.tema || "").trim() || null,
+    ordem: Number.parseInt(editV.ordem, 10) || 0,
+        };
  const { error } = await supabase.from("videos").update(campos).eq("id", editV.id);
+ if (error) tk("Não deu para salvar. A migração 028 já foi rodada no Supabase?");
  if (!error) {
  setVideos((v) => v.map((x) => (x.id === editV.id ? { ...x, ...campos } : x)));
  setEditV(null);
@@ -12865,7 +13219,7 @@ function PainelMentora({ ir }) {
             ) : videos.map((v) => (
  editV?.id === v.id ? (
               <div key={v.id} style={{ background: alfa(C.obs, .05), border: `1px solid ${C.ouro}44`, borderRadius: 10, padding: "13px 14px", marginBottom: 10 }}>
-                {[["Título", "titulo"], ["Descrição", "descricao"], ["Duração", "duracao"]].map(([lb, k]) => (
+                {[["Título", "titulo"], ["Tema (série, opcional)", "tema"], ["Ordem na série (1, 2, 3...)", "ordem"], ["Descrição", "descricao"], ["Duração", "duracao"]].map(([lb, k]) => (
                   <div key={k} style={{ marginBottom: 10 }}>
                     <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginBottom: 3 }}>{lb}</div>
                     <input
@@ -12915,7 +13269,7 @@ function PainelMentora({ ir }) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
                   <button onClick={() => removerVideo(v.id)} style={{ background: "transparent", border: "none", color: C.obs, cursor: "pointer", fontSize: 17 }}>✕</button>
-                  <button onClick={() => setEditV({ id: v.id, titulo: v.titulo || "", descricao: v.descricao || "", duracao: v.duracao || "" })}
+                  <button onClick={() => setEditV({ id: v.id, titulo: v.titulo || "", tema: v.tema || "", ordem: String(v.ordem ?? 0), descricao: v.descricao || "", duracao: v.duracao || "" })}
                     style={{ background: "transparent", border: `1px solid ${C.ouro}55`, borderRadius: 50, padding: "4px 12px", fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.ouroTxt, cursor: "pointer" }}>
                     editar
                   </button>

@@ -170,6 +170,7 @@ export function PassoAPasso({ antiga = false, onFechar, passos = null, rotulo = 
 // ── Dica fixa da tela Hoje ───────────────────────────────────────────────────
 export function DicaHoje({ onEntendi }) {
   const [saindo, setSaindo] = useState(false);
+  const [aberta, setAberta] = useState(false);
   const linha = (n, conteudo) => (
     <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginTop: 10 }}>
       <span style={{ width: 26, height: 26, borderRadius: 13, background: T.primary, color: "#FFFFFF", fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{n}</span>
@@ -179,7 +180,12 @@ export function DicaHoje({ onEntendi }) {
   return (
     <div style={{ background: "#F2E4DC", borderRadius: 20, padding: "16px 16px 12px", marginTop: 16, fontFamily: FONTE,
                   opacity: saindo ? 0 : 1, transition: "opacity .25s ease" }}>
-      <div style={{ fontSize: 17, fontWeight: 600, color: T.ink }}>Como usar a tela Hoje</div>
+      <button onClick={() => setAberta((v) => !v)} aria-expanded={aberta}
+        style={{ width: "100%", minHeight: 44, background: "none", border: "none", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: FONTE, fontSize: 17, fontWeight: 600, color: T.ink, cursor: "pointer" }}>
+        <span>Como usar a tela Hoje</span>
+        <span aria-hidden="true" style={{ fontSize: 22, color: T.primary, transform: aberta ? "rotate(90deg)" : "none", transition: "transform .2s" }}>›</span>
+      </button>
+      {aberta && (<>
       {linha(1, "Faça o seu hábito no seu tempo.")}
       {linha(2, <>Toque em <b>Feito hoje</b>.</>)}
       {linha(3, "Sua luz sobe a trilha da montanha.")}
@@ -190,6 +196,7 @@ export function DicaHoje({ onEntendi }) {
           Entendi
         </button>
       </div>
+      </>)}
     </div>
   );
 }
