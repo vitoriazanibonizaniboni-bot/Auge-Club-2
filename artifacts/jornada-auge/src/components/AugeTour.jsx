@@ -254,8 +254,8 @@ export const PASSOS_ABA = {
       ),
     },
     {
-      titulo: "Veja o calendário de um hábito",
-      texto: <>Toque no {forte("nome de um hábito")} para ver só ele no calendário do mês. Cada dia feito fica marcado.</>,
+      titulo: "Veja só um hábito",
+      texto: <>Toque no {forte("nome de um hábito")} para ver os detalhes dele: o calendário do mês, só desse hábito.</>,
       ilustra: (
         <Ilustracao fundo="#F4EDE3">
           <div style={{ width: "86%", maxWidth: 300, background: "#FFFFFF", borderRadius: 18, boxShadow: "0 6px 20px rgba(31,26,23,.10)", padding: 16, boxSizing: "border-box", display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
@@ -263,6 +263,39 @@ export const PASSOS_ABA = {
               <span key={i} style={{ height: 22, borderRadius: 11, background: [0, 1, 3, 4, 6, 8, 9, 11, 12].includes(i) ? "#626442" : "#EFE7DC" }} />
             ))}
           </div>
+        </Ilustracao>
+      ),
+    },
+    {
+      titulo: "Esqueceu de marcar um dia?",
+      texto: <>Toque em {forte("Marcar um dia que faltou")} e registre o hábito feito naquele dia.</>,
+      ilustra: (
+        <Ilustracao fundo="#EEF0E4">
+          <Cartao estilo={{ textAlign: "center" }}>
+            <Botaozinho>Marcar um dia que faltou</Botaozinho>
+          </Cartao>
+        </Ilustracao>
+      ),
+    },
+    {
+      titulo: "Crie os seus hábitos",
+      texto: <>Toque em {forte("+ Adicionar hábito")}, dê um nome e escolha quantas vezes na semana quer fazer.</>,
+      ilustra: (
+        <Ilustracao fundo="#F2E4DC">
+          <Cartao estilo={{ textAlign: "center" }}>
+            <Botaozinho cor="#FFFFFF" texto={T.ink} anel={false} borda="1.5px solid #D8B79C">+ Adicionar hábito</Botaozinho>
+          </Cartao>
+        </Ilustracao>
+      ),
+    },
+    {
+      titulo: "Bateu a preguiça?",
+      texto: <>No fim da tela, toque em {forte("bateu a preguiça?")} para abrir o seu Kit: os seus mínimos e um empurrão para voltar.</>,
+      ilustra: (
+        <Ilustracao fundo="#F4EDE3">
+          <Cartao estilo={{ textAlign: "center" }}>
+            <Botaozinho>bateu a preguiça?</Botaozinho>
+          </Cartao>
         </Ilustracao>
       ),
     },
