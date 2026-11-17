@@ -54,8 +54,9 @@ const AGENDAS = {
 // e nao da para saber o genero de "Agua" ou "Alongamento" sem chutar.
 const HABITOS = [
   { id: "movimento", nome: "Movimento", unlock: 1, ontem: false, col: "mov" },
-  { id: "sono", nome: "Sono", unlock: 5, ontem: true, col: "sono" },
-  { id: "tempo", nome: "Tempo para Si", unlock: 9, ontem: false, col: "tsi" },
+  { id: "alimentacao", nome: "Alimentação", unlock: 4, ontem: false, col: "alimentacao" },
+  { id: "sono", nome: "Sono", unlock: 7, ontem: true, col: "sono" },
+  { id: "tempo", nome: "Tempo para Si", unlock: 10, ontem: false, col: "tsi" },
 ];
 
 // Quantos dias seguidos ja contam como sequencia digna de comemorar.

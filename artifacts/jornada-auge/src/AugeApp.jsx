@@ -118,6 +118,12 @@ const IcoH = {
       <circle cx="12" cy="12" r="8.5" />
     </svg>
   ),
+ alimentacao: (c, s = 20) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 19c0-8 6-13 14-14-1 8-6 14-14 14z" />
+      <path d="M5 19l7-7" />
+    </svg>
+  ),
  sono: (c, s = 20) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round">
       <path d="M20 13.5A8.5 8.5 0 1 1 10.5 4a7 7 0 0 0 9.5 9.5z" />
@@ -187,12 +193,13 @@ const IcoH = {
 };
 
 // ─── HÁBITOS ANGULARES FIXOS DO MÉTODO (v2) ──────────────────────────────────
-// 3 hábitos com meta SEMANAL de frequência (não lógica de "todo dia").
+// 4 hábitos com meta SEMANAL de frequência (não lógica de "todo dia").
 // Desbloqueio por calendário, independente do desempenho (seção 4.7).
 const HABS_FIXOS = [
   { id: "movimento", nome: "Movimento", ic: "", unlock: 1, freqDef: 3 },
-  { id: "sono", nome: "Sono", ic: "", unlock: 5, freqDef: 7 },
-  { id: "tempo", nome: "Tempo para Si", ic: "", unlock: 9, freqDef: 3 },
+  { id: "alimentacao", nome: "Alimentação", ic: "", unlock: 4, freqDef: 5 },
+  { id: "sono", nome: "Sono", ic: "", unlock: 7, freqDef: 7 },
+  { id: "tempo", nome: "Tempo para Si", ic: "", unlock: 10, freqDef: 3 },
 ];
 
 // Escala de dificuldade (seção 4.4) — mede processo, não julga a pessoa
@@ -1468,7 +1475,7 @@ export default function App() {
   );
 
   // ── Ações Jornada v2 ────────────────────────────────────────────────────────
- const _colMeta = { movimento: "mov", sono: "sono", tempo: "tsi" };
+ const _colMeta = { movimento: "mov", alimentacao: "alimentacao", sono: "sono", tempo: "tsi" };
  const registrarHabito = async (habId, dataStr, dif = null) => {
     // Marcos do Clube (03/11): 10, 30, 50, 100… hábitos marcados. Aparece uma
     // vez só por marco (guardado no celular).
@@ -1848,6 +1855,7 @@ export default function App() {
  movimento: { freq: m.mov_freq ?? 3, desc: m.mov_desc || "", minimo: m.mov_minimo || "", nome: m.mov_nome || "", ativo: m.mov_ativo !== false },
  sono: { freq: m.sono_freq ?? 7, desc: m.sono_desc || "", minimo: m.sono_minimo || "", nome: m.sono_nome || "", ativo: m.sono_ativo !== false },
  tempo: { freq: m.tsi_freq ?? 3, desc: m.tsi_desc || "", minimo: m.tsi_minimo || "", nome: m.tsi_nome || "", ativo: m.tsi_ativo !== false },
+    alimentacao: { freq: m.alimentacao_freq ?? 5, desc: m.alimentacao_desc || "", minimo: m.alimentacao_minimo || "", nome: m.alimentacao_nome || "", ativo: m.alimentacao_ativo !== false },
       });
     } else {
       // Primeira vez na v2: aproveita os hábitos escolhidos no cadastro antigo
@@ -1863,6 +1871,7 @@ export default function App() {
  movimento: { freq: 3, desc: movDesc, minimo: "" },
  sono: { freq: 7, desc: sonoDesc, minimo: "" },
  tempo: { freq: 3, desc: tsiDesc, minimo: "" },
+ alimentacao: { freq: 5, desc: "", minimo: "" },
       });
  if (movDesc || sonoDesc || tsiDesc) {
  supabase.from("habitos_metas").upsert(
@@ -8787,7 +8796,7 @@ const PA_PORQUES = [
   "O que você quer deixar para trás?",
   "Como você quer se sentir daqui a 12 semanas?",
 ];
-const PA_MIN_EX = { movimento: "ex: caminhar 10 minutos", sono: "ex: 30 min sem celular", tempo: "ex: ler 1 página" };
+const PA_MIN_EX = { movimento: "ex: caminhar 10 minutos", alimentacao: "ex: uma refeição com legumes e verduras", sono: "ex: 30 min sem celular", tempo: "ex: ler 1 página" };
 function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarPorques, salvarAncora, salvarMinimos, salvarMeta, setCarta, tk, onConcluir }) {
   const passos = [
     faltam.porques && "porques",
@@ -8798,7 +8807,7 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
   const [i, setI] = useState(0);
   const [p, setP] = useState(pqs);
   const [a, setA] = useState(anc);
-  const [m, setM] = useState({ movimento: metas?.movimento?.minimo || "", sono: metas?.sono?.minimo || "", tempo: metas?.tempo?.minimo || "" });
+  const [m, setM] = useState({ movimento: metas?.movimento?.minimo || "", alimentacao: metas?.alimentacao?.minimo || "", sono: metas?.sono?.minimo || "", tempo: metas?.tempo?.minimo || "" });
   const [fq, setFq] = useState(() => Object.fromEntries(HABS_FIXOS.map((h) => [h.id, { freq: metas?.[h.id]?.freq ?? h.freqDef, desc: metas?.[h.id]?.desc || "" }])));
   const [salvando, setSalvando] = useState(false);
   const passo = passos[i];
@@ -8818,7 +8827,7 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
       for (const h of HABS_FIXOS) await salvarMeta(h.id, fq[h.id].freq, fq[h.id].desc.trim());
     }
     if (passo === "minimos") {
-      const ok = await salvarMinimos({ movimento: m.movimento.trim(), sono: m.sono.trim(), tempo: m.tempo.trim() });
+      const ok = await salvarMinimos({ movimento: m.movimento.trim(), alimentacao: m.alimentacao.trim(), sono: m.sono.trim(), tempo: m.tempo.trim() });
       if (!ok) { setSalvando(false); tk("Não conseguimos salvar agora. Tente de novo."); return; }
     }
     setSalvando(false);
@@ -8884,7 +8893,7 @@ function PrimeiroAcesso({ nome, antiga = false, faltam, pqs, anc, metas, salvarP
               <button onClick={() => setFq((x) => ({ ...x, [h.id]: { ...x[h.id], freq: Math.min(7, x[h.id].freq + 1) } }))} aria-label={`Aumentar ${h.nome}`}
  style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${C.ouro}`, background: "none", color: C.ouroTxt, cursor: "pointer", fontSize: 20 }}>+</button>
             </div>
-            <input value={fq[h.id].desc} onChange={(e) => { const v = e.target.value; setFq((x) => ({ ...x, [h.id]: { ...x[h.id], desc: v } })); }} placeholder={({ movimento: "Ex.: academia, 3x na semana", sono: "Ex.: 1 hora sem celular antes de dormir", tempo: "Ex.: ler 20 minutos" })[h.id] || "Ex.: 20 minutos, 3x na semana"} style={{ ...campo, minHeight: 50 }} />
+            <input value={fq[h.id].desc} onChange={(e) => { const v = e.target.value; setFq((x) => ({ ...x, [h.id]: { ...x[h.id], desc: v } })); }} placeholder={({ movimento: "Ex.: academia, 3x na semana", alimentacao: "Ex.: refeições com legumes e verduras, 5x na semana", sono: "Ex.: 1 hora sem celular antes de dormir", tempo: "Ex.: ler 20 minutos" })[h.id] || "Ex.: 20 minutos, 3x na semana"} style={{ ...campo, minHeight: 50 }} />
           </div>
         ))}
 
@@ -11769,7 +11778,7 @@ function Emergencia({
         {/* 5 · os 3 minimos, sempre os 3 (no Clube, os que estão na lista dela) */}
         <Bloco titulo="Seus mínimos inegociáveis">
           {habsFixos.map((h) => {
- const col = h.id === "movimento" ? "mov_minimo" : h.id === "sono" ? "sono_minimo" : "tsi_minimo";
+ const col = ({ movimento: "mov_minimo", alimentacao: "alimentacao_minimo", sono: "sono_minimo" })[h.id] || "tsi_minimo";
  const txt = metas?.[h.id]?.minimo || "";
  return (
               <div key={h.id} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 11 }}>
@@ -13047,7 +13056,7 @@ function PainelMentora({ ir }) {
  const regsU = regsPor[uid] || {};
  const mU = metasPor[uid];
  const metaDe = (hid) =>
- hid === "movimento" ? (mU?.mov_freq ?? 3) : hid === "sono" ? (mU?.sono_freq ?? 7) : (mU?.tsi_freq ?? 3);
+ hid === "movimento" ? (mU?.mov_freq ?? 3) : hid === "alimentacao" ? (mU?.alimentacao_freq ?? 5) : hid === "sono" ? (mU?.sono_freq ?? 7) : (mU?.tsi_freq ?? 3);
  const semStats = (seg) => {
  const dias = weekDays(seg);
  const out = {};
@@ -13392,7 +13401,7 @@ function PainelMentora({ ir }) {
                 Turmas
               </div>
               <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13.5, color: C.lt, marginBottom: 14, lineHeight: 1.5 }}>
-                A data de início é a segunda-feira da Semana 1 daquela turma: é dela que sai a semana de cada aluna e o desbloqueio do Sono (S5) e do Tempo para Si (S9). Turma sem data ainda não começou. O desafio da semana também é por turma — é aqui, e só aqui, que ele se edita.
+                A data de início é a segunda-feira da Semana 1 daquela turma: é dela que sai a semana de cada aluna e o desbloqueio da Alimentação (S4), do Sono (S7) e do Tempo para Si (S10). Turma sem data ainda não começou. O desafio da semana também é por turma — é aqui, e só aqui, que ele se edita.
               </div>
               {turmas.map((t, i) => {
                 const mudar = (campo, valor) => setTurmas((ts) => ts.map((x, xi) => xi === i ? { ...x, [campo]: valor } : x));
@@ -13519,7 +13528,7 @@ function PainelMentora({ ir }) {
               const chaves = (alunaSel.perfil_auge || "").split(",").filter(Boolean);
               const perfis = chaves.map((k) => PERFIS[k]?.nome).filter(Boolean);
               const mv = alunaSel.metas || {};
-              const minimos = [["Movimento", "mov_minimo"], ["Sono", "sono_minimo"], ["Tempo para Si", "tsi_minimo"]].filter(([, c]) => mv[c]);
+              const minimos = [["Movimento", "mov_minimo"], ["Alimentação", "alimentacao_minimo"], ["Sono", "sono_minimo"], ["Tempo para Si", "tsi_minimo"]].filter(([, c]) => mv[c]);
               const ORDEM = ["S1", "S6", "S12"];
               const rodas = ORDEM.map((mo) => (alunaSel.roda || []).find((r) => r.momento === mo)).filter(Boolean);
               const tb = { fontFamily: FB, fontWeight: 400, fontSize: 12.5, letterSpacing: "0.25em", textTransform: "uppercase", color: C.ouroDk, margin: "16px 0 7px" };
@@ -13552,6 +13561,7 @@ function PainelMentora({ ir }) {
                             : (() => {
  const mvv = alunaSel.metas || {};
  const col = habAlunaSel.id === "movimento" ? ["mov_desc", "mov_freq", 3]
+                                : habAlunaSel.id === "alimentacao" ? ["alimentacao_desc", "alimentacao_freq", 5]
                                 : habAlunaSel.id === "sono" ? ["sono_desc", "sono_freq", 7]
                                 : ["tsi_desc", "tsi_freq", 3];
  const freq = mvv[col[1]] ?? col[2];
