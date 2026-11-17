@@ -5954,8 +5954,13 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir, aulasTr
   return () => { vivo = false; };
  }, [guiaAberto]);
  const trancado = (v) => aulasTrancadas && v.categoria === "aulas";
+ const vimeoEmbedHoje = (url) => {
+  const id = url?.match(/vimeo\.com\/(?:video\/)?(\d+)/)?.[1];
+  return id ? `https://player.vimeo.com/video/${id}?playsinline=1` : null;
+ };
+ const arquivoDiretoHoje = (url) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || "") || /\/storage\/v1\/object\//.test(url || "");
  const ytEmbedHoje = (url) => {
-  const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)?.[1];
+  const id = url?.match(/(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([\w-]{11})/)?.[1];
   return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1` : null;
  };
  const jaAssistiu = (id) => assistidos.has(String(id));
@@ -6122,10 +6127,22 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir, aulasTr
        {ytEmbedHoje(videoAberto.url) ? (
         <iframe src={ytEmbedHoje(videoAberto.url)} title={videoAberto.titulo} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
-       ) : (
+       ) : vimeoEmbedHoje(videoAberto.url) ? (
+        <iframe src={vimeoEmbedHoje(videoAberto.url)} title={videoAberto.titulo} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen
+         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+       ) : arquivoDiretoHoje(videoAberto.url) ? (
         <video src={videoAberto.url} controls autoPlay playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+       ) : (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, boxSizing: "border-box" }}>
+         <button onClick={() => abrirLinkExterno(videoAberto.url)}
+          style={{ minHeight: 52, padding: "0 22px", borderRadius: 50, border: "none", background: C.primary, color: "#FFFFFF", fontFamily: FB, fontSize: 17, fontWeight: 600, cursor: "pointer" }}>Assistir em outra janela</button>
+        </div>
        )}
       </div>
+      <button onClick={() => abrirLinkExterno(videoAberto.url)}
+       style={{ display: "block", marginTop: 10, background: "none", border: "none", padding: "8px 0", fontFamily: FB, fontSize: 16, color: C.ouroTxt, textDecoration: "underline", cursor: "pointer" }}>
+       Não abriu? Assistir em outra janela
+      </button>
       <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 20, color: C.obs, lineHeight: 1.32, marginTop: 16 }}>
        {videoAberto.dur ? `${videoAberto.dur} | ${videoAberto.titulo}` : videoAberto.titulo}
       </div>
