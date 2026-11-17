@@ -5218,6 +5218,7 @@ function Home({ videos, authUserId, aulasTrancadas = false,
  habAngulares,
  setHabAngulares,
  usuario,
+ minhaFoto,
  streakAtual,
  diasSemTreino,
  carta,
@@ -5682,7 +5683,7 @@ function Home({ videos, authUserId, aulasTrancadas = false,
             {conquista && createPortal(<ImagemConquista dados={conquista} modoClube={modoClube} tk={tk} onFechar={() => setConquista(null)} />, document.body)}
 
             {/* Conteúdos da Hoje (mockup 14/11) */}
-            <ConteudosHoje videos={videos} modoClube={modoClube} perfil={perfil} authUserId={authUserId} ir={ir} aulasTrancadas={aulasTrancadas} />
+            <ConteudosHoje videos={videos} modoClube={modoClube} perfil={perfil} authUserId={authUserId} usuario={usuario} minhaFoto={minhaFoto} ir={ir} aulasTrancadas={aulasTrancadas} />
 
             {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
             <div style={{ height: 100 }} />
@@ -5925,7 +5926,7 @@ const CAPA_DO_ITEM = {
  "romances bobinhos favoritos": "/capas/romances-bobinhos-favoritos.jpg",
 };
 
-function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, ir, aulasTrancadas = false }) {
+function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, usuario, minhaFoto, ir, aulasTrancadas = false }) {
  const [assistidos, setAssistidos] = useState(() => new Set());
  const [serie, setSerie] = useState(null); // conteúdo aberto: { titulo, itens }
  // Aula e guia tocam aqui, sem sair da Hoje
