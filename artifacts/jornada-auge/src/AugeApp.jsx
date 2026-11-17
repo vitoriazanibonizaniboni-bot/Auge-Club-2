@@ -195,6 +195,9 @@ const IcoH = {
 // ─── HÁBITOS ANGULARES FIXOS DO MÉTODO (v2) ──────────────────────────────────
 // 4 hábitos com meta SEMANAL de frequência (não lógica de "todo dia").
 // Desbloqueio por calendário, independente do desempenho (seção 4.7).
+// Mentora: a turma que ela está vendo fica salva neste aparelho
+const lerVistaSalva = () => { try { return localStorage.getItem("auge_vista_turma") || null; } catch { return null; } };
+
 const HABS_FIXOS = [
   { id: "movimento", nome: "Movimento", ic: "", unlock: 1, freqDef: 3 },
   { id: "alimentacao", nome: "Alimentação", ic: "", unlock: 4, freqDef: 5 },
@@ -1327,6 +1330,8 @@ export default function App() {
  // "ver progresso" na Hoje: abre a Trajetoria ja com o painel deste hábito
  const [habProgresso, setHabProgresso] = useState(null);
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config, ou da turma)
+ const [turmasAdmin, setTurmasAdmin] = useState([]); // só a mentora: todas as turmas
+ const [vistaTurmaId, setVistaTurmaId] = useState(null); // só a mentora: a turma que as telas mostram
  const [turma, setTurma] = useState(null); // turma da aluna: inicio, encontro, link do Meet e desafio
  const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
  const [grupoClube, setGrupoClube] = useState(""); // link do grupo de WhatsApp do Clube (config)
@@ -1475,6 +1480,27 @@ export default function App() {
   );
 
   // ── Ações Jornada v2 ────────────────────────────────────────────────────────
+ // Mentora: troca a turma que as telas mostram (Hoje, Trajetória, Mural), como se estivesse nela
+ const trocarVista = async (id) => {
+  if (!id) return;
+  setVistaTurmaId(id);
+  try { localStorage.setItem("auge_vista_turma", id); } catch {}
+  const [tRes, dsRes] = await Promise.all([
+   supabase.from("turmas").select("*").eq("id", id).single(),
+   supabase.from("desafios_semana").select("semana,texto").eq("turma_id", id),
+  ]);
+  const t = tRes?.data;
+  if (t) {
+   setTurma(t);
+   if (t.inicio) setJornadaInicio(t.inicio);
+   setMentoria((m) => ({ data: t.mentoria_data || m.data, semana: m.semana, duracao: t.mentoria_duracao || m.duracao, zoom: t.zoom || m.zoom }));
+   setDesafioTexto(t.desafio || "");
+   const porSemana = {};
+   for (const d of dsRes?.data || []) porSemana[d.semana] = d.texto || "";
+   setDesafiosSemana(porSemana);
+  }
+  carregarFeed(authUser?.id, id, true).catch(() => {});
+ };
  const _colMeta = { movimento: "mov", alimentacao: "alimentacao", sono: "sono", tempo: "tsi" };
  const registrarHabito = async (habId, dataStr, dif = null) => {
     // Marcos do Clube (03/11): 10, 30, 50, 100… hábitos marcados. Aparece uma
@@ -1679,7 +1705,7 @@ export default function App() {
     // A mentora e a excecao: ela acompanha todas as turmas, entao ve tudo.
  const _t = turmaId !== undefined ? turmaId : turma?.id || null;
  const _admin = ehAdmin !== undefined ? ehAdmin : perfil === "admin";
- const soDaMinhaTurma = (q) => (_admin ? q : _t ? q.eq("turma_id", _t) : q.is("turma_id", null));
+ const soDaMinhaTurma = (q) => (_admin ? (_t ? q.eq("turma_id", _t) : q) : _t ? q.eq("turma_id", _t) : q.is("turma_id", null));
  const [feedPublicoRes, feedPrivadoRes] = await Promise.all([
  soDaMinhaTurma(supabase
         .from("feed")
@@ -2103,13 +2129,21 @@ export default function App() {
     // sai assim que config e turma chegam (sem elas a semana sairia errada);
     // Mural, videos e Radar terminam de chegar com o app ja aberto.
  const _turmaId = profileRes.data?.turma_id;
- const pFeed = carregarFeed(userId, _turmaId || null, profileRes.data?.plano === "admin").catch(() => {});
+ const _adminCarga = profileRes.data?.plano === "admin";
+ const _turmaVista = _adminCarga ? (lerVistaSalva() || _turmaId || null) : (_turmaId || null);
+ const pFeed = carregarFeed(userId, _turmaVista, _adminCarga).catch(() => {});
  const pConfigTurma = (async () => {
  const [configRes, turmaRes, dsRes] = await Promise.all([
  supabase.from("config").select("*"),
- _turmaId ? supabase.from("turmas").select("*").eq("id", _turmaId).single() : Promise.resolve({ data: null }),
- _turmaId ? supabase.from("desafios_semana").select("semana,texto").eq("turma_id", _turmaId) : Promise.resolve({ data: null }),
+ _turmaVista ? supabase.from("turmas").select("*").eq("id", _turmaVista).single() : Promise.resolve({ data: null }),
+ _turmaVista ? supabase.from("desafios_semana").select("semana,texto").eq("turma_id", _turmaVista) : Promise.resolve({ data: null }),
       ]);
+      // Mentora: carrega a lista de turmas para o seletor
+      if (_adminCarga) {
+       const { data: todas } = await supabase.from("turmas").select("*").order("ordem");
+       setTurmasAdmin(todas || []);
+       setVistaTurmaId(_turmaVista);
+      }
       // Config primeiro, turma depois: a turma vale mais que os valores gerais.
  if (configRes.data?.length) {
  const cfg = Object.fromEntries(configRes.data.map((c) => [c.id, c.valor]));
@@ -2131,7 +2165,7 @@ export default function App() {
       // desafio da turma, a aluna fica sem desafio, e nao com o valor antigo
       // que sobrou no config.
  const t = turmaRes?.data;
- if (_turmaId && t) {
+ if (_turmaVista && t) {
  setTurma(t);
  if (t.inicio) setJornadaInicio(t.inicio);
  setMentoria((m) => ({
@@ -2669,6 +2703,7 @@ export default function App() {
 
  const ctx = {
  modoClube,
+ turmasAdmin, vistaTurmaId, trocarVista, isAdmin: perfil === "admin",
  abrirRetro: () => setRetroAberta(true),
  vit,
  // 7 dias grátis: as aulas aparecem com cadeado (decisão da Vitória, 02/11)
@@ -5198,7 +5233,7 @@ function ImagemConquista({ dados, modoClube, tk, onFechar }) {
  );
 }
 
-function Home({ videos, authUserId, aulasTrancadas = false,
+function Home({ videos, authUserId, aulasTrancadas = false, turmasAdmin = [], vistaTurmaId = null, trocarVista, isAdmin = false,
  modoClube,
  setSexta,
  perfil,
@@ -5526,6 +5561,7 @@ function Home({ videos, authUserId, aulasTrancadas = false,
 
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
+      {isAdmin && <SeletorTurmaAdmin turmas={turmasAdmin} vistaId={vistaTurmaId} onTrocar={trocarVista} />}
       {/* Aviso ao marcar, com a montanha pequena: a luz sobe ali, onde ela estiver na tela */}
       {cumeAviso && (
         <div key={cumeAviso.id} role="status" style={{ position: "fixed", left: 16, right: 16, top: "calc(16px + env(safe-area-inset-top))", zIndex: 300, maxWidth: 420, margin: "0 auto", background: C.branco, borderRadius: 18, boxShadow: "0 8px 28px rgba(31,26,23,.18)", padding: 10, display: "flex", alignItems: "center", gap: 12, animation: "fadeUp .3s ease" }}>
@@ -6179,7 +6215,24 @@ function ConteudosHoje({ videos = [], modoClube, perfil, authUserId, usuario, mi
  );
 }
 
-function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto }) {
+// Seletor da mentora: a turma que as telas mostram
+function SeletorTurmaAdmin({ turmas = [], vistaId, onTrocar }) {
+ if (!turmas.length || !onTrocar) return null;
+ return (
+  <div role="group" aria-label="Turma que você está vendo" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+   <span style={{ fontFamily: FB, fontSize: 14, color: C.obs }}>Vendo a</span>
+   {turmas.map((t) => {
+    const ativa = t.id === vistaId;
+    return (
+     <button key={t.id} onClick={() => onTrocar(t.id)} aria-pressed={ativa}
+      style={{ minHeight: 40, padding: "0 16px", borderRadius: 50, border: `1px solid ${ativa ? C.oliva : C.ouro}`, background: ativa ? C.oliva : "transparent", color: ativa ? C.creme : C.obs, fontFamily: FB, fontSize: 15, fontWeight: 600, cursor: "pointer" }}>{t.nome}</button>
+    );
+   })}
+  </div>
+ );
+}
+
+function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto, turmasAdmin = [], vistaTurmaId = null, trocarVista, isAdmin = false }) {
  const totalNaoLidas = Object.values(naoLidas).reduce((a, b) => a + b, 0);
  const [open, setOpen] = useState(null);
  const [txt, setTxt] = useState("");
@@ -6328,6 +6381,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
     });
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
+      {isAdmin && <SeletorTurmaAdmin turmas={turmasAdmin} vistaId={vistaTurmaId} onTrocar={trocarVista} />}
       {avisoAcao && (
         <div style={{ position: "fixed", top: "calc(14px + env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 16, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
       )}
