@@ -7386,7 +7386,7 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
               </button>
             </>
           ) : (
-            <div style={{ textAlign: "center", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.linho }}>
+            <div style={{ textAlign: "center", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "transparent", border: `1.5px dashed ${C.ouroDk}`, borderRadius: 12, boxSizing: "border-box" }}>
               <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Adicionar foto</div>
               <div
  style={{
