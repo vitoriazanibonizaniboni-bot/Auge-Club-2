@@ -10239,6 +10239,8 @@ function Jornada({
  salvarMinimo,
  tk,
  usuario,
+ notifStatus,
+ setNotifStatus,
 }) {
  const hist = historico || {};
  const SEMANA = ["S", "T", "Q", "Q", "S", "S", "D"];
