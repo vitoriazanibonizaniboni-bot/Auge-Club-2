@@ -1332,6 +1332,7 @@ export default function App() {
  const [jornadaInicio, setJornadaInicio] = useState(null); // segunda-feira da S1 (config, ou da turma)
  const [turmasAdmin, setTurmasAdmin] = useState([]); // só a mentora: todas as turmas
  const [vistaTurmaId, setVistaTurmaId] = useState(null); // só a mentora: a turma que as telas mostram
+ const [arteMural, setArteMural] = useState(null); // foto recém-postada no Mural: abre a arte para o Instagram
  const [turma, setTurma] = useState(null); // turma da aluna: inicio, encontro, link do Meet e desafio
  const [contatoWhats, setContatoWhats] = useState(""); // WhatsApp da tela de espera (config)
  const [grupoClube, setGrupoClube] = useState(""); // link do grupo de WhatsApp do Clube (config)
@@ -2434,6 +2435,8 @@ export default function App() {
  avatar: minhaFoto,
     };
  setFeed((f) => [novoPost, ...f]);
+    // Foto postada no Mural: já abre a arte para o Instagram
+ if (imgUrl || entry.imgSrc) setArteMural(imgUrl || entry.imgSrc);
 
     // Salva no Supabase (público ou privado)
     {
@@ -2704,6 +2707,7 @@ export default function App() {
  const ctx = {
  modoClube,
  turmasAdmin, vistaTurmaId, trocarVista, isAdmin: perfil === "admin",
+ arteMural, setArteMural,
  abrirRetro: () => setRetroAberta(true),
  vit,
  // 7 dias grátis: as aulas aparecem com cadeado (decisão da Vitória, 02/11)
@@ -5715,11 +5719,11 @@ function Home({ videos, authUserId, aulasTrancadas = false, turmasAdmin = [], vi
               <Card style={{ marginBottom: 12, background: C.linho, boxShadow: "none", border: "none" }}>
                 <div style={{ fontFamily: FB, fontSize: 17, fontWeight: 600, color: C.obs, marginBottom: 4 }}>Mais um dia registrado</div>
                 <div style={{ fontFamily: FB, fontSize: 16, color: C.lt, lineHeight: 1.45, marginBottom: 12 }}>
-                  {modoClube ? "Quer mostrar seu dia no Instagram?" : "Quer mostrar seu dia no Mural ou no Instagram?"}
+                  {modoClube ? "Quer mostrar seu dia no Instagram?" : "Quer mostrar seu dia no Mural?"}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {!modoClube && <Button icone={IcoH.camera(C.creme)} onClick={() => { fecharConviteHoje(); convidarMural(null); }}>Postar no Mural</Button>}
-                  <Button variante={modoClube ? undefined : "contorno"} onClick={() => { fecharConviteHoje(); setArteAberta(true); }}>Criar arte para o Instagram</Button>
+                  {modoClube && <Button onClick={() => { fecharConviteHoje(); setArteAberta(true); }}>Criar arte para o Instagram</Button>}
                   <Button variante="texto" onClick={fecharConviteHoje}>Agora não</Button>
                 </div>
               </Card>
@@ -5787,7 +5791,7 @@ async function notificarInteracao(targetUserId, tipo, nome) {
 
 // Arte para o Instagram: a aluna escolhe uma foto, ela entra na moldura da marca,
 // e a imagem vai para o compartilhar do celular (Instagram aparece na lista).
-function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
+function ArtePostagem({ onFechar, tk, modoClube, authUserId, fotoInicial = null }) {
  const canvasRef = useRef(null);
  const fotoRef = useRef(null);
  const camRef = useRef(null);
@@ -5849,6 +5853,8 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId }) {
   img.onerror = () => setErro("Não consegui abrir essa foto do Mural. Tente outra.");
   img.src = src;
  };
+ // Veio de um post recém-feito no Mural: a foto já entra na arte
+ useEffect(() => { if (fotoInicial) usarImagem(fotoInicial); }, []);
  const escolherFoto = (e) => {
   const f = e.target.files?.[0];
   e.target.value = "";
@@ -6232,7 +6238,7 @@ function SeletorTurmaAdmin({ turmas = [], vistaId, onTrocar }) {
  );
 }
 
-function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto, turmasAdmin = [], vistaTurmaId = null, trocarVista, isAdmin = false }) {
+function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto, turmasAdmin = [], vistaTurmaId = null, trocarVista, isAdmin = false, arteMural = null, setArteMural, modoClube = false, tk }) {
  const totalNaoLidas = Object.values(naoLidas).reduce((a, b) => a + b, 0);
  const [open, setOpen] = useState(null);
  const [txt, setTxt] = useState("");
@@ -6382,6 +6388,7 @@ function Feed({ feed, setFeed, ir, authUserId, usuario, naoLidas = {}, minhaFoto
  return (
     <div style={{ animation: "fadeUp .35s ease" }}>
       {isAdmin && <SeletorTurmaAdmin turmas={turmasAdmin} vistaId={vistaTurmaId} onTrocar={trocarVista} />}
+      {arteMural && createPortal(<ArtePostagem fotoInicial={arteMural} onFechar={() => setArteMural(null)} tk={tk} modoClube={modoClube} authUserId={authUserId} />, document.body)}
       {avisoAcao && (
         <div style={{ position: "fixed", top: "calc(14px + env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", zIndex: 800, background: C.obs2, color: C.creme, fontFamily: FB, fontSize: 16, padding: "10px 16px", borderRadius: 50, boxShadow: "0 8px 24px rgba(0,0,0,.4)", maxWidth: "90%", textAlign: "center" }}>{avisoAcao}</div>
       )}
