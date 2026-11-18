@@ -7266,12 +7266,10 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
         <div
  style={{
  fontFamily: FB,
- fontWeight: 400,
- fontSize: 14.5,
- color: C.lt,
- letterSpacing: "0.2em",
- textTransform: "uppercase",
- marginBottom: 10,
+ fontWeight: 600,
+ fontSize: 17,
+ color: C.obs,
+ marginBottom: 8,
           }}
         >
  O que você fez por você hoje?
@@ -7299,12 +7297,10 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
         <div
  style={{
  fontFamily: FB,
- fontWeight: 400,
- fontSize: 14.5,
- color: C.lt,
- letterSpacing: "0.2em",
- textTransform: "uppercase",
- marginBottom: 10,
+ fontWeight: 600,
+ fontSize: 17,
+ color: C.obs,
+ marginBottom: 8,
           }}
         >
  Quer acrescentar algo? (opcional)
@@ -7389,13 +7385,13 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
             </>
           ) : (
             <div style={{ textAlign: "center", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.linho }}>
-              <div style={{ fontFamily: FB, fontSize: 13, letterSpacing: "0.15em", textTransform: "uppercase", color: C.ouroTxt }}>Adicionar foto</div>
+              <div style={{ fontFamily: FB, fontWeight: 600, fontSize: 17, color: C.obs }}>Adicionar foto</div>
               <div
  style={{
- fontSize: 15,
+ fontSize: 16,
  fontFamily: FB,
  fontWeight: 400,
- color: C.lt,
+ color: C.obs,
  marginTop: 5,
                 }}
               >
