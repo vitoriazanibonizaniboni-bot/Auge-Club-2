@@ -2436,7 +2436,7 @@ export default function App() {
     };
  setFeed((f) => [novoPost, ...f]);
     // Foto postada no Mural: já abre a arte para o Instagram
- if (imgUrl || entry.imgSrc) setArteMural(imgUrl || entry.imgSrc);
+ if (entry.imgSrc) setArteMural(entry.imgSrc);
 
     // Salva no Supabase (público ou privado)
     {
@@ -5910,7 +5910,7 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId, fotoInicial = null 
          {fotosMural.map((f) => (
           <button key={f.id} onClick={() => usarImagem(f.img_url)} aria-label="Usar esta foto do Mural"
            style={{ padding: 0, border: "none", background: "none", cursor: "pointer", borderRadius: 12, overflow: "hidden", aspectRatio: "1 / 1" }}>
-           <img src={f.img_url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+           <img src={f.img_url} alt="" loading="lazy" onError={(e) => { e.currentTarget.closest("button").style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </button>
          ))}
         </div>
