@@ -3075,7 +3075,7 @@ export default function App() {
       <div
  ref={rolarRef}
  onScroll={(e) => { rolagem.current[telaRolando.current] = e.currentTarget.scrollTop; }}
- style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 120 }}
+ style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 90 }}
       >
         {/* SEM position neste invólucro: o botão "bateu a preguiça?" e os
             painéis das telas usam position:absolute/fixed presos ao app
@@ -5743,8 +5743,6 @@ function Home({ videos, authUserId, aulasTrancadas = false, turmasAdmin = [], vi
             {/* Conteúdos da Hoje (mockup 14/11) */}
             <ConteudosHoje videos={videos} modoClube={modoClube} perfil={perfil} authUserId={authUserId} usuario={usuario} minhaFoto={minhaFoto} ir={ir} aulasTrancadas={aulasTrancadas} />
 
-            {/* espaço para a pastilha fixa do Kit não cobrir o último item */}
-            <div style={{ height: 100 }} />
           </div>
 
 
