@@ -11265,11 +11265,11 @@ function CalendarioCores({ linhas, regs, metaDoHabito, inicial = null, onTirar }
  const hoje = ds === todayStr;
  return (
             <div key={dia} aria-label={`${dia}: ${feitos.length ? feitos.map((h) => h.nome).join(", ") : "nenhum hábito"}`}
- style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, paddingBottom: 6 }}>
+ style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, paddingBottom: 4 }}>
               <span style={{ fontFamily: FB, fontSize: 15, fontWeight: hoje ? 700 : 400, color: C.obs, width: 28, height: 28, borderRadius: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", boxShadow: hoje ? `inset 0 0 0 2px ${C.obs}` : "none" }}>{dia}</span>
-              <span aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}>
+              <span aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
                 {visiveis.map((h) => (
-                  <span key={h.id} style={{ height: 8, borderRadius: 4, background: regs[ds]?.[h.id] ? h.cor : RISCO_VAZIO }} />
+                  <span key={h.id} style={{ height: 5, borderRadius: 3, background: regs[ds]?.[h.id] ? h.cor : RISCO_VAZIO }} />
                 ))}
               </span>
             </div>
