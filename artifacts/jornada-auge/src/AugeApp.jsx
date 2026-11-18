@@ -10347,6 +10347,31 @@ function Jornada({
 
         {/* Espaços de escrita — Âncora e Porquês */}
         <CartaoMapa icone={PenLine} titulo="Espaços de escrita" linha="Âncora e Porquês" onClick={() => ir(S.ESC)} />
+        {/* Notificações e lembretes — ligar/desligar (seção 9) */}
+        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra }}> Notificações e lembretes</div>
+            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 3 }}>
+              {notifStatus === "granted" ? "Ativadas" : notifStatus === "denied" ? "Bloqueadas no navegador" : "Desativadas"}
+            </div>
+          </div>
+          <button
+ onClick={async () => {
+ if (notifStatus === "granted") { setNotifStatus("dismissed"); tk("Lembretes desativados"); }
+ else {
+ const r = await requestPermission();
+ setNotifStatus(r === "granted" ? "granted" : r === "denied" ? "denied" : "dismissed");
+ if (r === "granted") tk("Lembretes ativados");
+ else if (r === "denied") tk("Permissão bloqueada nas configurações do navegador");
+              }
+            }}
+ style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 16, color: notifStatus === "granted" ? C.obs2 : C.ouroTxt, cursor: "pointer" }}
+          >
+            {notifStatus === "granted" ? "Desligar" : "Ligar"}
+          </button>
+        </div>
+
+
         {/* Perfil e Configurações agora é o círculo no alto da tela */}
 
       </Grain>
@@ -14457,30 +14482,6 @@ function Perfil({
  style={{ background: C.ouro, border: "none", borderRadius: 20, padding: "8px 18px", fontFamily: FB, fontSize: 16, color: C.obs2, cursor: "pointer" }}>Salvar</button>
             </div>
           )}
-        </div>
-
-        {/* Notificações e lembretes — ligar/desligar (seção 9) */}
-        <div style={{ background: C.branco, border: `1px solid ${C.linho}`, borderRadius: 14, padding: "16px 17px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 16, color: C.terra }}> Notificações e lembretes</div>
-            <div style={{ fontFamily: FB, fontWeight: 400, fontSize: 13, color: C.lt, marginTop: 3 }}>
-              {notifStatus === "granted" ? "Ativadas" : notifStatus === "denied" ? "Bloqueadas no navegador" : "Desativadas"}
-            </div>
-          </div>
-          <button
- onClick={async () => {
- if (notifStatus === "granted") { setNotifStatus("dismissed"); tk("Lembretes desativados"); }
- else {
- const r = await requestPermission();
- setNotifStatus(r === "granted" ? "granted" : r === "denied" ? "denied" : "dismissed");
- if (r === "granted") tk("Lembretes ativados");
- else if (r === "denied") tk("Permissão bloqueada nas configurações do navegador");
-              }
-            }}
- style={{ background: notifStatus === "granted" ? C.ouro : "transparent", border: `1px solid ${C.ouro}`, borderRadius: 20, padding: "7px 16px", fontFamily: FB, fontSize: 16, color: notifStatus === "granted" ? C.obs2 : C.ouroTxt, cursor: "pointer" }}
-          >
-            {notifStatus === "granted" ? "Desligar" : "Ligar"}
-          </button>
         </div>
 
         {!IS_JORNADA && <PrefRadar authUserId={authUserId} />}
