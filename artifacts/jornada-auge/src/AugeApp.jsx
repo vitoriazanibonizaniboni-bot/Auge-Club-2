@@ -5809,6 +5809,7 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId, fotoInicial = null 
  // Story 1080×1920: foto em tela cheia e a moldura (PNG com transparência) por cima.
  // Enquanto a moldura não existir em public/molduras, desenha um texto provisório.
  const MOLDURA = { jornada: "/molduras/story-jornada.png", clube: "/molduras/story-clube.png" };
+ const MOLDURA_DESCE = 160;
  const carregarMoldura = (src) => new Promise((res) => {
   const im = new Image();
   im.onload = () => res(im);
@@ -5827,7 +5828,7 @@ function ArtePostagem({ onFechar, tk, modoClube, authUserId, fotoInicial = null 
   g.drawImage(img, (W - iw) / 2, (H - ih) / 2, iw, ih);
   const moldura = await carregarMoldura(MOLDURA[modoClube ? "clube" : "jornada"]);
   if (moldura) {
-   g.drawImage(moldura, 0, 0, W, H);
+   g.drawImage(moldura, 0, MOLDURA_DESCE, W, H); // desce o desenho para ficar sobre o creme, e não em cima da foto
    return;
   }
   const deg = g.createLinearGradient(0, 1380, 0, H);
