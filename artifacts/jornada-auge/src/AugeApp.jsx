@@ -3617,7 +3617,7 @@ function Splash({ ir }) {
  color: `${C.linho}66`,
  lineHeight: 1.6,
  textAlign: "center",
- maxWidth: 240,
+ maxWidth: 200,
  marginTop: 4,
           }}
         >
@@ -7328,6 +7328,8 @@ function Novo({ back, postTreino, postPrefill, setPostPrefill }) {
  onClick={() => ref.current?.click()}
  style={{
  aspectRatio: "4 / 5",
+ maxWidth: 200,
+ margin: "0 auto",
  borderRadius: 0,
  border: "none",
  background: "transparent",
