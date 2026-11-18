@@ -35,6 +35,11 @@ function nextDailyAt(hour, minute = 0) {
 const ehNativo = () =>
   typeof window !== "undefined" && !!window.Capacitor &&
   !!window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+// iPhone/iPad no navegador (Safari): o push pelo site foi desligado. Quem avisa
+// a aluna no iOS é o app nativo; aqui não se pede permissão nem se inscreve no site.
+const ehIOSWeb = () =>
+  typeof navigator !== "undefined" && !ehNativo() &&
+  /iPhone|iPad|iPod/.test(navigator.userAgent || "");
 const pluginOneSignal = () => {
   const OS = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
   return OS && typeof OS.initialize === "function" ? OS : null;
@@ -68,6 +73,7 @@ export async function requestPermission() {
     } catch (e) {}
     return "unsupported";
   }
+  if (ehIOSWeb()) return "unsupported";
   if (!("Notification" in window)) return "unsupported";
   let result = Notification.permission;
   if (result !== "granted" && result !== "denied") {
@@ -95,6 +101,7 @@ async function postToSW(msg) {
 // ─── Agendar os 3 gatilhos ────────────────────────────────────────────────────
 // diasSemCheckin: calculado pelo app (diasSemTreino no estado global)
 export async function scheduleAll(diasSemCheckin = 0, nHab = 0) {
+  if (ehIOSWeb()) return;
   if (Notification.permission !== "granted") return;
 
   const schedule = {};
@@ -181,6 +188,7 @@ export function setOneSignalUser(uid) {
     }
     return;
   }
+  if (ehIOSWeb()) return;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push((OneSignal) => { try { OneSignal.login(String(uid)); } catch (e) {} });
 }
